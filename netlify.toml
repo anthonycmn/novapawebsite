@@ -1,0 +1,7 @@
+# Netlify configuration for the NOVAPA website (static HTML site).
+# The site files live in the repository root and need no build step,
+# so there is no build command and the publish directory is ".".
+
+[build]
+  publish = "."
+  command = ""
