@@ -9,3 +9,17 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+# Old Summer 2026 camp page is retired — send stale links/bookmarks to the
+# current summer funnel.
+[[redirects]]
+  from = "/summer"
+  to = "/summer-2027"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/summer.html"
+  to = "/summer-2027.html"
+  status = 301
+  force = true

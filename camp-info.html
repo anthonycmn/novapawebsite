@@ -188,6 +188,33 @@
   }
   .jumpnav-links a:hover { color: var(--navy); background: var(--gold2); border-color: var(--gold2); }
 
+  /* Collapsed sticky state: while scrolled, section pills hide behind a toggle */
+  .jumpnav-toggle {
+    display: none;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(200, 137, 42, 0.3);
+    border-radius: 100px;
+    padding: 9px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .jumpnav-toggle:hover { color: var(--navy); background: var(--gold2); border-color: var(--gold2); }
+  .jumpnav-toggle svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.25s; }
+  .jumpnav.is-stuck .jumpnav-toggle { display: inline-flex; }
+  .jumpnav.is-stuck .jumpnav-links { display: none; }
+  .jumpnav.is-stuck.is-open .jumpnav-links { display: flex; flex-basis: 100%; animation: jnReveal 0.25s ease; }
+  .jumpnav.is-stuck.is-open .jumpnav-toggle svg { transform: rotate(180deg); }
+  @keyframes jnReveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 520px) { .jumpnav.is-stuck .search-wrap { min-width: 140px; } }
+
   /* QUICKLINKS ROW - bold navy with gold accents to contrast with green contact strip */
   .quicklinks-row {
     background:
@@ -1526,7 +1553,11 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
       <input type="search" id="pageSearch" placeholder="Search this page (e.g. 'jazz shoes', 'pickup', 'allergies')…" aria-label="Search page">
     </div>
-    <div class="jumpnav-links">
+    <button class="jumpnav-toggle" type="button" aria-expanded="false" aria-controls="jumpnavLinks">
+      Sections
+      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="jumpnav-links" id="jumpnavLinks">
       <a href="#sessions">Sessions</a>
       <a href="#performances">Performances</a>
       <a href="#keepsakes">Star Pages</a>
@@ -2354,7 +2385,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <div class="footer-col">
       <div class="footer-col-head">Programs</div>
       <a href="classes.html">2026&ndash;27 Classes</a>
-      <a href="summer-2027.html">Summer Camps 2026</a>
+      <a href="summer-2027.html">Summer Camps 2027</a>
       <a href="camp-info.html">Camp Parent Info</a>
       <a href="coaching.html">College Audition Coaching</a>
       <a href="https://novapa.booktix.com" rel="noopener" target="_blank">Box Office &amp; Tickets</a>
@@ -2444,6 +2475,35 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { searchInput.value = ''; clearHighlights(); }
   });
+
+  // Collapse the section pills once the jumpnav is stuck (scrolled past its spot)
+  (function(){
+    const jn = document.querySelector('.jumpnav');
+    const toggle = jn.querySelector('.jumpnav-toggle');
+    const sentinel = document.createElement('div');
+    sentinel.style.cssText = 'height:1px;margin-top:-1px;';
+    jn.parentNode.insertBefore(sentinel, jn);
+    function updateStuck(){
+      // Stuck once the sentinel scrolls up behind the fixed 68px nav
+      const stuck = sentinel.getBoundingClientRect().top < 69;
+      if (stuck === jn.classList.contains('is-stuck')) return;
+      jn.classList.toggle('is-stuck', stuck);
+      if (!stuck) { jn.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); }
+    }
+    document.addEventListener('scroll', updateStuck, { passive: true, capture: true });
+    window.addEventListener('resize', updateStuck, { passive: true });
+    updateStuck();
+    toggle.addEventListener('click', function(){
+      const open = jn.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    jn.querySelectorAll('.jumpnav-links a').forEach(function(a){
+      a.addEventListener('click', function(){
+        jn.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+  })();
 </script>
 
 <script>
