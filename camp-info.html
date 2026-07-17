@@ -1376,84 +1376,11 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 }
 </style>
 <script src="/posthog.js" defer></script>
-<style id="nvAnnounceCss">
-:root { --nv-announce-h: 0px; }
-#nvAnnounce { position: fixed; top: 0; left: 0; right: 0; z-index: 9500;
-  background: linear-gradient(90deg, #8B1A2F 0%, #08111F 35%, #0F1E36 65%, #C8892A 100%);
-  border-bottom: 1px solid rgba(232,184,75,0.35); box-shadow: 0 4px 18px rgba(0,0,0,0.35); overflow: hidden; }
-#nvAnnounce::before { content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(45deg, transparent, transparent 18px, rgba(232,184,75,0.04) 18px, rgba(232,184,75,0.04) 19px); pointer-events: none; }
-.nvann-link { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 10px 56px 10px 20px;
-  text-decoration: none; color: #fff; font-family: 'DM Sans', sans-serif; position: relative; transition: background 0.25s ease; }
-.nvann-link:hover { background: rgba(232,184,75,0.06); }
-.nvann-pill { display: inline-flex; align-items: center; gap: 7px; background: rgba(232,184,75,0.18);
-  border: 1px solid rgba(232,184,75,0.55); color: #F7D98F; padding: 4px 12px; border-radius: 100px;
-  font-family: 'Cinzel', serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; flex-shrink: 0; }
-.nvann-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #E8B84B;
-  box-shadow: 0 0 8px #E8B84B; animation: nvann-pulse 1.8s ease-in-out infinite; }
-@keyframes nvann-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
-.nvann-title { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 600; color: #fff; }
-.nvann-title em { color: #F7D98F; font-style: italic; font-weight: 700; }
-.nvann-sep { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.35); flex-shrink: 0; }
-.nvann-meta { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.06em; text-transform: uppercase; }
-.nvann-cta { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: #F7D98F;
-  letter-spacing: 0.12em; text-transform: uppercase; flex-shrink: 0; }
-.nvann-cta .arr { transition: transform 0.25s ease; font-size: 14px; }
-.nvann-link:hover .nvann-cta .arr { transform: translateX(4px); }
-.nvann-close { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px;
-  border-radius: 50%; border: 1px solid rgba(255,255,255,0.18); background: rgba(0,0,0,0.25); color: rgba(255,255,255,0.7);
-  font-size: 13px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; z-index: 2;
-  transition: background 0.2s, color 0.2s, border-color 0.2s; }
-.nvann-close:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(232,184,75,0.5); }
-@media (max-width: 900px) {
-  .nvann-link { gap: 10px; padding: 8px 48px 8px 14px; flex-wrap: wrap; }
-  .nvann-title { font-size: 14px; }
-  .nvann-sep, .nvann-meta { display: none; }
-  .nvann-cta { font-size: 10px; }
-}
-@media (max-width: 520px) { .nvann-pill { font-size: 8.5px; padding: 3px 9px; letter-spacing: 0.18em; } .nvann-title { font-size: 13px; } }
-body { padding-top: calc(68px + var(--nv-announce-h)) !important; }
-.u-nav { top: var(--nv-announce-h) !important; }
-.u-nav-links { top: calc(68px + var(--nv-announce-h)) !important; max-height: calc(100vh - 68px - var(--nv-announce-h)) !important; }
-</style>
 </head>
 <body class="has-u-nav">
-<div id="nvAnnounce" style="display:none" role="region" aria-label="Announcement">
-  <a class="nvann-link" id="nvAnnounceLink" href="summer-2027.html">
-    <span class="nvann-pill">☀︎ Summer 2027</span>
-    <span class="nvann-title">Three shows. <em>One epic summer.</em></span>
-    <span class="nvann-sep"></span>
-    <span class="nvann-meta">How to Train Your Dragon Jr · Charlie &amp; the Chocolate Factory Jr · Trolls Jr</span>
-    <span class="nvann-cta">Registration open <span class="arr">→</span></span>
-  </a>
-  <button class="nvann-close" id="nvAnnounceClose" aria-label="Dismiss announcement">✕</button>
-</div>
-<script>
-(function(){
-  var KEY = 'nvAnnounceDismissed2027';
-  var bar = document.getElementById('nvAnnounce');
-  if (!bar) return;
-  try { if (sessionStorage.getItem(KEY) === '1') { bar.remove(); return; } } catch (e) {}
-  bar.style.display = '';
-  function sync() { document.documentElement.style.setProperty('--nv-announce-h', bar.offsetHeight + 'px'); }
-  sync();
-  window.addEventListener('resize', sync);
-  function ph(ev) {
-    try { if (window.posthog && window.posthog.capture) window.posthog.capture(ev, { campaign: 'summer-2027', page_path: location.pathname }); } catch (e) {}
-  }
-  document.getElementById('nvAnnounceLink').addEventListener('click', function(){ ph('announcement_clicked'); });
-  document.getElementById('nvAnnounceClose').addEventListener('click', function(){
-    ph('announcement_dismissed');
-    try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
-    bar.remove();
-    document.documentElement.style.setProperty('--nv-announce-h', '0px');
-  });
-})();
-</script>
-
   <!-- ══ REGISTRATION OPEN BANNER ══ -->
   <div class="nvreg-banner" id="nvregBanner" style="margin-top:0">
-    <a class="nvreg-link" href="https://www.hisawyer.com/nova-performing-arts/schedules?location_id%5B%5D=202081&amp;schedule_id=camps&amp;widget_tags=summer+camp" target="_blank" rel="noopener" aria-label="Registration is now open — register today">
+    <a class="nvreg-link" href="https://www.hisawyer.com/nova-performing-arts/schedules?location_id%5B%5D=202081&amp;schedule_id=camps&amp;widget_tags=broadway+bound%2Cteen+conservatory" target="_blank" rel="noopener" aria-label="Registration is now open — register today">
       <span class="nvreg-pill">Now Open · 2026–27</span>
       <span class="nvreg-title">Registration Is <em>Now Open!</em></span>
       <span class="nvreg-sep"></span>
@@ -1524,7 +1451,7 @@ body { padding-top: calc(68px + var(--nv-announce-h)) !important; }
     <a href="summer-camp-newsletters.html">Camp Newsletters</a>
     <a href="coaching.html">Coaching</a>
     <a href="https://novapa.booktix.com" target="_blank" rel="noopener">Tickets</a>
-    <a class="u-nav-cta" href="https://www.hisawyer.com/nova-performing-arts/schedules?location_id%5B%5D=202081&amp;schedule_id=camps&amp;widget_tags=summer+camp" target="_blank" rel="noopener">Register &rarr;</a>
+    <a class="u-nav-cta" href="https://www.hisawyer.com/nova-performing-arts/schedules?location_id%5B%5D=202081&amp;schedule_id=camps&amp;widget_tags=broadway+bound%2Cteen+conservatory" target="_blank" rel="noopener">Register &rarr;</a>
   </div>
   <button class="u-nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="u-nav-links" type="button">
     <svg class="ico-open" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
