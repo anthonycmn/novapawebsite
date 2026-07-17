@@ -692,7 +692,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <span class="leg-item leg-class active" data-cat="class" onclick="toggleCat(this)"><span class="leg-dot"></span>Classes</span>
     <span class="leg-item leg-community active" data-cat="community" onclick="toggleCat(this)"><span class="leg-dot"></span>Community Show</span>
     <span class="leg-item leg-conservatory active" data-cat="conservatory" onclick="toggleCat(this)"><span class="leg-dot"></span>Conservatory</span>
-    <span class="leg-item leg-stagelighter active" data-cat="stagelighter" onclick="toggleCat(this)"><span class="leg-dot"></span>Stagelighter</span>
+    <span class="leg-item leg-stagelighter active" data-cat="stagelighter" onclick="toggleCat(this)"><span class="leg-dot"></span>Broadway Bound</span>
     <span class="leg-item leg-tech active" data-cat="tech" onclick="toggleCat(this)"><span class="leg-dot"></span>Tech Week</span>
     <span class="leg-item leg-break active" data-cat="break" onclick="toggleCat(this)"><span class="leg-dot"></span>Break</span>
     <span class="leg-item leg-recital active" data-cat="recital" onclick="toggleCat(this)"><span class="leg-dot"></span>Recital/Gala</span>
@@ -752,18 +752,18 @@ const WEEKLY_CLASSES = [
   [2,'9:30–10:15am','Tots Dance – Tap & Tumble','Ages 3–5','Tiny Tots Dance'],
   [2,'5:00–5:50pm','Musical Theatre – Ages 5–8','Ages 5–8','Musical Theatre'],
   [2,'6:05–6:55pm','K-Pop Dance – Ages 5–8','Ages 5–8','Dance'],
-  [2,'6:15–7:45pm','Stagelighter Jr. Rehearsal','Ages 9–12','Production'],
+  [2,'6:15–7:45pm','Broadway Bound Jr. Rehearsal','Ages 9–12','Production'],
   [2,'7:00–7:50pm','Musical Theatre Dance – Ages 13–17','Ages 13–17','Musical Theatre'],
   [2,'8:05–8:55pm','Musical Theatre Acting – Ages 13–17','Ages 13–17','Theatre'],
   [2,'9:00–9:50pm','Adult Voice & Choir','Ages 18+','Voice'],
   // WEDNESDAY
   [3,'10:30–11:20am','Homeschool Theatre Class','Ages 5–11','Theatre'],
   [3,'11:35am–12:25pm','Homeschool Theatre/Dance','Ages 12–17','Dance'],
-  [3,'5:15–6:45pm','Stagelighter Kids Rehearsal','Ages 5–9','Production'],
+  [3,'5:15–6:45pm','Broadway Bound Kids Rehearsal','Ages 5–9','Production'],
   [3,'5:15–6:05pm','Actors Studio I & II – Ages 10–12','Ages 10–12','Theatre'],
   [3,'6:20–7:10pm','Musical Theatre Dance – Ages 10–12','Ages 10–12','Musical Theatre'],
   [3,'7:15–8:05pm','Bollywood Dance – Ages 10–12','Ages 10–12','Dance'],
-  [3,'7:00–9:00pm','Stagelighter Teens Rehearsal','Ages 13–18','Production'],
+  [3,'7:00–9:00pm','Broadway Bound Teens Rehearsal','Ages 13–18','Production'],
   [3,'7:25–8:15pm','Adult Musical Theatre Class','Ages 18+','Musical Theatre'],
   // THURSDAY
   [4,'9:30–10:15am','Tots Dance – Ballet Morning','Ages 2–4','Tiny Tots Dance'],
@@ -864,11 +864,11 @@ const RAW_EVENTS = [
 ...[20,21,22,23,24,25,26,27,28,29,30,31].map(d=>[2026,11,d,'Winter Break','break','']),
 ...[1,2,3].map(d=>[2027,0,d,'Winter Break','break','']),
 // Tech Frozen Kids Jan 18-21
-[2027,0,18,'Tech – Frozen Kids','tech','Stagelighter Kids'],[2027,0,19,'Tech – Frozen Kids','tech',''],[2027,0,20,'Tech – Frozen Kids','tech',''],[2027,0,21,'Tech – Frozen Kids','tech',''],
-[2027,0,22,'Frozen Kids','stagelighter','Stagelighter Kids'],[2027,0,23,'Frozen Kids','stagelighter',''],[2027,0,24,'Frozen Kids','stagelighter',''],
-[2027,0,25,'Tech – Frozen Jr.','tech','Stagelighter Jr.'],[2027,0,26,'Tech – Frozen Jr.','tech',''],[2027,0,27,'Tech – Frozen Jr.','tech',''],[2027,0,28,'Tech – Frozen Jr.','tech',''],
-[2027,0,29,'Frozen Jr.','stagelighter','Stagelighter Jr.'],[2027,0,30,'Frozen Jr.','stagelighter',''],[2027,0,31,'Frozen Jr.','stagelighter',''],
-[2027,1,1,'Tech – Frozen Jr.','tech','Stagelighter Teen'],[2027,1,2,'Tech – Frozen Jr.','tech',''],[2027,1,3,'Tech – Frozen Jr.','tech',''],[2027,1,4,'Tech – Frozen Jr.','tech',''],
+[2027,0,18,'Tech – Frozen Kids','tech','Broadway Bound Kids'],[2027,0,19,'Tech – Frozen Kids','tech',''],[2027,0,20,'Tech – Frozen Kids','tech',''],[2027,0,21,'Tech – Frozen Kids','tech',''],
+[2027,0,22,'Frozen Kids','stagelighter','Broadway Bound Kids'],[2027,0,23,'Frozen Kids','stagelighter',''],[2027,0,24,'Frozen Kids','stagelighter',''],
+[2027,0,25,'Tech – Frozen Jr.','tech','Broadway Bound Jr.'],[2027,0,26,'Tech – Frozen Jr.','tech',''],[2027,0,27,'Tech – Frozen Jr.','tech',''],[2027,0,28,'Tech – Frozen Jr.','tech',''],
+[2027,0,29,'Frozen Jr.','stagelighter','Broadway Bound Jr.'],[2027,0,30,'Frozen Jr.','stagelighter',''],[2027,0,31,'Frozen Jr.','stagelighter',''],
+[2027,1,1,'Tech – Frozen Jr.','tech','Broadway Bound Teen'],[2027,1,2,'Tech – Frozen Jr.','tech',''],[2027,1,3,'Tech – Frozen Jr.','tech',''],[2027,1,4,'Tech – Frozen Jr.','tech',''],
 [2027,1,5,'Frozen Jr.','stagelighter',''],[2027,1,6,'Frozen Jr.','stagelighter',''],
 [2027,1,12,'Frozen Jr.','stagelighter',''],[2027,1,13,'Frozen Jr.','stagelighter',''],
 // Tech Teen Conservatory Spring Title Mar 1-4
@@ -879,7 +879,7 @@ const RAW_EVENTS = [
 // Spring Break
 ...[22,23,24,25,26].map(d=>[2027,2,d,'Spring Break','break','']),
 // Tech LM Kids May 10-13
-[2027,4,10,'Tech – LM Kids','tech','Stagelighter Kids'],[2027,4,11,'Tech – LM Kids','tech',''],[2027,4,12,'Tech – LM Kids','tech',''],[2027,4,13,'Tech – LM Kids','tech',''],
+[2027,4,10,'Tech – LM Kids','tech','Broadway Bound Kids'],[2027,4,11,'Tech – LM Kids','tech',''],[2027,4,12,'Tech – LM Kids','tech',''],[2027,4,13,'Tech – LM Kids','tech',''],
 [2027,4,14,'Little Mermaid Jr.','stagelighter',''],[2027,4,15,'Little Mermaid Jr.','stagelighter',''],[2027,4,16,'Little Mermaid Jr.','stagelighter',''],
 [2027,4,17,'Tech – LM Jr.','tech',''],[2027,4,18,'Tech – LM Jr.','tech',''],[2027,4,19,'Tech – LM Jr.','tech',''],
 [2027,4,20,'Little Mermaid Jr.','stagelighter',''],[2027,4,21,'Little Mermaid Jr.','stagelighter',''],[2027,4,22,'Little Mermaid Jr.','stagelighter',''],
