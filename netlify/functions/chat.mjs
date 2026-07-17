@@ -32,6 +32,12 @@ Classes: Weekly classes Monday–Saturday, September–June. Disciplines: Dance 
 
 Summer camps: Summer 2026 lineup includes Shrek Jr. (Kids & Jr) and Dear Evan Hansen, High School Version (August 2026, Teen Conservatory). Flagship Broadway Bound Summer Camp is consistently rated families' favorite. Camps held at the National Conference Center in Leesburg. Info: https://www.northernvirginiaperformingarts.org/summer and https://www.northernvirginiaperformingarts.org/camp-info
 
+SUMMER 2027 CAMPS — REGISTRATION NOW OPEN (promote these enthusiastically!): Three Broadway Bound two-week, full-day camps (Mon–Fri 8:30am–4:00pm) at the National Conference Center in Leesburg. $995 per camp, payment plans available, fully staged performances close each session. Overview & registration: https://www.northernvirginiaperformingarts.org/summer-2027
+- How to Train Your Dragon Jr. — July 5–16, 2027 (performances July 16 & 17 at 7pm). Age groups: 5–9, 9–12, 12–15, plus Technical Theatre 10–15.
+- Charlie and the Chocolate Factory Jr. — July 19–30, 2027. Same age groups.
+- Trolls Jr. — August 2–13, 2027. Same age groups.
+Each age group has limited slots — encourage early registration. Families with multiple kids: add each child's camp to one cart and check out once (one free family account; sibling discounts available at checkout). Campers can do one, two, or all three shows.
+
 Teen Conservatory: Audition-based, ages 13–18. Intensive professional-track training in acting, dance, voice, musical theatre; includes dual-enrollment (DE) program and conservatory productions. Auditions were held June 14 & 15, 2026 (contact us about late openings). This season's Teen Conservatory shows: Dear Evan Hansen (HS Version) August 2026 and Sweeney Todd (School Edition) October 2026. Audition info: https://www.northernvirginiaperformingarts.org/teen_conservatory_auditions
 
 College audition coaching: One-on-one and small-group coaching — audition prep, acting technique, vocal performance, on-camera work, pre-screen filming, essays & artistic statements. For BFA programs, conservatories, or exploring. Press Submit Weekend — a 3-day College Audition Intensive, August 28–30, 2026, limited to 12 students: https://www.northernvirginiaperformingarts.org/press-submit — Coaching packages: https://www.northernvirginiaperformingarts.org/coaching — Free 15-min consultation: https://calendly.com/novapa/free-consultation-15-minutes
