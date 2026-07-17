@@ -11,7 +11,7 @@
   </title>
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&amp;family=DM+Sans:wght@300;400;500;600&amp;family=Cinzel:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&amp;family=DM+Sans:wght@300;400;500;600;700;800&amp;family=Cinzel:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600&amp;family=DM+Sans:wght@300;400;500&amp;display=swap" rel="stylesheet"/>
   <style>
    *,
@@ -392,11 +392,12 @@
 
    .hero h1 {
      font-family: 'Playfair Display', serif;
-     font-size: clamp(50px, 7vw, 92px);
+     font-size: clamp(38px, 5.4vw, 70px);
      font-weight: 900;
-     line-height: 0.95;
-     letter-spacing: -0.02em;
+     line-height: 1.14;
+     letter-spacing: -0.015em;
      margin-bottom: 20px;
+     max-width: 16em;
      animation: fadeUp 0.8s 0.1s ease both
    }
 
@@ -407,14 +408,19 @@
 
    .hero h1 .l2 {
      display: block;
-     color: transparent;
-     -webkit-text-stroke: 1.5px var(--gold)
+     background: linear-gradient(100deg, #C8892A 0%, #E8B84B 45%, #F7D98F 60%, #E8B84B 75%, #C8892A 100%);
+     -webkit-background-clip: text;
+     background-clip: text;
+     color: transparent
    }
 
    .hero h1 .l3 {
      display: block;
-     color: var(--gold2);
-     font-style: italic
+     color: rgba(255,255,255,0.55);
+     font-style: italic;
+     font-size: 0.42em;
+     letter-spacing: 0.04em;
+     margin-top: 10px
    }
 
    .htagline {
@@ -3084,8 +3090,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     </div>
     <div class="audition-banner-text">
      <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Limited Registration Available</div>
-     <div class="audition-banner-title">Register Now for <span>Broadway Bound</span></div>
-     <div class="audition-banner-sub">Northern Virginia&rsquo;s Premier Performing Arts Company</div>
+     <div class="audition-banner-title">Register Now for <span>Broadway Bound</span> Summer Camp</div>
+     <div class="audition-banner-sub">Three musicals &middot; Ages 5&ndash;15 &middot; Save up to 20% through August 15</div>
     </div>
     <div class="audition-banner-cta">
      <span>Register Now</span>
@@ -3115,21 +3121,16 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <div class="heline">
       </div>
       <span class="hetext">
-       2026–2027 Season · Northern Virginia
+       2026–2027 Season · Leesburg, VA
       </span>
       <div class="heline">
       </div>
      </div>
      <h1>
       <span class="l1">
-       impACTing Lives
+       Performing arts classes, camps <span style="background:linear-gradient(100deg,#C8892A 0%,#E8B84B 45%,#F7D98F 60%,#E8B84B 75%,#C8892A 100%);-webkit-background-clip:text;background-clip:text;color:transparent">&amp; productions.</span>
       </span>
-      <span class="l2">
-       One Story
-      </span>
-      <span class="l3">
-       At a Time
-      </span>
+      <span style="display:block;font-size:0.36em;font-weight:500;color:rgba(255,255,255,0.6);letter-spacing:0.06em;margin-top:12px">For ages 2&ndash;18+</span>
      </h1>
      <div class="htagline">
       <span class="tw c">
@@ -3147,9 +3148,15 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       </span>
      </div>
      <p class="hdesc">
-      Northern Virginia's most passionate performing arts conservatory — dance, theatre, voice, musical theatre, and film training from Tiny Tots to adult performers.
+      Northern Virginia's performing arts conservatory — dance, acting, voice, musical theatre, and technical theatre.
      </p>
-    </div>
+     <div class="hero-ctas" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:26px">
+      <a href="#programs" style="display:inline-flex;align-items:center;gap:9px;background:linear-gradient(135deg,#C8892A,#E8B84B);color:#08111F;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:14px 28px;border-radius:100px;text-decoration:none">Find Your Program
+       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg></a>
+      <a href="summer-2027.html" style="display:inline-flex;align-items:center;gap:9px;background:transparent;border:1px solid rgba(255,255,255,0.35);color:#fff;font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:14px 28px;border-radius:100px;text-decoration:none">Summer Camp 2027
+       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+     </div>
+     </div>
     <aside class="htestimonials" aria-label="What families are saying">
      <div class="htesti-track">
       <figure class="htesti-card"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Broadway Bound is successful not because of its location, but because of the people in it. Our fifth year!&rdquo;</blockquote><figcaption><span class="htesti-av">JE</span><span class="htesti-who"><b>Jacklyn Esquerra</b>Parent &middot; Broadway Bound</span></figcaption></figure>
@@ -3168,31 +3175,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     </aside>
    </div>
   </section>
-  <!-- ── REGISTRATION INFO BAR (relocated from hero) ── -->
-  <a href="summer-2027.html" class="audition-banner" aria-label="Register now for Broadway Bound — limited registration available">
-   <div class="audition-banner-inner">
-    <div class="audition-banner-icon" aria-hidden="true">
-     <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="16" y1="2" x2="16" y2="6"></line>
-      <line x1="8" y1="2" x2="8" y2="6"></line>
-      <line x1="3" y1="10" x2="21" y2="10"></line>
-     </svg>
-    </div>
-    <div class="audition-banner-text">
-     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Limited Registration Available</div>
-     <div class="audition-banner-title">Register Now for <span>Broadway Bound</span></div>
-     <div class="audition-banner-sub">Northern Virginia&rsquo;s Premier Performing Arts Company</div>
-    </div>
-    <div class="audition-banner-cta">
-     <span>Register Now</span>
-     <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-      <polyline points="12 5 19 12 12 19"></polyline>
-     </svg>
-    </div>
-   </div>
-  </a>
   <style>
    /* ── HERO AUDITION CALLOUT ── */
    .hero-audition {
@@ -3539,32 +3521,137 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   <!-- ── TICKER ── -->
   <div class="ticker">
    <div class="ticker-inner">
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
-    <span class="ti"><span class="td"></span> 🐉 How to Train Your Dragon Jr · Jul 5–16, 2027</span>
-    <span class="ti"><span class="td"></span> 🍫 Charlie &amp; the Chocolate Factory Jr · Jul 19–30, 2027</span>
-    <span class="ti"><span class="td"></span> 🌈 Trolls Jr · Aug 2–13, 2027</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
+    <span class="ti"><span class="td"></span> Educators with 20 years of experience</span>
+    <span class="ti"><span class="td"></span> 5-star rated by families</span>
+    <span class="ti"><span class="td"></span> 9 full productions a year</span>
    </div>
   </div>
+  <!-- ── PROGRAMS ── -->
+  <section class="progs" id="programs">
+   <div class="progs-inner">
+    <div class="seceye reveal">
+     <span class="sectag">
+      ✦ Our Programs
+     </span>
+    </div>
+    <h2 class="sectitle reveal rd1">
+     Find Your
+     <em style="font-style:italic;color:var(--gold2)">
+      Perfect Program
+     </em>
+    </h2>
+    <p class="secdesc reveal rd2">
+     From first steps on stage to professional-level conservatory training — every program is built to ignite a lifelong love of performing arts.
+    </p>
+    <div class="pgrid">
+     <a class="pcard reveal" href="summer-2027.html">
+      <span class="picon">
+       ☀️
+      </span>
+      <div class="psuper">
+       Ages 5–15 · Registration Open
+      </div>
+      <div class="pname">
+       Broadway Bound Summer Camp
+      </div>
+      <div class="pdesc">
+       Three two-week musical theatre camps — How to Train Your Dragon Jr., Charlie and the Chocolate Factory Jr., and Trolls Jr. Every camper performs on stage.
+      </div>
+      <div class="pcta">
+       See Camps &amp; Register
+       <svg viewbox="0 0 24 24">
+        <path d="M5 12h14M12 5l7 7-7 7">
+        </path>
+       </svg>
+      </div>
+     </a>
+     <a class="pcard reveal" href="classes.html?disc=conservatory">
+      <span class="picon">
+       🌟
+      </span>
+      <div class="psuper">
+       Ages 13–18 · Audition-Based
+      </div>
+      <div class="pname">
+       Teen Conservatory
+      </div>
+      <div class="pdesc">
+       Intensive, professional-track training in acting, dance, voice, and musical theatre. Includes our dual-enrollment (DE) program and conservatory productions.
+      </div>
+      <div class="pcta">
+       Explore Program
+       <svg viewbox="0 0 24 24">
+        <path d="M5 12h14M12 5l7 7-7 7">
+        </path>
+       </svg>
+      </div>
+     </a>
+     <a class="pcard reveal rd1" href="coaching.html">
+      <span class="picon">
+       🎯
+      </span>
+      <div class="psuper">
+       All Ages · Private &amp; Group
+      </div>
+      <div class="pname">
+       Coaching
+      </div>
+      <div class="pdesc">
+       One-on-one and small-group coaching for audition prep, acting technique, vocal performance, and on-camera work &mdash; plus the Press Submit college audition intensive, Aug 28&ndash;30.
+      </div>
+      <div class="pcta">
+       Explore Program
+       <svg viewbox="0 0 24 24">
+        <path d="M5 12h14M12 5l7 7-7 7">
+        </path>
+       </svg>
+      </div>
+     </a>
+     <a class="pcard reveal rd2" href="classes.html">
+      <span class="picon">
+       🎭
+      </span>
+      <div class="psuper">
+       Ages 2–18 · Year-Round
+      </div>
+      <div class="pname">
+       Classes &amp; Productions
+      </div>
+      <div class="pdesc">
+       Dance, theatre, voice, musical theatre, and film — weekly classes Monday through Saturday plus three Broadway Bound production companies.
+      </div>
+      <div class="pcta">
+       View Full Schedule
+       <svg viewbox="0 0 24 24">
+        <path d="M5 12h14M12 5l7 7-7 7">
+        </path>
+       </svg>
+      </div>
+     </a>
+     </div>
+   </div>
+  </section>
   <!-- ── SHOWS CAROUSEL — CHRONOLOGICAL ORDER ── -->
   <section class="shows" id="shows">
    <div class="shows-hdr">
@@ -3942,24 +4029,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    <div class="dots" id="dots">
    </div>
   </section>
-  <!-- ── PRESS SUBMIT SECTION (was top banner) ── -->
-  <section class="promo-band promo-band-alt" id="press-submit-promo">
-   <div class="promo-band-inner reveal">
-    <div class="promo-band-text">
-     <div class="seceye">
-      <span class="sectag">New · Limited to 12 Students</span>
-     </div>
-     <h2 class="sectitle">College Audition Intensive<br/><em>Press Submit Weekend</em></h2>
-     <p class="secdesc">A focused three-day intensive for serious college-bound performers — pre-screen prep, repertoire, and audition strategy. August 28 – August 30, 2026.</p>
-    </div>
-    <div class="promo-band-cta">
-     <a class="btnp" href="press-submit.html">
-      Learn More
-      <svg class="bico" viewbox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
-     </a>
-    </div>
-   </div>
-  </section>
   <style>
    /* ── PROMO BANDS (registration + press submit, relocated from top banners) ── */
    .promo-band { padding: 60px 24px; position: relative; }
@@ -4231,111 +4300,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
        Registration Now Open →
       </a>
      </div>
-    </div>
-   </div>
-  </section>
-  <!-- ── PROGRAMS ── -->
-  <section class="progs" id="programs">
-   <div class="progs-inner">
-    <div class="seceye reveal">
-     <span class="sectag">
-      ✦ Our Programs
-     </span>
-    </div>
-    <h2 class="sectitle reveal rd1">
-     Find Your
-     <em style="font-style:italic;color:var(--gold2)">
-      Perfect Program
-     </em>
-    </h2>
-    <p class="secdesc reveal rd2">
-     From first steps on stage to professional-level conservatory training — every program is built to ignite a lifelong love of performing arts.
-    </p>
-    <div class="pgrid">
-     <a class="pcard reveal" href="classes.html?disc=conservatory">
-      <span class="picon">
-       🌟
-      </span>
-      <div class="psuper">
-       Ages 13–18 · Audition-Based
-      </div>
-      <div class="pname">
-       Teen Conservatory
-      </div>
-      <div class="pdesc">
-       Intensive, professional-track training in acting, dance, voice, and musical theatre. Includes our dual-enrollment (DE) program and conservatory productions.
-      </div>
-      <div class="pcta">
-       Explore Program
-       <svg viewbox="0 0 24 24">
-        <path d="M5 12h14M12 5l7 7-7 7">
-        </path>
-       </svg>
-      </div>
-     </a>
-     <a class="pcard reveal rd1" href="coaching.html">
-      <span class="picon">
-       🎯
-      </span>
-      <div class="psuper">
-       All Ages · Private &amp; Group
-      </div>
-      <div class="pname">
-       Coaching
-      </div>
-      <div class="pdesc">
-       One-on-one and small-group coaching for audition prep, acting technique, vocal performance, and on-camera work.
-      </div>
-      <div class="pcta">
-       Explore Program
-       <svg viewbox="0 0 24 24">
-        <path d="M5 12h14M12 5l7 7-7 7">
-        </path>
-       </svg>
-      </div>
-     </a>
-     <a class="pcard reveal rd2" href="classes.html">
-      <span class="picon">
-       🎭
-      </span>
-      <div class="psuper">
-       Ages 2–18 · Year-Round
-      </div>
-      <div class="pname">
-       Classes &amp; Productions
-      </div>
-      <div class="pdesc">
-       Dance, theatre, voice, musical theatre, and film — weekly classes Monday through Saturday plus three Broadway Bound production companies.
-      </div>
-      <div class="pcta">
-       View Full Schedule
-       <svg viewbox="0 0 24 24">
-        <path d="M5 12h14M12 5l7 7-7 7">
-        </path>
-       </svg>
-      </div>
-     </a>
-     <a class="pcard reveal rd3" href="classes.html?filter=adults-tab">
-      <span class="picon">
-       🎬
-      </span>
-      <div class="psuper">
-       Ages 18+ · All Levels Welcome
-      </div>
-      <div class="pname">
-       Adult Classes &amp; Shows
-      </div>
-      <div class="pdesc">
-       Acting fundamentals, adult dance, musical theatre, and a spring cabaret production. It is never too late to take the stage.
-      </div>
-      <div class="pcta">
-       Explore Program
-       <svg viewbox="0 0 24 24">
-        <path d="M5 12h14M12 5l7 7-7 7">
-        </path>
-       </svg>
-      </div>
-     </a>
     </div>
    </div>
   </section>
