@@ -1,0 +1,8 @@
+{
+  "name": "novapa-website",
+  "private": true,
+  "description": "NoVAPA static site + Netlify Functions (SPOT chatbot)",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.1"
+  }
+}

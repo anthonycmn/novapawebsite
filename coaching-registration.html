@@ -1425,8 +1425,7 @@ window.addEventListener('scroll',function(){
   'use strict';
 
   // ─── Configuration ───────────────────────────────────────────────────
-  const API_ENDPOINT = '/api/chat'; // routes to /.netlify/functions/chat (optional - falls back to local KB)
-  const USE_LOCAL_KB = true; // Set to false to use only the API endpoint
+  const API_ENDPOINT = '/api/chat'; // Netlify function (netlify/functions/chat.mjs); falls back to the local KB on any failure
   const WELCOME_MESSAGE = "Hi! I'm SPOT, your guide to NoVAPA. 🎭 Ask me anything about our classes, camps, registration, coaching, or auditions — or pick a quick topic below.";
   const QUICK_STARTERS = [
     "When does registration open?",
@@ -1657,7 +1656,7 @@ window.addEventListener('scroll',function(){
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: conversationHistory }),
-        signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
+        signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined
       });
       if (!response.ok) return null;
       const data = await response.json();
@@ -1667,17 +1666,26 @@ window.addEventListener('scroll',function(){
     }
   }
 
-  // ─── Generate a reply (API first if enabled, then local KB) ─────────
+  // ─── Generate a reply (live API first, local KB as fallback) ────────
   async function generateReply(text) {
-    // If USE_LOCAL_KB is false, the API is required.
-    if (!USE_LOCAL_KB) {
-      const apiReply = await tryApi(text);
-      return apiReply || "I'm having trouble connecting right now. Please email <a href='mailto:info@novapa.org'>info@novapa.org</a> or call <a href='tel:5715712120'>(571) 571-2120</a>.";
+    const apiReply = await tryApi(text);
+    if (apiReply) {
+      trackAnswer('api');
+      return apiReply;
     }
-    // Otherwise, use the local NVPA knowledge base for instant, reliable answers.
+    // API unavailable (down, rate-limited, or key not configured) — use the local KB.
+    trackAnswer('kb_fallback');
     const match = matchIntent(text);
     if (match) return match.response;
     return fallbackResponse(text);
+  }
+
+  function trackAnswer(via) {
+    try {
+      if (window.posthog && window.posthog.capture) {
+        window.posthog.capture('assistant_answered', { via: via, page_path: location.pathname });
+      }
+    } catch (e) {}
   }
 
   // ─── Send a message ──────────────────────────────────────────────────
