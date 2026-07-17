@@ -302,12 +302,70 @@
      margin: 0 auto;
      padding: 0 60px;
      padding-top: 84px;
-     width: 100%
+     width: 100%;
+     display: flex;
+     align-items: center;
+     gap: 44px
    }
 
    .hinner {
-     max-width: 760px
+     max-width: 760px;
+     flex: 1 1 auto;
+     min-width: 0
    }
+   /* ── Hero auto-scrolling testimonials ── */
+   .htestimonials {
+     position: relative;
+     flex: 0 0 380px;
+     width: 380px;
+     height: 460px;
+     overflow: hidden;
+     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 11%, #000 89%, transparent 100%);
+     mask-image: linear-gradient(to bottom, transparent 0, #000 11%, #000 89%, transparent 100%);
+   }
+   .htesti-track {
+     display: flex;
+     flex-direction: column;
+     animation: htestiScroll 36s linear infinite;
+     will-change: transform;
+   }
+   .htestimonials:hover .htesti-track { animation-play-state: paused; }
+   @keyframes htestiScroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+   .htesti-card {
+     background: rgba(15, 30, 54, 0.55);
+     -webkit-backdrop-filter: blur(12px);
+     backdrop-filter: blur(12px);
+     border: 1px solid rgba(232, 184, 75, 0.28);
+     border-radius: 16px;
+     padding: 22px 24px;
+     margin-bottom: 18px;
+     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+   }
+   .htesti-stars { color: #E8B84B; font-size: 13px; letter-spacing: 3px; margin-bottom: 11px; }
+   .htesti-card blockquote {
+     margin: 0 0 16px;
+     font-size: 14px;
+     line-height: 1.55;
+     color: rgba(255, 255, 255, 0.92);
+     font-style: italic;
+   }
+   .htesti-card figcaption { display: flex; align-items: center; gap: 12px; }
+   .htesti-av {
+     width: 40px; height: 40px;
+     border-radius: 50%;
+     background: linear-gradient(135deg, #C8892A, #E8B84B);
+     color: #08111F;
+     font-weight: 800; font-size: 13px;
+     display: flex; align-items: center; justify-content: center;
+     flex-shrink: 0;
+   }
+   .htesti-who { display: flex; flex-direction: column; line-height: 1.35; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+   .htesti-who b { color: #fff; font-size: 13.5px; font-weight: 700; }
+   @media (max-width: 1080px) {
+     .hcontent { display: block; }
+     .htestimonials { display: none; }
+   }
+   @media (prefers-reduced-motion: reduce) { .htesti-track { animation: none; } }
 
    .heyebrow {
      display: inline-flex;
@@ -3047,6 +3105,22 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       Northern Virginia's most passionate performing arts conservatory — dance, theatre, voice, musical theatre, and film training from Tiny Tots to adult performers.
      </p>
     </div>
+    <aside class="htestimonials" aria-label="What families are saying">
+     <div class="htesti-track">
+      <figure class="htesti-card"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Broadway Bound is successful not because of its location, but because of the people in it. Our fifth year!&rdquo;</blockquote><figcaption><span class="htesti-av">JE</span><span class="htesti-who"><b>Jacklyn Esquerra</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Your crew very quickly built a passion in her that I hope lasts a lifetime. I&rsquo;ve been truly impressed!&rdquo;</blockquote><figcaption><span class="htesti-av">MR</span><span class="htesti-who"><b>Megan Rosh</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;The genuine care comes through to the kids &mdash; they feel the love of the cast, crew, and directors.&rdquo;</blockquote><figcaption><span class="htesti-av">JV</span><span class="htesti-who"><b>Jenevieve Vogue</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Such a fun experience &mdash; the best theater summer camp there is, in my opinion!&rdquo;</blockquote><figcaption><span class="htesti-av">TC</span><span class="htesti-who"><b>Tyler Craft</b>Student &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;One of the best summer camps they&rsquo;ve ever done &mdash; it helped my daughter overcome her stage fright.&rdquo;</blockquote><figcaption><span class="htesti-av">NC</span><span class="htesti-who"><b>Nancy Chu</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Our daughter was confident and comfortable in her role. She&rsquo;s already asking about the next program!&rdquo;</blockquote><figcaption><span class="htesti-av">KM</span><span class="htesti-who"><b>Kanages Mohler</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card" aria-hidden="true"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Broadway Bound is successful not because of its location, but because of the people in it. Our fifth year!&rdquo;</blockquote><figcaption><span class="htesti-av">JE</span><span class="htesti-who"><b>Jacklyn Esquerra</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card" aria-hidden="true"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Your crew very quickly built a passion in her that I hope lasts a lifetime. I&rsquo;ve been truly impressed!&rdquo;</blockquote><figcaption><span class="htesti-av">MR</span><span class="htesti-who"><b>Megan Rosh</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card" aria-hidden="true"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;The genuine care comes through to the kids &mdash; they feel the love of the cast, crew, and directors.&rdquo;</blockquote><figcaption><span class="htesti-av">JV</span><span class="htesti-who"><b>Jenevieve Vogue</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card" aria-hidden="true"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Such a fun experience &mdash; the best theater summer camp there is, in my opinion!&rdquo;</blockquote><figcaption><span class="htesti-av">TC</span><span class="htesti-who"><b>Tyler Craft</b>Student &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card" aria-hidden="true"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;One of the best summer camps they&rsquo;ve ever done &mdash; it helped my daughter overcome her stage fright.&rdquo;</blockquote><figcaption><span class="htesti-av">NC</span><span class="htesti-who"><b>Nancy Chu</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="htesti-card" aria-hidden="true"><div class="htesti-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Our daughter was confident and comfortable in her role. She&rsquo;s already asking about the next program!&rdquo;</blockquote><figcaption><span class="htesti-av">KM</span><span class="htesti-who"><b>Kanages Mohler</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+     </div>
+    </aside>
    </div>
   </section>
   <!-- ── REGISTRATION INFO BAR (relocated from hero) ── -->
