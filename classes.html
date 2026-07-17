@@ -703,7 +703,12 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 #classlist{ scroll-margin-top:80px; }
 </style>
 <style>
-.card:has(.c-cardlink){ position:relative; cursor:pointer; }
+.card:has(.c-cardlink){ position:relative; cursor:pointer; transition:transform .16s ease, box-shadow .16s ease; }
+.card:has(.c-cardlink):hover{ transform:translateY(-4px); box-shadow:0 14px 32px rgba(0,0,0,.14); }
+.c-register{ margin-top:13px; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border-radius:9px; background:linear-gradient(135deg,#C8892A,#E8B84B); color:#1a1205; font-weight:800; font-size:12px; letter-spacing:.09em; text-transform:uppercase; box-shadow:0 3px 10px rgba(200,137,42,.28); }
+.c-register span{ display:inline-block; transition:transform .16s ease; }
+.card:has(.c-cardlink):hover .c-register{ box-shadow:0 8px 22px rgba(200,137,42,.5); }
+.card:has(.c-cardlink):hover .c-register span{ transform:translateX(5px); }
 .c-cardlink{ position:absolute; inset:0; z-index:5; border-radius:inherit; }
 .card:has(.c-cardlink) .t-level{ color:#8A5C00; font-weight:700; }
 </style>
@@ -801,11 +806,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <button class="ftab" data-filter="thu" onclick="filterDay(this,'thu')">Thursday</button>
       
       <div class="filter-divider"></div>
-      <button class="ftab" data-filter="ages5" onclick="filterDay(this,'ages5')">Tiny Tots (2–5)</button>
       <button class="ftab" data-filter="ages8" onclick="filterDay(this,'ages8')">Ages 5–8</button>
       <button class="ftab" data-filter="ages12" onclick="filterDay(this,'ages12')">Ages 9–12</button>
       <button class="ftab" data-filter="ages17" onclick="filterDay(this,'ages17')">Ages 13–17</button>
-      <button class="ftab" data-filter="adults-tab" onclick="filterDay(this,'adults-tab')">Adults (18+)</button>
       <div class="filter-divider"></div>
       <button class="ftab" data-filter="summer" onclick="filterDay(this,'summer')" style="color:var(--gold)">☀ Summer '27</button>
       <button class="ftab" data-filter="pricing" onclick="filterDay(this,'pricing')" style="color:var(--gold)">💲 Pricing</button>
@@ -839,183 +842,51 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     Showing classes that include this age group across the full weekly schedule. Some classes span multiple age ranges — check the age tag on each card for the full range.
   </div>
 
+  <div class="reg-hint" style="max-width:760px;margin:0 auto 24px;text-align:center;font-weight:800;font-size:15px;color:#8A5C00;background:linear-gradient(135deg,#FCF4E1,#FBEFD2);border:1.5px dashed #C8892A;border-radius:13px;padding:13px 20px">&#128073; Click any class to register &mdash; it takes you straight to sign-up.</div>
+
   <!-- MONDAY -->
   <div class="day-block" data-day="mon" id="day-mon">
-    <div class="day-hdr"><div class="day-name">Monday</div><div class="day-meta">5 weekly classes &middot; plus Tiny Tots &amp; Adults</div></div>
-    <div class="slot-group"><div class="slot-label">Morning &mdash; Tiny Tots</div><div class="cards-grid">
-      <div class="card" data-day="mon" data-disc="dance" data-ages="tots" style="--card-color:#A02860"><div class="c-time">9:30 &ndash; 10:15 AM</div><div class="c-name">Parent &amp; Me Dance</div><div class="c-tags"><span class="tag t-ages">Ages 2&ndash;4</span><span class="tag t-studio">Studio B</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Intro</span></div></div>
-      <div class="card" data-day="mon" data-disc="dance" data-ages="tots" style="--card-color:#A02860"><div class="c-time">10:30 &ndash; 11:15 AM</div><div class="c-name">Pre-Ballet &amp; Mini Movers</div><div class="c-tags"><span class="tag t-ages">Ages 4&ndash;5</span><span class="tag t-studio">Studio A</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Intro</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="mon" data-disc="dance" data-ages="ages8" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960872" target="_blank" rel="noopener" aria-label="Register for Ballet ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Ballet &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="theatre" data-ages="ages8" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960867" target="_blank" rel="noopener" aria-label="Register for Acting ages 5 to 8"></a><div class="c-time">6:00 PM</div><div class="c-name">Acting &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960881" target="_blank" rel="noopener" aria-label="Register for Ballet I ages 9 to 11"></a><div class="c-time">6:00 PM</div><div class="c-name">Ballet I &ndash; Ages 9&ndash;11</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;11</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960882" target="_blank" rel="noopener" aria-label="Register for Ballet II ages 9 to 11"></a><div class="c-time">7:00 PM</div><div class="c-name">Ballet II &ndash; Ages 9&ndash;11</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;11</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="voice" data-ages="ages17" style="--card-color:#14703C"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960898" target="_blank" rel="noopener" aria-label="Register for Triple Threat Training ages 13 to 17"></a><div class="c-time">7:00 PM</div><div class="c-name">Triple Threat Training &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc voice">Voice</span><span class="tag t-level">Register &rarr;</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Adults</div><div class="cards-grid">
-      <div class="card" data-day="mon" data-disc="theatre" data-ages="adult" style="--card-color:#A02820"><div class="c-time">7:00 &ndash; 7:50 PM</div><div class="c-name">Adult Actors &ndash; Acting Fundamentals</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">Studio B</span><span class="tag t-disc theatre">Theatre</span><span class="tag t-level">All Levels</span></div></div>
-      <div class="card" data-day="mon" data-disc="dance" data-ages="adult" style="--card-color:#A02860"><div class="c-time">8:00 &ndash; 8:50 PM</div><div class="c-name">Adult Dance Class</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">Studio A</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">All Levels</span></div></div>
+    <div class="day-hdr"><div class="day-name">Monday</div><div class="day-meta">5 weekly classes</div></div>
+    <div class="slot-group"><div class="slot-label">Weekly Classes</div><div class="cards-grid">
+      <div class="card" data-day="mon" data-disc="dance" data-ages="ages8" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960872" target="_blank" rel="noopener" aria-label="Register for Ballet ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Ballet &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="mon" data-disc="theatre" data-ages="ages8" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960867" target="_blank" rel="noopener" aria-label="Register for Acting ages 5 to 8"></a><div class="c-time">6:00 PM</div><div class="c-name">Acting &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="mon" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960881" target="_blank" rel="noopener" aria-label="Register for Ballet I ages 9 to 11"></a><div class="c-time">6:00 PM</div><div class="c-name">Ballet I &ndash; Ages 9&ndash;11</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;11</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="mon" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960882" target="_blank" rel="noopener" aria-label="Register for Ballet II ages 9 to 11"></a><div class="c-time">7:00 PM</div><div class="c-name">Ballet II &ndash; Ages 9&ndash;11</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;11</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="mon" data-disc="voice" data-ages="ages17" style="--card-color:#14703C"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960898" target="_blank" rel="noopener" aria-label="Register for Triple Threat Training ages 13 to 17"></a><div class="c-time">7:00 PM</div><div class="c-name">Triple Threat Training &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc voice">Voice</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
     </div></div>
   </div>
 
   <!-- TUESDAY -->
   <div class="day-block" data-day="tue" id="day-tue">
-    <div class="day-hdr"><div class="day-name">Tuesday</div><div class="day-meta">3 weekly classes &middot; plus Tiny Tots &amp; Adults</div></div>
-    <div class="slot-group"><div class="slot-label">Morning &mdash; Tiny Tots</div><div class="cards-grid">
-      <div class="card" data-day="tue" data-disc="dance" data-ages="tots" style="--card-color:#A02860"><div class="c-time">9:30 &ndash; 10:15 AM</div><div class="c-name">Tots Dance &ndash; Tap &amp; Tumble</div><div class="c-tags"><span class="tag t-ages">Ages 2&ndash;5</span><span class="tag t-studio">Studio B</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Intro</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages8" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960924" target="_blank" rel="noopener" aria-label="Register for Musical Theatre ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Musical Theatre &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages17" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960925" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Dance ages 13 to 17"></a><div class="c-time">7:00 PM</div><div class="c-name">Musical Theatre Dance &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages17" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960927" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Acting ages 13 to 17"></a><div class="c-time">8:00 PM</div><div class="c-name">Musical Theatre Acting &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Adults</div><div class="cards-grid">
-      <div class="card" data-day="tue" data-disc="voice" data-ages="adult" style="--card-color:#14703C"><div class="c-time">9:00 &ndash; 9:50 PM</div><div class="c-name">Adult Voice &amp; Choir</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">Studio A</span><span class="tag t-disc voice">Voice</span><span class="tag t-level">All Levels</span></div></div>
+    <div class="day-hdr"><div class="day-name">Tuesday</div><div class="day-meta">3 weekly classes</div></div>
+    <div class="slot-group"><div class="slot-label">Weekly Classes</div><div class="cards-grid">
+      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages8" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960924" target="_blank" rel="noopener" aria-label="Register for Musical Theatre ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Musical Theatre &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages17" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960925" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Dance ages 13 to 17"></a><div class="c-time">7:00 PM</div><div class="c-name">Musical Theatre Dance &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages17" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960927" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Acting ages 13 to 17"></a><div class="c-time">8:00 PM</div><div class="c-name">Musical Theatre Acting &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
     </div></div>
   </div>
 
   <!-- WEDNESDAY -->
   <div class="day-block" data-day="wed" id="day-wed">
-    <div class="day-hdr"><div class="day-name">Wednesday</div><div class="day-meta">4 weekly classes &middot; plus Adults</div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="wed" data-disc="theatre" data-ages="ages12" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960936" target="_blank" rel="noopener" aria-label="Register for Acting ages 9 to 12"></a><div class="c-time">5:15 PM</div><div class="c-name">Acting &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="wed" data-disc="voice" data-ages="ages17" style="--card-color:#14703C"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960946" target="_blank" rel="noopener" aria-label="Register for Triple Threat Training ages 13 to 17"></a><div class="c-time">6:00 PM</div><div class="c-name">Triple Threat Training &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc voice">Voice</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960939" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Dance ages 9 to 12"></a><div class="c-time">6:15 PM</div><div class="c-name">Musical Theatre Dance &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960945" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Acting ages 9 to 12"></a><div class="c-time">7:15 PM</div><div class="c-name">Musical Theatre Acting &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Adults</div><div class="cards-grid">
-      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="adult" style="--card-color:#8A5C00"><div class="c-time">7:25 &ndash; 8:15 PM</div><div class="c-name">Adult Musical Theatre Class</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">Studio A</span><span class="tag t-disc musicaltheatre">Musical Theatre</span><span class="tag t-level">All Levels</span></div></div>
+    <div class="day-hdr"><div class="day-name">Wednesday</div><div class="day-meta">4 weekly classes</div></div>
+    <div class="slot-group"><div class="slot-label">Weekly Classes</div><div class="cards-grid">
+      <div class="card" data-day="wed" data-disc="theatre" data-ages="ages12" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960936" target="_blank" rel="noopener" aria-label="Register for Acting ages 9 to 12"></a><div class="c-time">5:15 PM</div><div class="c-name">Acting &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="wed" data-disc="voice" data-ages="ages17" style="--card-color:#14703C"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960946" target="_blank" rel="noopener" aria-label="Register for Triple Threat Training ages 13 to 17"></a><div class="c-time">6:00 PM</div><div class="c-name">Triple Threat Training &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc voice">Voice</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960939" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Dance ages 9 to 12"></a><div class="c-time">6:15 PM</div><div class="c-name">Musical Theatre Dance &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960945" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Acting ages 9 to 12"></a><div class="c-time">7:15 PM</div><div class="c-name">Musical Theatre Acting &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
     </div></div>
   </div>
 
   <!-- THURSDAY -->
   <div class="day-block" data-day="thu" id="day-thu">
-    <div class="day-hdr"><div class="day-name">Thursday</div><div class="day-meta">4 weekly classes &middot; plus Tiny Tots &amp; Adults</div></div>
-    <div class="slot-group"><div class="slot-label">Morning &mdash; Tiny Tots</div><div class="cards-grid">
-      <div class="card" data-day="thu" data-disc="dance" data-ages="tots" style="--card-color:#A02860"><div class="c-time">9:30 &ndash; 10:15 AM</div><div class="c-name">Tots Dance &ndash; Ballet Morning</div><div class="c-tags"><span class="tag t-ages">Ages 2&ndash;5</span><span class="tag t-studio">Studio A</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Intro</span></div></div>
-      <div class="card" data-day="thu" data-disc="theatre" data-ages="tots" style="--card-color:#A02820"><div class="c-time">10:30 &ndash; 11:15 AM</div><div class="c-name">Tiny Tots Improv &amp; Play</div><div class="c-tags"><span class="tag t-ages">Ages 2&ndash;5</span><span class="tag t-studio">Studio B</span><span class="tag t-disc theatre">Theatre</span><span class="tag t-level">Intro</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="thu" data-disc="dance" data-ages="ages8" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960957" target="_blank" rel="noopener" aria-label="Register for Hip-Hop ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Hip-Hop &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="thu" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960958" target="_blank" rel="noopener" aria-label="Register for Hip-Hop ages 9 to 12"></a><div class="c-time">6:00 PM</div><div class="c-name">Hip-Hop &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="thu" data-disc="theatre" data-ages="ages12" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960959" target="_blank" rel="noopener" aria-label="Register for Improv ages 9 to 12"></a><div class="c-time">6:30 PM</div><div class="c-name">Improv &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-      <div class="card" data-day="thu" data-disc="theatre" data-ages="ages17" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960961" target="_blank" rel="noopener" aria-label="Register for Improv ages 13 to 17"></a><div class="c-time">7:30 PM</div><div class="c-name">Improv &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span><span class="tag t-level">Register &rarr;</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Adults</div><div class="cards-grid">
-      <div class="card" data-day="thu" data-disc="theatre" data-ages="adult" style="--card-color:#A02820"><div class="c-time">8:30 &ndash; 9:30 PM</div><div class="c-name">Adult Acting &amp; Improv</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">Studio B</span><span class="tag t-disc theatre">Theatre</span><span class="tag t-level">All Levels</span></div></div>
+    <div class="day-hdr"><div class="day-name">Thursday</div><div class="day-meta">4 weekly classes</div></div>
+    <div class="slot-group"><div class="slot-label">Weekly Classes</div><div class="cards-grid">
+      <div class="card" data-day="thu" data-disc="dance" data-ages="ages8" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960957" target="_blank" rel="noopener" aria-label="Register for Hip-Hop ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Hip-Hop &ndash; Ages 5&ndash;8</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="thu" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960958" target="_blank" rel="noopener" aria-label="Register for Hip-Hop ages 9 to 12"></a><div class="c-time">6:00 PM</div><div class="c-name">Hip-Hop &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="thu" data-disc="theatre" data-ages="ages12" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960959" target="_blank" rel="noopener" aria-label="Register for Improv ages 9 to 12"></a><div class="c-time">6:30 PM</div><div class="c-name">Improv &ndash; Ages 9&ndash;12</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <div class="card" data-day="thu" data-disc="theatre" data-ages="ages17" style="--card-color:#A02820"><a class="c-cardlink" href="https://www.hisawyer.com/nova-performing-arts/schedules/activity-set/1960961" target="_blank" rel="noopener" aria-label="Register for Improv ages 13 to 17"></a><div class="c-time">7:30 PM</div><div class="c-name">Improv &ndash; Ages 13&ndash;17</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
     </div></div>
   </div>
-    <div class="day-block" data-day="adults-tab" id="day-adults-tab">
-    <div class="day-hdr">
-      <div class="day-name">Adults (18+)</div>
-      <div class="day-meta">6 classes across Mon · Tue · Wed · Thu · Sat · All disciplines · All levels welcome</div>
-    </div>
-
-    <div class="adult-intro">
-      <div class="adult-intro-text">
-        <div class="adult-eyebrow">NoVAPA Adult Programs</div>
-        <h2>It's Never Too Late to <em>Take the Stage</em></h2>
-        <p>Our adult programs are designed for all experience levels — complete beginners to returning performers. Join a welcoming community of adults who share your passion for the performing arts. All classes are 50 minutes unless noted.</p>
-      </div>
-      <div class="adult-stats">
-        <div><div class="a-stat-num">6</div><div class="a-stat-lbl">Weekly Classes</div></div>
-        <div><div class="a-stat-num">4</div><div class="a-stat-lbl">Disciplines</div></div>
-        <div><div class="a-stat-num">$90</div><div class="a-stat-lbl">Per Month</div></div>
-      </div>
-    </div>
-
-    <div class="slot-group">
-      <div class="slot-label">Monday</div>
-      <div class="cards-grid">
-        <div class="card" data-day="adults-tab" data-disc="theatre" data-ages="adult" style="--card-color:#A02820">
-          <div class="c-time">Monday · 7:00 – 7:50 PM</div>
-          <div class="c-name">Adult Actors — Acting Fundamentals</div>
-          <div class="c-tags">
-            <span class="tag t-ages">Ages 18+</span>
-            <span class="tag t-studio">Studio B</span>
-            <span class="tag t-disc theatre">Theatre</span>
-            <span class="tag t-level">All Levels</span>
-          </div>
-        </div>
-        <div class="card" data-day="adults-tab" data-disc="dance" data-ages="adult" style="--card-color:#A02860">
-          <div class="c-time">Monday · 8:00 – 8:50 PM</div>
-          <div class="c-name">Adult Dance Class</div>
-          <div class="c-tags">
-            <span class="tag t-ages">Ages 18+</span>
-            <span class="tag t-studio">Studio A</span>
-            <span class="tag t-disc dance">Dance</span>
-            <span class="tag t-level">All Levels</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="slot-group">
-      <div class="slot-label">Tuesday</div>
-      <div class="cards-grid">
-        <div class="card" data-day="adults-tab" data-disc="voice" data-ages="adult" style="--card-color:#14703C">
-          <div class="c-time">Tuesday · 9:00 – 9:50 PM</div>
-          <div class="c-name">Adult Voice &amp; Choir</div>
-          <div class="c-tags">
-            <span class="tag t-ages">Ages 18+</span>
-            <span class="tag t-studio">Studio B</span>
-            <span class="tag t-disc voice">Voice</span>
-            <span class="tag t-level">All Levels</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="slot-group">
-      <div class="slot-label">Wednesday</div>
-      <div class="cards-grid">
-        <div class="card" data-day="adults-tab" data-disc="musicaltheatre" data-ages="adult" style="--card-color:#8A5C00">
-          <div class="c-time">Wednesday · 7:25 – 8:15 PM</div>
-          <div class="c-name">Adult Musical Theatre Class</div>
-          <div class="c-tags">
-            <span class="tag t-ages">Ages 18+</span>
-            <span class="tag t-studio">Studio B</span>
-            <span class="tag t-disc combo">Musical Theatre</span>
-            <span class="tag t-level">All Levels</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="slot-group">
-      <div class="slot-label">Thursday</div>
-      <div class="cards-grid">
-        <div class="card" data-day="adults-tab" data-disc="theatre" data-ages="adult" style="--card-color:#A02820">
-          <div class="c-time">Thursday · 8:30 – 9:30 PM</div>
-          <div class="c-name">Adult Acting &amp; Improv</div>
-          <div class="c-tags">
-            <span class="tag t-ages">Ages 18+</span>
-            <span class="tag t-studio">Studio B</span>
-            <span class="tag t-disc theatre">Theatre</span>
-            <span class="tag t-level">All Levels</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="slot-group">
-      <div class="slot-label">Saturday — Ongoing Troupe</div>
-      <div class="cards-grid">
-        <div class="card" data-day="adults-tab" data-disc="theatre" data-ages="adult" style="--card-color:#0F6482">
-          <div class="c-time">Saturday · 10:00 – 11:30 AM</div>
-          <div class="c-name">Improv Theatre Troupe</div>
-          <div class="c-tags">
-            <span class="tag t-ages">Ages 13+</span>
-            <span class="tag t-studio">Studio A</span>
-            <span class="tag t-disc theatre">Theatre</span>
-            <span class="tag t-level">All Levels</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- BROADWAY BOUND SUMMER 2027 -->
   <div class="day-block" data-day="summer" id="day-summer">
 
