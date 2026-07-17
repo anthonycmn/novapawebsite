@@ -807,12 +807,12 @@ const CLASS_DATES = new Set([
 const RAW_EVENTS = [
 // ── SUMMER 2026 ──
 // Session 1 Shrek Jr Jun 29 – Jul 10
-...[...Array(10)].map((_,i)=>{const d=new Date(2026,5,29+i);return[d.getFullYear(),d.getMonth(),d.getDate(),'Shrek Jr. Camp S1','summer','Session 1 · Jun 29–Jul 10 · Ashburn · 9am–4pm'];}).filter(x=>new Date(x[0],x[1],x[2]).getDay()!==0&&new Date(x[0],x[1],x[2]).getDay()!==6?x:x),
+...[...Array(10)].map((_,i)=>{const d=new Date(2026,5,29+i);return[d.getFullYear(),d.getMonth(),d.getDate(),'Shrek Jr. Camp S1','summer','Session 1 · Jun 29–Jul 10 · Leesburg · 9am–4pm'];}).filter(x=>new Date(x[0],x[1],x[2]).getDay()!==0&&new Date(x[0],x[1],x[2]).getDay()!==6?x:x),
 [2026,6,10,'Shrek Jr. Performance','summer','Happily Ever After at 7pm · Youth PM at 5pm'],
 [2026,6,11,'Shrek Jr. Performance','summer','Once Upon a Time at 1pm · Spellbound at 4pm'],
 ...[...Array(5)].map((_,i)=>[2026,6,6+i,'Triple Threat Jr. Camp','summer','Jul 6–10 · Leesburg · Ages 10–15 · $325']),
 // Session 2 Jul 13–24
-...[...Array(10)].map((_,i)=>{const d=new Date(2026,6,13+i);return[d.getFullYear(),d.getMonth(),d.getDate(),'Shrek Jr. Camp S2','summer','Session 2 · Jul 13–24 · Ashburn · 9am–4pm'];}),
+...[...Array(10)].map((_,i)=>{const d=new Date(2026,6,13+i);return[d.getFullYear(),d.getMonth(),d.getDate(),'Shrek Jr. Camp S2','summer','Session 2 · Jul 13–24 · Leesburg · 9am–4pm'];}),
 [2026,6,24,'Shrek Jr. Performance','summer','Youth PM at 5pm'],
 [2026,6,25,'Shrek Jr. Performance','summer','Youth AM at 11am · Fairy Tale Cast at 7pm'],
 ...[...Array(5)].map((_,i)=>[2026,6,13+i,'Disney Adventures Camp','summer','Jul 13–17 · Leesburg · Ages 5–11 · $325']),
@@ -1589,7 +1589,7 @@ buildList();
     // === Location ===
     location: {
       keywords: ['where', 'location', 'address', 'directions', 'studio', 'leesburg', 'ashburn', 'national conference center', 'find you', 'find us', 'how do i get'],
-      response: `<strong>📍 Where to find us</strong><br><br><strong>Current Studio:</strong><br>National Conference Center<br>18980 Upper Belmont Place<br>Leesburg, VA 20176<br><br><strong>🏛️ Coming Soon:</strong> A brand-new <strong>10,000 sq ft Creative Arts Center in the heart of Ashburn</strong>, planned to open by Labor Day Weekend 2026 — just in time for the new season!<br><br>👉 <a href="https://maps.google.com?q=18980+Upper+Belmont+Place+Leesburg+VA+20176">Get directions →</a>`
+      response: `<strong>📍 Where to find us</strong><br><br><strong>Current Studio:</strong><br>National Conference Center<br>18980 Upper Belmont Place<br>Leesburg, VA 20176<br><br>👉 <a href="https://maps.google.com?q=18980+Upper+Belmont+Place+Leesburg+VA+20176">Get directions →</a>`
     },
 
     // === Classes / Disciplines ===
