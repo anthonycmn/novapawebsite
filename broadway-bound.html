@@ -3206,6 +3206,24 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       </div>
   </section>
 
+  <!-- Bundle & Save (flashy) -->
+  <style>
+  .bundle-flash{ position:relative; max-width:720px; margin:6px auto 10px; padding:26px 34px; border-radius:20px; text-align:center; overflow:hidden; background:linear-gradient(120deg,#C8892A,#E8B84B,#F7D98F,#E8B84B,#C8892A); background-size:300% 100%; animation:bundleShift 6s ease infinite; box-shadow:0 12px 40px rgba(200,137,42,0.42); border:2px solid rgba(255,255,255,0.55); }
+  @keyframes bundleShift{ 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+  .bundle-flash::after{ content:''; position:absolute; top:0; left:-60%; width:40%; height:100%; background:linear-gradient(100deg,transparent,rgba(255,255,255,0.55),transparent); transform:skewX(-20deg); animation:bundleShine 3.4s ease-in-out infinite; pointer-events:none; }
+  @keyframes bundleShine{ 0%{left:-60%} 55%,100%{left:130%} }
+  .bundle-badge{ display:inline-block; background:#1a1205; color:#F7D98F; font-family:'Cinzel',serif; font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; padding:7px 16px; border-radius:100px; margin-bottom:12px; animation:bundleBob 1.7s ease-in-out infinite; }
+  @keyframes bundleBob{ 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(-4px) rotate(2deg)} }
+  .bundle-flash h3{ position:relative; font-family:'Playfair Display',serif; font-size:clamp(22px,3.2vw,32px); font-weight:900; color:#1a1205; margin:0 0 6px; }
+  .bundle-flash p{ position:relative; font-size:14.5px; color:#3a2a08; font-weight:600; margin:0; }
+  .bundle-off{ display:inline-block; background:#B3261E; color:#fff; font-weight:900; padding:1px 11px; border-radius:8px; transform:rotate(-3deg); box-shadow:0 3px 10px rgba(0,0,0,0.2); }
+  @media (prefers-reduced-motion: reduce){ .bundle-flash,.bundle-flash::after,.bundle-badge{ animation:none; } }
+  </style>
+  <div class="bundle-flash">
+    <span class="bundle-badge">&#127881; Bundle &amp; Save</span>
+    <h3>Do Both Shows &amp; Save <span class="bundle-off">10% OFF</span></h3>
+    <p>&#10052;&#65039; Register for <strong>Frozen</strong> and &#127754; <strong>The Little Mermaid</strong> together &mdash; take 10% off both!</p>
+  </div>
   <section class="pgm-sec" id="spring">
     <div class="pgm-head pgm-head-c reveal">
       <div class="seceye"><span class="sectag">2026&ndash;27 Season &middot; Feb&ndash;May</span></div>
@@ -3288,11 +3306,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         </div>
       </article></div>
   </section>
-
-  <div class="bundle-offer" style="max-width:920px;margin:38px auto 0;padding:20px 30px;background:linear-gradient(135deg,#C8892A 0%,#E8B84B 100%);border-radius:16px;text-align:center;box-shadow:0 8px 28px rgba(200,137,42,0.28)">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#4a3410;margin-bottom:6px">Bundle &amp; Save</div>
-    <div style="font-size:clamp(17px,2.4vw,23px);font-weight:800;color:#1a1205;line-height:1.32">Register for Frozen and The Little Mermaid together and receive 10% Off</div>
-  </div>
 
   <section class="pgm-sec" id="pricing">
     <div class="pgm-head reveal">
