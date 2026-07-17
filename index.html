@@ -3050,7 +3050,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    </div>
   </section>
   <!-- ── REGISTRATION INFO BAR (relocated from hero) ── -->
-  <a href="summer-2027.html" class="audition-banner" aria-label="Summer 2027 camp registration now open">
+  <a href="summer-2027.html" class="audition-banner" aria-label="Register now for Broadway Bound — limited registration available, register today">
    <div class="audition-banner-inner">
     <div class="audition-banner-icon" aria-hidden="true">
      <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3061,11 +3061,12 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      </svg>
     </div>
     <div class="audition-banner-text">
-     <div class="audition-banner-eyebrow">Registration</div>
-     <div class="audition-banner-title">Summer 2027 <span>Now Open</span></div>
+     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Limited Registration Available &middot; Register Today</div>
+     <div class="audition-banner-title">Register Now for <span>Broadway Bound</span></div>
+     <div class="audition-banner-sub">Northern Virginia&rsquo;s Premier Performing Arts Company</div>
     </div>
     <div class="audition-banner-cta">
-     <span>Registration Info</span>
+     <span>Register Now</span>
      <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <line x1="5" y1="12" x2="19" y2="12"></line>
       <polyline points="12 5 19 12 12 19"></polyline>
@@ -3305,6 +3306,88 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    }
    .audition-banner:hover .audition-banner-cta svg {
     transform: translateX(4px);
+   }
+   /* ── Flashy register banner enhancements ── */
+   .audition-banner {
+    background: linear-gradient(135deg, #0F1E36 0%, #1a3a6b 45%, #0F1E36 100%);
+    border-top: 2px solid rgba(232,184,75,0.55);
+    border-bottom: 2px solid rgba(232,184,75,0.55);
+    animation: abGlow 3s ease-in-out infinite;
+   }
+   @keyframes abGlow {
+    0%, 100% { box-shadow: inset 0 0 0 rgba(232,184,75,0), 0 4px 18px rgba(232,184,75,0.10); }
+    50% { box-shadow: inset 0 0 40px rgba(232,184,75,0.22), 0 8px 34px rgba(232,184,75,0.28); }
+   }
+   .audition-banner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.20), transparent);
+    transform: skewX(-20deg);
+    animation: abShimmer 4.5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+   }
+   @keyframes abShimmer { 0% { left: -60%; } 55%, 100% { left: 130%; } }
+   .audition-banner-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #F7D98F;
+   }
+   .ab-pulse {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ff4d4d;
+    flex-shrink: 0;
+    animation: abPulse 1.4s ease-out infinite;
+   }
+   @keyframes abPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,77,77,0.75); }
+    70% { box-shadow: 0 0 0 11px rgba(255,77,77,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,77,77,0); }
+   }
+   .audition-banner-title {
+    font-size: 29px;
+    font-weight: 800;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.35);
+   }
+   .audition-banner-title span {
+    color: #F7D98F;
+    font-style: italic;
+    text-shadow: 0 0 18px rgba(247,217,143,0.55);
+   }
+   .audition-banner-sub {
+    font-size: 14.5px;
+    color: rgba(255,255,255,0.82);
+    font-weight: 500;
+    margin-top: 3px;
+   }
+   .audition-banner-cta {
+    font-size: 14px;
+    padding: 14px 30px;
+    animation: abCta 2.2s ease-in-out infinite;
+   }
+   @keyframes abCta {
+    0%, 100% { box-shadow: 0 4px 14px rgba(200,137,42,0.35); }
+    50% { box-shadow: 0 6px 28px rgba(232,184,75,0.7); }
+   }
+   .audition-banner-icon {
+    animation: abFloat 3s ease-in-out infinite;
+   }
+   @keyframes abFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+   @media (max-width: 640px) {
+    .audition-banner-title { font-size: 21px; }
+    .audition-banner-sub { font-size: 13px; }
+   }
+   @media (prefers-reduced-motion: reduce) {
+    .audition-banner, .audition-banner::after, .ab-pulse, .audition-banner-cta, .audition-banner-icon { animation: none; }
    }
    @media (max-width: 768px) {
     .audition-banner-inner {
