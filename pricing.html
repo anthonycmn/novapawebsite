@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing | Northern Virginia Performing Arts</title>
+  <meta name="description" content="Simple, transparent pricing for NoVAPA weekly classes, productions, and summer camps — register for everything in one place.">
+  <link rel="stylesheet" href="reg-banner.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --navy:#08111F; --navy2:#0F1E36; --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    body{ font-family:'DM Sans',sans-serif; background:linear-gradient(160deg,#08111F 0%,#0F1E36 55%,#08111F 100%); color:#fff; line-height:1.6; min-height:100vh; }
+    a{ color:inherit; }
+    .p-nav{ display:flex; align-items:center; justify-content:space-between; padding:15px 40px; border-bottom:1px solid rgba(232,184,75,0.15); position:sticky; top:0; background:rgba(8,17,31,0.92); backdrop-filter:blur(10px); z-index:100; }
+    .p-logo{ font-family:'Cinzel',serif; font-weight:700; letter-spacing:.09em; color:#fff; text-decoration:none; font-size:15px; }
+    .p-logo span{ color:var(--gold2); }
+    .p-nav-links{ display:flex; gap:22px; align-items:center; }
+    .p-nav-links a{ text-decoration:none; font-size:13px; color:rgba(255,255,255,0.72); }
+    .p-nav-links a:hover{ color:#fff; }
+    .p-nav-cta{ background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#08111F !important; padding:9px 20px; border-radius:100px; font-weight:700; font-size:12.5px; }
+    .p-hero{ text-align:center; padding:64px 24px 30px; }
+    .p-eyebrow{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:var(--gold2); }
+    .p-hero h1{ font-family:'Cormorant Garamond',serif; font-size:clamp(38px,6vw,62px); font-weight:800; margin:12px 0 10px; line-height:1.05; }
+    .p-hero p{ max-width:560px; margin:0 auto; color:rgba(255,255,255,0.7); font-size:16px; }
+    .p-wrap{ max-width:1080px; margin:0 auto; padding:16px 24px 30px; }
+    .p-sec-label{ font-family:'Cinzel',serif; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold2); margin:46px 0 18px; padding-bottom:10px; border-bottom:1px solid rgba(232,184,75,0.2); }
+    .p-sec-label span{ color:rgba(255,255,255,0.4); font-family:'DM Sans'; text-transform:none; letter-spacing:0; font-weight:400; font-size:12px; }
+    .p-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
+    .p-card{ background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; text-decoration:none; color:#fff; transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+    .p-card[href]{ cursor:pointer; }
+    .p-card[href]:hover{ transform:translateY(-4px); border-color:rgba(232,184,75,0.55); box-shadow:0 16px 40px rgba(0,0,0,0.42); }
+    .p-card.feat{ border-color:rgba(232,184,75,0.4); background:linear-gradient(180deg, rgba(232,184,75,0.08), rgba(255,255,255,0.02)); }
+    .p-tag{ font-family:'Cinzel',serif; font-size:9.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--gold2); margin-bottom:8px; }
+    .p-card-name{ font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:700; line-height:1.2; }
+    .p-card-desc{ font-size:13px; color:rgba(255,255,255,0.58); margin:8px 0 16px; flex:1; line-height:1.6; }
+    .p-amt{ font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:900; color:var(--gold2); line-height:1; }
+    .p-unit{ font-size:13px; color:rgba(255,255,255,0.5); font-family:'DM Sans'; font-weight:400; }
+    .p-reg{ display:inline-flex; align-items:center; gap:7px; margin-top:16px; font-size:12.5px; font-weight:700; color:var(--gold3); letter-spacing:.03em; }
+    .p-bigcta{ text-align:center; padding:54px 24px 24px; }
+    .p-bigcta a{ display:inline-flex; align-items:center; gap:11px; background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#08111F; font-family:'Cinzel',serif; font-weight:700; font-size:15px; letter-spacing:.04em; padding:18px 46px; border-radius:100px; text-decoration:none; box-shadow:0 10px 30px rgba(200,137,42,0.35); transition:transform .2s ease, box-shadow .2s ease; }
+    .p-bigcta a:hover{ transform:translateY(-2px); box-shadow:0 14px 40px rgba(232,184,75,0.5); }
+    .p-note{ text-align:center; color:rgba(255,255,255,0.48); font-size:13px; padding:0 24px 64px; max-width:640px; margin:14px auto 0; }
+    footer{ border-top:1px solid rgba(232,184,75,0.15); padding:28px 40px; text-align:center; color:rgba(255,255,255,0.5); font-size:13px; }
+    footer a{ color:var(--gold2); text-decoration:none; }
+    @media(max-width:620px){ .p-nav-links a:not(.p-nav-cta){ display:none; } .p-nav{ padding:13px 18px; } }
+  </style>
+</head>
+<body>
+  <nav class="p-nav">
+    <a class="p-logo" href="index.html">NORTHERN VIRGINIA <span>PERFORMING ARTS</span></a>
+    <div class="p-nav-links">
+      <a href="classes.html">Classes</a>
+      <a href="broadway-bound.html">Broadway Bound</a>
+      <a href="summer-2027.html">Summer Camps</a>
+      <a href="coaching.html">Coaching</a>
+      <a class="p-nav-cta" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">Register &rarr;</a>
+    </div>
+  </nav>
+
+  <!-- reg-banner-sitewide -->
+  <a href="summer-2027.html" class="audition-banner" aria-label="Register now for Broadway Bound &mdash; limited registration available, register today">
+   <div class="audition-banner-inner">
+    <div class="audition-banner-icon" aria-hidden="true">
+     <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+     </svg>
+    </div>
+    <div class="audition-banner-text">
+     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Limited Registration Available &middot; Register Today</div>
+     <div class="audition-banner-title">Register Now for <span>Broadway Bound</span></div>
+     <div class="audition-banner-sub">Northern Virginia&rsquo;s Premier Performing Arts Company</div>
+    </div>
+    <div class="audition-banner-cta">
+     <span>Register Now</span>
+     <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
+     </svg>
+    </div>
+   </div>
+  </a>
+
+  <section class="p-hero">
+    <div class="p-eyebrow">2026&ndash;2027 Season</div>
+    <h1>Simple, Transparent Pricing</h1>
+    <p>Pick your program and register &mdash; classes, productions, and summer camps, all in one place. No hidden fees.</p>
+  </section>
+
+  <div class="p-wrap">
+
+    <div class="p-sec-label">Weekly Classes <span>&middot; per child &middot; billed monthly</span></div>
+    <div class="p-grid">
+      <a class="p-card" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">
+        <div class="p-tag">Class Membership</div>
+        <div class="p-card-name">1 Class</div>
+        <div class="p-card-desc">Any one weekly class from the schedule.</div>
+        <div class="p-amt">$90 <span class="p-unit">/ mo</span></div>
+        <span class="p-reg">Register &rarr;</span>
+      </a>
+      <a class="p-card" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">
+        <div class="p-tag">Class Membership</div>
+        <div class="p-card-name">2 Classes</div>
+        <div class="p-card-desc">Any two weekly classes from the schedule.</div>
+        <div class="p-amt">$159 <span class="p-unit">/ mo</span></div>
+        <span class="p-reg">Register &rarr;</span>
+      </a>
+      <a class="p-card feat" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">
+        <div class="p-tag">Most Popular</div>
+        <div class="p-card-name">3 Classes</div>
+        <div class="p-card-desc">Any three weekly classes from the schedule.</div>
+        <div class="p-amt">$199 <span class="p-unit">/ mo</span></div>
+        <span class="p-reg">Register &rarr;</span>
+      </a>
+    </div>
+
+    <div class="p-sec-label">Productions <span>&middot; per performer &middot; à la carte</span></div>
+    <div class="p-grid">
+      <a class="p-card" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">
+        <div class="p-tag">Fall &amp; Spring</div>
+        <div class="p-card-name">Broadway Bound Show</div>
+        <div class="p-card-desc">One production &mdash; Frozen or The Little Mermaid. Kids, Junior, or Teen company.</div>
+        <div class="p-amt">$695 <span class="p-unit">/ show</span></div>
+        <span class="p-reg">Register &rarr;</span>
+      </a>
+      <a class="p-card" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">
+        <div class="p-tag">Ages 13&ndash;18 &middot; Audition</div>
+        <div class="p-card-name">Teen Conservatory Show</div>
+        <div class="p-card-desc">One conservatory production &mdash; Sweeney Todd or Hadestown.</div>
+        <div class="p-amt">$849 <span class="p-unit">/ show</span></div>
+        <span class="p-reg">Register &rarr;</span>
+      </a>
+    </div>
+
+    <div class="p-sec-label">Summer Camps <span>&middot; per performer</span></div>
+    <div class="p-grid">
+      <a class="p-card" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">
+        <div class="p-tag">Two Weeks</div>
+        <div class="p-card-name">Summer Camp Production</div>
+        <div class="p-card-desc">Full two-week camp with a live showcase performance.</div>
+        <div class="p-amt">$995 <span class="p-unit">/ camp</span></div>
+        <span class="p-reg">Register &rarr;</span>
+      </a>
+      <a class="p-card" href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">
+        <div class="p-tag">One Week</div>
+        <div class="p-card-name">One-Week Camp</div>
+        <div class="p-card-desc">Stand-alone one-week camp session. Enroll in one week or many.</div>
+        <div class="p-amt">$425 <span class="p-unit">/ week</span></div>
+        <span class="p-reg">Register &rarr;</span>
+      </a>
+    </div>
+
+    <div class="p-sec-label">Flexible Payment</div>
+    <div class="p-grid">
+      <div class="p-card">
+        <div class="p-tag">Pay Your Way</div>
+        <div class="p-card-name">Installment Plans</div>
+        <div class="p-card-desc">Split your tuition or show fee into monthly payments at checkout.</div>
+        <div class="p-amt">No Penalty <span class="p-unit">&middot; no added fees</span></div>
+      </div>
+      <div class="p-card">
+        <div class="p-tag">Peace of Mind</div>
+        <div class="p-card-name">Tuition Insurance</div>
+        <div class="p-card-desc">Protect your enrollment for the season. Add it at checkout.</div>
+        <div class="p-amt">$95 <span class="p-unit">/ season</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="p-bigcta">
+    <a href="https://www.hisawyer.com/nova-performing-arts/schedules?schedule_id=all&amp;widget_tags=a+day+at+the+theatre%2Cbroadway+bound%2Cbroadway+trip%2Ccharlie%2Cclasses%2Cfrozen%2Chttyd%2Clittle+mermaid%2Cstagelighters%2Csummer+camp%2Cteen+conservatory%2Ctrolls" target="_blank" rel="noopener">Browse Everything &amp; Register &rarr;</a>
+  </div>
+  <p class="p-note">Sibling discount available &middot; Installment plans and tuition insurance offered at checkout. Every program above registers through our secure HiSawyer portal.</p>
+
+  <footer>
+    Northern Virginia Performing Arts &middot; Leesburg, VA &middot;
+    <a href="mailto:info@novapa.org">info@novapa.org</a> &middot;
+    <a href="tel:5715712120">(571) 571-2120</a>
+  </footer>
+</body>
+</html>
