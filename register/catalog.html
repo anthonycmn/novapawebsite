@@ -90,14 +90,29 @@
     });
     document.getElementById('count').textContent = rows.length + ' of ' + all.length + ' programs';
     document.getElementById('grid').innerHTML = rows.map(function(r){
-      return '<a class="it" style="text-decoration:none" href="https://www.hisawyer.com' + esc(r.pdp_url || '') + '" target="_blank" rel="noopener">' +
+      var cta, href, note = '';
+      if (r.bookable) {
+        href = '/register/?activity=' + r.id;
+        if (r.bb_gated && !r.gate_open) {
+          cta = 'Returning families: register \u2192';
+          note = 'Opens to everyone Aug 1';
+        } else {
+          cta = r.category === 'class' ? 'Enroll now \u2192' : 'Register \u2192';
+        }
+      } else {
+        href = 'https://www.hisawyer.com' + (r.pdp_url || '');
+        cta = 'View on Sawyer \u2192';
+      }
+      return '<a class="it" style="text-decoration:none" href="' + esc(href) + '"' +
+        (r.bookable ? '' : ' target="_blank" rel="noopener"') + '>' +
         '<div class="img"' + (r.image_url ? ' style="background-image:url(' + esc(r.image_url) + ')"' : '') + '></div>' +
         '<div class="bd">' +
           '<div class="nm">' + esc(r.name) + '</div>' +
           '<div class="meta">' + esc(r.age_range || '') + (r.schedule_name ? ' · ' + esc(r.schedule_name) : '') + '</div>' +
           '<div class="tags">' + (r.widget_tags||[]).slice(0,3).map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
           '<div class="ft"><span class="pr">' + esc((r.pricing||[])[0] || '') + '</span>' +
-          '<span class="sp">' + (r.open_spots != null ? r.open_spots + ' open seats' : '') + '</span></div>' +
+          '<span class="sp" style="color:var(--gold2);font-weight:700">' + cta + '</span></div>' +
+          (note ? '<div class="meta" style="color:var(--gold3)">' + note + '</div>' : '') +
         '</div></a>';
     }).join('');
   }

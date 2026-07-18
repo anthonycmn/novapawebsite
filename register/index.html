@@ -270,6 +270,10 @@
       </div>
       <div id="payBreakdown"></div>
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
+      <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
+        <span>I agree to NOVAPA's <a href="/policies" target="_blank" rel="noopener">policies</a> (cancellation, liability, and media).</span>
+      </label>
       <button class="btn" id="payStart">Continue to Payment</button>
       <div id="payElement"></div>
       <button class="btn" id="paySubmit" style="display:none">Pay <span id="payAmt"></span></button>
@@ -291,6 +295,7 @@
         🍂 Keep the momentum: <a href="/classes">fall classes are enrolling now</a> — same stage, all year.
       </p>
     </div>
+    <div class="card" id="profileForms"></div>
     <p class="tiny">Friends want in? Send them to <b>novapa.org/summer-2027</b> — the waitlist gets first access on Aug 1.</p>
   </section>
 
@@ -313,8 +318,15 @@
   var SHOW_DATES = { httyd:'Jul 5–16', charlie:'Jul 19–30', trolls:'Aug 2–13' };
   var state = {
     email:null, family:null, kids:[], shows:[], assign:{}, hold:null,
-    inventory:{}, plan:'deposit', clientSecret:null, pricing:null, stripe:null, elements:null
+    inventory:{}, plan:'deposit', clientSecret:null, pricing:null, stripe:null, elements:null,
+    catIds:[], catItems:[], feeDue:false, policyOk:false
   };
+  (function(){
+    var m = location.search.match(/[?&]activity=([0-9,]+)/);
+    if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
+  })();
+  function isCatMode(){ return state.catItems.length > 0; }
+  function catAllClasses(){ return state.catItems.every(function(a){ return a.category === 'class'; }); }
   function $(id){ return document.getElementById(id); }
   function ev(name, props){ try { window.posthog && window.posthog.capture(name, props||{}); } catch(e){} }
   function go(stepId){
@@ -382,10 +394,15 @@
   function loadFamily(){
     Promise.all([
       sb.rpc('get_my_family'),
-      sb.rpc('inventory_status')
+      sb.rpc('inventory_status'),
+      state.catIds.length ? sb.rpc('catalog_list') : Promise.resolve({data: []}),
+      sb.rpc('family_fee_due', { p_email: state.email })
     ]).then(function(results){
       var fam = results[0].data;
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
+      state.catItems = (results[2].data || []).filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+      state.feeDue = !!results[3].data;
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
         return { name:c.name, age:c.age, already:c.already_registered||[], sel:true };
@@ -436,6 +453,7 @@
   $('famNext').addEventListener('click', function(){
     var errEl = $('famErr'); errEl.classList.remove('on');
     if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one camper.'; errEl.classList.add('on'); return; }
+    if (isCatMode()) { renderCatAssign(); go('st-assign'); return; }
     go('st-shows'); updateTicker();
   });
   $('signout').addEventListener('click', function(e){
@@ -521,8 +539,42 @@
       });
     });
   }
+  function renderCatAssign(){
+    var kids = state.kids.filter(function(k){ return k.sel; });
+    var html = state.catItems.map(function(a){
+      var priceLine = a.category === 'class'
+        ? ((a.pricing||[])[0] || '$90/month') + ' per camper · first month due today'
+        : ((a.pricing||[])[0] || '') + ' per camper';
+      var rows = kids.map(function(k){
+        var key = 'act' + a.id + '|' + k.name;
+        if (!(key in state.assign)) state.assign[key] = { on: kids.length === 1, band: null };
+        var sel = state.assign[key];
+        return '<div class="kid-row"><label class="kid-check">' +
+          '<input type="checkbox" data-key="' + esc(key) + '" ' + (sel.on ? 'checked' : '') + '> ' +
+          '<span>' + esc(k.name) + (k.age ? ' <span style="color:var(--ink-dim)">· ' + k.age + '</span>' : '') + '</span></label></div>';
+      }).join('');
+      return '<div class="card"><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px">' +
+        esc(a.name) + '</div>' +
+        '<div class="tiny" style="text-align:left;margin:0 0 4px">' + esc(a.age_range || '') +
+        (a.schedule_name ? ' · ' + esc(a.schedule_name) : '') + '</div>' +
+        '<div class="tiny" style="text-align:left;margin:0 0 8px;color:var(--gold3)">' + priceLine + '</div>' + rows + '</div>';
+    }).join('');
+    $('assignBlocks').innerHTML = html;
+    $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; });
+    });
+  }
   function buildItems(){
     var items = [];
+    if (isCatMode()) {
+      state.catItems.forEach(function(a){
+        state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
+          var sel = state.assign['act' + a.id + '|' + k.name];
+          if (sel && sel.on) items.push({ activity_id: a.id, camper: k.name });
+        });
+      });
+      return items;
+    }
     state.shows.forEach(function(show){
       state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
         var a = state.assign[show + '|' + k.name];
@@ -538,10 +590,18 @@
     var items = buildItems();
     if (!items.length) { errEl.textContent = 'Check at least one camper into a show.'; errEl.classList.add('on'); return; }
     $('assignNext').disabled = true;
-    sb.rpc('acquire_hold', { p_items: items }).then(function(res){
+    sb.rpc('acquire_hold_v2', { p_items: items }).then(function(res){
       $('assignNext').disabled = false;
       if (res.error) {
         var msg = res.error.message || '';
+        if (msg.indexOf('GATED') !== -1) {
+          errEl.textContent = '🎭 Broadway Bound programs are open to returning NOVAPA families only until August 1 — this email isn\'t in our family records. Join the waitlist on the summer page and you\'ll get first access on drop day.';
+          errEl.classList.add('on'); return;
+        }
+        if (msg.indexOf('SOLD_OUT_ACTIVITY') !== -1) {
+          errEl.textContent = '😔 One of these programs just filled up.';
+          errEl.classList.add('on'); return;
+        }
         if (msg.indexOf('SOLD_OUT') !== -1) {
           var parts = msg.split(':');
           errEl.textContent = '😔 ' + (SHOW_NAMES[parts[1]] || parts[1]) + ' (' + bandLabel(parts[2] || '') + ') just filled up — pick a different track.';
@@ -589,6 +649,7 @@
   // ---------- step: pay ----------
   document.querySelectorAll('.plan-opt').forEach(function(opt){
     opt.addEventListener('click', function(){
+      if (isCatMode()) return;
       document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
       opt.classList.add('sel');
       state.plan = opt.dataset.plan;
@@ -599,6 +660,44 @@
     });
   });
 
+  function catPricing(){
+    var items = state.hold ? state.hold.items : buildItems();
+    var byId = {};
+    state.catItems.forEach(function(a){ byId[a.id] = a; });
+    var firstChild = items.length ? items[0].camper : null;
+    var units = items.map(function(it){
+      var a = byId[it.activity_id] || {};
+      if (a.category === 'class') {
+        var base = 9000;
+        return (it.camper && it.camper !== firstChild) ? Math.round(base * 0.95) : base;
+      }
+      return a.price_cents || 0;
+    });
+    var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
+    var fee = state.feeDue ? C.FAMILY_FEE * 100 : 0;
+    return { items: items, units: units, subtotal: subtotal, fee: fee,
+             total: subtotal + fee, today: subtotal + fee,
+             monthly: catAllClasses() ? units : [] };
+  }
+  function renderCatPay(){
+    var p = catPricing();
+    var byId = {}; state.catItems.forEach(function(a){ byId[a.id] = a; });
+    var rows = p.items.map(function(it, i){
+      var a = byId[it.activity_id] || {};
+      return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(a.name || '') +
+        (p.units[i] === 8550 ? ' <span class="savings">(5% sibling)</span>' : '') +
+        '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
+    }).join('');
+    $('summaryCard').innerHTML =
+      '<div class="sumrow head"><span>Your enrollment</span><span></span></div>' + rows +
+      (p.fee ? '<div class="sumrow"><span>Annual family registration</span><span>' + money(p.fee) + '</span></div>' : '') +
+      '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
+    document.querySelector('.plan-toggle').style.display = 'none';
+    $('upsellBox').style.display = 'none';
+    $('payBreakdown').innerHTML = catAllClasses()
+      ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month' + (p.fee ? ' + the annual family fee' : '') + '. Monthly tuition continues automatically once the season is underway (next bill Oct 1) — cancel anytime per our policies.</p>'
+      : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done.</p>';
+  }
   function localPricing(){
     var items = state.hold ? state.hold.items : buildItems();
     var n = items.length;
@@ -612,6 +711,7 @@
   }
 
   function renderPay(){
+    if (isCatMode()) { renderCatPay(); return; }
     var items = state.hold ? state.hold.items : buildItems();
     var p = localPricing();
     var fullPrice = C.PRICE * 100;
@@ -647,6 +747,10 @@
 
   $('payStart').addEventListener('click', function(){
     var errEl = $('payErr'); errEl.classList.remove('on');
+    if (!$('policyOk').checked) {
+      errEl.textContent = 'Please agree to NOVAPA\'s policies to continue.';
+      errEl.classList.add('on'); return;
+    }
     if (!C.STRIPE_PUBLISHABLE_KEY) {
       errEl.textContent = 'Payments aren\'t configured yet (test build) — Stripe keys pending.';
       errEl.classList.add('on'); return;
@@ -713,11 +817,50 @@
     $('holdChip').classList.remove('on'); $('topNote').style.display='';
     var p = state.pricing;
     var items = state.hold.items;
-    $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
-      Math.round((p.discount_pct||0)) + '% off</b>' +
-      (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full. 🎉');
+    if (isCatMode()) {
+      $('doneRecap').innerHTML = items.length + ' enrollment' + (items.length>1?'s':'') + ' locked in — ' +
+        money(p.today_cents) + ' paid today' + (catAllClasses() ? ', monthly tuition on autopilot from Oct 1.' : '.') + ' 🎉';
+    } else {
+      $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
+        Math.round((p.discount_pct||0)) + '% off</b>' +
+        (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full. 🎉');
+    }
+    renderProfileForms(items);
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
     go('st-done');
+  }
+  function renderProfileForms(items){
+    var names = [];
+    items.forEach(function(it){ if (it.camper && names.indexOf(it.camper) === -1) names.push(it.camper); });
+    var host = $('profileForms');
+    if (!host || !names.length) return;
+    host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>One last thing — camper details</span><span></span></div>' +
+      '<p class="tiny" style="text-align:left;margin:0 0 10px">Takes 30 seconds per camper and saves you an email later. You can also do this anytime before the season.</p>' +
+      names.map(function(n, i){
+        return '<div style="border-top:1px solid var(--line);padding:12px 0">' +
+          '<div style="font-weight:700;color:#fff;margin-bottom:8px">' + esc(n) + '</div>' +
+          '<input type="text" id="pfB' + i + '" placeholder="Birthdate (MM/DD/YYYY)" style="margin-bottom:8px">' +
+          '<input type="text" id="pfA' + i + '" placeholder="Allergies or medical notes (or \'none\')" style="margin-bottom:8px">' +
+          '<input type="text" id="pfE' + i + '" placeholder="Emergency contact — name + phone">' +
+          '<button class="btn btn-ghost" data-pf="' + i + '" data-name="' + esc(n) + '" style="margin-top:8px;padding:10px">Save ' + esc(n.split(' ')[0]) + '\'s info</button>' +
+          '<div class="tiny" id="pfS' + i + '"></div></div>';
+      }).join('');
+    host.querySelectorAll('button[data-pf]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var i = b.dataset.pf;
+        var bd = $('pfB' + i).value.trim();
+        var iso = null;
+        var mm = bd.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (mm) iso = mm[3] + '-' + ('0'+mm[1]).slice(-2) + '-' + ('0'+mm[2]).slice(-2);
+        sb.rpc('update_my_camper', {
+          p_name: b.dataset.name, p_birthdate: iso,
+          p_allergies: $('pfA' + i).value.trim() || null,
+          p_emergency: $('pfE' + i).value.trim() || null
+        }).then(function(res){
+          $('pfS' + i).textContent = res.error ? 'Could not save — try again.' : '✓ Saved!';
+        });
+      });
+    });
   }
 
   // back buttons

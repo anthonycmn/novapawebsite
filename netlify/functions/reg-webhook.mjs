@@ -2,9 +2,12 @@
 // payment_intent.succeeded -> confirm the order in Supabase (service role),
 // and for deposit plans create the 8-installment subscription schedule.
 import Stripe from "stripe";
-import { SUPABASE_URL, INSTALLMENTS, INSTALLMENT_START_UTC } from "./reg-config.mjs";
+import {
+  SUPABASE_URL, INSTALLMENTS, INSTALLMENT_START_UTC, CLASS_BILL_ANCHOR_UTC,
+} from "./reg-config.mjs";
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
+const CLASS_PRODUCT_ID = "novapa-class-monthly";
 
 async function serviceRpc(fn, args) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -21,14 +24,11 @@ async function serviceRpc(fn, args) {
   try { return JSON.parse(text); } catch { return text; }
 }
 
-async function ensureInstallmentProduct(stripe) {
+async function ensureProduct(stripe, id, name) {
   try {
-    await stripe.products.retrieve(INSTALLMENT_PRODUCT_ID);
+    await stripe.products.retrieve(id);
   } catch {
-    await stripe.products.create({
-      id: INSTALLMENT_PRODUCT_ID,
-      name: "NOVAPA Summer 2027 Camp — Monthly Installment",
-    });
+    await stripe.products.create({ id, name });
   }
 }
 
@@ -60,7 +60,12 @@ export default async (req) => {
 
   try {
     const nItems = parseInt(m.n_items || "0", 10) || 0;
-    const unitPrices = Array.from({ length: nItems }, () => parseInt(m.unit_cents || "0", 10));
+    let unitPrices;
+    if (m.unit_prices) {
+      try { unitPrices = JSON.parse(m.unit_prices); } catch { unitPrices = []; }
+    } else {
+      unitPrices = Array.from({ length: nItems }, () => parseInt(m.unit_cents || "0", 10));
+    }
 
     const orderId = await serviceRpc("confirm_order", {
       p_hold_id: m.hold_id,
@@ -75,8 +80,44 @@ export default async (req) => {
       p_unit_prices: unitPrices,
     });
 
+    if (m.fee_charged === "1" && m.email) {
+      await serviceRpc("mark_fee_paid", { p_email: m.email });
+    }
+
+    const paymentMethodId = typeof pi.payment_method === "string"
+      ? pi.payment_method : pi.payment_method?.id;
+    const customerId = typeof pi.customer === "string" ? pi.customer : pi.customer?.id;
+
+    // Class enrollment: create the ongoing $--/month subscription.
+    // First month was charged via the PaymentIntent; trial_end delays the
+    // first recurring invoice to the season billing anchor (Oct 1, 2026).
+    if (m.plan === "subscription") {
+      let monthly = [];
+      try { monthly = JSON.parse(m.monthly_items || "[]"); } catch {}
+      if (monthly.length) {
+        await ensureProduct(stripe, CLASS_PRODUCT_ID, "NOVAPA Season Class — Monthly Tuition");
+        const trialEnd = CLASS_BILL_ANCHOR_UTC > Math.floor(Date.now() / 1000) + 3600
+          ? CLASS_BILL_ANCHOR_UTC : undefined;
+        const sub = await stripe.subscriptions.create({
+          customer: customerId,
+          default_payment_method: paymentMethodId || undefined,
+          trial_end: trialEnd,
+          proration_behavior: "none",
+          items: monthly.map((cents) => ({
+            quantity: 1,
+            price_data: {
+              currency: "usd", product: CLASS_PRODUCT_ID,
+              recurring: { interval: "month" }, unit_amount: cents,
+            },
+          })),
+          metadata: { order_id: String(orderId), payment_intent: pi.id },
+        });
+        await serviceRpc("set_order_schedule", { p_order_id: orderId, p_schedule: sub.id });
+      }
+    }
+
     if (m.plan === "deposit" && parseInt(m.installment_cents || "0", 10) > 0) {
-      await ensureInstallmentProduct(stripe);
+      await ensureProduct(stripe, INSTALLMENT_PRODUCT_ID, "NOVAPA Summer 2027 Camp — Monthly Installment");
       const paymentMethod = typeof pi.payment_method === "string"
         ? pi.payment_method : pi.payment_method?.id;
       const schedule = await stripe.subscriptionSchedules.create({

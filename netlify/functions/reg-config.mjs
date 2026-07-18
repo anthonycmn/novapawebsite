@@ -15,6 +15,12 @@ export const EARLYBIRD_END = "2026-08-15T23:59:59-04:00";
 export const PUBLIC_OPEN_AT = "2026-08-01T10:00:00-04:00";
 export const INSTALLMENT_START_UTC = Date.UTC(2026, 8, 1, 4, 0, 0) / 1000; // Sep 1 2026 00:00 ET
 
+// Classes (2026-27 season): $90/month subscriptions, first month at enrollment,
+// recurring billing anchored after season start (mirrors Sawyer's model).
+export const CLASS_PRICE_CENTS = 9000;
+export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000; // Oct 1 2026 00:00 ET
+export const SIBLING_PCT = 5; // advertised: 5% off per additional child's class registrations
+
 export const SHOWS = {
   httyd: "How to Train Your Dragon JR.",
   charlie: "Charlie and the Chocolate Factory JR.",
