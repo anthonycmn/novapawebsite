@@ -3,9 +3,9 @@
 // reg-pay.mjs recomputes everything server-side.
 // All dollar amounts pending CJ sign-off are marked.
 
-export const SUPABASE_URL = "https://osagllrzztcxzpnpudcr.supabase.co";
+export const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 export const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zYWdsbHJ6enRjeHpwbnB1ZGNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTE1NjEsImV4cCI6MjA5OTk2NzU2MX0.YFF_O55bpSU8JdRw-CtmyHiQ-8K7saoF1a6lXYoWPkA";
+  "sb_publishable_8ar97CkK-C0YlWuOGtI_tA_mwTDVE6H";
 
 export const PRICE_CENTS = 99500;            // $995 per camp
 export const DEPOSIT_PER_CAMP_CENTS = 18000; // $180 reserve per camp (CJ sign-off)
