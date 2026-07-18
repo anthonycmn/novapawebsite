@@ -324,6 +324,12 @@
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
+    if (state.catIds.length) {
+      document.querySelector('#st-gate .eyebrow').textContent = 'NOVAPA Registration';
+      document.querySelector('#st-gate h1').innerHTML = 'Enroll in about <em>3 minutes.</em>';
+      document.querySelector('#st-gate .sub').textContent = 'Start with the email you\'ve used with NOVAPA before — we\'ll load your family automatically. New families welcome too.';
+      document.getElementById('topNote').textContent = 'NOVAPA · Registration';
+    }
   })();
   function isCatMode(){ return state.catItems.length > 0; }
   function catAllClasses(){ return state.catItems.every(function(a){ return a.category === 'class'; }); }
