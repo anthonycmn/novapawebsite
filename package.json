@@ -3,6 +3,7 @@
   "private": true,
   "description": "NoVAPA static site + Netlify Functions (SPOT chatbot)",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.112.1"
+    "@anthropic-ai/sdk": "^0.112.1",
+    "stripe": "^18.0.0"
   }
 }

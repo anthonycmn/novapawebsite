@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — NOVAPA Summer 2027 Broadway Bound Camps</title>
+<meta name="description" content="Reserve your camper's spot in NOVAPA's Summer 2027 Broadway Bound camps — How to Train Your Dragon Jr., Charlie and the Chocolate Factory Jr., and Trolls Jr.">
+<meta name="robots" content="noindex"><!-- remove at public launch -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<script src="/posthog.js" defer></script>
+<script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
+    --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+    --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
+    --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45);
+    --danger:#E8654B; --ok:#5BC98C;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%);
+    min-height:100vh;
+  }
+  a { color:var(--gold2); }
+  .top {
+    position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
+    padding:14px 20px; background:rgba(8,17,31,0.92); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand { font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.22em; font-size:15px; color:#fff; text-decoration:none; }
+  .brand em { color:var(--gold2); font-style:normal; }
+  .top-note { font-size:12px; color:var(--ink-dim); margin-left:auto; text-align:right; }
+  #holdChip {
+    display:none; margin-left:auto; align-items:center; gap:8px;
+    background:linear-gradient(135deg, rgba(200,137,42,0.25), rgba(232,184,75,0.15));
+    border:1px solid rgba(232,184,75,0.5); border-radius:999px; padding:7px 14px;
+    font-weight:700; font-size:13.5px; color:var(--gold3); white-space:nowrap;
+  }
+  #holdChip.on { display:flex; }
+  #holdChip .dot { width:8px; height:8px; border-radius:50%; background:var(--gold2); animation:pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  .wrap { max-width:680px; margin:0 auto; padding:34px 20px 90px; }
+  .eyebrow { font-family:'Cinzel',serif; font-size:11.5px; font-weight:700; letter-spacing:0.26em; text-transform:uppercase; color:var(--gold2); margin-bottom:12px; }
+  h1 { font-family:'Cormorant Garamond',serif; font-weight:600; font-size:clamp(30px,6vw,44px); line-height:1.08; color:#fff; margin-bottom:12px; }
+  h1 em { color:var(--gold2); }
+  .sub { color:var(--ink-dim); font-size:16px; line-height:1.6; margin-bottom:26px; }
+  .step { display:none; animation:fade .35s ease; }
+  .step.on { display:block; }
+  @keyframes fade { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px; }
+  input[type=email], input[type=text], input[type=number] {
+    width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.65); color:#fff; font-size:16px; font-family:inherit;
+  }
+  input::placeholder { color:rgba(255,255,255,0.4); }
+  .btn {
+    display:inline-block; width:100%; text-align:center; border:0; cursor:pointer;
+    background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206;
+    font-family:'DM Sans',sans-serif; font-weight:700; font-size:16.5px;
+    padding:15px 22px; border-radius:12px; margin-top:14px;
+    box-shadow:0 8px 30px rgba(200,137,42,0.35); transition:transform .15s;
+  }
+  .btn:hover { transform:translateY(-1px); }
+  .btn[disabled] { opacity:0.5; cursor:default; transform:none; }
+  .btn-ghost { background:none; border:1px solid var(--line); color:var(--ink); box-shadow:none; font-weight:500; }
+  .tiny { font-size:12.5px; color:var(--ink-dim); margin-top:10px; line-height:1.55; text-align:center; }
+  .err { display:none; color:var(--danger); font-size:14px; margin-top:10px; font-weight:500; }
+  .err.on { display:block; }
+
+  /* show cards */
+  .shows { display:grid; gap:12px; }
+  .show-card {
+    display:flex; align-items:center; gap:16px; cursor:pointer; user-select:none;
+    background:var(--card); border:2px solid var(--line); border-radius:16px; padding:18px;
+    transition:border-color .15s, background .15s;
+  }
+  .show-card .art { font-size:38px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; border-radius:14px; flex-shrink:0; }
+  .show-card[data-show=httyd] .art { background:linear-gradient(135deg,#123c33,#1f6b52); }
+  .show-card[data-show=charlie] .art { background:linear-gradient(135deg,#4a1f5c,#7b2d8b); }
+  .show-card[data-show=trolls] .art { background:linear-gradient(135deg,#0f4a6b,#2a8fb8); }
+  .show-card .t { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:700; color:#fff; line-height:1.15; }
+  .show-card .d { font-size:13px; color:var(--ink-dim); margin-top:3px; }
+  .show-card .tick { margin-left:auto; width:26px; height:26px; border-radius:50%; border:2px solid var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; color:#1a1206; }
+  .show-card.sel { border-color:var(--gold2); background:rgba(232,184,75,0.08); }
+  .show-card.sel .tick { background:var(--gold2); border-color:var(--gold2); }
+  .ticker {
+    margin-top:16px; text-align:center; font-weight:700; font-size:15px; color:var(--gold3);
+    background:rgba(232,184,75,0.08); border:1px dashed rgba(232,184,75,0.45);
+    border-radius:12px; padding:13px 16px;
+  }
+
+  /* campers / assignment */
+  .kid-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .kid-row:last-child { border-bottom:none; }
+  .kid-check { display:flex; align-items:center; gap:10px; cursor:pointer; min-width:170px; font-weight:500; }
+  .kid-check input { width:19px; height:19px; accent-color:var(--gold2); }
+  .badge-done { font-size:11.5px; color:var(--ok); font-weight:700; }
+  .pills { display:flex; gap:6px; flex-wrap:wrap; }
+  .pill { font-size:12.5px; padding:6px 11px; border-radius:999px; border:1px solid var(--line); cursor:pointer; color:var(--ink-dim); user-select:none; }
+  .pill.sel { background:var(--gold2); border-color:var(--gold2); color:#1a1206; font-weight:700; }
+  .pill .left { color:var(--danger); font-weight:700; }
+  .pill.sel .left { color:#7a2c1a; }
+  .addkid { display:flex; gap:8px; margin-top:12px; }
+  .addkid input[name=kname] { flex:2; } .addkid input[name=kage] { flex:1; min-width:70px; }
+  .addkid button { flex-shrink:0; width:auto; margin-top:0; padding:12px 16px; }
+
+  /* summary / payment */
+  .sumrow { display:flex; justify-content:space-between; padding:8px 0; font-size:15px; }
+  .sumrow.head { color:var(--ink-dim); font-size:13px; text-transform:uppercase; letter-spacing:0.08em; }
+  .sumrow.total { border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-weight:700; font-size:17px; color:#fff; }
+  .savings { color:var(--ok); font-weight:700; }
+  .plan-toggle { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+  .plan-opt { border:2px solid var(--line); border-radius:14px; padding:15px; cursor:pointer; text-align:center; }
+  .plan-opt.sel { border-color:var(--gold2); background:rgba(232,184,75,0.08); }
+  .plan-opt .p1 { font-weight:700; font-size:15.5px; color:#fff; }
+  .plan-opt .p2 { font-size:12.5px; color:var(--ink-dim); margin-top:4px; line-height:1.45; }
+  .plan-opt .perk { font-size:11.5px; color:var(--ok); font-weight:700; margin-top:5px; }
+  .upsell {
+    border:1px solid rgba(232,184,75,0.5); background:linear-gradient(135deg, rgba(200,137,42,0.14), rgba(22,43,82,0.4));
+    border-radius:14px; padding:16px; margin-bottom:14px;
+  }
+  .upsell b { color:var(--gold3); }
+  .upsell button { width:auto; margin-top:10px; padding:10px 16px; font-size:14px; }
+  #payElement { margin:16px 0; }
+  .back { background:none; border:none; color:var(--ink-dim); font-size:13.5px; cursor:pointer; margin-bottom:16px; font-family:inherit; }
+
+  .modal-back { display:none; position:fixed; inset:0; background:rgba(4,9,17,0.8); z-index:99; align-items:center; justify-content:center; padding:20px; }
+  .modal-back.on { display:flex; }
+  .modal { background:var(--navy1); border:1px solid rgba(232,184,75,0.4); border-radius:18px; padding:28px; max-width:420px; text-align:center; }
+  .modal h3 { font-family:'Cormorant Garamond',serif; font-size:26px; color:#fff; margin-bottom:8px; }
+
+  .conf-art { font-size:52px; text-align:center; margin-bottom:8px; }
+  .center { text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <a class="brand" href="/">NOVA<em>PA</em></a>
+  <div id="holdChip"><span class="dot"></span><span>Spots held — <span id="holdTime">30:00</span></span></div>
+  <div class="top-note" id="topNote">Summer 2027 · Broadway Bound</div>
+</div>
+
+<div class="wrap">
+
+  <!-- STEP: email gate -->
+  <section class="step on" id="st-gate">
+    <div class="eyebrow">Summer 2027 · Broadway Bound</div>
+    <h1>Reserve your camper's <em>summer</em> in about 3 minutes.</h1>
+    <p class="sub">Three shows. Limited spots per age group. Start with the email you've used with NOVAPA before — returning families get priority access.</p>
+    <div class="card">
+      <input type="email" id="emailInput" placeholder="parent@email.com" autocomplete="email">
+      <button class="btn" id="emailGo">Continue</button>
+      <div class="err" id="gateErr"></div>
+      <p class="tiny">We'll verify it's you — no password needed.</p>
+    </div>
+  </section>
+
+  <!-- STEP: link sent -->
+  <section class="step" id="st-linksent">
+    <div class="eyebrow">Check your inbox</div>
+    <h1>We just emailed you a <em>sign-in link.</em></h1>
+    <p class="sub">Sent to <b id="sentTo"></b>. Open it on this device and you'll land right back here with your family loaded. (Check spam if it's not there in a minute.)</p>
+    <div class="card center">
+      <button class="btn btn-ghost" id="resendBtn">Resend link</button>
+      <p class="tiny">Wrong email? <a href="#" id="restartLink">Start over</a></p>
+    </div>
+  </section>
+
+  <!-- STEP: waitlist (pre-open unknown emails) -->
+  <section class="step" id="st-waitlist">
+    <div class="eyebrow">Private re-enrollment underway</div>
+    <h1>Returning families go first. <em>You're next.</em></h1>
+    <p class="sub">Right now, current NOVAPA families are re-enrolling for Summer 2027. Everything left opens to the public on <b>Saturday, August 1 at 10 AM</b> — and the waitlist gets the link one hour early.</p>
+    <div class="card center" id="wlCard">
+      <p style="font-weight:700; color:var(--gold3); margin-bottom:6px">Every show caps: 35 (5–9) · 60 (9–12) · 60 (12–15) · 20 Tech</p>
+      <button class="btn" id="wlJoin">Put Me in Line for August 1</button>
+      <div class="err" id="wlErr"></div>
+      <p class="tiny">No payment, no obligation — just first access.</p>
+    </div>
+    <div class="card center" id="wlDone" style="display:none">
+      <div class="conf-art">🎟️</div>
+      <p style="font-weight:700; color:#fff; font-size:18px">You're in line!</p>
+      <p class="tiny">Watch your inbox the morning of August 1. Early-bird pricing (up to 20% off) runs through August 15.</p>
+    </div>
+  </section>
+
+  <!-- STEP: family -->
+  <section class="step" id="st-family">
+    <div class="eyebrow" id="famEyebrow">Welcome back</div>
+    <h1 id="famH1">Who's coming to camp?</h1>
+    <p class="sub" id="famSub">Confirm your campers — add or edit anyone.</p>
+    <div class="card">
+      <div id="kidList"></div>
+      <div class="addkid">
+        <input type="text" name="kname" id="newKidName" placeholder="Camper name">
+        <input type="number" name="kage" id="newKidAge" placeholder="Age" min="2" max="18">
+        <button class="btn btn-ghost" id="addKidBtn">Add</button>
+      </div>
+      <div class="err" id="famErr"></div>
+      <button class="btn" id="famNext">Choose Our Shows →</button>
+      <p class="tiny">Signed in as <span id="whoami"></span> · <a href="#" id="signout">not you?</a></p>
+    </div>
+  </section>
+
+  <!-- STEP: shows -->
+  <section class="step" id="st-shows">
+    <button class="back" data-back="st-family">← Back</button>
+    <div class="eyebrow">Step 2 of 4</div>
+    <h1>Pick your <em>shows.</em></h1>
+    <p class="sub">Each is a two-week, full-day camp ($995) at the National Conference Center, Leesburg. Select all that fit your summer — the more camps in one order, the deeper every camp's discount.</p>
+    <div class="shows">
+      <div class="show-card" data-show="httyd">
+        <div class="art">🐉</div>
+        <div><div class="t">How to Train Your Dragon JR.</div><div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:00</div></div>
+        <div class="tick">✓</div>
+      </div>
+      <div class="show-card" data-show="charlie">
+        <div class="art">🍫</div>
+        <div><div class="t">Charlie and the Chocolate Factory JR.</div><div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:00</div></div>
+        <div class="tick">✓</div>
+      </div>
+      <div class="show-card" data-show="trolls">
+        <div class="art">🌈</div>
+        <div><div class="t">Trolls The Musical JR.</div><div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00</div></div>
+        <div class="tick">✓</div>
+      </div>
+    </div>
+    <div class="ticker" id="tierTicker">Select a show to see your early-bird price.</div>
+    <button class="btn" id="showsNext" disabled>Assign My Campers →</button>
+  </section>
+
+  <!-- STEP: assign -->
+  <section class="step" id="st-assign">
+    <button class="back" data-back="st-shows">← Back</button>
+    <div class="eyebrow">Step 3 of 4</div>
+    <h1>Who does <em>which show?</em></h1>
+    <p class="sub">Check each camper joining each show, and confirm their track. Ages 5–9, 9–12, 12–15 — or Technical Theatre (10–15): sets, lights, sound, stage crew.</p>
+    <div id="assignBlocks"></div>
+    <div class="err" id="assignErr"></div>
+    <button class="btn" id="assignNext">Hold My Spots for 30 Minutes →</button>
+    <p class="tiny">Nothing is charged yet — this reserves your spots while you finish.</p>
+  </section>
+
+  <!-- STEP: pay -->
+  <section class="step" id="st-pay">
+    <button class="back" data-back="st-assign">← Back</button>
+    <div class="eyebrow">Step 4 of 4 — spots held</div>
+    <h1>Lock it <em>in.</em></h1>
+    <div class="upsell" id="upsellBox" style="display:none"></div>
+    <div class="card" id="summaryCard"></div>
+    <div class="card">
+      <div class="plan-toggle">
+        <div class="plan-opt sel" data-plan="deposit">
+          <div class="p1">Reserve today</div>
+          <div class="p2">$180 per camp now, the rest split over 8 monthly payments (Sep–Apr)</div>
+        </div>
+        <div class="plan-opt" data-plan="full">
+          <div class="p1">Pay in full</div>
+          <div class="p2">One payment, done</div>
+          <div class="perk">$25 family fee waived</div>
+        </div>
+      </div>
+      <div id="payBreakdown"></div>
+      <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
+      <button class="btn" id="payStart">Continue to Payment</button>
+      <div id="payElement"></div>
+      <button class="btn" id="paySubmit" style="display:none">Pay <span id="payAmt"></span></button>
+      <div class="err" id="payErr"></div>
+      <p class="tiny">Secure payment by Stripe · No booking fees · Early-bird pricing locked through Aug 15</p>
+    </div>
+  </section>
+
+  <!-- STEP: done -->
+  <section class="step" id="st-done">
+    <div class="conf-art">🎭✨</div>
+    <h1 class="center">That's a <em>bow-worthy</em> decision.</h1>
+    <p class="sub center" id="doneRecap"></p>
+    <div class="card">
+      <div class="sumrow head"><span>What happens next</span><span></span></div>
+      <p class="sub" style="margin:6px 0 0; font-size:14.5px">
+        📧 Receipt + confirmation are on the way to your inbox.<br>
+        📋 Your registration details land in your NOVAPA account within 1–2 business days.<br>
+        🍂 Keep the momentum: <a href="/classes">fall classes are enrolling now</a> — same stage, all year.
+      </p>
+    </div>
+    <p class="tiny">Friends want in? Send them to <b>novapa.org/summer-2027</b> — the waitlist gets first access on Aug 1.</p>
+  </section>
+
+</div>
+
+<!-- hold expired modal -->
+<div class="modal-back" id="expiredModal">
+  <div class="modal">
+    <h3>Your 30-minute hold expired</h3>
+    <p class="sub" style="margin-bottom:6px">Your spots were released back to the pool — grab them again before someone else does.</p>
+    <button class="btn" id="reholdBtn">Re-Hold My Spots</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var C = window.NOVAREG;
+  var sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  var SHOW_NAMES = { httyd:'How to Train Your Dragon JR.', charlie:'Charlie and the Chocolate Factory JR.', trolls:'Trolls The Musical JR.' };
+  var SHOW_DATES = { httyd:'Jul 5–16', charlie:'Jul 19–30', trolls:'Aug 2–13' };
+  var state = {
+    email:null, family:null, kids:[], shows:[], assign:{}, hold:null,
+    inventory:{}, plan:'deposit', clientSecret:null, pricing:null, stripe:null, elements:null
+  };
+  function $(id){ return document.getElementById(id); }
+  function ev(name, props){ try { window.posthog && window.posthog.capture(name, props||{}); } catch(e){} }
+  function go(stepId){
+    document.querySelectorAll('.step').forEach(function(s){ s.classList.remove('on'); });
+    $(stepId).classList.add('on');
+    window.scrollTo({top:0});
+    ev('reg_step_viewed', { step: stepId });
+  }
+  function money(cents){ return '$' + (cents/100).toLocaleString('en-US', {minimumFractionDigits: cents%100 ? 2 : 0, maximumFractionDigits:2}); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function discRate(n){ if (new Date() > new Date(C.EARLYBIRD_END)) return 0; return n>=3?0.20:n===2?0.15:n>=1?0.10:0; }
+  function isPublicOpen(){ return new Date() >= new Date(C.PUBLIC_OPEN_AT); }
+
+  // ---------- boot: returning from magic link? ----------
+  sb.auth.getSession().then(function(res){
+    var session = res.data && res.data.session;
+    if (session && session.user && session.user.email) {
+      state.email = session.user.email.toLowerCase();
+      loadFamily();
+    }
+  });
+
+  // ---------- step: gate ----------
+  $('emailGo').addEventListener('click', function(){ startEmail($('emailInput').value.trim()); });
+  $('emailInput').addEventListener('keydown', function(e){ if(e.key==='Enter') startEmail($('emailInput').value.trim()); });
+
+  function startEmail(email){
+    var errEl = $('gateErr'); errEl.classList.remove('on');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent='Please enter a valid email.'; errEl.classList.add('on'); return; }
+    state.email = email.toLowerCase();
+    $('emailGo').disabled = true;
+    ev('reg_email_submitted');
+    sb.rpc('email_known', { p_email: state.email }).then(function(res){
+      var known = !!res.data;
+      if (!known && !isPublicOpen()) { ev('reg_waitlist_shown'); go('st-waitlist'); $('emailGo').disabled=false; return; }
+      sendLink();
+    }).catch(function(){ errEl.textContent='Something went wrong — try again.'; errEl.classList.add('on'); $('emailGo').disabled=false; });
+  }
+
+  function sendLink(){
+    sb.auth.signInWithOtp({
+      email: state.email,
+      options: { emailRedirectTo: location.origin + '/register/', shouldCreateUser: true }
+    }).then(function(res){
+      $('emailGo').disabled = false;
+      if (res.error) { var e=$('gateErr'); e.textContent = res.error.message || 'Could not send the link — try again shortly.'; e.classList.add('on'); return; }
+      $('sentTo').textContent = state.email;
+      ev('reg_link_sent');
+      go('st-linksent');
+    });
+  }
+  $('resendBtn').addEventListener('click', sendLink);
+  $('restartLink').addEventListener('click', function(e){ e.preventDefault(); go('st-gate'); });
+
+  // ---------- step: waitlist ----------
+  $('wlJoin').addEventListener('click', function(){
+    sb.rpc('join_waitlist', { p_email: state.email, p_source: 'register-flow' }).then(function(res){
+      if (res.error) { var e=$('wlErr'); e.textContent='Could not save — email info@novapa.org and we\'ll add you.'; e.classList.add('on'); return; }
+      $('wlCard').style.display='none'; $('wlDone').style.display='block';
+      ev('reg_waitlist_joined');
+    });
+  });
+
+  // ---------- step: family ----------
+  function loadFamily(){
+    Promise.all([
+      sb.rpc('get_my_family'),
+      sb.rpc('inventory_status')
+    ]).then(function(results){
+      var fam = results[0].data;
+      (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
+      state.family = fam || { campers: [] };
+      state.kids = (state.family.campers || []).map(function(c){
+        return { name:c.name, age:c.age, already:c.already_registered||[], sel:true };
+      });
+      var returning = state.kids.length > 0;
+      $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your campers';
+      $('famH1').innerHTML = returning
+        ? 'Welcome back — registering <em>' + esc(firstNames()) + '</em> again?'
+        : 'Who\'s coming to <em>camp?</em>';
+      $('famSub').textContent = returning
+        ? 'Confirm who\'s in for Summer 2027 — add or uncheck anyone.'
+        : 'Add each camper\'s name and age — we\'ll match them to the right group.';
+      $('whoami').textContent = state.email;
+      renderKids();
+      ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
+      go('st-family');
+    });
+  }
+  function firstNames(){
+    var names = state.kids.map(function(k){ return k.name.split(' ')[0]; });
+    if (!names.length) return '';
+    if (names.length === 1) return names[0];
+    return names.slice(0,-1).join(', ') + ' and ' + names[names.length-1];
+  }
+  function renderKids(){
+    var html = state.kids.map(function(k, i){
+      return '<div class="kid-row"><label class="kid-check">' +
+        '<input type="checkbox" data-i="'+i+'" '+(k.sel?'checked':'')+'> ' +
+        '<span>'+esc(k.name)+(k.age?' <span style="color:var(--ink-dim)">· '+k.age+'</span>':'')+'</span>' +
+        (k.already && k.already.length ? ' <span class="badge-done">✓ already in '+k.already.length+' camp'+(k.already.length>1?'s':'')+'</span>' : '') +
+        '</label></div>';
+    }).join('');
+    $('kidList').innerHTML = html || '<p class="tiny" style="text-align:left">No campers yet — add your first below.</p>';
+    $('kidList').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){ state.kids[+cb.dataset.i].sel = cb.checked; });
+    });
+  }
+  $('addKidBtn').addEventListener('click', function(){
+    var name = $('newKidName').value.trim();
+    var age = parseInt($('newKidAge').value, 10);
+    var errEl = $('famErr'); errEl.classList.remove('on');
+    if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
+    if (!(age >= 5 && age <= 15)) { errEl.textContent='Camps are for ages 5–15.'; errEl.classList.add('on'); return; }
+    state.kids.push({ name:name, age:age, already:[], sel:true });
+    $('newKidName').value=''; $('newKidAge').value='';
+    renderKids();
+  });
+  $('famNext').addEventListener('click', function(){
+    var errEl = $('famErr'); errEl.classList.remove('on');
+    if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one camper.'; errEl.classList.add('on'); return; }
+    go('st-shows'); updateTicker();
+  });
+  $('signout').addEventListener('click', function(e){
+    e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
+  });
+
+  // ---------- step: shows ----------
+  document.querySelectorAll('.show-card').forEach(function(card){
+    card.addEventListener('click', function(){
+      var show = card.dataset.show;
+      var i = state.shows.indexOf(show);
+      if (i === -1) state.shows.push(show); else state.shows.splice(i,1);
+      card.classList.toggle('sel', i === -1);
+      updateTicker();
+      ev('reg_show_toggled', { show: show, selected: i === -1 });
+    });
+  });
+  function estItemCount(){
+    var kids = state.kids.filter(function(k){ return k.sel; }).length;
+    return state.shows.length * Math.max(1, kids); // estimate before assignment
+  }
+  function updateTicker(){
+    var t = $('tierTicker');
+    var nShows = state.shows.length;
+    $('showsNext').disabled = nShows === 0;
+    if (nShows === 0) { t.textContent = 'Select a show to see your early-bird price.'; return; }
+    var n = estItemCount();
+    var rate = discRate(n);
+    var unit = Math.round(C.PRICE * (1-rate));
+    var msg = '🎟️ ' + Math.round(rate*100) + '% off — ' + '$' + unit + ' per camp';
+    if (n === 1) msg += ' · add a 2nd camp and BOTH drop to 15% off';
+    else if (n === 2) msg += ' · one more and EVERYTHING drops to 20% off';
+    else msg += ' — our best price, every camp';
+    t.textContent = msg;
+  }
+  $('showsNext').addEventListener('click', function(){ renderAssign(); go('st-assign'); });
+
+  // ---------- step: assign ----------
+  function bandsFor(age){
+    if (age == null) return ['5-9','9-12','12-15','tech'];
+    var b = [];
+    if (age >= 5 && age <= 9) b.push('5-9');
+    if (age >= 9 && age <= 12) b.push('9-12');
+    if (age >= 12 && age <= 15) b.push('12-15');
+    if (age >= 10 && age <= 15) b.push('tech');
+    return b;
+  }
+  function bandLabel(b){ return b === 'tech' ? '🔧 Tech' : 'Ages ' + b; }
+  function renderAssign(){
+    var kids = state.kids.filter(function(k){ return k.sel; });
+    var html = state.shows.map(function(show){
+      var rows = kids.map(function(k, ki){
+        var already = (k.already||[]).indexOf(show) !== -1;
+        var key = show + '|' + k.name;
+        if (!(key in state.assign)) {
+          var defBands = bandsFor(k.age).filter(function(b){ return b !== 'tech'; });
+          state.assign[key] = { on: !already, band: defBands[0] || '9-12' };
+        }
+        if (already) state.assign[key].on = false;
+        var a = state.assign[key];
+        var pills = bandsFor(k.age).map(function(b){
+          var left = state.inventory[show + '|' + b];
+          var leftTag = (left != null && left <= 10) ? ' <span class="left">' + (left <= 0 ? 'FULL' : left + ' left') + '</span>' : '';
+          return '<span class="pill' + (a.band === b ? ' sel' : '') + '" data-key="' + esc(key) + '" data-band="' + b + '">' + bandLabel(b) + leftTag + '</span>';
+        }).join('');
+        return '<div class="kid-row">' +
+          '<label class="kid-check"><input type="checkbox" data-key="' + esc(key) + '" ' + (a.on ? 'checked' : '') + (already ? ' disabled' : '') + '> <span>' + esc(k.name) + '</span>' +
+          (already ? ' <span class="badge-done">✓ already registered</span>' : '') + '</label>' +
+          '<div class="pills">' + pills + '</div></div>';
+      }).join('');
+      return '<div class="card"><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">' +
+        SHOW_NAMES[show] + '</div><div class="tiny" style="text-align:left;margin:0 0 8px">' + SHOW_DATES[show] + ', 2027</div>' + rows + '</div>';
+    }).join('');
+    $('assignBlocks').innerHTML = html;
+    $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; });
+    });
+    $('assignBlocks').querySelectorAll('.pill').forEach(function(p){
+      p.addEventListener('click', function(){
+        state.assign[p.dataset.key].band = p.dataset.band;
+        renderAssign();
+      });
+    });
+  }
+  function buildItems(){
+    var items = [];
+    state.shows.forEach(function(show){
+      state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
+        var a = state.assign[show + '|' + k.name];
+        if (a && a.on) items.push({ show: show, band: a.band, camper: k.name });
+      });
+    });
+    return items;
+  }
+  $('assignNext').addEventListener('click', acquireHold);
+
+  function acquireHold(){
+    var errEl = $('assignErr'); errEl.classList.remove('on');
+    var items = buildItems();
+    if (!items.length) { errEl.textContent = 'Check at least one camper into a show.'; errEl.classList.add('on'); return; }
+    $('assignNext').disabled = true;
+    sb.rpc('acquire_hold', { p_items: items }).then(function(res){
+      $('assignNext').disabled = false;
+      if (res.error) {
+        var msg = res.error.message || '';
+        if (msg.indexOf('SOLD_OUT') !== -1) {
+          var parts = msg.split(':');
+          errEl.textContent = '😔 ' + (SHOW_NAMES[parts[1]] || parts[1]) + ' (' + bandLabel(parts[2] || '') + ') just filled up — pick a different track.';
+          refreshInventory().then(renderAssign);
+        } else errEl.textContent = 'Could not hold spots — try again.';
+        errEl.classList.add('on'); return;
+      }
+      state.hold = { id: res.data.hold_id, expires: new Date(res.data.expires_at), items: items };
+      startTimer();
+      ev('reg_hold_acquired', { items: items.length });
+      renderPay();
+      go('st-pay');
+    });
+  }
+  function refreshInventory(){
+    return sb.rpc('inventory_status').then(function(res){
+      (res.data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
+    });
+  }
+
+  // ---------- hold timer ----------
+  var timerInt = null;
+  function startTimer(){
+    $('holdChip').classList.add('on'); $('topNote').style.display = 'none';
+    clearInterval(timerInt);
+    timerInt = setInterval(function(){
+      var ms = state.hold.expires - new Date();
+      if (ms <= 0) {
+        clearInterval(timerInt);
+        $('holdChip').classList.remove('on'); $('topNote').style.display = '';
+        $('expiredModal').classList.add('on');
+        ev('reg_hold_expired');
+        return;
+      }
+      var s = Math.floor(ms / 1000);
+      $('holdTime').textContent = Math.floor(s/60) + ':' + ('0' + (s%60)).slice(-2);
+    }, 500);
+  }
+  $('reholdBtn').addEventListener('click', function(){
+    $('expiredModal').classList.remove('on');
+    state.clientSecret = null;
+    acquireHold();
+  });
+
+  // ---------- step: pay ----------
+  document.querySelectorAll('.plan-opt').forEach(function(opt){
+    opt.addEventListener('click', function(){
+      document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
+      opt.classList.add('sel');
+      state.plan = opt.dataset.plan;
+      state.clientSecret = null;
+      $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none'; $('payStart').style.display = '';
+      renderPay();
+      ev('reg_plan_selected', { plan: state.plan });
+    });
+  });
+
+  function localPricing(){
+    var items = state.hold ? state.hold.items : buildItems();
+    var n = items.length;
+    var rate = discRate(n);
+    var unit = Math.round(C.PRICE * 100 * (1-rate));
+    var subtotal = unit * n;
+    if (state.plan === 'full') return { n:n, rate:rate, unit:unit, subtotal:subtotal, fee:0, total:subtotal, today:subtotal, inst:0 };
+    var today = C.DEPOSIT_PER_CAMP * 100 * n + C.FAMILY_FEE * 100;
+    var remainder = subtotal - C.DEPOSIT_PER_CAMP * 100 * n;
+    return { n:n, rate:rate, unit:unit, subtotal:subtotal, fee:C.FAMILY_FEE*100, total:subtotal + C.FAMILY_FEE*100, today:today, inst:Math.ceil(remainder / C.INSTALLMENTS) };
+  }
+
+  function renderPay(){
+    var items = state.hold ? state.hold.items : buildItems();
+    var p = localPricing();
+    var fullPrice = C.PRICE * 100;
+    var savings = (fullPrice - p.unit) * p.n;
+    var rows = items.map(function(it){
+      return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span></span><span>' + money(p.unit) + '</span></div>';
+    }).join('');
+    $('summaryCard').innerHTML =
+      '<div class="sumrow head"><span>Your summer</span><span>' + Math.round(p.rate*100) + '% off each</span></div>' + rows +
+      (savings > 0 ? '<div class="sumrow"><span class="savings">Early-bird savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
+      (p.fee ? '<div class="sumrow"><span>Annual family registration</span><span>' + money(p.fee) + '</span></div>' : '') +
+      '<div class="sumrow total"><span>Total</span><span>' + money(p.total) + '</span></div>';
+
+    $('payBreakdown').innerHTML = state.plan === 'deposit'
+      ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
+        '<p class="tiny" style="text-align:left;margin-top:2px">Then ' + C.INSTALLMENTS + ' monthly payments of ' + money(p.inst) + ' (Sep 2026 – Apr 2027), automatic on this card.</p>'
+      : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
+        '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — no family fee, no future payments.</p>';
+
+    // honest upsell: only when a real cheaper tier exists
+    var box = $('upsellBox');
+    if (p.n > 0 && p.n < 3 && new Date() <= new Date(C.EARLYBIRD_END)) {
+      var nextRate = discRate(p.n + 1);
+      var nextUnit = Math.round(C.PRICE * 100 * (1 - nextRate));
+      var extraSave = (p.unit - nextUnit) * p.n;
+      box.style.display = '';
+      box.innerHTML = '<b>One more camp changes the math.</b> Add any camp and every camp in this order drops to <b>' +
+        Math.round(nextRate*100) + '% off (' + money(nextUnit) + ')</b> — that\'s ' + money(extraSave) +
+        ' more off what\'s already here. <button class="btn" id="upsellAdd">+ Add Another Camp</button>';
+      $('upsellAdd').addEventListener('click', function(){ ev('reg_upsell_clicked'); go('st-shows'); updateTicker(); });
+    } else box.style.display = 'none';
+  }
+
+  $('payStart').addEventListener('click', function(){
+    var errEl = $('payErr'); errEl.classList.remove('on');
+    if (!C.STRIPE_PUBLISHABLE_KEY) {
+      errEl.textContent = 'Payments aren\'t configured yet (test build) — Stripe keys pending.';
+      errEl.classList.add('on'); return;
+    }
+    $('payStart').disabled = true;
+    sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim() })
+      });
+    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+    .then(function(res){
+      $('payStart').disabled = false;
+      if (!res.ok) {
+        var msg = res.j.error === 'hold_expired' ? 'Your hold expired — re-hold your spots.' : 'Could not start payment (' + (res.j.error || 'error') + ').';
+        $('payErr').textContent = msg; $('payErr').classList.add('on'); return;
+      }
+      state.clientSecret = res.j.client_secret;
+      state.pricing = res.j.pricing;
+      mountStripe();
+      ev('reg_payment_started', { plan: state.plan, today_cents: res.j.pricing.today_cents });
+    }).catch(function(){
+      $('payStart').disabled = false;
+      $('payErr').textContent = 'Network error — try again.'; $('payErr').classList.add('on');
+    });
+  });
+
+  function mountStripe(){
+    function ready(){
+      state.stripe = Stripe(C.STRIPE_PUBLISHABLE_KEY);
+      state.elements = state.stripe.elements({
+        clientSecret: state.clientSecret,
+        appearance: { theme: 'night', variables: { colorPrimary: '#E8B84B', fontFamily: 'DM Sans, sans-serif' } }
+      });
+      state.elements.create('payment').mount('#payElement');
+      $('payStart').style.display = 'none';
+      $('payAmt').textContent = money(state.pricing.today_cents);
+      $('paySubmit').style.display = '';
+    }
+    if (window.Stripe) return ready();
+    var s = document.createElement('script');
+    s.src = 'https://js.stripe.com/v3/'; s.onload = ready;
+    document.head.appendChild(s);
+  }
+
+  $('paySubmit').addEventListener('click', function(){
+    var errEl = $('payErr'); errEl.classList.remove('on');
+    $('paySubmit').disabled = true;
+    state.stripe.confirmPayment({
+      elements: state.elements,
+      confirmParams: { return_url: location.origin + '/register/?paid=1' },
+      redirect: 'if_required'
+    }).then(function(res){
+      $('paySubmit').disabled = false;
+      if (res.error) { errEl.textContent = res.error.message; errEl.classList.add('on'); ev('reg_payment_failed'); return; }
+      if (res.paymentIntent && res.paymentIntent.status === 'succeeded') finish();
+    });
+  });
+
+  function finish(){
+    clearInterval(timerInt);
+    $('holdChip').classList.remove('on'); $('topNote').style.display='';
+    var p = state.pricing;
+    var items = state.hold.items;
+    $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
+      Math.round((p.discount_pct||0)) + '% off</b>' +
+      (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full. 🎉');
+    ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
+    go('st-done');
+  }
+
+  // back buttons
+  document.querySelectorAll('.back').forEach(function(b){
+    b.addEventListener('click', function(){ go(b.dataset.back); if (b.dataset.back==='st-shows') updateTicker(); });
+  });
+})();
+</script>
+</body>
+</html>
