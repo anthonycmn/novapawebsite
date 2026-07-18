@@ -465,10 +465,11 @@
     var n = estItemCount();
     var rate = discRate(n);
     var unit = Math.round(C.PRICE * (1-rate));
-    var msg = '🎟️ ' + Math.round(rate*100) + '% off — ' + '$' + unit + ' per camp';
-    if (n === 1) msg += ' · add a 2nd camp and BOTH drop to 15% off';
-    else if (n === 2) msg += ' · one more and EVERYTHING drops to 20% off';
-    else msg += ' — our best price, every camp';
+    var msg = '🎟️ ' + n + ' camp registration' + (n > 1 ? 's' : '') + ' = ' +
+      Math.round(rate*100) + '% off each ($' + unit + ' per camp)';
+    if (n === 1) msg += ' · a 2nd registration drops both to 15%';
+    else if (n === 2) msg += ' · a 3rd drops everything to 20%';
+    else msg += ' — our best price on every camp';
     t.textContent = msg;
   }
   $('showsNext').addEventListener('click', function(){ renderAssign(); go('st-assign'); });
@@ -637,7 +638,7 @@
       var nextUnit = Math.round(C.PRICE * 100 * (1 - nextRate));
       var extraSave = (p.unit - nextUnit) * p.n;
       box.style.display = '';
-      box.innerHTML = '<b>One more camp changes the math.</b> Add any camp and every camp in this order drops to <b>' +
+      box.innerHTML = '<b>One more registration changes the math.</b> Add any camp for any camper and every registration in this order drops to <b>' +
         Math.round(nextRate*100) + '% off (' + money(nextUnit) + ')</b> — that\'s ' + money(extraSave) +
         ' more off what\'s already here. <button class="btn" id="upsellAdd">+ Add Another Camp</button>';
       $('upsellAdd').addEventListener('click', function(){ ev('reg_upsell_clicked'); go('st-shows'); updateTicker(); });
