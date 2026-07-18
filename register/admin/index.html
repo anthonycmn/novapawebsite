@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVAPA Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg:#0B1422; --panel:#101D31; --line:rgba(255,255,255,0.09);
+    --ink:#E8EDF5; --dim:#7C8AA0; --gold:#E8B84B; --ok:#4FC98C; --bad:#E8654B;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
+  a { color:var(--gold); text-decoration:none; }
+
+  .layout { display:flex; min-height:100vh; }
+  .side { width:184px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line);
+    padding:20px 0; position:sticky; top:0; height:100vh; display:flex; flex-direction:column; }
+  .logo { font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.2em; font-size:13px;
+    color:#fff; padding:0 20px 18px; }
+  .logo em { color:var(--gold); font-style:normal; }
+  .nav a { display:block; padding:10px 20px; color:var(--dim); font-weight:500; border-left:2px solid transparent; }
+  .nav a.on { color:#fff; border-left-color:var(--gold); background:rgba(232,184,75,0.06); }
+  .side .who { margin-top:auto; padding:14px 20px 0; font-size:11px; color:var(--dim); border-top:1px solid var(--line); word-break:break-all; }
+
+  .main { flex:1; padding:26px 30px 60px; min-width:0; }
+  .sec { display:none; }
+  .sec.on { display:block; }
+  h2 { font-size:15px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:0.1em; margin:26px 0 12px; }
+  h2:first-child { margin-top:0; }
+
+  .stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:10px; }
+  .stat { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .stat .v { font-size:24px; font-weight:700; color:#fff; letter-spacing:-0.01em; }
+  .stat .v.gold { color:var(--gold); } .stat .v.ok { color:var(--ok); } .stat .v.bad { color:var(--bad); }
+  .stat .l { font-size:11px; color:var(--dim); margin-top:3px; text-transform:uppercase; letter-spacing:0.06em; }
+
+  table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  th { text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--dim);
+    padding:9px 12px; border-bottom:1px solid var(--line); font-weight:600; }
+  td { padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sub { color:var(--dim); font-size:12px; }
+  .tag { display:inline-block; font-size:10px; padding:2px 7px; border-radius:99px; background:rgba(255,255,255,0.07); color:var(--dim); }
+  .tag.ok { background:rgba(79,201,140,0.13); color:var(--ok); }
+  .tag.bad { background:rgba(232,101,75,0.13); color:var(--bad); }
+  .tag.gold { background:rgba(232,184,75,0.13); color:var(--gold); }
+  .bar { height:5px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden; min-width:70px; }
+  .bar i { display:block; height:100%; background:var(--gold); }
+  .bar i.full { background:var(--bad); }
+  .wrap-scroll { overflow-x:auto; }
+
+  /* calendar */
+  .cal-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+  .cal-head b { font-size:17px; min-width:150px; text-align:center; }
+  .cal-head button { background:var(--panel); border:1px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:6px 12px; cursor:pointer; font-family:inherit; }
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal .dow { font-size:10px; color:var(--dim); text-transform:uppercase; text-align:center; padding:4px 0; }
+  .cal .day { background:var(--panel); border:1px solid var(--line); border-radius:8px; min-height:74px; padding:5px 6px; font-size:11px; }
+  .cal .day.blank { background:none; border-color:transparent; }
+  .cal .day .d { color:var(--dim); font-size:10.5px; margin-bottom:3px; }
+  .cal .day.today .d { color:var(--gold); font-weight:700; }
+  .cal .ev { display:block; background:rgba(232,184,75,0.14); color:var(--gold); border-radius:4px;
+    padding:1px 5px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal .ev.c2026 { background:rgba(124,138,160,0.16); color:#9fb0c8; }
+
+  /* login */
+  #login { max-width:320px; margin:16vh auto 0; text-align:center; }
+  #login .logo { padding:0 0 22px; font-size:16px; }
+  #login input { width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel); color:#fff; font-size:15px; font-family:inherit; margin-bottom:10px; }
+  #login button { width:100%; padding:12px; border:0; border-radius:10px; background:var(--gold);
+    color:#1a1206; font-weight:700; font-size:15px; cursor:pointer; font-family:inherit; }
+  #login .msg { margin-top:12px; color:var(--dim); font-size:13px; }
+  .empty { color:var(--dim); padding:20px; text-align:center; }
+</style>
+</head>
+<body>
+
+<div id="login" style="display:none">
+  <div class="logo">NOVA<em>PA</em> · ADMIN</div>
+  <input type="email" id="lgEmail" placeholder="admin email">
+  <button id="lgGo">Send sign-in link</button>
+  <div class="msg" id="lgMsg"></div>
+</div>
+
+<div class="layout" id="app" style="display:none">
+  <div class="side">
+    <div class="logo">NOVA<em>PA</em></div>
+    <div class="nav" id="nav">
+      <a data-s="overview" class="on">Overview</a>
+      <a data-s="orders">Orders</a>
+      <a data-s="balances">Balances</a>
+      <a data-s="inventory">Inventory</a>
+      <a data-s="calendar">Calendar</a>
+    </div>
+    <div class="who"><span id="whoEmail"></span><br><a href="#" id="signOut">sign out</a></div>
+  </div>
+
+  <div class="main">
+    <section class="sec on" id="s-overview">
+      <h2>Revenue</h2>
+      <div class="stats" id="stRevenue"></div>
+      <h2>Outstanding</h2>
+      <div class="stats" id="stOut"></div>
+      <h2>People</h2>
+      <div class="stats" id="stPeople"></div>
+      <h2>Summer 2027</h2>
+      <div class="stats" id="stSummer"></div>
+    </section>
+
+    <section class="sec" id="s-orders">
+      <h2>Web Orders</h2>
+      <div class="wrap-scroll"><table id="tblOrders"></table></div>
+    </section>
+
+    <section class="sec" id="s-balances">
+      <div class="stats" id="stBal" style="margin-bottom:14px"></div>
+      <div class="wrap-scroll"><table id="tblBal"></table></div>
+    </section>
+
+    <section class="sec" id="s-inventory">
+      <h2>Summer 2027</h2>
+      <div class="wrap-scroll"><table id="tblSummer"></table></div>
+      <h2>All Programs</h2>
+      <div class="wrap-scroll"><table id="tblActs"></table></div>
+    </section>
+
+    <section class="sec" id="s-calendar">
+      <div class="cal-head">
+        <button id="calPrev">‹</button><b id="calTitle"></b><button id="calNext">›</button>
+      </div>
+      <div class="cal" id="calGrid"></div>
+      <h2>Weekly / Ongoing</h2>
+      <div class="wrap-scroll"><table id="tblOngoing"></table></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var C = window.NOVAREG;
+  var sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  var SHOWL = { httyd:'Dragon', charlie:'Charlie', trolls:'Trolls' };
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function usd(c){ if (c==null) return '—'; return '$' + (c/100).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+  function usd2(c){ if (c==null) return '—'; return '$' + (c/100).toLocaleString('en-US',{minimumFractionDigits:2}); }
+  function dt(s){ if(!s) return '—'; var d=new Date(s); return (d.getMonth()+1)+'/'+d.getDate()+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+  function stat(v, l, cls){ return '<div class="stat"><div class="v ' + (cls||'') + '">' + v + '</div><div class="l">' + l + '</div></div>'; }
+
+  // ---- auth ----
+  sb.auth.getSession().then(function(res){
+    var s = res.data && res.data.session;
+    if (!s) { $('login').style.display=''; return; }
+    sb.rpc('is_admin').then(function(r){
+      if (!r.data) { $('login').style.display=''; $('lgMsg').textContent = 'No access for ' + (s.user.email||''); sb.auth.signOut(); return; }
+      $('app').style.display='flex';
+      $('whoEmail').textContent = s.user.email;
+      boot();
+    });
+  });
+  $('lgGo').addEventListener('click', function(){
+    var em = $('lgEmail').value.trim();
+    if (!em) return;
+    sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + '/register/admin/', shouldCreateUser: true } })
+      .then(function(r){ $('lgMsg').textContent = r.error ? r.error.message : 'Link sent — check email.'; });
+  });
+  $('signOut').addEventListener('click', function(e){ e.preventDefault(); sb.auth.signOut().then(function(){ location.reload(); }); });
+
+  // ---- nav ----
+  document.querySelectorAll('#nav a').forEach(function(a){
+    a.addEventListener('click', function(){
+      document.querySelectorAll('#nav a').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
+      a.classList.add('on'); $('s-' + a.dataset.s).classList.add('on');
+    });
+  });
+
+  var INV = null;
+  function boot(){
+    sb.rpc('admin_stats').then(function(r){ if (r.data) renderStats(r.data); });
+    sb.rpc('admin_orders').then(function(r){ renderOrders(r.data || []); });
+    sb.rpc('admin_balances').then(function(r){ renderBalances(r.data || []); });
+    sb.rpc('admin_inventory').then(function(r){ if (r.data) { INV = r.data; renderInventory(r.data); buildCal(); } });
+  }
+
+  function renderStats(s){
+    $('stRevenue').innerHTML =
+      stat(usd(s.web_collected_cents), 'web collected', 'ok') +
+      stat(usd(s.web_booked_value_cents), 'web booked value') +
+      stat(s.web_orders, 'web orders') +
+      stat(s.web_orders_7d, 'orders · 7d') +
+      stat(usd(s.regpack_collected_cents), 'regpack collected', 'ok');
+    $('stOut').innerHTML =
+      stat(usd(s.regpack_outstanding_cents), 'regpack outstanding', 'bad') +
+      stat(s.regpack_outstanding_count, 'accounts owing') +
+      stat(usd(s.sawyer_outstanding_cents), 'sawyer outstanding', s.sawyer_outstanding_cents ? 'bad' : '');
+    $('stPeople').innerHTML =
+      stat(s.families, 'families') +
+      stat(s.campers, 'campers') +
+      stat(s.waitlist, 'waitlist');
+    $('stSummer').innerHTML =
+      stat(s.summer_taken + ' / ' + s.summer_cap, 'spots taken', 'gold') +
+      stat(s.active_holds, 'active holds');
+  }
+
+  function renderOrders(rows){
+    if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
+    $('tblOrders').innerHTML =
+      '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th>sawyer</th></tr>' +
+      rows.map(function(o){
+        return '<tr><td>' + dt(o.created_at) + '</td>' +
+          '<td>' + esc(o.parent_name || '') + '<div class="sub">' + esc(o.email) + '</div></td>' +
+          '<td>' + esc(o.items || '') + '</td>' +
+          '<td><span class="tag ' + (o.plan==='subscription'?'gold':'') + '">' + o.plan + '</span></td>' +
+          '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
+          '<td class="num">' + usd2(o.total_cents) + '</td>' +
+          '<td>' + (o.sawyer_entered ? '<span class="tag ok">✓</span>' : '<span class="tag bad">no</span>') + '</td></tr>';
+      }).join('');
+  }
+
+  function renderBalances(rows){
+    var owing = rows.filter(function(r){ return (r.balance_cents||0) > 0; });
+    var tot = owing.reduce(function(s,r){ return s + r.balance_cents; }, 0);
+    var dueNow = owing.reduce(function(s,r){ return s + (r.due_now_cents||0); }, 0);
+    var auto = owing.filter(function(r){ return r.has_saved_pm; }).length;
+    $('stBal').innerHTML =
+      stat(usd(tot), 'outstanding', 'bad') +
+      stat(usd(dueNow), 'due now') +
+      stat(owing.length, 'accounts') +
+      stat(auto + ' / ' + owing.length, 'card on file');
+    $('tblBal').innerHTML =
+      '<tr><th>name</th><th>email</th><th class="num">ordered</th><th class="num">paid</th><th class="num">balance</th><th class="num">due now</th><th class="num">future</th><th>autobill</th><th>src</th></tr>' +
+      owing.map(function(r){
+        return '<tr><td>' + esc(r.person_name) + '</td>' +
+          '<td class="sub">' + esc(r.parent_email || '?') + '</td>' +
+          '<td class="num">' + usd2(r.total_order_cents) + '</td>' +
+          '<td class="num">' + usd2(r.total_paid_cents) + '</td>' +
+          '<td class="num" style="color:var(--bad);font-weight:700">' + usd2(r.balance_cents) + '</td>' +
+          '<td class="num">' + usd2(r.due_now_cents) + '</td>' +
+          '<td class="num">' + usd2(r.due_future_cents) + '</td>' +
+          '<td>' + (r.has_saved_pm ? '<span class="tag ok">✓</span>' : '<span class="tag bad">—</span>') + '</td>' +
+          '<td><span class="tag">' + r.source + '</span></td></tr>';
+      }).join('');
+  }
+
+  function renderInventory(inv){
+    var sum = inv.summer || [];
+    var shows = ['httyd','charlie','trolls'];
+    var bands = ['5-9','9-12','12-15','tech'];
+    var by = {}; sum.forEach(function(r){ by[r.show+'|'+r.band] = r; });
+    $('tblSummer').innerHTML =
+      '<tr><th></th>' + bands.map(function(b){ return '<th>' + b + '</th>'; }).join('') + '</tr>' +
+      shows.map(function(sh){
+        return '<tr><td><b>' + SHOWL[sh] + '</b></td>' + bands.map(function(b){
+          var r = by[sh+'|'+b] || {};
+          var taken = (r.booked||0) + (r.held||0);
+          var pct = r.cap ? Math.round(taken/r.cap*100) : 0;
+          return '<td><b>' + (r.cap - taken) + '</b> <span class="sub">left / ' + r.cap + '</span>' +
+            '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div></td>';
+        }).join('') + '</tr>';
+      }).join('');
+
+    var acts = (inv.activities || []);
+    $('tblActs').innerHTML =
+      '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th class="num">sawyer spots</th><th class="num">web sold</th><th></th></tr>' +
+      acts.map(function(a){
+        return '<tr><td>' + esc(a.name) + '</td>' +
+          '<td class="sub">' + esc(a.schedule || '') + '</td>' +
+          '<td class="sub">' + esc(a.age || '') + '</td>' +
+          '<td class="num">' + usd(a.price_cents) + (a.category==='class'?'<span class="sub">/mo</span>':'') + '</td>' +
+          '<td class="num">' + (a.open_spots != null ? a.open_spots : '—') + '</td>' +
+          '<td class="num">' + (a.sold || 0) + '</td>' +
+          '<td>' + (a.bb_gated ? '<span class="tag gold">gated</span>' : '') + '</td></tr>';
+      }).join('');
+  }
+
+  // ---- calendar ----
+  var calY, calM;
+  function parseEvents(){
+    var evs = [];
+    (INV && INV.activities || []).forEach(function(a){
+      var m = (a.schedule || '').match(/^(\d{1,2})\/(\d{1,2})\s*-\s*(\d{1,2})\/(\d{1,2})$/);
+      if (!m) return;
+      var year = (a.raw_in_progress === 'true') ? 2026 : (a.bb_gated ? 2027 : (parseInt(m[1],10) >= 9 ? 2026 : 2027));
+      evs.push({ name: a.name, y: year,
+        start: new Date(year, parseInt(m[1],10)-1, parseInt(m[2],10)),
+        end: new Date(year, parseInt(m[3],10)-1, parseInt(m[4],10)) });
+    });
+    return evs;
+  }
+  function buildCal(){
+    var now = new Date();
+    if (calY === undefined) { calY = now.getFullYear(); calM = now.getMonth(); }
+    var evs = parseEvents();
+    var first = new Date(calY, calM, 1);
+    var days = new Date(calY, calM+1, 0).getDate();
+    $('calTitle').textContent = first.toLocaleString('en-US',{month:'long',year:'numeric'});
+    var html = ['S','M','T','W','T','F','S'].map(function(d){ return '<div class="dow">'+d+'</div>'; }).join('');
+    for (var i = 0; i < first.getDay(); i++) html += '<div class="day blank"></div>';
+    for (var d = 1; d <= days; d++) {
+      var cur = new Date(calY, calM, d);
+      var todays = evs.filter(function(e){ return cur >= e.start && cur <= e.end; });
+      var isToday = cur.toDateString() === now.toDateString();
+      html += '<div class="day' + (isToday?' today':'') + '"><div class="d">' + d + '</div>' +
+        todays.slice(0,3).map(function(e){
+          return '<span class="ev' + (e.y===2026?' c2026':'') + '" title="' + esc(e.name) + '">' + esc(e.name.replace(/Broadway Bound\s*\|?\s*/i,'')) + '</span>';
+        }).join('') + (todays.length>3 ? '<span class="sub">+' + (todays.length-3) + '</span>' : '') + '</div>';
+    }
+    $('calGrid').innerHTML = html;
+
+    var ongoing = (INV.activities || []).filter(function(a){ return !/^\d{1,2}\//.test(a.schedule || ''); });
+    $('tblOngoing').innerHTML =
+      '<tr><th>program</th><th>schedule</th><th>ages</th></tr>' +
+      ongoing.map(function(a){
+        return '<tr><td>' + esc(a.name) + '</td><td class="sub">' + esc(a.schedule || '—') + '</td><td class="sub">' + esc(a.age || '') + '</td></tr>';
+      }).join('');
+  }
+  $('calPrev').addEventListener('click', function(){ calM--; if (calM<0){calM=11;calY--;} buildCal(); });
+  $('calNext').addEventListener('click', function(){ calM++; if (calM>11){calM=0;calY++;} buildCal(); });
+})();
+</script>
+</body>
+</html>
