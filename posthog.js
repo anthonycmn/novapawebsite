@@ -11,6 +11,18 @@
   var POSTHOG_KEY = 'phc_pKwTDgnhHKjG34dvXmjtw2NJzCsGkK3L6MfMp9TUvYkw';
   var POSTHOG_HOST = 'https://us.i.posthog.com';
 
+  // --- Internal-traffic exclusion ---
+  // Visit any page once with ?internal=1 to permanently mark this
+  // browser as internal (Jason/CJ/testing) — analytics never loads again
+  // on it. ?internal=0 clears the flag. Localhost never tracks.
+  try {
+    var q = location.search;
+    if (q.indexOf('internal=1') !== -1) localStorage.setItem('novapa_internal', '1');
+    if (q.indexOf('internal=0') !== -1) localStorage.removeItem('novapa_internal');
+    if (localStorage.getItem('novapa_internal') === '1') return;
+  } catch (e) { /* localStorage blocked — fall through, still track */ }
+  if (/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname)) return;
+
   function cookieYesAnalyticsConsent() {
     var m = document.cookie.match(/(?:^|;\s*)cookieyes-consent=([^;]*)/);
     if (!m) return false;
@@ -57,7 +69,13 @@
       var a = e.target && e.target.closest && e.target.closest('a[href]');
       if (!a) return;
       var href = a.getAttribute('href') || '';
-      if (href.indexOf('novapa_registration') !== -1 || href === '#register') {
+      if (href.indexOf('hisawyer.com') !== -1) {
+        capture('sawyer_link_clicked', {
+          cta_text: (a.textContent || '').trim().slice(0, 80),
+          cta_href: href,
+          page_path: page
+        });
+      } else if (href.indexOf('novapa_registration') !== -1 || href === '#register') {
         capture('registration_cta_clicked', {
           cta_text: (a.textContent || '').trim().slice(0, 80),
           cta_href: href,
