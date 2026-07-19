@@ -217,14 +217,17 @@
     patchSummerStat();
   }
 
-  // add regpack-sold summer kids (no band data, so they live outside the inventory grid)
+  // add regpack-sold summer kids: band caps are net of regpack (CJ), so regpack
+  // kids grow BOTH sides of taken/cap — they hold real seats above the Sawyer caps
   function patchSummerStat(){
     var n = window.__rpSummer || 0;
     if (!n) return;
     var cell = $('stSummer') && $('stSummer').querySelector('.v');
     if (cell && !cell.getAttribute('data-rp')) {
       cell.setAttribute('data-rp', '1');
-      cell.textContent = cell.textContent.replace(/^(\d+)/, function(m){ return (+m + n); });
+      cell.textContent = cell.textContent.replace(/^(\d+)( \/ )(\d+)/, function(_, t, sep, c){
+        return (+t + n) + sep + (+c + n);
+      });
     }
   }
 
@@ -303,11 +306,13 @@
     $('tblActs').innerHTML =
       '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th style="min-width:130px">spots</th><th class="num">enrolled</th><th></th></tr>' +
       acts.map(function(a){
-        var cap = a.capacity;
+        // Sawyer caps are set net of Regpack signups (CJ), so full program size
+        // = sawyer cap + regpack kids, and left = sawyer remaining − web sales
         var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
-        var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
-        var taken = sawyer + (a.regpack||0) + (a.sold||0);
-        var left = (cap != null) ? Math.max(0, cap - taken) : null;
+        var cap = (a.capacity != null) ? a.capacity + (a.regpack||0) : null;
+        var sawyer = (a.capacity != null && sawyerRemain != null) ? Math.max(0, a.capacity - sawyerRemain) : 0;
+        var left = (sawyerRemain != null) ? Math.max(0, sawyerRemain - (a.sold||0)) : (cap != null ? Math.max(0, cap - sawyer - (a.regpack||0) - (a.sold||0)) : null);
+        var taken = (cap != null && left != null) ? cap - left : sawyer + (a.regpack||0) + (a.sold||0);
         var parts = [];
         if (sawyer) parts.push(sawyer + ' sawyer');
         if (a.regpack) parts.push(a.regpack + ' regpack');
