@@ -199,11 +199,14 @@
       stat(usd(s.web_booked_value_cents), 'web booked value') +
       stat(s.web_orders, 'web orders') +
       stat(s.web_orders_7d, 'orders · 7d') +
-      stat(usd(s.regpack_collected_cents), 'regpack collected', 'ok');
+      stat(usd(s.regpack_collected_cents), 'regpack collected', 'ok') +
+      stat(usd(s.sawyer_collected_cents), 'sawyer collected', 'ok');
     $('stOut').innerHTML =
       stat(usd(s.regpack_outstanding_cents), 'regpack outstanding', 'bad') +
       stat(s.regpack_outstanding_count, 'accounts owing') +
-      stat(usd(s.sawyer_outstanding_cents), 'sawyer outstanding', s.sawyer_outstanding_cents ? 'bad' : '');
+      stat(usd(s.sawyer_outstanding_cents), 'sawyer outstanding', s.sawyer_outstanding_cents ? 'bad' : '') +
+      stat(s.sawyer_outstanding_count, 'sawyer owing') +
+      stat(usd((s.regpack_due_now_cents || 0) + (s.sawyer_due_now_cents || 0)), 'overdue now', 'bad');
     $('stPeople').innerHTML =
       stat(s.families, 'families') +
       stat(s.campers, 'campers') +
