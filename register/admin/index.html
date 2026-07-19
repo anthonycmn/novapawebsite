@@ -214,6 +214,18 @@
     $('stSummer').innerHTML =
       stat(s.summer_taken + ' / ' + s.summer_cap, 'spots taken', 'gold') +
       stat(s.active_holds, 'active holds');
+    patchSummerStat();
+  }
+
+  // add regpack-sold summer kids (no band data, so they live outside the inventory grid)
+  function patchSummerStat(){
+    var n = window.__rpSummer || 0;
+    if (!n) return;
+    var cell = $('stSummer') && $('stSummer').querySelector('.v');
+    if (cell && !cell.getAttribute('data-rp')) {
+      cell.setAttribute('data-rp', '1');
+      cell.textContent = cell.textContent.replace(/^(\d+)/, function(m){ return (+m + n); });
+    }
   }
 
   function renderOrders(rows){
@@ -258,13 +270,17 @@
 
   function renderInventory(inv){
     var sum = inv.summer || [];
+    var rp = inv.summer_regpack || {};
     var shows = ['httyd','charlie','trolls'];
     var bands = ['5-9','9-12','12-15','tech'];
     var by = {}; sum.forEach(function(r){ by[r.show+'|'+r.band] = r; });
     $('tblSummer').innerHTML =
       '<tr><th></th>' + bands.map(function(b){ return '<th>' + b + '</th>'; }).join('') + '</tr>' +
       shows.map(function(sh){
-        return '<tr><td><b>' + SHOWL[sh] + '</b></td>' + bands.map(function(b){
+        var rpN = rp[sh] || 0;
+        return '<tr><td><b>' + SHOWL[sh] + '</b>' +
+          (rpN ? '<div class="sub">+' + rpN + ' regpack</div>' : '') + '</td>' +
+          bands.map(function(b){
           var r = by[sh+'|'+b] || {};
           var taken = (r.booked||0) + (r.held||0);
           var pct = r.cap ? Math.round(taken/r.cap*100) : 0;
@@ -273,17 +289,36 @@
         }).join('') + '</tr>';
       }).join('');
 
+    // regpack summer kids aren't in the band grid (no band data) — count them in the stat card
+    window.__rpSummer = Object.keys(rp).reduce(function(a,k){ return a + rp[k]; }, 0);
+    patchSummerStat();
+
+    function bar(left, cap, taken){
+      var pct = cap ? Math.round(taken/cap*100) : 0;
+      return '<b>' + left + '</b> <span class="sub">left / ' + cap + '</span>' +
+        '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div>';
+    }
+
     var acts = (inv.activities || []);
     $('tblActs').innerHTML =
-      '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th class="num">sawyer spots</th><th class="num">web sold</th><th></th></tr>' +
+      '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th style="min-width:130px">spots</th><th class="num">enrolled</th><th></th></tr>' +
       acts.map(function(a){
+        var cap = a.capacity;
+        var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
+        var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
+        var taken = sawyer + (a.regpack||0) + (a.sold||0);
+        var left = (cap != null) ? Math.max(0, cap - taken) : null;
+        var parts = [];
+        if (sawyer) parts.push(sawyer + ' sawyer');
+        if (a.regpack) parts.push(a.regpack + ' regpack');
+        if (a.sold) parts.push(a.sold + ' web');
         return '<tr><td>' + esc(a.name) + '</td>' +
           '<td class="sub">' + esc(a.schedule || '') + '</td>' +
           '<td class="sub">' + esc(a.age || '') + '</td>' +
           '<td class="num">' + usd(a.price_cents) + (a.category==='class'?'<span class="sub">/mo</span>':'') + '</td>' +
-          '<td class="num">' + (a.open_spots != null ? a.open_spots : '—') + '</td>' +
-          '<td class="num">' + (a.sold || 0) + '</td>' +
-          '<td>' + (a.bb_gated ? '<span class="tag gold">gated</span>' : '') + '</td></tr>';
+          '<td>' + (cap != null ? bar(left, cap, taken) : '<span class="sub">—</span>') + '</td>' +
+          '<td class="num">' + (taken || '0') + (parts.length ? '<div class="sub">' + parts.join(' · ') + '</div>' : '') + '</td>' +
+          '<td>' + (a.bb_gated ? '<span class="tag gold">returning-only til Aug 1</span>' : '') + '</td></tr>';
       }).join('');
   }
 
