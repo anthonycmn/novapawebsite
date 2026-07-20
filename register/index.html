@@ -28,15 +28,17 @@
   }
   a { color:var(--gold2); }
   .top {
-    position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
-    padding:14px 20px; background:rgba(8,17,31,0.92); backdrop-filter:blur(8px);
-    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:center;
+    padding:12px 60px 12px 20px; min-height:52px;
   }
-  .brand { font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.22em; font-size:15px; color:#fff; text-decoration:none; }
-  .brand em { color:var(--gold2); font-style:normal; }
-  .top-note { font-size:12px; color:var(--ink-dim); margin-left:auto; text-align:right; }
+  #closeX {
+    position:fixed; top:12px; right:14px; z-index:60; width:38px; height:38px;
+    border-radius:50%; border:1px solid var(--line); background:rgba(8,17,31,0.75);
+    color:var(--ink-dim); font-size:22px; line-height:1; cursor:pointer; font-family:inherit;
+  }
+  #closeX:hover { color:#fff; border-color:rgba(255,255,255,0.4); }
   #holdChip {
-    display:none; margin-left:auto; align-items:center; gap:8px;
+    display:none; align-items:center; gap:8px;
     background:linear-gradient(135deg, rgba(200,137,42,0.25), rgba(232,184,75,0.15));
     border:1px solid rgba(232,184,75,0.5); border-radius:999px; padding:7px 14px;
     font-weight:700; font-size:13.5px; color:var(--gold3); white-space:nowrap;
@@ -138,23 +140,73 @@
 
   .conf-art { font-size:52px; text-align:center; margin-bottom:8px; }
   .center { text-align:center; }
+
+  /* new/returning choice */
+  .choice { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:480px) { .choice { grid-template-columns:1fr; } }
+  .choice-card {
+    border:2px solid var(--line); border-radius:16px; padding:26px 20px; cursor:pointer;
+    background:var(--card); text-align:center; transition:border-color .15s, background .15s;
+  }
+  .choice-card:hover { border-color:var(--gold2); background:rgba(232,184,75,0.08); }
+  .choice-card .c1 { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#fff; }
+  .choice-card .c2 { font-size:13px; color:var(--ink-dim); margin-top:6px; line-height:1.4; }
+
+  /* poster show blocks with kid checkboxes */
+  .showb { background:var(--card); border:2px solid var(--line); border-radius:18px; overflow:hidden; margin-bottom:16px; transition:border-color .15s; }
+  .showb.sel { border-color:var(--gold2); }
+  .showb .poster { aspect-ratio:880/625; max-height:300px; width:100%; background-size:cover; background-position:center top; }
+  .showb .bd { padding:16px 18px 14px; }
+  .showb .t { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:700; color:#fff; line-height:1.15; }
+  .showb .d { font-size:13px; color:var(--ink-dim); margin:3px 0 10px; }
+  .showb .kids { border-top:1px solid var(--line); padding-top:4px; }
+
+  /* upsell toast */
+  #toast {
+    display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:80;
+    max-width:min(480px, calc(100vw - 32px)); background:var(--navy1);
+    border:1px solid rgba(232,184,75,0.55); border-radius:14px; padding:14px 16px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.5); font-size:14.5px; line-height:1.45;
+  }
+  #toast.on { display:flex; align-items:center; gap:12px; animation:fade .3s ease; }
+  #toast b { color:var(--gold3); }
+  #toast .tbtn { flex-shrink:0; border:0; border-radius:10px; padding:9px 14px; font-weight:700; cursor:pointer;
+    background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206; font-family:inherit; font-size:13.5px; }
+  #toast .tx { flex-shrink:0; background:none; border:none; color:var(--ink-dim); font-size:18px; cursor:pointer; padding:2px 4px; }
 </style>
 </head>
 <body>
 
 <div class="top">
-  <a class="brand" href="/">NOVA<em>PA</em></a>
-  <div id="holdChip"><span class="dot"></span><span>Spots held — <span id="holdTime">30:00</span></span></div>
-  <div class="top-note" id="topNote">Summer 2027 · Broadway Bound</div>
+  <div id="holdChip"><span class="dot"></span><span>Reserved for <span id="holdTime">30:00</span></span></div>
+  <span id="topNote" style="display:none"></span>
 </div>
+<button id="closeX" aria-label="Close registration">&times;</button>
 
 <div class="wrap">
 
-  <!-- STEP: email gate -->
+  <!-- STEP: new or returning -->
   <section class="step on" id="st-gate">
-    <div class="eyebrow">Summer 2027 · Broadway Bound</div>
-    <h1>Reserve your camper's <em>summer</em> in about 3 minutes.</h1>
-    <p class="sub">Start with the email you've used with NOVAPA before.</p>
+    <div class="eyebrow" id="gateEyebrow">Summer 2027 · Broadway Bound</div>
+    <h1>New or returning <em>camper?</em></h1>
+    <div class="choice">
+      <div class="choice-card" id="choiceReturning">
+        <div class="c1">Returning</div>
+        <div class="c2">We've done a NOVAPA program before</div>
+      </div>
+      <div class="choice-card" id="choiceNew">
+        <div class="c1">New</div>
+        <div class="c2">First time at NOVAPA</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP: returning email -->
+  <section class="step" id="st-remail">
+    <button class="back" data-back="st-gate">← Back</button>
+    <div class="eyebrow">Welcome back</div>
+    <h1>What's your <em>email?</em></h1>
+    <p class="sub">Use the one you've registered with before — we'll load your family.</p>
     <div class="card">
       <input type="email" id="emailInput" placeholder="parent@email.com" autocomplete="email">
       <button class="btn" id="emailGo">Continue</button>
@@ -174,15 +226,17 @@
     </div>
   </section>
 
-  <!-- STEP: waitlist (pre-open unknown emails) -->
+  <!-- STEP: new family (waitlist pre-open / signup after) -->
   <section class="step" id="st-waitlist">
+    <button class="back" data-back="st-gate">← Back</button>
     <div class="eyebrow">Summer 2027</div>
-    <h1>Registration opens <em>August 1.</em></h1>
-    <p class="sub">Public registration opens Saturday, August 1 at 10 AM. The waitlist gets the link one hour early.</p>
-    <div class="card center" id="wlCard">
+    <h1 id="wlH1">Registration opens <em>August 1.</em></h1>
+    <p class="sub" id="wlSub">The waitlist gets the registration link one hour before the public.</p>
+    <div class="card" id="wlCard">
+      <input type="email" id="wlEmail" placeholder="parent@email.com" autocomplete="email">
       <button class="btn" id="wlJoin">Join the Waitlist</button>
       <div class="err" id="wlErr"></div>
-      <p class="tiny">No payment, no obligation.</p>
+      <p class="tiny" id="wlTiny">No payment, no obligation.</p>
     </div>
     <div class="card center" id="wlDone" style="display:none">
       <p style="font-weight:700; color:#fff; font-size:18px">You're on the list.</p>
@@ -208,50 +262,58 @@
     </div>
   </section>
 
-  <!-- STEP: shows -->
+  <!-- STEP: shows + campers -->
   <section class="step" id="st-shows">
     <button class="back" data-back="st-family">← Back</button>
-    <div class="eyebrow">Step 2 of 4</div>
-    <h1>Pick your <em>shows.</em></h1>
-    <p class="sub">Two-week, full-day camps at the National Conference Center, Leesburg.</p>
-    <div class="shows">
-      <div class="show-card" data-show="httyd">
-        <div class="art">D</div>
-        <div><div class="t">How to Train Your Dragon JR.</div><div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:00</div></div>
-        <div class="tick">✓</div>
+    <h1>Choose your <em>shows.</em></h1>
+    <p class="sub">Check each camper into their shows.</p>
+    <div id="showBlocks">
+      <div class="showb" data-show="httyd">
+        <div class="poster" style="background-image:url('/register/img/httyd.jpg')"></div>
+        <div class="bd">
+          <div class="t">How to Train Your Dragon JR.</div>
+          <div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:00 · $995</div>
+          <div class="kids" data-show="httyd"></div>
+        </div>
       </div>
-      <div class="show-card" data-show="charlie">
-        <div class="art">C</div>
-        <div><div class="t">Charlie and the Chocolate Factory JR.</div><div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:00</div></div>
-        <div class="tick">✓</div>
+      <div class="showb" data-show="charlie">
+        <div class="poster" style="background-image:url('/register/img/charlie.jpg')"></div>
+        <div class="bd">
+          <div class="t">Charlie and the Chocolate Factory JR.</div>
+          <div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:00 · $995</div>
+          <div class="kids" data-show="charlie"></div>
+        </div>
       </div>
-      <div class="show-card" data-show="trolls">
-        <div class="art">T</div>
-        <div><div class="t">Trolls The Musical JR.</div><div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00</div></div>
-        <div class="tick">✓</div>
+      <div class="showb" data-show="trolls">
+        <div class="poster" style="background-image:url('/register/img/trolls.jpg')"></div>
+        <div class="bd">
+          <div class="t">Trolls The Musical JR.</div>
+          <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00 · $995</div>
+          <div class="kids" data-show="trolls"></div>
+        </div>
       </div>
     </div>
-    <div class="ticker" id="tierTicker">Select a show to see your early-bird price.</div>
-    <button class="btn" id="showsNext" disabled>Assign My Campers →</button>
+    <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
+    <div class="err" id="assignErr"></div>
+    <button class="btn" id="assignNext">Continue →</button>
+    <p class="tiny">Nothing is charged yet.</p>
   </section>
 
-  <!-- STEP: assign -->
+  <!-- STEP: assign (catalog checkout only) -->
   <section class="step" id="st-assign">
-    <button class="back" data-back="st-shows">← Back</button>
-    <div class="eyebrow">Step 3 of 4</div>
-    <h1>Who does <em>which show?</em></h1>
-    <p class="sub">Check each camper into their shows and pick their age group.</p>
+    <button class="back" data-back="st-family">← Back</button>
+    <h1>Who's <em>enrolling?</em></h1>
+    <p class="sub">Check each camper into each program.</p>
     <div id="assignBlocks"></div>
-    <div class="err" id="assignErr"></div>
-    <button class="btn" id="assignNext">Hold My Spots →</button>
-    <p class="tiny">Nothing is charged yet — spots are held for 30 minutes.</p>
+    <div class="err" id="catErr"></div>
+    <button class="btn" id="catNext">Continue →</button>
+    <p class="tiny">Nothing is charged yet.</p>
   </section>
 
   <!-- STEP: pay -->
   <section class="step" id="st-pay">
-    <button class="back" data-back="st-assign">← Back</button>
-    <div class="eyebrow">Step 4 of 4 — spots held</div>
-    <h1>Lock it <em>in.</em></h1>
+    <button class="back" id="payBack" data-back="st-shows">← Back</button>
+    <h1 id="payH1">Reserve your <em>spots.</em></h1>
     <div class="upsell" id="upsellBox" style="display:none"></div>
     <div class="card" id="summaryCard"></div>
     <div class="card">
@@ -275,9 +337,9 @@
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
         <span>I agree to NOVAPA's <a href="/policies" target="_blank" rel="noopener">policies</a> — <b>all sales are final (no refunds)</b>, payments complete 2 weeks before each program, and class cancellations need 30 days' notice.</span>
       </label>
-      <button class="btn" id="payStart">Continue to Payment</button>
+      <button class="btn" id="payStart" style="display:none">Continue to Payment</button>
       <div id="payElement"></div>
-      <button class="btn" id="paySubmit" style="display:none">Pay <span id="payAmt"></span></button>
+      <button class="btn" id="paySubmit" style="display:none">Reserve for <span id="payAmt"></span> today</button>
       <div class="err" id="payErr"></div>
       <p class="tiny">Secure payment by Stripe · No booking fees · FSA eligible</p>
     </div>
@@ -311,6 +373,23 @@
   </div>
 </div>
 
+<!-- leave confirm modal -->
+<div class="modal-back" id="leaveModal">
+  <div class="modal">
+    <h3>Are you sure?</h3>
+    <p class="sub" style="margin-bottom:6px">You'll lose your spot.</p>
+    <button class="btn" id="stayBtn">Keep My Spot</button>
+    <button class="btn btn-ghost" id="leaveBtn">Leave</button>
+  </div>
+</div>
+
+<!-- upsell toast -->
+<div id="toast">
+  <span id="toastMsg"></span>
+  <button class="tbtn" id="toastAdd">Add</button>
+  <button class="tx" id="toastClose" aria-label="Dismiss">&times;</button>
+</div>
+
 <script>
 (function () {
   var C = window.NOVAREG;
@@ -326,10 +405,8 @@
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
     if (state.catIds.length) {
-      document.querySelector('#st-gate .eyebrow').textContent = 'NOVAPA Registration';
-      document.querySelector('#st-gate h1').innerHTML = 'Enroll in about <em>3 minutes.</em>';
-      document.querySelector('#st-gate .sub').textContent = 'Start with the email you\'ve used with NOVAPA before — we\'ll load your family automatically. New families welcome too.';
-      document.getElementById('topNote').textContent = 'NOVAPA · Registration';
+      document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
+      document.getElementById('payBack').dataset.back = 'st-assign';
     }
   })();
   function isCatMode(){ return state.catItems.length > 0; }
@@ -339,6 +416,7 @@
   function go(stepId){
     document.querySelectorAll('.step').forEach(function(s){ s.classList.remove('on'); });
     $(stepId).classList.add('on');
+    if (stepId !== 'st-shows' && $('toast')) $('toast').classList.remove('on');
     window.scrollTo({top:0});
     ev('reg_step_viewed', { step: stepId });
   }
@@ -367,7 +445,23 @@
     }
   });
 
-  // ---------- step: gate ----------
+  // ---------- step: gate (new or returning) ----------
+  $('choiceReturning').addEventListener('click', function(){
+    ev('reg_choice', { returning: true });
+    go('st-remail'); $('emailInput').focus();
+  });
+  $('choiceNew').addEventListener('click', function(){
+    ev('reg_choice', { returning: false });
+    if (!isCatMode() && !isPublicOpen()) { ev('reg_waitlist_shown'); go('st-waitlist'); $('wlEmail').focus(); return; }
+    // gate open (or catalog checkout): new families sign up normally
+    state.wlSignup = true;
+    $('wlH1').innerHTML = "What's your <em>email?</em>";
+    $('wlSub').textContent = "We'll send you a sign-in link to get started.";
+    $('wlJoin').textContent = 'Continue';
+    $('wlTiny').textContent = 'No password needed.';
+    go('st-waitlist'); $('wlEmail').focus();
+  });
+
   $('emailGo').addEventListener('click', function(){ startEmail($('emailInput').value.trim()); });
   $('emailInput').addEventListener('keydown', function(e){ if(e.key==='Enter') startEmail($('emailInput').value.trim()); });
 
@@ -378,8 +472,12 @@
     $('emailGo').disabled = true;
     ev('reg_email_submitted');
     sb.rpc('email_known', { p_email: state.email }).then(function(res){
-      var known = !!res.data;
-      if (!known && !isPublicOpen()) { ev('reg_waitlist_shown'); go('st-waitlist'); $('emailGo').disabled=false; return; }
+      if (!res.data) {
+        $('emailGo').disabled = false;
+        ev('reg_email_unknown');
+        errEl.textContent = "We couldn't find that email — try again with one you've signed up with before.";
+        errEl.classList.add('on'); return;
+      }
       sendLink();
     }).catch(function(){ errEl.textContent='Something went wrong — try again.'; errEl.classList.add('on'); $('emailGo').disabled=false; });
   }
@@ -387,7 +485,7 @@
   function sendLink(){
     sb.auth.signInWithOtp({
       email: state.email,
-      options: { emailRedirectTo: location.origin + '/register/', shouldCreateUser: true }
+      options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
     }).then(function(res){
       $('emailGo').disabled = false;
       if (res.error) { var e=$('gateErr'); e.textContent = res.error.message || 'Could not send the link — try again shortly.'; e.classList.add('on'); return; }
@@ -399,14 +497,32 @@
   $('resendBtn').addEventListener('click', sendLink);
   $('restartLink').addEventListener('click', function(e){ e.preventDefault(); go('st-gate'); });
 
-  // ---------- step: waitlist ----------
-  $('wlJoin').addEventListener('click', function(){
+  // ---------- step: new family (waitlist pre-open, signup after) ----------
+  function wlGo(){
+    var errEl = $('wlErr'); errEl.classList.remove('on');
+    var email = $('wlEmail').value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent='Please enter a valid email.'; errEl.classList.add('on'); return; }
+    state.email = email.toLowerCase();
+    if (state.wlSignup) { $('emailGo').disabled = false; sendLinkNew(); return; }
     sb.rpc('join_waitlist', { p_email: state.email, p_source: 'register-flow' }).then(function(res){
-      if (res.error) { var e=$('wlErr'); e.textContent='Could not save — email info@novapa.org and we\'ll add you.'; e.classList.add('on'); return; }
+      if (res.error) { errEl.textContent='Could not save — email info@novapa.org and we\'ll add you.'; errEl.classList.add('on'); return; }
       $('wlCard').style.display='none'; $('wlDone').style.display='block';
       ev('reg_waitlist_joined');
     });
-  });
+  }
+  function sendLinkNew(){
+    sb.auth.signInWithOtp({
+      email: state.email,
+      options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
+    }).then(function(res){
+      if (res.error) { var e=$('wlErr'); e.textContent = res.error.message || 'Could not send the link — try again shortly.'; e.classList.add('on'); return; }
+      $('sentTo').textContent = state.email;
+      ev('reg_link_sent');
+      go('st-linksent');
+    });
+  }
+  $('wlJoin').addEventListener('click', wlGo);
+  $('wlEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') wlGo(); });
 
   // ---------- step: family ----------
   function loadFamily(){
@@ -472,41 +588,18 @@
   $('famNext').addEventListener('click', function(){
     var errEl = $('famErr'); errEl.classList.remove('on');
     if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one camper.'; errEl.classList.add('on'); return; }
-    if (isCatMode()) { renderCatAssign(); go('st-assign'); return; }
-    go('st-shows'); updateTicker();
+    if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
+    renderShowKids(); go('st-shows'); startSoftTimer();
   });
   $('signout').addEventListener('click', function(e){
     e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
   });
 
-  // ---------- step: shows ----------
-  document.querySelectorAll('.show-card').forEach(function(card){
-    card.addEventListener('click', function(){
-      var show = card.dataset.show;
-      var i = state.shows.indexOf(show);
-      if (i === -1) state.shows.push(show); else state.shows.splice(i,1);
-      card.classList.toggle('sel', i === -1);
-      updateTicker();
-      ev('reg_show_toggled', { show: show, selected: i === -1 });
-    });
-  });
+  // ---------- step: shows + campers ----------
   function estItemCount(){
     var kids = state.kids.filter(function(k){ return k.sel; }).length;
     return state.shows.length * Math.max(1, kids); // estimate before assignment
   }
-  function updateTicker(){
-    var t = $('tierTicker');
-    var nShows = state.shows.length;
-    $('showsNext').disabled = nShows === 0;
-    if (nShows === 0) { t.textContent = 'Select a show to see your early-bird price.'; return; }
-    var msg = saleOn()
-      ? '1 camp 10% off · 2 camps 15% off · all 3 20% off each — through Aug 15.'
-      : '$995 per two-week camp.';
-    t.textContent = msg;
-  }
-  $('showsNext').addEventListener('click', function(){ renderAssign(); go('st-assign'); });
-
-  // ---------- step: assign ----------
   function bandsFor(age){
     if (age == null) return ['5-9','9-12','12-15','tech'];
     var b = [];
@@ -516,43 +609,105 @@
     if (age >= 10 && age <= 15) b.push('tech');
     return b;
   }
-  function bandLabel(b){ return b === 'tech' ? 'Tech (10\u201315)' : ({'5-9':'Ages 5–8','9-12':'Ages 9–12','12-15':'Ages 13–15'})[b] || ('Ages ' + b); }
-  function renderAssign(){
+  function bandLabel(b){ return b === 'tech' ? 'Tech (10\u201315)' : ({'5-9':'Ages 5\u20138','9-12':'Ages 9\u201312','12-15':'Ages 13\u201315'})[b] || ('Ages ' + b); }
+  function syncShows(){
+    state.shows = Object.keys(SHOW_NAMES).filter(function(show){
+      return state.kids.some(function(k){ var a = state.assign[show + '|' + k.name]; return a && a.on; });
+    });
+    document.querySelectorAll('.showb').forEach(function(b){
+      b.classList.toggle('sel', state.shows.indexOf(b.dataset.show) !== -1);
+    });
+  }
+  function updateTicker(){
+    var t = $('tierTicker');
+    if (!state.shows.length) { t.textContent = 'Check a camper into a show to see your price.'; return; }
+    t.textContent = saleOn()
+      ? '1 camp 10% off \u00b7 2 camps 15% off \u00b7 all 3 20% off each \u2014 through Aug 15.'
+      : '$995 per two-week camp.';
+  }
+  function renderShowKids(){
     var kids = state.kids.filter(function(k){ return k.sel; });
-    var html = state.shows.map(function(show){
-      var rows = kids.map(function(k, ki){
+    document.querySelectorAll('#showBlocks .kids').forEach(function(host){
+      var show = host.dataset.show;
+      host.innerHTML = kids.map(function(k){
         var already = (k.already||[]).indexOf(show) !== -1;
         var key = show + '|' + k.name;
         if (!(key in state.assign)) {
           var defBands = bandsFor(k.age).filter(function(b){ return b !== 'tech'; });
-          state.assign[key] = { on: !already, band: defBands[0] || '9-12' };
+          state.assign[key] = { on: false, band: defBands[0] || '9-12' };
         }
         if (already) state.assign[key].on = false;
         var a = state.assign[key];
-        var pills = bandsFor(k.age).map(function(b){
+        var pills = (!a.on || already) ? '' : bandsFor(k.age).map(function(b){
           var left = state.inventory[show + '|' + b];
           var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Full' : left + ' more spots available') + '</span>' : '';
           return '<span class="pill' + (a.band === b ? ' sel' : '') + '" data-key="' + esc(key) + '" data-band="' + b + '">' + bandLabel(b) + leftTag + '</span>';
         }).join('');
         return '<div class="kid-row">' +
           '<label class="kid-check"><input type="checkbox" data-key="' + esc(key) + '" ' + (a.on ? 'checked' : '') + (already ? ' disabled' : '') + '> <span>' + esc(k.name) + '</span>' +
-          (already ? ' <span class="badge-done">✓ already registered</span>' : '') + '</label>' +
-          '<div class="pills">' + pills + '</div></div>';
+          (already ? ' <span class="badge-done">\u2713 already registered</span>' : '') + '</label>' +
+          (pills ? '<div class="pills">' + pills + '</div>' : '') + '</div>';
       }).join('');
-      return '<div class="card"><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">' +
-        SHOW_NAMES[show] + '</div><div class="tiny" style="text-align:left;margin:0 0 8px">' + SHOW_DATES[show] + ', 2027</div>' + rows + '</div>';
-    }).join('');
-    $('assignBlocks').innerHTML = html;
-    $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
-      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; });
     });
-    $('assignBlocks').querySelectorAll('.pill').forEach(function(p){
-      p.addEventListener('click', function(){
-        state.assign[p.dataset.key].band = p.dataset.band;
-        renderAssign();
+    var blocks = $('showBlocks');
+    blocks.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        state.assign[cb.dataset.key].on = cb.checked;
+        ev('reg_show_kid_toggled', { key: cb.dataset.key, on: cb.checked });
+        renderShowKids();
       });
     });
+    blocks.querySelectorAll('.pill').forEach(function(p){
+      p.addEventListener('click', function(){ state.assign[p.dataset.key].band = p.dataset.band; renderShowKids(); });
+    });
+    syncShows(); updateTicker(); upsellCheck();
   }
+
+  // upsell toast \u2014 "In town? bundle another camp"
+  var toastSig = { shown: null, dismissed: {} };
+  function upsellCheck(){
+    var t = $('toast');
+    if (!saleOn() || !document.querySelector('#st-shows.on')) { t.classList.remove('on'); return; }
+    var byKid = {};
+    state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
+      Object.keys(SHOW_NAMES).forEach(function(show){
+        var a = state.assign[show + '|' + k.name];
+        if (a && a.on) (byKid[k.name] = byKid[k.name] || []).push(show);
+      });
+    });
+    var best = null;
+    Object.keys(byKid).forEach(function(name){
+      var n = byKid[name].length;
+      if (!best && n >= 1 && n < 3) {
+        var missing = Object.keys(SHOW_NAMES).filter(function(s){ return byKid[name].indexOf(s) === -1; });
+        best = { kid: name, n: n, show: missing[missing.length - 1] };
+      }
+    });
+    if (!best) { t.classList.remove('on'); return; }
+    var sig = best.kid + '|' + best.n;
+    if (toastSig.dismissed[sig]) { t.classList.remove('on'); return; }
+    if (toastSig.shown === sig && t.classList.contains('on')) return;
+    toastSig.shown = sig;
+    var pct = Math.round(discRate(best.n + 1) * 100);
+    var nm = { httyd: 'Dragon', charlie: 'Charlie', trolls: 'Trolls' }[best.show];
+    $('toastMsg').innerHTML = 'In town <b>' + SHOW_DATES[best.show] + '</b>? Save <b>' + pct + '%</b> by bundling ' + nm + ' camp!';
+    t.dataset.show = best.show; t.dataset.kid = best.kid; t.dataset.sig = sig;
+    t.classList.add('on');
+    ev('reg_upsell_toast', { show: best.show, pct: pct });
+  }
+  $('toastAdd').addEventListener('click', function(){
+    var t = $('toast');
+    var key = t.dataset.show + '|' + t.dataset.kid;
+    if (state.assign[key]) state.assign[key].on = true;
+    t.classList.remove('on');
+    ev('reg_upsell_toast_added', { show: t.dataset.show });
+    renderShowKids();
+  });
+  $('toastClose').addEventListener('click', function(){
+    var t = $('toast');
+    toastSig.dismissed[t.dataset.sig] = true;
+    t.classList.remove('on');
+  });
   function renderCatAssign(){
     var kids = state.kids.filter(function(k){ return k.sel; });
     var html = state.catItems.map(function(a){
@@ -602,14 +757,15 @@
     return items;
   }
   $('assignNext').addEventListener('click', acquireHold);
+  $('catNext').addEventListener('click', acquireHold);
 
   function acquireHold(){
-    var errEl = $('assignErr'); errEl.classList.remove('on');
+    var errEl = isCatMode() ? $('catErr') : $('assignErr'); errEl.classList.remove('on');
     var items = buildItems();
     if (!items.length) { errEl.textContent = 'Check at least one camper into a show.'; errEl.classList.add('on'); return; }
-    $('assignNext').disabled = true;
+    $('assignNext').disabled = true; $('catNext').disabled = true;
     sb.rpc('acquire_hold_v2', { p_items: items }).then(function(res){
-      $('assignNext').disabled = false;
+      $('assignNext').disabled = false; $('catNext').disabled = false;
       if (res.error) {
         var msg = res.error.message || '';
         if (msg.indexOf('GATED') !== -1) {
@@ -623,7 +779,7 @@
         if (msg.indexOf('SOLD_OUT') !== -1) {
           var parts = msg.split(':');
           errEl.textContent = (SHOW_NAMES[parts[1]] || parts[1]) + ' (' + bandLabel(parts[2] || '') + ') just filled up — pick a different track.';
-          refreshInventory().then(renderAssign);
+          refreshInventory().then(renderShowKids);
         } else errEl.textContent = 'Could not hold spots — try again.';
         errEl.classList.add('on'); return;
       }
@@ -632,6 +788,7 @@
       ev('reg_hold_acquired', { items: items.length });
       renderPay();
       go('st-pay');
+      schedulePay();
     });
   }
   function refreshInventory(){
@@ -640,18 +797,28 @@
     });
   }
 
-  // ---------- hold timer ----------
+  // ---------- reservation timer (soft from show selection, hard once held) ----------
   var timerInt = null;
+  function startSoftTimer(){
+    if (state.hold || state.softUntil) return;
+    state.softUntil = new Date(Date.now() + 30 * 60000);
+    startTimer();
+  }
   function startTimer(){
-    $('holdChip').classList.add('on'); $('topNote').style.display = 'none';
+    $('holdChip').classList.add('on');
     clearInterval(timerInt);
     timerInt = setInterval(function(){
-      var ms = state.hold.expires - new Date();
+      var end = state.hold ? state.hold.expires : state.softUntil;
+      var ms = end - new Date();
       if (ms <= 0) {
-        clearInterval(timerInt);
-        $('holdChip').classList.remove('on'); $('topNote').style.display = '';
-        $('expiredModal').classList.add('on');
-        ev('reg_hold_expired');
+        if (state.hold) {
+          clearInterval(timerInt);
+          $('holdChip').classList.remove('on');
+          $('expiredModal').classList.add('on');
+          ev('reg_hold_expired');
+        } else {
+          state.softUntil = new Date(Date.now() + 30 * 60000);
+        }
         return;
       }
       var s = Math.floor(ms / 1000);
@@ -671,9 +838,9 @@
       document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
       opt.classList.add('sel');
       state.plan = opt.dataset.plan;
-      state.clientSecret = null;
-      $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none'; $('payStart').style.display = '';
+      resetPayUI();
       renderPay();
+      schedulePay();
       ev('reg_plan_selected', { plan: state.plan });
     });
   });
@@ -724,6 +891,7 @@
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
     updateInsurance(p.items, p.baseSubtotal);
+    setPayH1(p.today);
     $('payBreakdown').innerHTML = catAllClasses()
       ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
       : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done. All sales final.</p>';
@@ -818,6 +986,7 @@
 
     updateInsurance(items, p.subtotal);
     renderUpsells(p, byKid, byIdAll);
+    setPayH1(p.today);
   }
 
   function renderUpsells(p, byKid, byIdAll){
@@ -853,12 +1022,11 @@
       box.style.display = '';
       box.innerHTML = html;
       var ua = document.getElementById('upsellAdd');
-      if (ua) ua.addEventListener('click', function(e){ e.preventDefault(); ev('reg_upsell_clicked'); go('st-shows'); updateTicker(); });
+      if (ua) ua.addEventListener('click', function(e){ e.preventDefault(); ev('reg_upsell_clicked'); renderShowKids(); go('st-shows'); });
       box.querySelectorAll('.addonCb').forEach(function(cb){
         cb.addEventListener('change', function(){
           state.addons[cb.dataset.key] = cb.checked ? +cb.dataset.id : null;
-          state.clientSecret = null;
-          $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none'; $('payStart').style.display = '';
+          resetPayUI();
           ev('reg_addon_toggled', { key: cb.dataset.key, on: cb.checked });
           acquireHold();
         });
@@ -868,9 +1036,9 @@
 
   $('insOk').addEventListener('change', function(){
     state.insurance = $('insOk').checked;
-    state.clientSecret = null;
-    $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none'; $('payStart').style.display = '';
+    resetPayUI();
     renderPay();
+    schedulePay();
     ev('reg_insurance_toggled', { on: state.insurance });
   });
 
@@ -885,12 +1053,22 @@
       '</b> starting ' + when + ' — automatic on this card, fully paid at least 2 weeks before camp.</p>';
   }
 
-  $('payStart').addEventListener('click', function(){
+  function resetPayUI(){
+    state.clientSecret = null;
+    $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none';
+  }
+  var payTimer = null;
+  function schedulePay(){ clearTimeout(payTimer); payTimer = setTimeout(startPayment, 350); }
+  function setPayH1(cents){
+    var n = state.hold ? state.hold.items.length : 1;
+    $('payH1').innerHTML = (!isCatMode() && state.plan === 'deposit')
+      ? 'Reserve your spot' + (n > 1 ? 's' : '') + ' for <em>' + money(cents) + '</em> today'
+      : 'Pay <em>' + money(cents) + '</em> today';
+  }
+  $('payStart').addEventListener('click', startPayment);
+  function startPayment(){
+    if (!state.hold || state.clientSecret) return;
     var errEl = $('payErr'); errEl.classList.remove('on');
-    if (!$('policyOk').checked) {
-      errEl.textContent = 'Please agree to NOVAPA\'s policies to continue.';
-      errEl.classList.add('on'); return;
-    }
     if (!C.STRIPE_PUBLISHABLE_KEY) {
       errEl.textContent = 'Payments aren\'t configured yet (test build) — Stripe keys pending.';
       errEl.classList.add('on'); return;
@@ -914,19 +1092,21 @@
           state.plan = 'full';
           document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.toggle('sel', o.dataset.plan === 'full'); });
           renderPay();
+          schedulePay();
         }
         $('payErr').textContent = msg; $('payErr').classList.add('on'); return;
       }
       state.clientSecret = res.j.client_secret;
       state.pricing = res.j.pricing;
       renderServerBreakdown(res.j.pricing);
+      setPayH1(res.j.pricing.today_cents);
       mountStripe();
       ev('reg_payment_started', { plan: state.plan, today_cents: res.j.pricing.today_cents });
     }).catch(function(){
       $('payStart').disabled = false;
       $('payErr').textContent = 'Network error — try again.'; $('payErr').classList.add('on');
     });
-  });
+  }
 
   function mountStripe(){
     function ready(){
@@ -937,7 +1117,8 @@
       });
       state.elements.create('payment').mount('#payElement');
       $('payStart').style.display = 'none';
-      $('payAmt').textContent = money(state.pricing.today_cents);
+      $('paySubmit').innerHTML = (!isCatMode() && state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
+        money(state.pricing.today_cents) + (!isCatMode() && state.plan === 'deposit' ? ' today' : '');
       $('paySubmit').style.display = '';
     }
     if (window.Stripe) return ready();
@@ -948,6 +1129,10 @@
 
   $('paySubmit').addEventListener('click', function(){
     var errEl = $('payErr'); errEl.classList.remove('on');
+    if (!$('policyOk').checked) {
+      errEl.textContent = 'Please agree to NOVAPA\'s policies to continue.';
+      errEl.classList.add('on'); return;
+    }
     $('paySubmit').disabled = true;
     state.stripe.confirmPayment({
       elements: state.elements,
@@ -1037,8 +1222,17 @@
   }
 
   // back buttons
+  function exitHref(){ return isCatMode() ? '/register/catalog.html' : '/summer-2027'; }
+  $('closeX').addEventListener('click', function(){
+    var deep = document.querySelector('#st-shows.on') || document.querySelector('#st-assign.on') || document.querySelector('#st-pay.on');
+    if (deep) { $('leaveModal').classList.add('on'); ev('reg_close_confirm_shown'); return; }
+    location.href = exitHref();
+  });
+  $('stayBtn').addEventListener('click', function(){ $('leaveModal').classList.remove('on'); });
+  $('leaveBtn').addEventListener('click', function(){ ev('reg_left_via_x'); location.href = exitHref(); });
+
   document.querySelectorAll('.back').forEach(function(b){
-    b.addEventListener('click', function(){ go(b.dataset.back); if (b.dataset.back==='st-shows') updateTicker(); });
+    b.addEventListener('click', function(){ go(b.dataset.back); if (b.dataset.back==='st-shows') renderShowKids(); });
   });
 })();
 </script>
