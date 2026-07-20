@@ -132,6 +132,9 @@
   .upsell b { color:var(--gold3); }
   .upsell button { width:auto; margin-top:10px; padding:10px 16px; font-size:14px; }
   #payElement { margin:16px 0; }
+  #expressCheckout { margin:4px 0 6px; }
+  .pay-or { display:flex; align-items:center; gap:12px; color:var(--ink-dim); font-size:12.5px; margin:14px 0 4px; }
+  .pay-or::before, .pay-or::after { content:''; flex:1; height:1px; background:var(--line); }
   .back { background:none; border:none; color:var(--ink-dim); font-size:13.5px; cursor:pointer; margin-bottom:16px; font-family:inherit; }
 
   .modal-back { display:none; position:fixed; inset:0; background:rgba(4,9,17,0.8); z-index:99; align-items:center; justify-content:center; padding:20px; }
@@ -343,6 +346,10 @@
         <span>I agree to NOVAPA's <a href="/policies" target="_blank" rel="noopener">policies</a> — <b>all sales are final (no refunds)</b>, payments complete 2 weeks before each program, and class cancellations need 30 days' notice.</span>
       </label>
       <button class="btn" id="payStart" style="display:none">Continue to Payment</button>
+      <div id="expressWrap" style="display:none">
+        <div id="expressCheckout"></div>
+        <div class="pay-or"><span>or pay by card</span></div>
+      </div>
       <div id="payElement"></div>
       <button class="btn" id="paySubmit" style="display:none">Reserve for <span id="payAmt"></span> today</button>
       <div class="err" id="payErr"></div>
@@ -1064,6 +1071,7 @@
   function resetPayUI(){
     state.clientSecret = null;
     $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none';
+    $('expressCheckout').innerHTML = ''; $('expressWrap').style.display = 'none';
   }
   var payTimer = null;
   function schedulePay(){ clearTimeout(payTimer); payTimer = setTimeout(startPayment, 350); }
@@ -1116,6 +1124,20 @@
     });
   }
 
+  function confirmNow(){
+    return state.stripe.confirmPayment({
+      elements: state.elements,
+      confirmParams: { return_url: location.origin + '/register/?paid=1' },
+      redirect: 'if_required'
+    });
+  }
+  function policyBlocked(){
+    if ($('policyOk').checked) return false;
+    var errEl = $('payErr');
+    errEl.textContent = 'Please agree to NOVAPA\'s policies to continue.';
+    errEl.classList.add('on');
+    return true;
+  }
   function mountStripe(){
     function ready(){
       state.stripe = Stripe(C.STRIPE_PUBLISHABLE_KEY);
@@ -1123,7 +1145,33 @@
         clientSecret: state.clientSecret,
         appearance: { theme: 'night', variables: { colorPrimary: '#E8B84B', fontFamily: 'DM Sans, sans-serif' } }
       });
-      state.elements.create('payment').mount('#payElement');
+      // Apple Pay / Google Pay / Link buttons — handled by Express Checkout,
+      // so suppress the duplicate wallet row inside the card element.
+      state.elements.create('payment', { wallets: { applePay: 'never', googlePay: 'never' } }).mount('#payElement');
+
+      $('expressCheckout').innerHTML = '';
+      var ece = state.elements.create('expressCheckout', {
+        buttonHeight: 48,
+        buttonTheme: { applePay: 'white', googlePay: 'white' }
+      });
+      ece.on('ready', function(e){
+        $('expressWrap').style.display = (e && e.availablePaymentMethods) ? '' : 'none';
+      });
+      ece.on('loaderror', function(){ $('expressWrap').style.display = 'none'; });
+      ece.on('click', function(e){
+        if (policyBlocked()) return;      // no resolve() → wallet sheet stays closed
+        ev('reg_wallet_clicked');
+        e.resolve();
+      });
+      ece.on('confirm', function(){
+        $('payErr').classList.remove('on');
+        confirmNow().then(function(res){
+          if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed', { wallet: true }); return; }
+          if (res.paymentIntent && res.paymentIntent.status === 'succeeded') finish();
+        });
+      });
+      ece.mount('#expressCheckout');
+
       $('payStart').style.display = 'none';
       $('paySubmit').innerHTML = (!isCatMode() && state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
         money(state.pricing.today_cents) + (!isCatMode() && state.plan === 'deposit' ? ' today' : '');
@@ -1136,19 +1184,12 @@
   }
 
   $('paySubmit').addEventListener('click', function(){
-    var errEl = $('payErr'); errEl.classList.remove('on');
-    if (!$('policyOk').checked) {
-      errEl.textContent = 'Please agree to NOVAPA\'s policies to continue.';
-      errEl.classList.add('on'); return;
-    }
+    $('payErr').classList.remove('on');
+    if (policyBlocked()) return;
     $('paySubmit').disabled = true;
-    state.stripe.confirmPayment({
-      elements: state.elements,
-      confirmParams: { return_url: location.origin + '/register/?paid=1' },
-      redirect: 'if_required'
-    }).then(function(res){
+    confirmNow().then(function(res){
       $('paySubmit').disabled = false;
-      if (res.error) { errEl.textContent = res.error.message; errEl.classList.add('on'); ev('reg_payment_failed'); return; }
+      if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed'); return; }
       if (res.paymentIntent && res.paymentIntent.status === 'succeeded') finish();
     });
   });
