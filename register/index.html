@@ -272,7 +272,7 @@
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:12px;cursor:pointer">
         <input type="checkbox" id="insOk" style="width:17px;height:17px;accent-color:var(--gold2)">
-        <span><b>Add tuition insurance (+10%)</b> — protection if plans change, per our <a href="/policies" target="_blank" rel="noopener">policy terms</a>. Without it, all payments are final.</span>
+        <span><b>Add tuition insurance (+10%)</b> — cancel <b>76+ days</b> before your program for a <b>100% refund</b> (75% at 75–51 days, 50% at 50–31, none within 30; premium non-refundable). <a href="/policies#tuition-insurance" target="_blank" rel="noopener">Full terms</a>. Without it, all payments are final.</span>
       </label>
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:10px;cursor:pointer">
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
@@ -693,7 +693,6 @@
       if (a.category === 'class') {
         var base = 9000;
         if (it.camper && it.camper !== firstChild) base = Math.round(base * 0.95);
-        if (state.insurance) base = Math.round(base * 1.10);
         return base;
       }
       var u = a.price_cents || 0;
@@ -719,8 +718,7 @@
       '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
-    var insLbl = $('insOk') && $('insOk').parentElement.querySelector('span');
-    if (insLbl && catAllClasses()) insLbl.innerHTML = '<b>Add tuition insurance (+10%)</b> — your monthly tuition becomes ' + money(9900) + '/class, with protection if plans change per our <a href="/policies" target="_blank" rel="noopener">policy terms</a>. Without it, all payments are final.';
+    if (catAllClasses()) { state.insurance = false; $('insOk').checked = false; $('insOk').parentElement.style.display = 'none'; }
     $('payBreakdown').innerHTML = catAllClasses()
       ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
       : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done. All sales final.</p>';

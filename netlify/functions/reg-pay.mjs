@@ -93,7 +93,7 @@ export default async (req) => {
       if (it.camper && it.camper !== firstChild) {
         base = Math.round(base * (1 - SIBLING_PCT / 100)); // sibling runs now (non-BB)
       }
-      if (insurance) base = Math.round(base * (1 + INSURANCE_PCT / 100));
+      // no insurance on classes — 30-day cancellation makes it pointless
       return base;
     });
     const subtotal = unitPrices.reduce((s, v) => s + v, 0);

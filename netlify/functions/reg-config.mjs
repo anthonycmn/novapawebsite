@@ -16,9 +16,10 @@
 //  - Classes: $90/mo, first month at checkout, next pull Oct 1, monthly
 //    through Jun 1 2027 (subscription auto-cancels Jul 1 2027).
 //    Cancellation: 30 days notice (policy-enforced, not code).
-//  - Tuition insurance (opt-in): +10%. One-time items: 10% of the
-//    discounted subtotal, collected at checkout. Classes: monthly price
-//    x1.10 on every payment.
+//  - Tuition insurance (opt-in, camps & shows only — NOT classes): +10% of
+//    the discounted subtotal, collected at checkout. Coverage per
+//    /policies#tuition-insurance: refund 100% at 90-76 days before start,
+//    75% at 75-51d, 50% at 50-31d, 0% within 30d; premium non-refundable.
 //  - All sales final — no refunds (insurance is the exception path).
 
 export const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
