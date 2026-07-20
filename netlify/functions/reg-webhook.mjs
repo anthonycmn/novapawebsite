@@ -3,7 +3,7 @@
 // and for deposit plans create the 8-installment subscription schedule.
 import Stripe from "stripe";
 import {
-  SUPABASE_URL, INSTALLMENTS, INSTALLMENT_START_UTC, CLASS_BILL_ANCHOR_UTC,
+  SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
@@ -80,10 +80,6 @@ export default async (req) => {
       p_unit_prices: unitPrices,
     });
 
-    if (m.fee_charged === "1" && m.email) {
-      await serviceRpc("mark_fee_paid", { p_email: m.email });
-    }
-
     const paymentMethodId = typeof pi.payment_method === "string"
       ? pi.payment_method : pi.payment_method?.id;
     const customerId = typeof pi.customer === "string" ? pi.customer : pi.customer?.id;
@@ -102,6 +98,7 @@ export default async (req) => {
           customer: customerId,
           default_payment_method: paymentMethodId || undefined,
           trial_end: trialEnd,
+          cancel_at: CLASS_SEASON_END_UTC, // season ends after the Jun 1 pull
           proration_behavior: "none",
           items: monthly.map((cents) => ({
             quantity: 1,
@@ -117,12 +114,15 @@ export default async (req) => {
     }
 
     if (m.plan === "deposit" && parseInt(m.installment_cents || "0", 10) > 0) {
-      await ensureProduct(stripe, INSTALLMENT_PRODUCT_ID, "NOVAPA Summer 2027 Camp — Monthly Installment");
+      await ensureProduct(stripe, INSTALLMENT_PRODUCT_ID, "NOVAPA Program — Monthly Installment");
       const paymentMethod = typeof pi.payment_method === "string"
         ? pi.payment_method : pi.payment_method?.id;
+      const nInst = parseInt(m.n_installments || "0", 10) || 0;
+      const firstInst = parseInt(m.first_installment_utc || "0", 10) || 0;
+      if (!nInst || !firstInst) throw new Error("deposit plan missing installment schedule");
       const schedule = await stripe.subscriptionSchedules.create({
         customer: typeof pi.customer === "string" ? pi.customer : pi.customer?.id,
-        start_date: INSTALLMENT_START_UTC,
+        start_date: firstInst,
         end_behavior: "cancel",
         default_settings: paymentMethod
           ? { default_payment_method: paymentMethod,
@@ -130,7 +130,7 @@ export default async (req) => {
           : undefined,
         metadata: { order_id: String(orderId), payment_intent: pi.id },
         phases: [{
-          iterations: INSTALLMENTS,
+          iterations: nInst,
           proration_behavior: "none",
           items: [{
             quantity: 1,

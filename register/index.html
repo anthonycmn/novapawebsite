@@ -215,7 +215,7 @@
     <button class="back" data-back="st-family">← Back</button>
     <div class="eyebrow">Step 2 of 4</div>
     <h1>Pick your <em>shows.</em></h1>
-    <p class="sub">Each is a two-week, full-day camp ($995) at the National Conference Center, Leesburg. Select all that fit your summer — the more camps in one order, the deeper every camp's discount.</p>
+    <p class="sub">Each is a two-week, full-day camp ($995) at the National Conference Center, Leesburg. Select every show that fits your summer — the more shows one camper does, the deeper that camper's discount (all 3 = 20% off each).</p>
     <div class="shows">
       <div class="show-card" data-show="httyd">
         <div class="art">🐉</div>
@@ -242,7 +242,7 @@
     <button class="back" data-back="st-shows">← Back</button>
     <div class="eyebrow">Step 3 of 4</div>
     <h1>Who does <em>which show?</em></h1>
-    <p class="sub">Check each camper joining each show, and confirm their track. Ages 5–9, 9–12, 12–15 — or Technical Theatre (10–15): sets, lights, sound, stage crew.</p>
+    <p class="sub">Check each camper joining each show, and confirm their track. Ages 5–8, 9–12, 13–15 — or Technical Theatre (10–15): sets, lights, sound, stage crew. Border age? Your call — pick the group that fits your kid.</p>
     <div id="assignBlocks"></div>
     <div class="err" id="assignErr"></div>
     <button class="btn" id="assignNext">Hold My Spots for 30 Minutes →</button>
@@ -260,25 +260,30 @@
       <div class="plan-toggle">
         <div class="plan-opt sel" data-plan="deposit">
           <div class="p1">Reserve today</div>
-          <div class="p2">$180 per camp now, the rest split over 8 monthly payments (Sep–Apr)</div>
+          <div class="p2">$180 per registration now — monthly autopay, fully paid 2 weeks before camp</div>
         </div>
         <div class="plan-opt" data-plan="full">
           <div class="p1">Pay in full</div>
           <div class="p2">One payment, done</div>
-          <div class="perk">$25 family fee waived</div>
+          <div class="perk">Simplest — nothing owed later</div>
         </div>
       </div>
       <div id="payBreakdown"></div>
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="insOk" style="width:17px;height:17px;accent-color:var(--gold2)">
+        <span><b>Add tuition insurance (+10%)</b> — protection if plans change, per our <a href="/policies" target="_blank" rel="noopener">policy terms</a>. Without it, all payments are final.</span>
+      </label>
+      <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:10px;cursor:pointer">
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
-        <span>I agree to NOVAPA's <a href="/policies" target="_blank" rel="noopener">policies</a> (cancellation, liability, and media).</span>
+        <span>I agree to NOVAPA's <a href="/policies" target="_blank" rel="noopener">policies</a> — <b>all sales are final (no refunds)</b>, payments complete 2 weeks before each program, and class cancellations need 30 days' notice.</span>
       </label>
       <button class="btn" id="payStart">Continue to Payment</button>
       <div id="payElement"></div>
       <button class="btn" id="paySubmit" style="display:none">Pay <span id="payAmt"></span></button>
       <div class="err" id="payErr"></div>
-      <p class="tiny">Secure payment by Stripe · No booking fees · Early-bird pricing locked through Aug 15</p>
+      <p class="tiny">Secure payment by Stripe · No booking fees · FSA dependent-care eligible (automatic receipt) · Launch pricing locked through Aug 15</p>
+      <p class="tiny">🎟️ Register before Aug 1 — one family wins <b>10 tickets to any NOVAPA show</b>, drawn &amp; emailed Aug 1.</p>
     </div>
   </section>
 
@@ -292,7 +297,8 @@
       <p class="sub" style="margin:6px 0 0; font-size:14.5px">
         📧 Receipt + confirmation are on the way to your inbox.<br>
         📋 Your registration details land in your NOVAPA account within 1–2 business days.<br>
-        🍂 Keep the momentum: <a href="/classes">fall classes are enrolling now</a> — same stage, all year.
+        🍂 Keep the momentum: <a href="/classes">fall classes are enrolling now</a> — same stage, all year.<br>
+        💾 Using a Dependent Care FSA? <a href="#" id="fsaBtn">Print your FSA receipt</a> (includes our Tax ID).
       </p>
     </div>
     <div class="card" id="profileForms"></div>
@@ -319,7 +325,7 @@
   var state = {
     email:null, family:null, kids:[], shows:[], assign:{}, hold:null,
     inventory:{}, plan:'deposit', clientSecret:null, pricing:null, stripe:null, elements:null,
-    catIds:[], catItems:[], feeDue:false, policyOk:false
+    catIds:[], catItems:[], allCat:[], addons:{}, insurance:false, feeDue:false, policyOk:false
   };
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
@@ -344,6 +350,17 @@
   function money(cents){ return '$' + (cents/100).toLocaleString('en-US', {minimumFractionDigits: cents%100 ? 2 : 0, maximumFractionDigits:2}); }
   function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
   function discRate(n){ if (new Date() > new Date(C.EARLYBIRD_END)) return 0; return n>=3?0.20:n===2?0.15:n>=1?0.10:0; }
+  function saleOn(){ return new Date() <= new Date(C.EARLYBIRD_END); }
+  function addonActFor(kind, age){
+    var re = kind === 'frozen' ? /frozen/i : /mermaid/i;
+    var acts = state.allCat.filter(function(a){ return a.bb_gated && a.bookable && re.test(a.name) && a.category !== 'class'; });
+    if (!acts.length) return null;
+    var hit = acts.filter(function(a){
+      var m = String(a.age_range||'').match(/(\d+)\D+(\d+)/);
+      return m && age != null && age >= +m[1] && age <= +m[2];
+    })[0];
+    return hit || acts[0];
+  }
   function isPublicOpen(){ return new Date() >= new Date(C.PUBLIC_OPEN_AT); }
 
   // ---------- boot: returning from magic link? ----------
@@ -401,12 +418,13 @@
     Promise.all([
       sb.rpc('get_my_family'),
       sb.rpc('inventory_status'),
-      state.catIds.length ? sb.rpc('catalog_list') : Promise.resolve({data: []}),
+      sb.rpc('catalog_list'),
       sb.rpc('family_fee_due', { p_email: state.email })
     ]).then(function(results){
       var fam = results[0].data;
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
-      state.catItems = (results[2].data || []).filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+      state.allCat = results[2].data || [];
+      state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
       state.feeDue = !!results[3].data;
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
@@ -486,14 +504,9 @@
     var nShows = state.shows.length;
     $('showsNext').disabled = nShows === 0;
     if (nShows === 0) { t.textContent = 'Select a show to see your early-bird price.'; return; }
-    var n = estItemCount();
-    var rate = discRate(n);
-    var unit = Math.round(C.PRICE * (1-rate));
-    var msg = '🎟️ ' + n + ' camp registration' + (n > 1 ? 's' : '') + ' = ' +
-      Math.round(rate*100) + '% off each ($' + unit + ' per camp)';
-    if (n === 1) msg += ' · a 2nd registration drops both to 15%';
-    else if (n === 2) msg += ' · a 3rd drops everything to 20%';
-    else msg += ' — our best price on every camp';
+    var msg = saleOn()
+      ? '🎟️ Per-kid launch pricing: 1 camp 10% · 2 camps 15% · all 3 = 20% off each ($796/camp) — locked through Aug 15.'
+      : '🎟️ Summer 2027 — $995 per two-week camp.';
     t.textContent = msg;
   }
   $('showsNext').addEventListener('click', function(){ renderAssign(); go('st-assign'); });
@@ -508,7 +521,7 @@
     if (age >= 10 && age <= 15) b.push('tech');
     return b;
   }
-  function bandLabel(b){ return b === 'tech' ? '🔧 Tech' : 'Ages ' + b; }
+  function bandLabel(b){ return b === 'tech' ? '🔧 Tech' : ({'5-9':'Ages 5–8','9-12':'Ages 9–12','12-15':'Ages 13–15'})[b] || ('Ages ' + b); }
   function renderAssign(){
     var kids = state.kids.filter(function(k){ return k.sel; });
     var html = state.shows.map(function(show){
@@ -586,6 +599,10 @@
         var a = state.assign[show + '|' + k.name];
         if (a && a.on) items.push({ show: show, band: a.band, camper: k.name });
       });
+    });
+    Object.keys(state.addons).forEach(function(key){
+      var id = state.addons[key];
+      if (id) items.push({ activity_id: id, camper: key.split('|')[1] });
     });
     return items;
   }
@@ -675,14 +692,16 @@
       var a = byId[it.activity_id] || {};
       if (a.category === 'class') {
         var base = 9000;
-        return (it.camper && it.camper !== firstChild) ? Math.round(base * 0.95) : base;
+        if (it.camper && it.camper !== firstChild) base = Math.round(base * 0.95);
+        if (state.insurance) base = Math.round(base * 1.10);
+        return base;
       }
-      return a.price_cents || 0;
+      var u = a.price_cents || 0;
+      return state.insurance ? Math.round(u * 1.10) : u;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
-    var fee = state.feeDue ? C.FAMILY_FEE * 100 : 0;
-    return { items: items, units: units, subtotal: subtotal, fee: fee,
-             total: subtotal + fee, today: subtotal + fee,
+    return { items: items, units: units, subtotal: subtotal, fee: 0,
+             total: subtotal, today: subtotal,
              monthly: catAllClasses() ? units : [] };
   }
   function renderCatPay(){
@@ -700,55 +719,131 @@
       '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
+    var insLbl = $('insOk') && $('insOk').parentElement.querySelector('span');
+    if (insLbl && catAllClasses()) insLbl.innerHTML = '<b>Add tuition insurance (+10%)</b> — your monthly tuition becomes ' + money(9900) + '/class, with protection if plans change per our <a href="/policies" target="_blank" rel="noopener">policy terms</a>. Without it, all payments are final.';
     $('payBreakdown').innerHTML = catAllClasses()
-      ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month' + (p.fee ? ' + the annual family fee' : '') + '. Monthly tuition continues automatically once the season is underway (next bill Oct 1) — cancel anytime per our policies.</p>'
-      : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done.</p>';
+      ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
+      : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done. All sales final.</p>';
   }
   function localPricing(){
     var items = state.hold ? state.hold.items : buildItems();
+    var byKid = {};
+    items.forEach(function(it){ if (it.show) { var k = it.camper||'?'; byKid[k] = (byKid[k]||0)+1; } });
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    var units = items.map(function(it){
+      if (it.show) return Math.round(C.PRICE * 100 * (1 - discRate(byKid[it.camper||'?'])));
+      var a = byIdAll[it.activity_id] || {};
+      var base = a.price_cents || 69500;
+      var kid = it.camper||'?';
+      var kidShowN = items.filter(function(x){ return !x.show && (x.camper||'?') === kid; }).length;
+      return (byKid[kid] || kidShowN >= 2) ? Math.round(base * 0.9) : base;
+    });
+    var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
+    var ins = state.insurance ? Math.round(subtotal * C.INSURANCE_PCT / 100) : 0;
+    var total = subtotal + ins;
     var n = items.length;
-    var rate = discRate(n);
-    var unit = Math.round(C.PRICE * 100 * (1-rate));
-    var subtotal = unit * n;
-    if (state.plan === 'full') return { n:n, rate:rate, unit:unit, subtotal:subtotal, fee:0, total:subtotal, today:subtotal, inst:0 };
-    var today = C.DEPOSIT_PER_CAMP * 100 * n + C.FAMILY_FEE * 100;
-    var remainder = subtotal - C.DEPOSIT_PER_CAMP * 100 * n;
-    return { n:n, rate:rate, unit:unit, subtotal:subtotal, fee:C.FAMILY_FEE*100, total:subtotal + C.FAMILY_FEE*100, today:today, inst:Math.ceil(remainder / C.INSTALLMENTS) };
+    if (state.plan === 'full') return { n:n, items:items, units:units, subtotal:subtotal, ins:ins, total:total, today:total, inst:0 };
+    var deposit = C.DEPOSIT_PER_CAMP * 100 * n;
+    return { n:n, items:items, units:units, subtotal:subtotal, ins:ins, total:total,
+             today: deposit + ins, inst: Math.ceil((subtotal - deposit) / C.INSTALLMENTS) };
   }
 
   function renderPay(){
     if (isCatMode()) { renderCatPay(); return; }
-    var items = state.hold ? state.hold.items : buildItems();
     var p = localPricing();
-    var fullPrice = C.PRICE * 100;
-    var savings = (fullPrice - p.unit) * p.n;
-    var rows = items.map(function(it){
-      return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span></span><span>' + money(p.unit) + '</span></div>';
+    var items = p.items;
+    var byKid = {};
+    items.forEach(function(it){ if (it.show) { var k = it.camper||'?'; byKid[k] = (byKid[k]||0)+1; } });
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    var savings = items.reduce(function(sum, it, i){
+      var full = it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 0);
+      return sum + Math.max(0, full - p.units[i]);
+    }, 0);
+    var rows = items.map(function(it, i){
+      var label = it.show
+        ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
+        : esc(it.camper) + ' — ' + esc((byIdAll[it.activity_id]||{}).name || 'Show') + ' <span class="savings">(10% bundle)</span>';
+      var pct = it.show ? Math.round(discRate(byKid[it.camper||'?'])*100) : 0;
+      return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + '</span><span>' + money(p.units[i]) + '</span></div>';
     }).join('');
     $('summaryCard').innerHTML =
-      '<div class="sumrow head"><span>Your summer</span><span>' + Math.round(p.rate*100) + '% off each</span></div>' + rows +
-      (savings > 0 ? '<div class="sumrow"><span class="savings">Early-bird savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
-      (p.fee ? '<div class="sumrow"><span>Annual family registration</span><span>' + money(p.fee) + '</span></div>' : '') +
+      '<div class="sumrow head"><span>Your summer</span><span>per-kid launch pricing</span></div>' + rows +
+      (savings > 0 ? '<div class="sumrow"><span class="savings">Launch-sale savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
+      (p.ins ? '<div class="sumrow"><span>Tuition insurance (10%)</span><span>' + money(p.ins) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Total</span><span>' + money(p.total) + '</span></div>';
 
     $('payBreakdown').innerHTML = state.plan === 'deposit'
       ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">Then ' + C.INSTALLMENTS + ' monthly payments of ' + money(p.inst) + ' (Sep 2026 – Apr 2027), automatic on this card.</p>'
+        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card — fully paid at least 2 weeks before camp. Exact schedule shown before you pay.</p>'
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — no family fee, no future payments.</p>';
+        '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
-    // honest upsell: only when a real cheaper tier exists
+    renderUpsells(p, byKid, byIdAll);
+  }
+
+  function renderUpsells(p, byKid, byIdAll){
     var box = $('upsellBox');
-    if (p.n > 0 && p.n < 3 && new Date() <= new Date(C.EARLYBIRD_END)) {
-      var nextRate = discRate(p.n + 1);
-      var nextUnit = Math.round(C.PRICE * 100 * (1 - nextRate));
-      var extraSave = (p.unit - nextUnit) * p.n;
+    var html = '';
+    if (saleOn()) {
+      var hints = Object.keys(byKid).filter(function(k){ return byKid[k] > 0 && byKid[k] < 3; }).map(function(k){
+        var next = Math.round(discRate(byKid[k]+1)*100);
+        return '<b>' + esc(k.split(' ')[0]) + '</b> is one show away from <b>' + next + '% off each camp</b>';
+      });
+      if (hints.length) {
+        html += '<div>' + hints.join(' · ') + ' — <a href="#" id="upsellAdd">add a show →</a></div>';
+      }
+      var kidsInCart = Object.keys(byKid);
+      var addonRows = [];
+      kidsInCart.forEach(function(kName){
+        var kid = state.kids.filter(function(k){ return k.name === kName; })[0] || {};
+        ['frozen','mermaid'].forEach(function(kind){
+          var act = addonActFor(kind, kid.age);
+          if (!act) return;
+          var key = kind + '|' + kName;
+          var priceOff = Math.round((act.price_cents||69500) * 0.9);
+          addonRows.push('<label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:6px;cursor:pointer">' +
+            '<input type="checkbox" class="addonCb" data-key="' + esc(key) + '" data-id="' + act.id + '"' + (state.addons[key] ? ' checked' : '') + ' style="width:16px;height:16px;accent-color:var(--gold2)">' +
+            '<span>Add <b>' + esc(act.name) + '</b> for ' + esc(kName.split(' ')[0]) + ' — <b>10% off (' + money(priceOff) + ')</b> bundled with camp</span></label>');
+        });
+      });
+      if (addonRows.length) {
+        html += '<div style="margin-top:10px"><b>Same stage, all year:</b> bundle a school-year show for 10% off.' + addonRows.join('') + '</div>';
+      }
+    }
+    if (html) {
       box.style.display = '';
-      box.innerHTML = '<b>One more registration changes the math.</b> Add any camp for any camper and every registration in this order drops to <b>' +
-        Math.round(nextRate*100) + '% off (' + money(nextUnit) + ')</b> — that\'s ' + money(extraSave) +
-        ' more off what\'s already here. <button class="btn" id="upsellAdd">+ Add Another Camp</button>';
-      $('upsellAdd').addEventListener('click', function(){ ev('reg_upsell_clicked'); go('st-shows'); updateTicker(); });
+      box.innerHTML = html;
+      var ua = document.getElementById('upsellAdd');
+      if (ua) ua.addEventListener('click', function(e){ e.preventDefault(); ev('reg_upsell_clicked'); go('st-shows'); updateTicker(); });
+      box.querySelectorAll('.addonCb').forEach(function(cb){
+        cb.addEventListener('change', function(){
+          state.addons[cb.dataset.key] = cb.checked ? +cb.dataset.id : null;
+          state.clientSecret = null;
+          $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none'; $('payStart').style.display = '';
+          ev('reg_addon_toggled', { key: cb.dataset.key, on: cb.checked });
+          acquireHold();
+        });
+      });
     } else box.style.display = 'none';
+  }
+
+  $('insOk').addEventListener('change', function(){
+    state.insurance = $('insOk').checked;
+    state.clientSecret = null;
+    $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none'; $('payStart').style.display = '';
+    renderPay();
+    ev('reg_insurance_toggled', { on: state.insurance });
+  });
+
+  function renderServerBreakdown(p){
+    if (state.plan !== 'deposit' || !p.n_installments) return;
+    var first = p.first_installment_utc ? new Date(p.first_installment_utc * 1000) : null;
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var when = first ? (months[first.getUTCMonth()] + ' ' + first.getUTCFullYear()) : '';
+    $('payBreakdown').innerHTML =
+      '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today_cents) + '</span></div>' +
+      '<p class="tiny" style="text-align:left;margin-top:2px">Then <b>' + p.n_installments + ' monthly payments of ' + money(p.installment_cents) +
+      '</b> starting ' + when + ' — automatic on this card, fully paid at least 2 weeks before camp.</p>';
   }
 
   $('payStart').addEventListener('click', function(){
@@ -767,17 +862,25 @@
       return fetch('/api/reg-pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim() })
+        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance })
       });
     }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
     .then(function(res){
       $('payStart').disabled = false;
       if (!res.ok) {
-        var msg = res.j.error === 'hold_expired' ? 'Your hold expired — re-hold your spots.' : 'Could not start payment (' + (res.j.error || 'error') + ').';
+        var msg = res.j.error === 'hold_expired' ? 'Your hold expired — re-hold your spots.'
+          : res.j.error === 'pay_full_only' ? 'This program starts within 2 weeks — payment in full is required.'
+          : 'Could not start payment (' + (res.j.error || 'error') + ').';
+        if (res.j.error === 'pay_full_only') {
+          state.plan = 'full';
+          document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.toggle('sel', o.dataset.plan === 'full'); });
+          renderPay();
+        }
         $('payErr').textContent = msg; $('payErr').classList.add('on'); return;
       }
       state.clientSecret = res.j.client_secret;
       state.pricing = res.j.pricing;
+      renderServerBreakdown(res.j.pricing);
       mountStripe();
       ev('reg_payment_started', { plan: state.plan, today_cents: res.j.pricing.today_cents });
     }).catch(function(){
@@ -818,6 +921,29 @@
     });
   });
 
+  function fsaReceipt(){
+    var p = state.pricing || {};
+    var items = (state.hold && state.hold.items) || [];
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    var units = p.unit_prices || [];
+    var rows = items.map(function(it, i){
+      var prog = it.show ? (SHOW_NAMES[it.show] + ' — Summer Camp ' + ({httyd:'Jul 5–16 2027',charlie:'Jul 19–30 2027',trolls:'Aug 2–13 2027'})[it.show] || '')
+        : ((byIdAll[it.activity_id]||{}).name || 'Program');
+      return '<tr><td>' + esc(it.camper||'') + '</td><td>' + esc(prog) + '</td><td style="text-align:right">' + money(units[i]||0) + '</td></tr>';
+    }).join('');
+    var w = window.open('', '_blank');
+    w.document.write('<html><head><title>NOVAPA Receipt</title></head><body style="font-family:Georgia,serif;max-width:640px;margin:40px auto;color:#111">' +
+      '<h2 style="margin-bottom:0">Northern Virginia Performing Arts</h2>' +
+      '<p style="margin-top:4px">18665 Conference Center Drive, Leesburg, VA 20176<br>Tax ID (EIN): 99-1421341 · cj@novapa.org</p>' +
+      '<h3>Dependent care services receipt</h3>' +
+      '<p>Date: ' + new Date().toLocaleDateString() + '<br>Parent/guardian: ' + esc($('parentName').value || state.email || '') + '</p>' +
+      '<table style="width:100%;border-collapse:collapse" border="1" cellpadding="6"><tr><th>Child</th><th>Program (dates of service)</th><th>Amount</th></tr>' + rows + '</table>' +
+      '<p><b>Paid today: ' + money(p.today_cents||0) + '</b>' + (p.total_cents && p.total_cents !== p.today_cents ? ' · Program total: ' + money(p.total_cents) + ' (remainder billed monthly)' : '') + '</p>' +
+      '<p style="font-size:13px">Provided for Dependent Care FSA reimbursement. Northern Virginia Performing Arts provides care and enrichment programming enabling parents/guardians to work.</p>' +
+      '</body></html>');
+    w.document.close(); w.print();
+  }
+
   function finish(){
     clearInterval(timerInt);
     $('holdChip').classList.remove('on'); $('topNote').style.display='';
@@ -832,6 +958,8 @@
         (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full. 🎉');
     }
     renderProfileForms(items);
+    var fb = document.getElementById('fsaBtn');
+    if (fb) fb.addEventListener('click', function(e){ e.preventDefault(); fsaReceipt(); });
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
     go('st-done');
   }

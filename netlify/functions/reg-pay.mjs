@@ -1,16 +1,18 @@
 // POST /api/reg-pay — create a Stripe PaymentIntent for an active hold.
-// Body: { hold_id, plan: "deposit"|"full"|"subscription", parent_name }
+// Body: { hold_id, plan: "deposit"|"full"|"subscription", parent_name, insurance }
 // Auth: Authorization: Bearer <supabase user JWT>
 // Pricing is computed here — client math is display-only.
 //
-// Two cart kinds (not mixed):
-//  - summer items {show, band, camper}: tiered camps, deposit or pay-in-full
-//  - catalog items {activity_id, camper}: classes ($90/mo sub, first month now,
-//    5% sibling on 2nd+ child) or BB shows (pay-in-full at listed price)
+// Cart kinds:
+//  - one-time items: summer camps {show, band, camper} and BB shows
+//    {activity_id, camper} may MIX in one cart (per-kid tiers, bundle 10%,
+//    deposit plans w/ installments ending 2 weeks before earliest start)
+//  - classes {activity_id, camper}: must be alone, plan=subscription
+//    ($90/mo, 5% sibling for 2nd+ child, insurance = monthly x1.10)
 import Stripe from "stripe";
 import {
-  SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceOrder,
-  CLASS_PRICE_CENTS, SIBLING_PCT, FAMILY_FEE_CENTS,
+  SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart,
+  CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, showStartFor,
 } from "./reg-config.mjs";
 
 async function anonRpc(fn, args, jwt) {
@@ -41,6 +43,7 @@ export default async (req) => {
   let body;
   try { body = await req.json(); } catch { return Response.json({ error: "bad_json" }, { status: 400 }); }
   const { hold_id, plan, parent_name } = body || {};
+  const insurance = !!(body || {}).insurance;
   if (!hold_id || !["deposit", "full", "subscription"].includes(plan)) {
     return Response.json({ error: "bad_request" }, { status: 400 });
   }
@@ -61,64 +64,77 @@ export default async (req) => {
 
   const items = hold.items;
   const summerItems = items.filter((it) => it.show);
-  const catalogItems = items.filter((it) => it.activity_id);
-  if (summerItems.length && catalogItems.length) {
-    return Response.json({ error: "mixed_cart" }, { status: 400 });
-  }
+  const activityItems = items.filter((it) => it.activity_id);
 
-  let pricing;         // { todayCents, totalCents, installmentCents, unitPrices[], monthlyItems[] }
-  let description;
-
-  if (summerItems.length) {
-    // existing summer camp path — unchanged math
-    if (plan === "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
-    const p = priceOrder(summerItems, plan);
-    pricing = {
-      todayCents: p.todayCents, totalCents: p.totalCents,
-      installmentCents: p.installmentCents,
-      unitPrices: summerItems.map(() => p.unitCents),
-      monthlyItems: [], discountPct: Math.round(p.rate * 100),
-      familyFeeCents: p.familyFeeCents,
-    };
-    description = summerItems
-      .map((it) => `${it.camper || "Camper"} — ${SHOWS[it.show] || it.show} (${it.band})`)
-      .join("; ");
-  } else {
-    // catalog path
-    const ids = [...new Set(catalogItems.map((it) => it.activity_id))];
+  // resolve activity items
+  let byId = {};
+  if (activityItems.length) {
+    const ids = [...new Set(activityItems.map((it) => it.activity_id))];
     const acts = await anonRpc("activity_prices", { p_ids: ids });
     if (!acts || acts.length !== ids.length) {
       return Response.json({ error: "unknown_activity" }, { status: 400 });
     }
-    const byId = Object.fromEntries(acts.map((a) => [a.id, a]));
-    const allClasses = catalogItems.every((it) => byId[it.activity_id].category === "class");
-    const anyClasses = catalogItems.some((it) => byId[it.activity_id].category === "class");
-    if (anyClasses && !allClasses) return Response.json({ error: "mixed_cart" }, { status: 400 });
-    if (allClasses && plan !== "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
-    if (!allClasses && plan !== "full") return Response.json({ error: "bad_plan" }, { status: 400 });
+    byId = Object.fromEntries(acts.map((a) => [a.id, a]));
+  }
+  const classItems = activityItems.filter((it) => byId[it.activity_id].category === "class");
+  const showItems = activityItems.filter((it) => byId[it.activity_id].category !== "class");
+  if (classItems.length && (summerItems.length || showItems.length)) {
+    return Response.json({ error: "mixed_cart" }, { status: 400 });
+  }
 
-    const feeDue = !!(await anonRpc("family_fee_due", { p_email: email }));
-    const firstChild = (catalogItems[0] || {}).camper;
-    const unitPrices = catalogItems.map((it) => {
-      const a = byId[it.activity_id];
-      if (a.category === "class") {
-        const base = CLASS_PRICE_CENTS;
-        // 5% sibling discount: class registrations for 2nd+ distinct child
-        return it.camper && it.camper !== firstChild
-          ? Math.round(base * (1 - SIBLING_PCT / 100)) : base;
+  let pricing;         // normalized for metadata + UI
+  let description;
+
+  if (classItems.length) {
+    if (plan !== "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
+    const firstChild = (classItems[0] || {}).camper;
+    const unitPrices = classItems.map((it) => {
+      let base = CLASS_PRICE_CENTS;
+      if (it.camper && it.camper !== firstChild) {
+        base = Math.round(base * (1 - SIBLING_PCT / 100)); // sibling runs now (non-BB)
       }
-      return a.price_cents;
+      if (insurance) base = Math.round(base * (1 + INSURANCE_PCT / 100));
+      return base;
     });
     const subtotal = unitPrices.reduce((s, v) => s + v, 0);
-    const feeCents = feeDue ? FAMILY_FEE_CENTS : 0;
     pricing = {
-      todayCents: subtotal + feeCents, totalCents: subtotal + feeCents,
-      installmentCents: 0, unitPrices,
-      monthlyItems: allClasses ? unitPrices : [],
-      discountPct: 0, familyFeeCents: feeCents,
+      todayCents: subtotal, totalCents: subtotal, subtotalCents: subtotal,
+      insuranceCents: 0, // built into the monthly price for classes
+      installmentCents: 0, nInstallments: 0, firstInstallmentUTC: 0,
+      unitPrices, monthlyItems: unitPrices, discountPct: 0,
     };
-    description = catalogItems
+    description = classItems
       .map((it) => `${it.camper || "Camper"} — ${byId[it.activity_id].name}`)
+      .join("; ");
+  } else {
+    if (plan === "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
+    const cart = [
+      ...summerItems,
+      ...showItems.map((it) => ({
+        ...it,
+        name: byId[it.activity_id].name,
+        price_cents: byId[it.activity_id].price_cents,
+        start: showStartFor(byId[it.activity_id].name),
+      })),
+    ];
+    const p = priceCart(cart, plan, { insurance });
+    if (plan === "deposit" && p.payFullOnly) {
+      return Response.json({ error: "pay_full_only" }, { status: 400 });
+    }
+    pricing = {
+      todayCents: p.todayCents, totalCents: p.totalCents, subtotalCents: p.subtotal,
+      insuranceCents: p.insuranceCents,
+      installmentCents: p.installmentCents,
+      nInstallments: p.installmentDatesUTC.length,
+      firstInstallmentUTC: p.installmentDatesUTC[0] || 0,
+      unitPrices: p.items.map((it) => it.unit),
+      monthlyItems: [],
+      discountPct: Math.round(Math.max(...p.items.map((it) => it.rate), 0) * 100),
+    };
+    description = cart
+      .map((it) => it.show
+        ? `${it.camper || "Camper"} — ${SHOWS[it.show] || it.show} (${it.band})`
+        : `${it.camper || "Camper"} — ${it.name}`)
       .join("; ");
   }
 
@@ -134,7 +150,7 @@ export default async (req) => {
     customer: customer.id,
     setup_future_usage: (plan === "deposit" || plan === "subscription") ? "off_session" : undefined,
     automatic_payment_methods: { enabled: true },
-    description: `NOVAPA — ${plan === "deposit" ? "camp reservation deposit"
+    description: `NOVAPA — ${plan === "deposit" ? "reservation deposit"
       : plan === "subscription" ? "class enrollment (first month)" : "paid in full"}`,
     statement_descriptor_suffix: "NOVAPA",
     metadata: {
@@ -142,9 +158,12 @@ export default async (req) => {
       parent_name: (parent_name || "").slice(0, 100),
       total_cents: String(pricing.totalCents),
       installment_cents: String(pricing.installmentCents),
+      n_installments: String(pricing.nInstallments),
+      first_installment_utc: String(pricing.firstInstallmentUTC),
+      insurance_cents: String(pricing.insuranceCents),
+      insured: insurance ? "1" : "0",
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
-      fee_charged: pricing.familyFeeCents > 0 ? "1" : "0",
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
     },
@@ -156,10 +175,13 @@ export default async (req) => {
       n: items.length,
       discount_pct: pricing.discountPct,
       unit_prices: pricing.unitPrices,
-      family_fee_cents: pricing.familyFeeCents,
+      subtotal_cents: pricing.subtotalCents,
+      insurance_cents: pricing.insuranceCents,
       total_cents: pricing.totalCents,
       today_cents: pricing.todayCents,
       installment_cents: pricing.installmentCents,
+      n_installments: pricing.nInstallments,
+      first_installment_utc: pricing.firstInstallmentUTC,
       monthly_items: pricing.monthlyItems,
     },
   });

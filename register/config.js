@@ -12,8 +12,8 @@ window.NOVAREG = {
   // Display constants — server (reg-config.mjs) is the source of truth.
   PRICE: 995,
   DEPOSIT_PER_CAMP: 180,
-  FAMILY_FEE: 25,
   INSTALLMENTS: 8,
+  INSURANCE_PCT: 10,
   EARLYBIRD_END: "2026-08-15T23:59:59-04:00",
   PUBLIC_OPEN_AT: "2026-08-01T10:00:00-04:00",
 };
