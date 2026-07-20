@@ -7,7 +7,7 @@ window.NOVAREG = {
     "sb_publishable_8ar97CkK-C0YlWuOGtI_tA_mwTDVE6H",
   // Stripe PUBLISHABLE key (pk_test_... for testing, pk_live_... at launch).
   // Set by Jason — leave "" to show the payments-not-configured notice.
-  STRIPE_PUBLISHABLE_KEY: "pk_test_51Ofz6ZHHQ0jZRpHdzK7YkFWlnU6M0hAwgFcnJPV8ZEDMKU8H0I0SOfJ7aVYGeQzMoiBuYSz5nFFyF3gyMmA03RNr00ItKrhNzQ",
+  STRIPE_PUBLISHABLE_KEY: "pk_live_51TvMGTGWP2ZbtaszSIFv1Ee0L7eyPtRVfvkaaR7xtnLTEMtGvngtbTwJngTlJKq70OkQ9LyGH5xt0y4JfziZVdTx001CwdMSlg",
 
   // Display constants — server (reg-config.mjs) is the source of truth.
   PRICE: 995,
