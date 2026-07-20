@@ -57,11 +57,11 @@
 <body>
 <div class="top">
   <a class="brand" href="/">NOVA<em>PA</em></a>
-  <div class="top-note">Program Catalog · internal preview</div>
+  <div class="top-note">Program Catalog</div>
 </div>
 <div class="wrap">
   <h1>Everything NOVAPA offers</h1>
-  <p class="sub">Launch sale through Aug 15: summer camps 10/15/20% off per kid (1/2/all 3 shows) · Frozen + Little Mermaid 10% off when bundled — with each other or any summer camp. Register before Aug 1 and your family is entered to win 10 tickets to any NOVAPA show.</p>
+  <p class="sub">Discounts apply automatically at checkout.</p>
   <div class="disc" id="discBar">Loading discounts…</div>
   <div class="bar">
     <button class="tab sel" data-f="all">All</button>
@@ -109,6 +109,7 @@
         '<div class="bd">' +
           '<div class="nm">' + esc(r.name) + '</div>' +
           '<div class="meta">' + esc(r.age_range || '') + (r.schedule_name ? ' · ' + esc(r.schedule_name) : '') + '</div>' +
+          (r.bookable && r.remaining != null && r.remaining < 20 ? '<div class="meta" style="color:var(--gold3);font-weight:700">' + (r.remaining <= 0 ? 'Full' : r.remaining + ' more spots available') + '</div>' : '') +
           '<div class="tags">' + (r.widget_tags||[]).slice(0,3).map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
           '<div class="ft"><span class="pr">' + esc((r.pricing||[])[0] || '') + '</span>' +
           '<span class="sp" style="color:var(--gold2);font-weight:700">' + cta + '</span></div>' +
@@ -118,7 +119,7 @@
   }
   rpc('catalog_list').then(function(rows){ all = rows || []; render(); });
   rpc('discounts_list').then(function(ds){
-    document.getElementById('discBar').innerHTML = '🎟️ <b>Advertised discounts:</b> ' + (ds||[]).map(function(d){
+    document.getElementById('discBar').innerHTML = '<b>Current offers:</b> ' + (ds||[]).map(function(d){
       return esc(d.name);
     }).join(' · ');
   });

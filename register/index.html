@@ -81,7 +81,7 @@
     background:var(--card); border:2px solid var(--line); border-radius:16px; padding:18px;
     transition:border-color .15s, background .15s;
   }
-  .show-card .art { font-size:38px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; border-radius:14px; flex-shrink:0; }
+  .show-card .art { font-size:30px; width:64px; height:64px; display:flex; align-items:center; justify-content:center; border-radius:14px; flex-shrink:0; font-family:'Cormorant Garamond',serif; font-weight:700; color:rgba(255,255,255,0.92); }
   .show-card[data-show=httyd] .art { background:linear-gradient(135deg,#123c33,#1f6b52); }
   .show-card[data-show=charlie] .art { background:linear-gradient(135deg,#4a1f5c,#7b2d8b); }
   .show-card[data-show=trolls] .art { background:linear-gradient(135deg,#0f4a6b,#2a8fb8); }
@@ -154,7 +154,7 @@
   <section class="step on" id="st-gate">
     <div class="eyebrow">Summer 2027 · Broadway Bound</div>
     <h1>Reserve your camper's <em>summer</em> in about 3 minutes.</h1>
-    <p class="sub">Three shows. Limited spots per age group. Start with the email you've used with NOVAPA before — returning families get priority access.</p>
+    <p class="sub">Start with the email you've used with NOVAPA before.</p>
     <div class="card">
       <input type="email" id="emailInput" placeholder="parent@email.com" autocomplete="email">
       <button class="btn" id="emailGo">Continue</button>
@@ -176,19 +176,17 @@
 
   <!-- STEP: waitlist (pre-open unknown emails) -->
   <section class="step" id="st-waitlist">
-    <div class="eyebrow">Private re-enrollment underway</div>
-    <h1>Returning families go first. <em>You're next.</em></h1>
-    <p class="sub">Right now, current NOVAPA families are re-enrolling for Summer 2027. Everything left opens to the public on <b>Saturday, August 1 at 10 AM</b> — and the waitlist gets the link one hour early.</p>
+    <div class="eyebrow">Summer 2027</div>
+    <h1>Registration opens <em>August 1.</em></h1>
+    <p class="sub">Public registration opens Saturday, August 1 at 10 AM. The waitlist gets the link one hour early.</p>
     <div class="card center" id="wlCard">
-      <p style="font-weight:700; color:var(--gold3); margin-bottom:6px">Every show caps: 35 (5–9) · 60 (9–12) · 60 (12–15) · 20 Tech</p>
-      <button class="btn" id="wlJoin">Put Me in Line for August 1</button>
+      <button class="btn" id="wlJoin">Join the Waitlist</button>
       <div class="err" id="wlErr"></div>
-      <p class="tiny">No payment, no obligation — just first access.</p>
+      <p class="tiny">No payment, no obligation.</p>
     </div>
     <div class="card center" id="wlDone" style="display:none">
-      <div class="conf-art">🎟️</div>
-      <p style="font-weight:700; color:#fff; font-size:18px">You're in line!</p>
-      <p class="tiny">Watch your inbox the morning of August 1. Early-bird pricing (up to 20% off) runs through August 15.</p>
+      <p style="font-weight:700; color:#fff; font-size:18px">You're on the list.</p>
+      <p class="tiny">Watch your inbox the morning of August 1.</p>
     </div>
   </section>
 
@@ -215,20 +213,20 @@
     <button class="back" data-back="st-family">← Back</button>
     <div class="eyebrow">Step 2 of 4</div>
     <h1>Pick your <em>shows.</em></h1>
-    <p class="sub">Each is a two-week, full-day camp ($995) at the National Conference Center, Leesburg. Select every show that fits your summer — the more shows one camper does, the deeper that camper's discount (all 3 = 20% off each).</p>
+    <p class="sub">Two-week, full-day camps at the National Conference Center, Leesburg.</p>
     <div class="shows">
       <div class="show-card" data-show="httyd">
-        <div class="art">🐉</div>
+        <div class="art">D</div>
         <div><div class="t">How to Train Your Dragon JR.</div><div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:00</div></div>
         <div class="tick">✓</div>
       </div>
       <div class="show-card" data-show="charlie">
-        <div class="art">🍫</div>
+        <div class="art">C</div>
         <div><div class="t">Charlie and the Chocolate Factory JR.</div><div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:00</div></div>
         <div class="tick">✓</div>
       </div>
       <div class="show-card" data-show="trolls">
-        <div class="art">🌈</div>
+        <div class="art">T</div>
         <div><div class="t">Trolls The Musical JR.</div><div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00</div></div>
         <div class="tick">✓</div>
       </div>
@@ -242,11 +240,11 @@
     <button class="back" data-back="st-shows">← Back</button>
     <div class="eyebrow">Step 3 of 4</div>
     <h1>Who does <em>which show?</em></h1>
-    <p class="sub">Check each camper joining each show, and confirm their track. Ages 5–8, 9–12, 13–15 — or Technical Theatre (10–15): sets, lights, sound, stage crew. Border age? Your call — pick the group that fits your kid.</p>
+    <p class="sub">Check each camper into their shows and pick their age group.</p>
     <div id="assignBlocks"></div>
     <div class="err" id="assignErr"></div>
-    <button class="btn" id="assignNext">Hold My Spots for 30 Minutes →</button>
-    <p class="tiny">Nothing is charged yet — this reserves your spots while you finish.</p>
+    <button class="btn" id="assignNext">Hold My Spots →</button>
+    <p class="tiny">Nothing is charged yet — spots are held for 30 minutes.</p>
   </section>
 
   <!-- STEP: pay -->
@@ -260,12 +258,11 @@
       <div class="plan-toggle">
         <div class="plan-opt sel" data-plan="deposit">
           <div class="p1">Reserve today</div>
-          <div class="p2">$180 per registration now — monthly autopay, fully paid 2 weeks before camp</div>
+          <div class="p2">$180 per registration now, rest on monthly autopay</div>
         </div>
         <div class="plan-opt" data-plan="full">
           <div class="p1">Pay in full</div>
           <div class="p2">One payment, done</div>
-          <div class="perk">Simplest — nothing owed later</div>
         </div>
       </div>
       <div id="payBreakdown"></div>
@@ -282,27 +279,25 @@
       <div id="payElement"></div>
       <button class="btn" id="paySubmit" style="display:none">Pay <span id="payAmt"></span></button>
       <div class="err" id="payErr"></div>
-      <p class="tiny">Secure payment by Stripe · No booking fees · FSA dependent-care eligible (automatic receipt) · Launch pricing locked through Aug 15</p>
-      <p class="tiny">🎟️ Register before Aug 1 — one family wins <b>10 tickets to any NOVAPA show</b>, drawn &amp; emailed Aug 1.</p>
+      <p class="tiny">Secure payment by Stripe · No booking fees · FSA eligible</p>
     </div>
   </section>
 
   <!-- STEP: done -->
   <section class="step" id="st-done">
-    <div class="conf-art">🎭✨</div>
     <h1 class="center">That's a <em>bow-worthy</em> decision.</h1>
     <p class="sub center" id="doneRecap"></p>
     <div class="card">
       <div class="sumrow head"><span>What happens next</span><span></span></div>
       <p class="sub" style="margin:6px 0 0; font-size:14.5px">
-        📧 Receipt + confirmation are on the way to your inbox.<br>
-        📋 Your registration details land in your NOVAPA account within 1–2 business days.<br>
-        🍂 Keep the momentum: <a href="/classes">fall classes are enrolling now</a> — same stage, all year.<br>
-        💾 Using a Dependent Care FSA? <a href="#" id="fsaBtn">Print your FSA receipt</a> (includes our Tax ID).
+        Receipt and confirmation are on the way to your inbox.<br>
+        Your registration lands in your NOVAPA account within 1–2 business days.<br>
+        <a href="/classes">Fall classes are enrolling now</a>.<br>
+        Using a Dependent Care FSA? <a href="#" id="fsaBtn">Print your FSA receipt</a>.
       </p>
     </div>
     <div class="card" id="profileForms"></div>
-    <p class="tiny">Friends want in? Send them to <b>novapa.org/summer-2027</b> — the waitlist gets first access on Aug 1.</p>
+    <p class="tiny">Friends want in? Send them to <b>novapa.org/summer-2027</b>.</p>
   </section>
 
 </div>
@@ -505,8 +500,8 @@
     $('showsNext').disabled = nShows === 0;
     if (nShows === 0) { t.textContent = 'Select a show to see your early-bird price.'; return; }
     var msg = saleOn()
-      ? '🎟️ Per-kid launch pricing: 1 camp 10% · 2 camps 15% · all 3 = 20% off each ($796/camp) — locked through Aug 15.'
-      : '🎟️ Summer 2027 — $995 per two-week camp.';
+      ? '1 camp 10% off · 2 camps 15% off · all 3 20% off each — through Aug 15.'
+      : '$995 per two-week camp.';
     t.textContent = msg;
   }
   $('showsNext').addEventListener('click', function(){ renderAssign(); go('st-assign'); });
@@ -521,7 +516,7 @@
     if (age >= 10 && age <= 15) b.push('tech');
     return b;
   }
-  function bandLabel(b){ return b === 'tech' ? '🔧 Tech' : ({'5-9':'Ages 5–8','9-12':'Ages 9–12','12-15':'Ages 13–15'})[b] || ('Ages ' + b); }
+  function bandLabel(b){ return b === 'tech' ? 'Tech (10\u201315)' : ({'5-9':'Ages 5–8','9-12':'Ages 9–12','12-15':'Ages 13–15'})[b] || ('Ages ' + b); }
   function renderAssign(){
     var kids = state.kids.filter(function(k){ return k.sel; });
     var html = state.shows.map(function(show){
@@ -536,7 +531,7 @@
         var a = state.assign[key];
         var pills = bandsFor(k.age).map(function(b){
           var left = state.inventory[show + '|' + b];
-          var leftTag = (left != null && left <= 10) ? ' <span class="left">' + (left <= 0 ? 'FULL' : left + ' left') + '</span>' : '';
+          var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Full' : left + ' more spots available') + '</span>' : '';
           return '<span class="pill' + (a.band === b ? ' sel' : '') + '" data-key="' + esc(key) + '" data-band="' + b + '">' + bandLabel(b) + leftTag + '</span>';
         }).join('');
         return '<div class="kid-row">' +
@@ -618,16 +613,16 @@
       if (res.error) {
         var msg = res.error.message || '';
         if (msg.indexOf('GATED') !== -1) {
-          errEl.textContent = '🎭 Broadway Bound programs are open to returning NOVAPA families only until August 1 — this email isn\'t in our family records. Join the waitlist on the summer page and you\'ll get first access on drop day.';
+          errEl.textContent = 'Registration is limited to returning NOVAPA families until August 1. Join the waitlist on the summer page for early access.';
           errEl.classList.add('on'); return;
         }
         if (msg.indexOf('SOLD_OUT_ACTIVITY') !== -1) {
-          errEl.textContent = '😔 One of these programs just filled up.';
+          errEl.textContent = 'One of these programs just filled up.';
           errEl.classList.add('on'); return;
         }
         if (msg.indexOf('SOLD_OUT') !== -1) {
           var parts = msg.split(':');
-          errEl.textContent = '😔 ' + (SHOW_NAMES[parts[1]] || parts[1]) + ' (' + bandLabel(parts[2] || '') + ') just filled up — pick a different track.';
+          errEl.textContent = (SHOW_NAMES[parts[1]] || parts[1]) + ' (' + bandLabel(parts[2] || '') + ') just filled up — pick a different track.';
           refreshInventory().then(renderAssign);
         } else errEl.textContent = 'Could not hold spots — try again.';
         errEl.classList.add('on'); return;
@@ -995,11 +990,11 @@
     var items = state.hold.items;
     if (isCatMode()) {
       $('doneRecap').innerHTML = items.length + ' enrollment' + (items.length>1?'s':'') + ' locked in — ' +
-        money(p.today_cents) + ' paid today' + (catAllClasses() ? ', monthly tuition on autopilot from Oct 1.' : '.') + ' 🎉';
+        money(p.today_cents) + ' paid today' + (catAllClasses() ? ', monthly tuition on autopilot from Oct 1.' : '.');
     } else {
       $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
         Math.round((p.discount_pct||0)) + '% off</b>' +
-        (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full. 🎉');
+        (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full.');
     }
     renderProfileForms(items);
     var fb = document.getElementById('fsaBtn');
