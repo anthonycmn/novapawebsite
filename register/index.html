@@ -699,7 +699,16 @@
       return state.insurance ? Math.round(u * 1.10) : u;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
-    return { items: items, units: units, subtotal: subtotal, fee: 0,
+    var baseSubtotal = items.reduce(function(sum, it){
+      var a = byId[it.activity_id] || {};
+      if (a.category === 'class') {
+        var b = 9000;
+        if (it.camper && it.camper !== firstChild) b = Math.round(b * 0.95);
+        return sum + b;
+      }
+      return sum + (a.price_cents || 0);
+    }, 0);
+    return { items: items, units: units, subtotal: subtotal, baseSubtotal: baseSubtotal, fee: 0,
              total: subtotal, today: subtotal,
              monthly: catAllClasses() ? units : [] };
   }
@@ -718,7 +727,7 @@
       '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
-    updateInsurance(p.items);
+    updateInsurance(p.items, p.baseSubtotal);
     $('payBreakdown').innerHTML = catAllClasses()
       ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
       : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done. All sales final.</p>';
@@ -765,7 +774,7 @@
     var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
-  function updateInsurance(items){
+  function updateInsurance(items, baseSubtotal){
     var wrap = $('insOk') && $('insOk').parentElement;
     if (!wrap) return;
     var start = cartStartDate(items);
@@ -775,7 +784,8 @@
     if (!tier) { state.insurance = false; $('insOk').checked = false; wrap.style.display = 'none'; return; }
     wrap.style.display = '';
     var deadline = new Date(start.getTime() - tier[1] * 86400000);
-    $('insLabel').innerHTML = '<b>Add tuition insurance (+10%)</b> — get a <b>' +
+    var price = Math.round((baseSubtotal || 0) * (C.INSURANCE_PCT || 10) / 100);
+    $('insLabel').innerHTML = '<b>Add tuition insurance' + (price ? ' (' + money(price) + ')' : '') + '</b> — get a <b>' +
       (tier[0] === 100 ? 'full' : tier[0] + '%') + ' refund</b> if you cancel by <b>' + fmtDate(deadline) +
       '</b>. <a href="/policies#tuition-insurance" target="_blank" rel="noopener">Terms</a>';
   }
@@ -810,7 +820,7 @@
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
-    updateInsurance(items);
+    updateInsurance(items, p.subtotal);
     renderUpsells(p, byKid, byIdAll);
   }
 
