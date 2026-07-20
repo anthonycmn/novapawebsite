@@ -76,7 +76,8 @@
           cta_href: href,
           page_path: page
         });
-      } else if (href.indexOf('novapa_registration') !== -1 || href === '#register') {
+      } else if (href.indexOf('novapa_registration') !== -1 || href === '#register' ||
+                 href.indexOf('/register/') === 0 || href.indexOf('register/catalog') !== -1) {
         capture('registration_cta_clicked', {
           cta_text: (a.textContent || '').trim().slice(0, 80),
           cta_href: href,
