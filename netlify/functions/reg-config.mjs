@@ -11,7 +11,8 @@
 //  - Sibling 5%: non-BB items (classes) immediately; BB camps/shows only
 //    after the launch sale ends. Never stacks with tier/bundle discounts.
 //  - Deposit plans: $180/item today, monthly installments on the 1st,
-//    last installment no later than 14 days before the item's start date.
+//    last installment no later than 14 days before the item's start date
+//    AND no later than May 1, 2027 (CJ: collect summer money earlier).
 //    Within 14 days of start: pay-in-full only.
 //  - Classes: $90/mo, first month at checkout, next pull Oct 1, monthly
 //    through Jun 1 2027 (subscription auto-cancels Jul 1 2027).
@@ -39,6 +40,8 @@ export const EARLYBIRD_END = "2026-08-15T23:59:59-04:00"; // launch sale end
 export const PUBLIC_OPEN_AT = "2026-08-01T10:00:00-04:00";
 export const MAX_INSTALLMENTS = 8;
 export const PAY_FULL_CUTOFF_DAYS = 14;      // all payments >= 2 weeks before start
+// Hard ceiling on the final installment date — May 1 2027 (summer money lands early).
+export const LAST_INSTALLMENT_UTC = Date.UTC(2027, 4, 1, 4, 0, 0);
 
 export const CLASS_PRICE_CENTS = 9000;
 export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;  // Oct 1 2026
@@ -86,7 +89,8 @@ export function siblingActive(isBB, now = new Date()) {
 export function installmentDates(startISO, now = new Date()) {
   if (!startISO) return [];
   const start = new Date(startISO + "T00:00:00-04:00");
-  const lastOk = new Date(start.getTime() - PAY_FULL_CUTOFF_DAYS * 86400000);
+  const lastOk = new Date(Math.min(
+    start.getTime() - PAY_FULL_CUTOFF_DAYS * 86400000, LAST_INSTALLMENT_UTC));
   const dates = [];
   let d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 4, 0, 0));
   while (d <= lastOk && dates.length < MAX_INSTALLMENTS) {

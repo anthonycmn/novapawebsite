@@ -53,7 +53,7 @@ function confirmationHtml(m, pi) {
   if (m.plan === "deposit" && nInst && firstInst) {
     const d = new Date(firstInst * 1000);
     planLine = `Then ${nInst} monthly payments of ${money(instCents)}, automatic on your card, ` +
-      `starting ${months[d.getUTCMonth()]} 1, ${d.getUTCFullYear()} — fully paid at least 2 weeks before your program.`;
+      `starting ${months[d.getUTCMonth()]} 1, ${d.getUTCFullYear()} — fully paid before your program begins.`;
   } else if (m.plan === "subscription") {
     planLine = "Monthly tuition continues automatically on the 1st of each month through June 1, 2027. Cancel anytime with 30 days' notice.";
   }
