@@ -166,7 +166,11 @@ export default async (req) => {
     currency: "usd",
     customer: customer.id,
     setup_future_usage: (plan === "deposit" || plan === "subscription") ? "off_session" : undefined,
-    automatic_payment_methods: { enabled: true },
+    // Cards + Link only. Apple Pay / Google Pay ride the card rails via the
+    // Express Checkout element. Redirect methods (Amazon Pay, Klarna, ...)
+    // are excluded deliberately: they hijack mobile checkout and cannot be
+    // charged off-session for installment schedules / class subscriptions.
+    payment_method_types: ["card", "link"],
     description: `NOVAPA — ${plan === "deposit" ? "reservation deposit"
       : plan === "subscription" ? "class enrollment (first month)" : "paid in full"}`,
     statement_descriptor_suffix: "NOVAPA",
