@@ -640,10 +640,23 @@
   }
   function updateTicker(){
     var t = $('tierTicker');
-    if (!state.shows.length) { t.textContent = 'Check a camper into a show to see your price.'; return; }
-    t.textContent = saleOn()
-      ? '1 camp 10% off \u00b7 2 camps 15% off \u00b7 all 3 20% off each \u2014 through Aug 15.'
-      : '$995 per two-week camp.';
+    var byKid = {};
+    state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
+      Object.keys(SHOW_NAMES).forEach(function(show){
+        var a = state.assign[show + '|' + k.name];
+        if (a && a.on) byKid[k.name] = (byKid[k.name] || 0) + 1;
+      });
+    });
+    var names = Object.keys(byKid);
+    if (!names.length) { t.textContent = 'Check a camper into a show to see your price.'; return; }
+    if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
+    function label(n){ return n + ' show' + (n > 1 ? 's' : '') + ' selected, ' + Math.round(discRate(n) * 100) + '% off'; }
+    if (names.length === 1) { t.textContent = label(byKid[names[0]]); return; }
+    var counts = names.map(function(n){ return byKid[n]; });
+    var uniform = counts.every(function(c){ return c === counts[0]; });
+    t.textContent = uniform
+      ? label(counts[0]) + ' each'
+      : names.map(function(n){ return n.split(' ')[0] + ': ' + byKid[n] + ' show' + (byKid[n] > 1 ? 's' : '') + ' (' + Math.round(discRate(byKid[n]) * 100) + '% off)'; }).join(' \u00b7 ');
   }
   function renderShowKids(){
     var kids = state.kids.filter(function(k){ return k.sel; });
