@@ -1019,37 +1019,12 @@
       if (hints.length) {
         html += '<div>' + hints.join(' · ') + ' — <a href="#" id="upsellAdd">add a show →</a></div>';
       }
-      var kidsInCart = Object.keys(byKid);
-      var addonRows = [];
-      kidsInCart.forEach(function(kName){
-        var kid = state.kids.filter(function(k){ return k.name === kName; })[0] || {};
-        ['frozen','mermaid'].forEach(function(kind){
-          var act = addonActFor(kind, kid.age);
-          if (!act) return;
-          var key = kind + '|' + kName;
-          var priceOff = Math.round((act.price_cents||69500) * 0.9);
-          addonRows.push('<label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:6px;cursor:pointer">' +
-            '<input type="checkbox" class="addonCb" data-key="' + esc(key) + '" data-id="' + act.id + '"' + (state.addons[key] ? ' checked' : '') + ' style="width:16px;height:16px;accent-color:var(--gold2)">' +
-            '<span>Add <b>' + esc(act.name) + '</b> for ' + esc(kName.split(' ')[0]) + ' — <b>10% off (' + money(priceOff) + ')</b> bundled with camp</span></label>');
-        });
-      });
-      if (addonRows.length) {
-        html += '<div style="margin-top:10px"><b>Same stage, all year:</b> bundle a school-year show for 10% off.' + addonRows.join('') + '</div>';
-      }
     }
     if (html) {
       box.style.display = '';
       box.innerHTML = html;
       var ua = document.getElementById('upsellAdd');
       if (ua) ua.addEventListener('click', function(e){ e.preventDefault(); ev('reg_upsell_clicked'); renderShowKids(); go('st-shows'); });
-      box.querySelectorAll('.addonCb').forEach(function(cb){
-        cb.addEventListener('change', function(){
-          state.addons[cb.dataset.key] = cb.checked ? +cb.dataset.id : null;
-          resetPayUI();
-          ev('reg_addon_toggled', { key: cb.dataset.key, on: cb.checked });
-          acquireHold();
-        });
-      });
     } else box.style.display = 'none';
   }
 
