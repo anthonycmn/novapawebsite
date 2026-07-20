@@ -175,9 +175,13 @@
   /* upsell toast */
   #toast {
     display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:80;
-    max-width:min(480px, calc(100vw - 32px)); background:var(--navy1);
+    width:min(480px, calc(100vw - 32px)); background:var(--navy1);
     border:1px solid rgba(232,184,75,0.55); border-radius:14px; padding:14px 16px;
     box-shadow:0 12px 40px rgba(0,0,0,0.5); font-size:14.5px; line-height:1.45;
+  }
+  #toast .tmsg { flex:1; }
+  @media (max-width: 640px) {
+    #toast { left:8px; right:8px; bottom:8px; transform:none; width:auto; }
   }
   #toast.on { display:flex; align-items:center; gap:12px; animation:fade .3s ease; }
   #toast b { color:var(--gold3); }
@@ -408,7 +412,7 @@
 
 <!-- upsell toast -->
 <div id="toast">
-  <span id="toastMsg"></span>
+  <span id="toastMsg" class="tmsg"></span>
   <button class="tbtn" id="toastAdd">Add</button>
   <button class="tx" id="toastClose" aria-label="Dismiss">&times;</button>
 </div>
