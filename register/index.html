@@ -264,7 +264,6 @@
 
   <!-- STEP: shows + campers -->
   <section class="step" id="st-shows">
-    <button class="back" data-back="st-family">← Back</button>
     <h1>Choose your <em>shows.</em></h1>
     <p class="sub">Check each camper into their shows.</p>
     <div id="showBlocks">
@@ -293,10 +292,15 @@
         </div>
       </div>
     </div>
+    <div class="addkid" style="margin-top:4px">
+      <input type="text" name="kname" id="sKidName" placeholder="Add another camper">
+      <input type="number" name="kage" id="sKidAge" placeholder="Age" min="2" max="18">
+      <button class="btn btn-ghost" id="sKidAdd">Add</button>
+    </div>
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
     <div class="err" id="assignErr"></div>
     <button class="btn" id="assignNext">Continue →</button>
-    <p class="tiny">Nothing is charged yet.</p>
+    <p class="tiny">Nothing is charged yet. Signed in as <span id="whoami2"></span> · <a href="#" id="signout2">not you?</a></p>
   </section>
 
   <!-- STEP: assign (catalog checkout only) -->
@@ -551,9 +555,11 @@
         ? 'Confirm who\'s in for Summer 2027 — add or uncheck anyone.'
         : 'Add each camper\'s name and age — we\'ll match them to the right group.';
       $('whoami').textContent = state.email;
+      $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
-      go('st-family');
+      if (isCatMode()) { go('st-family'); return; }
+      renderShowKids(); go('st-shows'); startSoftTimer();
     });
   }
   function firstNames(){
@@ -593,6 +599,19 @@
   });
   $('signout').addEventListener('click', function(e){
     e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
+  });
+  $('signout2').addEventListener('click', function(e){
+    e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
+  });
+  $('sKidAdd').addEventListener('click', function(){
+    var name = $('sKidName').value.trim();
+    var age = parseInt($('sKidAge').value, 10);
+    var errEl = $('assignErr'); errEl.classList.remove('on');
+    if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
+    if (!(age >= 5 && age <= 15)) { errEl.textContent='Camps are for ages 5\u201315.'; errEl.classList.add('on'); return; }
+    state.kids.push({ name:name, age:age, already:[], sel:true });
+    $('sKidName').value=''; $('sKidAge').value='';
+    renderShowKids();
   });
 
   // ---------- step: shows + campers ----------
