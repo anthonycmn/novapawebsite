@@ -24,6 +24,10 @@
 //  - Day camps ($70 one-day events, price <= DAY_CAMP_MAX_CENTS): pay-in-full
 //    only (charged fully today even inside a deposit-plan cart), no bundle or
 //    tier discounts, no insurance; sibling 5% applies immediately (non-BB).
+//  - Coupon codes (coupons table): percent off the discounted subtotal —
+//    stacks on top of tier/bundle/sibling like Sawyer coupons did. Insurance
+//    is computed on the post-coupon amount. For classes the coupon reduces
+//    today's first-month charge only; the recurring monthly price is unchanged.
 
 export const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 export const SUPABASE_ANON_KEY =
@@ -98,6 +102,7 @@ export function installmentDates(startISO, now = new Date()) {
 export function priceCart(cart, plan, opts = {}) {
   const now = opts.now || new Date();
   const insurance = !!opts.insurance;
+  const couponPct = Math.min(100, Math.max(0, opts.couponPct || 0));
   const campsByKid = {};
   for (const it of cart) if (it.show) {
     const k = it.camper || "?";
@@ -144,10 +149,13 @@ export function priceCart(cart, plan, opts = {}) {
     return { ...it, unit, rate };
   });
 
-  const subtotal = priced.reduce((s, it) => s + it.unit, 0);
-  // insurance covers camps/shows only — day camps excluded
+  const grossSubtotal = priced.reduce((s, it) => s + it.unit, 0);
+  const couponCents = couponPct ? Math.round(grossSubtotal * couponPct / 100) : 0;
+  const subtotal = grossSubtotal - couponCents;
+  // insurance covers camps/shows only — day camps excluded; coupon factor applies
   const insurableCents = priced.reduce((s, it) => s + (it.daycamp ? 0 : it.unit), 0);
-  const insuranceCents = insurance ? Math.round(insurableCents * INSURANCE_PCT / 100) : 0;
+  const insuranceCents = insurance
+    ? Math.round(insurableCents * (1 - couponPct / 100) * INSURANCE_PCT / 100) : 0;
   const totalCents = subtotal + insuranceCents;
 
   // earliest start in cart governs the installment window
@@ -158,7 +166,7 @@ export function priceCart(cart, plan, opts = {}) {
 
   if (plan === "full" || payFullOnly) {
     return {
-      items: priced, subtotal, insuranceCents, totalCents,
+      items: priced, subtotal, couponCents, insuranceCents, totalCents,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly, plan: "full",
     };
@@ -166,12 +174,23 @@ export function priceCart(cart, plan, opts = {}) {
   // day camps are cheap one-offs: charged in full today, never spread over installments
   const dayCampCents = priced.reduce((s, it) => s + (it.daycamp ? it.unit : 0), 0);
   const planCount = priced.filter((it) => !it.daycamp).length;
-  const depositCents = DEPOSIT_PER_ITEM_CENTS * planCount + dayCampCents;
-  const todayCents = depositCents + insuranceCents;
+  const factor = 1 - couponPct / 100;
+  const depositCents = Math.min(
+    Math.round((DEPOSIT_PER_ITEM_CENTS * planCount + dayCampCents) * (couponPct ? factor : 1)),
+    subtotal);
   const remainder = subtotal - depositCents;
+  if (remainder <= 0) {
+    // coupon shrank the balance below the deposit — collect it all today
+    return {
+      items: priced, subtotal, couponCents, insuranceCents, totalCents,
+      todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
+      payFullOnly: false, plan: "full",
+    };
+  }
+  const todayCents = depositCents + insuranceCents;
   const installmentCents = Math.max(0, Math.ceil(remainder / schedule.length));
   return {
-    items: priced, subtotal, insuranceCents, totalCents,
+    items: priced, subtotal, couponCents, insuranceCents, totalCents,
     todayCents, installmentCents, installmentDatesUTC: schedule,
     payFullOnly: false, plan: "deposit",
   };

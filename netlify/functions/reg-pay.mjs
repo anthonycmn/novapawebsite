@@ -44,6 +44,7 @@ export default async (req) => {
   try { body = await req.json(); } catch { return Response.json({ error: "bad_json" }, { status: 400 }); }
   const { hold_id, plan, parent_name } = body || {};
   const insurance = !!(body || {}).insurance;
+  const couponCode = String((body || {}).coupon || "").trim();
   if (!hold_id || !["deposit", "full", "subscription"].includes(plan)) {
     return Response.json({ error: "bad_request" }, { status: 400 });
   }
@@ -60,6 +61,15 @@ export default async (req) => {
   if (!hold || !hold.items) return Response.json({ error: "hold_not_found" }, { status: 404 });
   if (hold.status !== "active" || new Date(hold.expires_at) < new Date()) {
     return Response.json({ error: "hold_expired" }, { status: 409 });
+  }
+
+  // coupon: validated server-side; invalid codes are a hard error so the
+  // client never silently charges full price after showing a discount
+  let couponPct = 0;
+  if (couponCode) {
+    const c = await anonRpc("check_coupon", { p_code: couponCode });
+    if (!c || !c.pct) return Response.json({ error: "bad_coupon" }, { status: 400 });
+    couponPct = c.pct;
   }
 
   const items = hold.items;
@@ -97,8 +107,10 @@ export default async (req) => {
       return base;
     });
     const subtotal = unitPrices.reduce((s, v) => s + v, 0);
+    const couponCents = couponPct ? Math.round(subtotal * couponPct / 100) : 0;
     pricing = {
-      todayCents: subtotal, totalCents: subtotal, subtotalCents: subtotal,
+      todayCents: subtotal - couponCents, totalCents: subtotal - couponCents,
+      subtotalCents: subtotal, couponCents,
       insuranceCents: 0, // built into the monthly price for classes
       installmentCents: 0, nInstallments: 0, firstInstallmentUTC: 0,
       unitPrices, monthlyItems: unitPrices, discountPct: 0,
@@ -117,12 +129,13 @@ export default async (req) => {
         start: showStartFor(byId[it.activity_id].name),
       })),
     ];
-    const p = priceCart(cart, plan, { insurance });
+    const p = priceCart(cart, plan, { insurance, couponPct });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
     }
     pricing = {
       todayCents: p.todayCents, totalCents: p.totalCents, subtotalCents: p.subtotal,
+      couponCents: p.couponCents || 0,
       insuranceCents: p.insuranceCents,
       installmentCents: p.installmentCents,
       nInstallments: p.installmentDatesUTC.length,
@@ -136,6 +149,10 @@ export default async (req) => {
         ? `${it.camper || "Camper"} — ${SHOWS[it.show] || it.show} (${it.band})`
         : `${it.camper || "Camper"} — ${it.name}`)
       .join("; ");
+  }
+
+  if (pricing.todayCents < 50) {
+    return Response.json({ error: "coupon_too_small" }, { status: 400 });
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -162,6 +179,8 @@ export default async (req) => {
       first_installment_utc: String(pricing.firstInstallmentUTC),
       insurance_cents: String(pricing.insuranceCents),
       insured: insurance ? "1" : "0",
+      coupon: couponPct ? couponCode.toUpperCase() : "",
+      coupon_cents: String(pricing.couponCents || 0),
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       n_items: String(items.length),
@@ -176,6 +195,8 @@ export default async (req) => {
       discount_pct: pricing.discountPct,
       unit_prices: pricing.unitPrices,
       subtotal_cents: pricing.subtotalCents,
+      coupon_cents: pricing.couponCents || 0,
+      coupon: couponPct ? couponCode.toUpperCase() : null,
       insurance_cents: pricing.insuranceCents,
       total_cents: pricing.totalCents,
       today_cents: pricing.todayCents,

@@ -342,6 +342,12 @@
         </div>
       </div>
       <div id="payBreakdown"></div>
+      <p class="tiny" style="text-align:left;margin:6px 0 0"><a href="#" id="couponLink">Have a coupon code?</a></p>
+      <div class="addkid" id="couponRow" style="display:none;margin-top:8px">
+        <input type="text" id="couponInput" placeholder="Coupon code" autocapitalize="characters" style="text-transform:uppercase">
+        <button class="btn btn-ghost" id="couponApply">Apply</button>
+      </div>
+      <p class="tiny" id="couponMsg" style="display:none;text-align:left;margin-top:6px"></p>
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:12px;cursor:pointer">
         <input type="checkbox" id="insOk" style="width:17px;height:17px;accent-color:var(--gold2)">
@@ -371,7 +377,6 @@
       <div class="sumrow head"><span>What happens next</span><span></span></div>
       <p class="sub" style="margin:6px 0 0; font-size:14.5px">
         Receipt and confirmation are on the way to your inbox.<br>
-        Your registration lands in your NOVAPA account within 1–2 business days.<br>
         <a href="/classes">Fall classes are enrolling now</a>.<br>
         Using a Dependent Care FSA? <a href="#" id="fsaBtn">Print your FSA receipt</a>.
       </p>
@@ -417,7 +422,7 @@
   var state = {
     email:null, family:null, kids:[], shows:[], assign:{}, hold:null,
     inventory:{}, plan:'deposit', clientSecret:null, pricing:null, stripe:null, elements:null,
-    catIds:[], catItems:[], allCat:[], addons:{}, insurance:false, feeDue:false, policyOk:false
+    catIds:[], catItems:[], allCat:[], addons:{}, insurance:false, feeDue:false, policyOk:false, coupon:null
   };
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
@@ -995,13 +1000,14 @@
       return state.insurance ? Math.round(u * 1.10) : u;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
+    var coupon = state.coupon ? Math.round(subtotal * state.coupon.pct / 100) : 0;
     var baseSubtotal = items.reduce(function(sum, it){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
       return sum + (a.price_cents || 0);
     }, 0);
-    return { items: items, units: units, sib: sib, subtotal: subtotal, baseSubtotal: baseSubtotal, fee: 0,
-             total: subtotal, today: subtotal,
+    return { items: items, units: units, sib: sib, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0,
+             total: subtotal - coupon, today: subtotal - coupon,
              monthly: catAllClasses() ? units : [] };
   }
   function renderCatPay(){
@@ -1016,6 +1022,7 @@
     $('summaryCard').innerHTML =
       '<div class="sumrow head"><span>Your enrollment</span><span></span></div>' + rows +
       (p.fee ? '<div class="sumrow"><span>Annual family registration</span><span>' + money(p.fee) + '</span></div>' : '') +
+      (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
@@ -1039,13 +1046,16 @@
       return (byKid[kid] || kidShowN >= 2) ? Math.round(base * 0.9) : base;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
-    var ins = state.insurance ? Math.round(subtotal * C.INSURANCE_PCT / 100) : 0;
-    var total = subtotal + ins;
+    var coupon = state.coupon ? Math.round(subtotal * state.coupon.pct / 100) : 0;
+    var net = subtotal - coupon;
+    var ins = state.insurance ? Math.round(net * C.INSURANCE_PCT / 100) : 0;
+    var total = net + ins;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, subtotal:subtotal, ins:ins, total:total, today:total, inst:0 };
-    var deposit = C.DEPOSIT_PER_CAMP * 100 * n;
-    return { n:n, items:items, units:units, subtotal:subtotal, ins:ins, total:total,
-             today: deposit + ins, inst: Math.ceil((subtotal - deposit) / C.INSTALLMENTS) };
+    if (state.plan === 'full') return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, total:total, today:total, inst:0 };
+    var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
+    if (net - deposit <= 0) return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, total:total, today:total, inst:0 };
+    return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, total:total,
+             today: deposit + ins, inst: Math.ceil((net - deposit) / C.INSTALLMENTS) };
   }
 
   var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };
@@ -1104,6 +1114,7 @@
     $('summaryCard').innerHTML =
       '<div class="sumrow head"><span>Your summer</span><span>per-kid launch pricing</span></div>' + rows +
       (savings > 0 ? '<div class="sumrow"><span class="savings">Launch-sale savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
+      (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
       (p.ins ? '<div class="sumrow"><span>Tuition insurance (10%)</span><span>' + money(p.ins) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Total</span><span>' + money(p.total) + '</span></div>';
 
@@ -1146,6 +1157,31 @@
     ev('reg_insurance_toggled', { on: state.insurance });
   });
 
+  $('couponLink').addEventListener('click', function(e){
+    e.preventDefault();
+    $('couponRow').style.display = 'flex'; $('couponLink').style.display = 'none';
+    $('couponInput').focus();
+  });
+  function applyCoupon(){
+    var code = $('couponInput').value.trim();
+    var msg = $('couponMsg');
+    if (!code) return;
+    sb.rpc('check_coupon', { p_code: code }).then(function(res){
+      msg.style.display = 'block';
+      if (!res.data || !res.data.pct) {
+        state.coupon = null;
+        msg.style.color = 'var(--danger)'; msg.textContent = "That code isn't valid.";
+        resetPayUI(); renderPay(); schedulePay(); return;
+      }
+      state.coupon = { code: res.data.code, pct: res.data.pct };
+      msg.style.color = 'var(--ok)'; msg.textContent = res.data.code + ' applied \u2014 ' + res.data.pct + '% off.';
+      ev('reg_coupon_applied', { code: res.data.code });
+      resetPayUI(); renderPay(); schedulePay();
+    });
+  }
+  $('couponApply').addEventListener('click', applyCoupon);
+  $('couponInput').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); applyCoupon(); } });
+
   function renderServerBreakdown(p){
     if (state.plan !== 'deposit' || !p.n_installments) return;
     var first = p.first_installment_utc ? new Date(p.first_installment_utc * 1000) : null;
@@ -1184,7 +1220,7 @@
       return fetch('/api/reg-pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance })
+        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined })
       });
     }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
     .then(function(res){
@@ -1192,7 +1228,10 @@
       if (!res.ok) {
         var msg = res.j.error === 'hold_expired' ? 'Your hold expired — re-hold your spots.'
           : res.j.error === 'pay_full_only' ? 'This program starts within 2 weeks — payment in full is required.'
+          : res.j.error === 'bad_coupon' ? 'That coupon is no longer valid — it was removed from your order.'
+          : res.j.error === 'coupon_too_small' ? 'That coupon brings the total below the card minimum — contact us instead.'
           : 'Could not start payment (' + (res.j.error || 'error') + ').';
+        if (res.j.error === 'bad_coupon') { state.coupon = null; $('couponMsg').style.display = 'none'; renderPay(); schedulePay(); }
         if (res.j.error === 'pay_full_only') {
           state.plan = 'full';
           document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.toggle('sel', o.dataset.plan === 'full'); });
