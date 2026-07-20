@@ -85,15 +85,19 @@ export default async (req) => {
     const customerId = typeof pi.customer === "string" ? pi.customer : pi.customer?.id;
 
     // Class enrollment: create the ongoing $--/month subscription.
-    // First month was charged via the PaymentIntent; trial_end delays the
-    // first recurring invoice to the season billing anchor (Oct 1, 2026).
+    // First month was charged via the PaymentIntent. Every recurring pull must
+    // land on the 1st (CJ): anchor the first recurring invoice to the later of
+    // the season anchor (Oct 1, 2026) or the 1st of next month — so early
+    // signups start Oct 1 and mid-season signups still bill on the 1st.
     if (m.plan === "subscription") {
       let monthly = [];
       try { monthly = JSON.parse(m.monthly_items || "[]"); } catch {}
       if (monthly.length) {
         await ensureProduct(stripe, CLASS_PRODUCT_ID, "NOVAPA Season Class — Monthly Tuition");
-        const trialEnd = CLASS_BILL_ANCHOR_UTC > Math.floor(Date.now() / 1000) + 3600
-          ? CLASS_BILL_ANCHOR_UTC : undefined;
+        const nowUTC = new Date();
+        const firstOfNextMonth = Math.floor(
+          Date.UTC(nowUTC.getUTCFullYear(), nowUTC.getUTCMonth() + 1, 1, 4, 0, 0) / 1000);
+        const trialEnd = Math.max(CLASS_BILL_ANCHOR_UTC, firstOfNextMonth);
         const sub = await stripe.subscriptions.create({
           customer: customerId,
           default_payment_method: paymentMethodId || undefined,
