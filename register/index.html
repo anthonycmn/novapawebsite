@@ -110,9 +110,14 @@
   .pill.sel { background:var(--gold2); border-color:var(--gold2); color:#1a1206; font-weight:700; }
   .pill .left { color:var(--danger); font-weight:700; }
   .pill.sel .left { color:#7a2c1a; }
-  .addkid { display:flex; gap:8px; margin-top:12px; }
-  .addkid input[name=kname] { flex:2; } .addkid input[name=kage] { flex:1; min-width:70px; }
+  .addkid { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .addkid input[name=kname] { flex:2; min-width:150px; } .addkid input[name=kage] { flex:1; min-width:70px; }
+  .addkid input[name=kbday] { flex:1; min-width:150px; color-scheme:dark; }
   .addkid button { flex-shrink:0; width:auto; margin-top:0; padding:12px 16px; }
+  @media (max-width: 640px) {
+    .addkid input[name=kname] { flex:1 1 100%; }
+    .addkid input[name=kbday] { flex:1; }
+  }
 
   /* summary / payment */
   .sumrow { display:flex; justify-content:space-between; padding:8px 0; font-size:15px; }
@@ -309,7 +314,7 @@
     </div>
     <div class="addkid" style="margin-top:4px">
       <input type="text" name="kname" id="sKidName" placeholder="Add another camper">
-      <input type="number" name="kage" id="sKidAge" placeholder="Age" min="2" max="18">
+      <input type="date" name="kbday" id="sKidBday" aria-label="Camper birthday">
       <button class="btn btn-ghost" id="sKidAdd">Add</button>
     </div>
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
@@ -631,12 +636,20 @@
   });
   $('sKidAdd').addEventListener('click', function(){
     var name = $('sKidName').value.trim();
-    var age = parseInt($('sKidAge').value, 10);
+    var bday = $('sKidBday').value;
     var errEl = $('assignErr'); errEl.classList.remove('on');
     if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
-    if (!(age >= 5 && age <= 15)) { errEl.textContent='Camps are for ages 5\u201315.'; errEl.classList.add('on'); return; }
-    state.kids.push({ name:name, age:age, already:[], sel:true });
-    $('sKidName').value=''; $('sKidAge').value='';
+    if (!bday || bday > new Date().toISOString().slice(0,10)) {
+      errEl.textContent='Camper birthday, please!'; errEl.classList.add('on'); return;
+    }
+    var age = ageOn(bday, '2027-07-05'); // age when camp starts
+    if (!(age >= 5 && age <= 15)) {
+      errEl.textContent='Camps are for ages 5\u201315 \u2014 this camper will be ' + age + ' when camp starts.';
+      errEl.classList.add('on'); return;
+    }
+    state.kids.push({ name:name, age:age, bday:bday, already:[], sel:true });
+    sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday });
+    $('sKidName').value=''; $('sKidBday').value='';
     renderShowKids();
   });
 
