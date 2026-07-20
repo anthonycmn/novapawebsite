@@ -272,7 +272,7 @@
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:12px;cursor:pointer">
         <input type="checkbox" id="insOk" style="width:17px;height:17px;accent-color:var(--gold2)">
-        <span><b>Add tuition insurance (+10%)</b> — cancel <b>76+ days</b> before your program for a <b>100% refund</b> (75% at 75–51 days, 50% at 50–31, none within 30; premium non-refundable). <a href="/policies#tuition-insurance" target="_blank" rel="noopener">Full terms</a>. Without it, all payments are final.</span>
+        <span id="insLabel"><b>Add tuition insurance (+10%)</b></span>
       </label>
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:10px;cursor:pointer">
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
@@ -718,7 +718,7 @@
       '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
-    if (catAllClasses()) { state.insurance = false; $('insOk').checked = false; $('insOk').parentElement.style.display = 'none'; }
+    updateInsurance(p.items);
     $('payBreakdown').innerHTML = catAllClasses()
       ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
       : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done. All sales final.</p>';
@@ -744,6 +744,40 @@
     var deposit = C.DEPOSIT_PER_CAMP * 100 * n;
     return { n:n, items:items, units:units, subtotal:subtotal, ins:ins, total:total,
              today: deposit + ins, inst: Math.ceil((subtotal - deposit) / C.INSTALLMENTS) };
+  }
+
+  var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };
+  function cartStartDate(items){
+    var starts = [];
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    items.forEach(function(it){
+      if (it.show && CAMP_START[it.show]) starts.push(CAMP_START[it.show]);
+      else if (it.activity_id) {
+        var n = (byIdAll[it.activity_id]||{}).name || '';
+        if (/frozen/i.test(n)) starts.push('2026-09-15');
+        else if (/mermaid/i.test(n)) starts.push('2027-02-03');
+      }
+    });
+    starts.sort();
+    return starts[0] ? new Date(starts[0] + 'T00:00:00-04:00') : null;
+  }
+  function fmtDate(d){
+    var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+  function updateInsurance(items){
+    var wrap = $('insOk') && $('insOk').parentElement;
+    if (!wrap) return;
+    var start = cartStartDate(items);
+    if (!start || catAllClasses()) { state.insurance = false; $('insOk').checked = false; wrap.style.display = 'none'; return; }
+    var days = Math.floor((start - new Date()) / 86400000);
+    var tier = days >= 76 ? [100, 76] : days >= 51 ? [75, 51] : days >= 31 ? [50, 31] : null;
+    if (!tier) { state.insurance = false; $('insOk').checked = false; wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    var deadline = new Date(start.getTime() - tier[1] * 86400000);
+    $('insLabel').innerHTML = '<b>Add tuition insurance (+10%)</b> — get a <b>' +
+      (tier[0] === 100 ? 'full' : tier[0] + '%') + ' refund</b> if you cancel by <b>' + fmtDate(deadline) +
+      '</b>. <a href="/policies#tuition-insurance" target="_blank" rel="noopener">Terms</a>';
   }
 
   function renderPay(){
@@ -776,6 +810,7 @@
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
+    updateInsurance(items);
     renderUpsells(p, byKid, byIdAll);
   }
 
