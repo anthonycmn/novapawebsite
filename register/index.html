@@ -132,6 +132,13 @@
   .upsell b { color:var(--gold3); }
   .upsell button { width:auto; margin-top:10px; padding:10px 16px; font-size:14px; }
   #payElement { margin:16px 0; }
+  .bday-row { display:flex; align-items:center; gap:10px; padding-left:29px; }
+  .bday-lbl { font-size:12.5px; color:var(--ink-dim); white-space:nowrap; }
+  .bday-lbl .req { color:var(--gold3); }
+  .bday-row input[type=date] { width:auto; flex:1; padding:9px 12px; font-size:14px; color-scheme:dark; }
+  .agewarn { margin-left:29px; font-size:12.5px; color:var(--gold3); line-height:1.45;
+    background:rgba(232,184,75,0.08); border:1px solid rgba(232,184,75,0.3); border-radius:9px; padding:8px 11px; }
+  .agewarn b { color:#fff; }
   #expressCheckout { margin:4px 0 6px; }
   .pay-or { display:flex; align-items:center; gap:12px; color:var(--ink-dim); font-size:12.5px; margin:14px 0 4px; }
   .pay-or::before, .pay-or::after { content:''; flex:1; height:1px; background:var(--line); }
@@ -233,7 +240,7 @@
   <!-- STEP: new family (waitlist pre-open / signup after) -->
   <section class="step" id="st-waitlist">
     <button class="back" data-back="st-gate">← Back</button>
-    <div class="eyebrow">Summer 2027</div>
+    <div class="eyebrow" id="wlEyebrow">Summer 2027</div>
     <h1 id="wlH1">Registration opens <em>August 1.</em></h1>
     <p class="sub" id="wlSub">The waitlist gets the registration link one hour before the public.</p>
     <div class="card" id="wlCard">
@@ -309,9 +316,8 @@
 
   <!-- STEP: assign (catalog checkout only) -->
   <section class="step" id="st-assign">
-    <button class="back" data-back="st-family">← Back</button>
     <h1>Who's <em>enrolling?</em></h1>
-    <p class="sub">Check each camper into each program.</p>
+    <p class="sub">Check each camper in, and confirm their birthday.</p>
     <div id="assignBlocks"></div>
     <div class="err" id="catErr"></div>
     <button class="btn" id="catNext">Continue →</button>
@@ -467,6 +473,7 @@
     if (!isCatMode() && !isPublicOpen()) { ev('reg_waitlist_shown'); go('st-waitlist'); $('wlEmail').focus(); return; }
     // gate open (or catalog checkout): new families sign up normally
     state.wlSignup = true;
+    if (isCatMode()) $('wlEyebrow').textContent = 'NOVAPA Registration';
     $('wlH1').innerHTML = "What's your <em>email?</em>";
     $('wlSub').textContent = "We'll send you a sign-in link to get started.";
     $('wlJoin').textContent = 'Continue';
@@ -542,17 +549,19 @@
       sb.rpc('get_my_family'),
       sb.rpc('inventory_status'),
       sb.rpc('catalog_list'),
-      sb.rpc('family_fee_due', { p_email: state.email })
+      sb.rpc('family_fee_due', { p_email: state.email }),
+      sb.rpc('my_camper_birthdates')
     ]).then(function(results){
       var fam = results[0].data;
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[2].data || [];
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
       state.feeDue = !!results[3].data;
+      var bdays = results[4] && results[4].data ? results[4].data : {};
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
-        return { name:c.name, age:c.age, already:c.already_registered||[], sel:true };
+        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), already:c.already_registered||[], sel:true };
       });
       var returning = state.kids.length > 0;
       $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your campers';
@@ -566,7 +575,7 @@
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
-      if (isCatMode()) { go('st-family'); return; }
+      if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
       renderShowKids(); go('st-shows'); startSoftTimer();
     });
   }
@@ -748,7 +757,46 @@
     toastSig.dismissed[t.dataset.sig] = true;
     t.classList.remove('on');
   });
+  // classes/school-year programs begin mid-September; age is measured at start
+  var CLASS_START = '2026-09-14';
+  function ageOn(bday, iso){
+    if (!bday) return null;
+    var b = new Date(bday + 'T00:00:00'), d = new Date(iso + 'T00:00:00');
+    var a = d.getFullYear() - b.getFullYear();
+    var m = d.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && d.getDate() < b.getDate())) a--;
+    return a;
+  }
+  function parseRange(s){
+    if (/adult/i.test(s || '')) return { min: 18, max: 200, adult: true };
+    var m = String(s || '').match(/(\d+)\s*[\u2013\u2014-]\s*(\d+)/);
+    if (m) return { min: +m[1], max: +m[2] };
+    var m2 = String(s || '').match(/(\d+)/);
+    if (m2) return { min: +m2[1], max: 200 };
+    return null;
+  }
+  function ageWarn(a, k){
+    if (!k.bday) return '';
+    var r = parseRange(a.age_range);
+    if (!r) return '';
+    var age = ageOn(k.bday, CLASS_START);
+    if (age == null) return '';
+    if (age >= r.min && age <= r.max) return '';
+    var range = r.adult ? 'adults (18+)' : 'ages ' + r.min + '\u2013' + r.max;
+    return esc(k.name.split(' ')[0]) + ' will be <b>' + age + '</b> when this starts \u2014 it\'s listed for <b>' + range + '</b>. You can still enroll.';
+  }
+  function catBirthdaysReady(){
+    var need = false;
+    state.catItems.forEach(function(a){
+      state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
+        var sel = state.assign['act' + a.id + '|' + k.name];
+        if (sel && sel.on && !k.bday) need = true;
+      });
+    });
+    return !need;
+  }
   function renderCatAssign(){
+    var today = new Date().toISOString().slice(0,10);
     var kids = state.kids.filter(function(k){ return k.sel; });
     var html = state.catItems.map(function(a){
       var priceLine = a.category === 'class'
@@ -758,9 +806,15 @@
         var key = 'act' + a.id + '|' + k.name;
         if (!(key in state.assign)) state.assign[key] = { on: kids.length === 1, band: null };
         var sel = state.assign[key];
-        return '<div class="kid-row"><label class="kid-check">' +
-          '<input type="checkbox" data-key="' + esc(key) + '" ' + (sel.on ? 'checked' : '') + '> ' +
-          '<span>' + esc(k.name) + (k.age ? ' <span style="color:var(--ink-dim)">· ' + k.age + '</span>' : '') + '</span></label></div>';
+        var warn = sel.on ? ageWarn(a, k) : '';
+        var bdayRow = sel.on
+          ? '<div class="bday-row"><label class="bday-lbl">Birthday' + (k.bday ? '' : ' <span class="req">(needed)</span>') + '</label>' +
+            '<input type="date" class="bdayInput" data-name="' + esc(k.name) + '" value="' + esc(k.bday || '') + '" max="' + today + '"></div>' +
+            (warn ? '<div class="agewarn">' + warn + '</div>' : '')
+          : '';
+        return '<div class="kid-row" style="flex-direction:column;align-items:stretch;gap:6px">' +
+          '<label class="kid-check"><input type="checkbox" data-key="' + esc(key) + '" ' + (sel.on ? 'checked' : '') + '> ' +
+          '<span>' + esc(k.name) + '</span></label>' + bdayRow + '</div>';
       }).join('');
       return '<div class="card"><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px">' +
         esc(a.name) + '</div>' +
@@ -768,10 +822,30 @@
         (a.schedule_name ? ' · ' + esc(a.schedule_name) : '') + '</div>' +
         '<div class="tiny" style="text-align:left;margin:0 0 8px;color:var(--gold3)">' + priceLine + '</div>' + rows + '</div>';
     }).join('');
+    html += '<div class="addkid" style="margin-top:2px">' +
+      '<input type="text" id="cKidName" placeholder="Add another camper">' +
+      '<input type="date" id="cKidBday" max="' + today + '" style="flex:1;min-width:130px">' +
+      '<button class="btn btn-ghost" id="cKidAdd">Add</button></div>';
     $('assignBlocks').innerHTML = html;
     $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
-      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; });
+      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); });
     });
+    $('assignBlocks').querySelectorAll('.bdayInput').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var kid = state.kids.filter(function(k){ return k.name === inp.dataset.name; })[0];
+        if (kid) { kid.bday = inp.value || null; renderCatAssign(); }
+      });
+    });
+    var addBtn = $('cKidAdd');
+    if (addBtn) addBtn.addEventListener('click', function(){
+      var name = $('cKidName').value.trim();
+      var bday = $('cKidBday').value;
+      var errEl = $('catErr'); errEl.classList.remove('on');
+      if (!name) { errEl.textContent = 'Camper name, please!'; errEl.classList.add('on'); return; }
+      state.kids.push({ name:name, age:null, bday: bday || null, already:[], sel:true });
+      renderCatAssign();
+    });
+    $('catNext').disabled = !catBirthdaysReady();
   }
   function buildItems(){
     var items = [];
@@ -797,7 +871,22 @@
     return items;
   }
   $('assignNext').addEventListener('click', acquireHold);
-  $('catNext').addEventListener('click', acquireHold);
+  $('catNext').addEventListener('click', function(){
+    var errEl = $('catErr'); errEl.classList.remove('on');
+    if (!catBirthdaysReady()) { errEl.textContent = 'Add a birthday for each camper you\'re enrolling.'; errEl.classList.add('on'); return; }
+    // persist any birthdays we collected/updated
+    var seen = {};
+    state.catItems.forEach(function(a){
+      state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
+        var sel = state.assign['act' + a.id + '|' + k.name];
+        if (sel && sel.on && k.bday && !seen[k.name]) {
+          seen[k.name] = 1;
+          sb.rpc('set_my_camper_birthdate', { p_name: k.name, p_birthdate: k.bday });
+        }
+      });
+    });
+    acquireHold();
+  });
 
   function acquireHold(){
     var errEl = isCatMode() ? $('catErr') : $('assignErr'); errEl.classList.remove('on');
