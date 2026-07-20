@@ -688,27 +688,28 @@
     var byId = {};
     state.catItems.forEach(function(a){ byId[a.id] = a; });
     var firstChild = items.length ? items[0].camper : null;
-    var units = items.map(function(it){
+    var sib = [];
+    var units = items.map(function(it, i){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class') {
         var base = 9000;
-        if (it.camper && it.camper !== firstChild) base = Math.round(base * 0.95);
+        if (it.camper && it.camper !== firstChild) { base = Math.round(base * 0.95); sib[i] = true; }
         return base;
       }
       var u = a.price_cents || 0;
+      if (u <= 20000) { // day camp: sibling 5% for 2nd+ child, no insurance
+        if (it.camper && it.camper !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
+        return u;
+      }
       return state.insurance ? Math.round(u * 1.10) : u;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var baseSubtotal = items.reduce(function(sum, it){
       var a = byId[it.activity_id] || {};
-      if (a.category === 'class') {
-        var b = 9000;
-        if (it.camper && it.camper !== firstChild) b = Math.round(b * 0.95);
-        return sum + b;
-      }
+      if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
       return sum + (a.price_cents || 0);
     }, 0);
-    return { items: items, units: units, subtotal: subtotal, baseSubtotal: baseSubtotal, fee: 0,
+    return { items: items, units: units, sib: sib, subtotal: subtotal, baseSubtotal: baseSubtotal, fee: 0,
              total: subtotal, today: subtotal,
              monthly: catAllClasses() ? units : [] };
   }
@@ -718,7 +719,7 @@
     var rows = p.items.map(function(it, i){
       var a = byId[it.activity_id] || {};
       return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(a.name || '') +
-        (p.units[i] === 8550 ? ' <span class="savings">(5% sibling)</span>' : '') +
+        (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
     $('summaryCard').innerHTML =

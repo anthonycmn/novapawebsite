@@ -21,6 +21,9 @@
 //    /policies#tuition-insurance: refund 100% at 90-76 days before start,
 //    75% at 75-51d, 50% at 50-31d, 0% within 30d; premium non-refundable.
 //  - All sales final — no refunds (insurance is the exception path).
+//  - Day camps ($70 one-day events, price <= DAY_CAMP_MAX_CENTS): pay-in-full
+//    only (charged fully today even inside a deposit-plan cart), no bundle or
+//    tier discounts, no insurance; sibling 5% applies immediately (non-BB).
 
 export const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 export const SUPABASE_ANON_KEY =
@@ -38,6 +41,9 @@ export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;  // O
 export const CLASS_SEASON_END_UTC = Date.UTC(2027, 6, 1, 4, 0, 0) / 1000;   // Jul 1 2027 (last pull Jun 1)
 export const SIBLING_PCT = 5;
 export const INSURANCE_PCT = 10;
+// Items at or under this price are "day camps" ($70 one-day events):
+// pay-in-full only, no bundle/tier discounts, no insurance, sibling 5% now.
+export const DAY_CAMP_MAX_CENTS = 20000;
 
 export const SHOWS = {
   httyd: "How to Train Your Dragon JR.",
@@ -98,8 +104,9 @@ export function priceCart(cart, plan, opts = {}) {
     campsByKid[k] = (campsByKid[k] || 0) + 1;
   }
   const kidsWithSummer = new Set(Object.keys(campsByKid));
+  const isDayCampItem = (it) => !it.show && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
   const showsByKid = {};
-  for (const it of cart) if (!it.show) {
+  for (const it of cart) if (!it.show && !isDayCampItem(it)) {
     const k = it.camper || "?";
     (showsByKid[k] = showsByKid[k] || []).push(it);
   }
@@ -116,6 +123,14 @@ export function priceCart(cart, plan, opts = {}) {
       }
       return { ...it, unit, rate };
     }
+    // day camp: no bundle/tier, sibling 5% for 2nd+ child (non-BB — runs now)
+    if (isDayCampItem(it)) {
+      let unit = it.price_cents;
+      if ((it.camper || "?") !== firstKid) {
+        unit = Math.round(unit * (1 - SIBLING_PCT / 100));
+      }
+      return { ...it, unit, rate: 0, daycamp: true };
+    }
     // BB show item (frozen/mermaid)
     const kid = it.camper || "?";
     const kidShows = showsByKid[kid] || [];
@@ -130,7 +145,9 @@ export function priceCart(cart, plan, opts = {}) {
   });
 
   const subtotal = priced.reduce((s, it) => s + it.unit, 0);
-  const insuranceCents = insurance ? Math.round(subtotal * INSURANCE_PCT / 100) : 0;
+  // insurance covers camps/shows only — day camps excluded
+  const insurableCents = priced.reduce((s, it) => s + (it.daycamp ? 0 : it.unit), 0);
+  const insuranceCents = insurance ? Math.round(insurableCents * INSURANCE_PCT / 100) : 0;
   const totalCents = subtotal + insuranceCents;
 
   // earliest start in cart governs the installment window
@@ -146,7 +163,10 @@ export function priceCart(cart, plan, opts = {}) {
       payFullOnly, plan: "full",
     };
   }
-  const depositCents = DEPOSIT_PER_ITEM_CENTS * cart.length;
+  // day camps are cheap one-offs: charged in full today, never spread over installments
+  const dayCampCents = priced.reduce((s, it) => s + (it.daycamp ? it.unit : 0), 0);
+  const planCount = priced.filter((it) => !it.daycamp).length;
+  const depositCents = DEPOSIT_PER_ITEM_CENTS * planCount + dayCampCents;
   const todayCents = depositCents + insuranceCents;
   const remainder = subtotal - depositCents;
   const installmentCents = Math.max(0, Math.ceil(remainder / schedule.length));
