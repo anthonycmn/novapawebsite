@@ -1406,61 +1406,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 <link rel="stylesheet" href="reg-banner.css">
 </head>
 <body class="has-u-nav">
-  <!-- ══ REGISTRATION OPEN BANNER ══ -->
-  <div class="nvreg-banner" id="nvregBanner" style="margin-top:0">
-    <a class="nvreg-link" href="/register/" target="_blank" rel="noopener" aria-label="Registration is now open — register today">
-      <span class="nvreg-pill">Now Open · 2026–27</span>
-      <span class="nvreg-title">Registration Is <em>Now Open!</em></span>
-      <span class="nvreg-sep"></span>
-      <span class="nvreg-meta">Classes · Camps · Productions</span>
-      <span class="nvreg-cta">Register Now <span class="nvreg-arr">&#8594;</span></span>
-    </a>
-    <button class="nvreg-close" id="nvregClose" type="button" aria-label="Dismiss announcement">&times;</button>
-  </div>
-  <style>
-   .nvreg-banner { position: relative; z-index: 8600; overflow: hidden;
-     background: linear-gradient(90deg, #08111F 0%, #0F1E36 45%, #166534 100%);
-     border-bottom: 1px solid rgba(232,184,75,0.35); box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
-   .nvreg-banner::before { content:''; position:absolute; inset:0; pointer-events:none;
-     background: repeating-linear-gradient(45deg, transparent, transparent 18px, rgba(232,184,75,0.05) 18px, rgba(232,184,75,0.05) 19px); }
-   .nvreg-link { display:flex; align-items:center; justify-content:center; gap:22px;
-     padding:11px 56px 11px 24px; text-decoration:none; color:#fff;
-     font-family:'DM Sans', sans-serif; position:relative; transition:background .25s ease; }
-   .nvreg-link:hover { background: rgba(22,101,52,0.28); }
-   .nvreg-pill { display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
-     background: rgba(232,184,75,0.18); border:1px solid rgba(232,184,75,0.55); color:#F7D98F;
-     padding:4px 12px; border-radius:100px; font-family:'Cinzel', serif; font-size:9.5px;
-     font-weight:700; letter-spacing:0.22em; text-transform:uppercase; }
-   .nvreg-pill::before { content:''; width:6px; height:6px; border-radius:50%; background:#E8B84B;
-     box-shadow:0 0 8px #E8B84B; animation: nvreg-pulse 1.8s ease-in-out infinite; }
-   @keyframes nvreg-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
-   .nvreg-title { font-family:'Cormorant Garamond', serif; font-size:17px; font-weight:600; letter-spacing:0.01em; color:#fff; }
-   .nvreg-title em { color:#F7D98F; font-style:italic; font-weight:700; }
-   .nvreg-sep { width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,0.35); flex-shrink:0; }
-   .nvreg-meta { font-size:11px; font-weight:500; color:rgba(255,255,255,0.78); letter-spacing:0.06em; text-transform:uppercase; }
-   .nvreg-cta { display:inline-flex; align-items:center; gap:7px; flex-shrink:0; font-size:11px; font-weight:700; color:#F7D98F; letter-spacing:0.12em; text-transform:uppercase; }
-   .nvreg-arr { transition: transform .25s ease; font-size:14px; }
-   .nvreg-link:hover .nvreg-arr { transform: translateX(4px); }
-   .nvreg-close { position:absolute; right:14px; top:50%; transform:translateY(-50%);
-     width:26px; height:26px; border-radius:50%; border:1px solid rgba(255,255,255,0.18);
-     background:rgba(0,0,0,0.25); color:rgba(255,255,255,0.7); font-size:14px; line-height:1;
-     cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; z-index:2;
-     transition: background .2s,color .2s,border-color .2s; }
-   .nvreg-close:hover { background:rgba(255,255,255,0.08); color:#fff; border-color:rgba(232,184,75,0.5); }
-   @media (max-width:900px){ .nvreg-link{ gap:12px; padding:9px 48px 9px 16px; flex-wrap:wrap; }
-     .nvreg-title{ font-size:14px; } .nvreg-meta{ font-size:10px; } .nvreg-cta{ font-size:10px; } .nvreg-sep{ display:none; } }
-   @media (max-width:520px){ .nvreg-pill{ font-size:8.5px; padding:3px 9px; letter-spacing:0.18em; }
-     .nvreg-title{ font-size:13px; } .nvreg-cta{ display:none; } }
-  </style>
-  <script>
-  (function(){
-    var b=document.getElementById('nvregBanner'), c=document.getElementById('nvregClose');
-    if(!b||!c) return;
-    try{ if(sessionStorage.getItem('nvregDismissed')==='1'){ b.style.display='none'; return; } }catch(e){}
-    c.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation();
-      b.style.display='none'; try{ sessionStorage.setItem('nvregDismissed','1'); }catch(e){} });
-  })();
-  </script>
 
 
 <!-- ===== UNIFIED SITE NAV (shared across all NoVAPA pages) ===== -->
@@ -1486,7 +1431,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   </button>
 </nav>
   <!-- reg-banner-sitewide -->
-  <a href="summer-2027.html" class="audition-banner" aria-label="Register now for Broadway Bound &mdash; limited registration available">
+  <a href="summer-2027.html" class="audition-banner" aria-label="Private registration for Summer 2027 now open &mdash; register now">
    <div class="audition-banner-inner">
     <div class="audition-banner-icon" aria-hidden="true">
      <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1495,9 +1440,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      </svg>
     </div>
     <div class="audition-banner-text">
-     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Limited Registration Available</div>
-     <div class="audition-banner-title">Register Now for <span>Broadway Bound</span> Summer Camp</div>
-     <div class="audition-banner-sub">Three musicals &middot; Ages 5&ndash;15 &middot; Save up to 20% through August 15</div>
+     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Private Registration Now Open</div>
+     <div class="audition-banner-title">Summer 2027 <span>Broadway Bound</span> Camps</div>
+     <div class="audition-banner-sub">Get up to 20% off.</div>
     </div>
     <div class="audition-banner-cta">
      <span>Register Now</span>
