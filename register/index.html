@@ -772,7 +772,9 @@
       errEl.classList.add('on'); return;
     }
     state.kids.push({ name:name, age:age, bday:bday, already:[], sel:true });
-    sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday });
+    sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday }).then(function(res){
+      if (res.error) ev('reg_save_failed', { fn: 'add_camper_bday', kid: name, msg: String(res.error.message || '').slice(0, 120) });
+    });
     $('sKidName').value=''; $('sKidBday').value=''; $('sKidBday').classList.add('isEmpty');
     $('kidModal').classList.remove('on');
     if (isCatMode()) renderCatAssign(); else renderShowKids();
@@ -1583,7 +1585,9 @@
         var k = state.kids[+sl.dataset.i];
         if (!k) return;
         k.tshirt = sl.value;
-        sb.rpc('update_my_camper_v2', { p_name: k.name, p_birthdate: null, p_profile: { tshirt: sl.value } });
+        sb.rpc('update_my_camper_v2', { p_name: k.name, p_birthdate: null, p_profile: { tshirt: sl.value } }).then(function(res){
+          if (res.error) ev('reg_save_failed', { fn: 'tshirt', kid: k.name, msg: String(res.error.message || '').slice(0, 120) });
+        });
         ev('reg_tshirt_selected', { size: sl.value });
       });
     });
@@ -1676,6 +1680,23 @@
     });
   }
 
+  function persistKidData(){
+    var items = state.hold ? state.hold.items : buildItems();
+    var seen = {};
+    (items || []).forEach(function(it){
+      var i = it.ci;
+      if (i == null || seen[i]) return;
+      seen[i] = 1;
+      var k = state.kids[i];
+      if (!k) return;
+      sb.rpc('update_my_camper_v2', {
+        p_name: k.name, p_birthdate: k.bday || null,
+        p_profile: k.tshirt ? { tshirt: k.tshirt } : {}
+      }).then(function(res){
+        if (res.error) ev('reg_save_failed', { fn: 'persistKidData', kid: k.name, msg: String(res.error.message || '').slice(0, 120) });
+      }, function(e){ ev('reg_save_failed', { fn: 'persistKidData', kid: k.name, msg: String(e && e.message || e).slice(0, 120) }); });
+    });
+  }
   function confirmNow(){
     return state.stripe.confirmPayment({
       elements: state.elements,
@@ -1715,6 +1736,7 @@
         if (policyBlocked()) return;
         var n = $('parentName').value.trim();
         if (n) sb.rpc('set_my_parent_name', { p_name: n });
+        persistKidData();
         ev('reg_wallet_clicked');
         e.resolve();
       });
@@ -1744,6 +1766,7 @@
     if (policyBlocked()) return;
     var pnv = $('parentName').value.trim();
     if (pnv) sb.rpc('set_my_parent_name', { p_name: pnv });
+    persistKidData();
     $('paySubmit').disabled = true;
     if (state.freeOrder) {
       sb.auth.getSession().then(function(res){
@@ -1919,7 +1942,16 @@
         Math.round((p.discount_pct||0)) + '% off</b>' +
         (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full.');
     }
-    renderProfileForms(items);
+    Promise.all([sb.rpc('my_camper_birthdates'), sb.rpc('my_camper_shirts')]).then(function(rs){
+      var sb_bdays = (rs[0] && rs[0].data) || {};
+      var sb_shirts = (rs[1] && rs[1].data) || {};
+      state.kids.forEach(function(k){
+        if (sb_bdays[k.name]) k.bday = k.bday || sb_bdays[k.name];
+        k.savedBday = !!sb_bdays[k.name];
+        k.savedShirt = !!sb_shirts[k.name];
+      });
+      renderProfileForms(items);
+    }, function(){ renderProfileForms(items); });
     var fb = document.getElementById('fsaBtn');
     if (fb) {
       if (!fsaEligibleItems(items).length) {
@@ -1939,9 +1971,10 @@
     items.forEach(function(it){ if (it.camper && names.indexOf(it.camper) === -1) names.push(it.camper); });
     var host = $('profileForms');
     if (!host || !names.length) return;
+    function kidOf(n){ return state.kids.filter(function(k){ return k.name === n; })[0] || {}; }
     function bdayOf(n){
-      var k = state.kids.filter(function(k){ return k.name === n; })[0];
-      return (k && k.bday) || null;
+      var k = kidOf(n);
+      return (k.savedBday && k.bday) || null; // only trust birthdays the server confirmed
     }
     var pfSaved = {};
     host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>Camper details</span><span></span></div>' +
@@ -1962,6 +1995,10 @@
           (bday ? '' :
             '<label class="tiny" style="display:block;text-align:left;margin:0 0 4px">Birthday</label>' +
             '<input type="date" class="pfdate" id="pfB' + i + '" style="margin-bottom:2px">') +
+          (kidOf(n).savedShirt ? '' :
+            '<label class="tiny" style="display:block;text-align:left;margin:10px 0 4px">T-shirt size <span style="color:var(--gold3)">*</span></label>' +
+            '<select class="pf" id="pfTS' + i + '" style="margin-bottom:2px"><option value="" disabled ' + (kidOf(n).tshirt ? '' : 'selected') + '>Size…</option>' +
+            SHIRT_SIZES.map(function(s){ return '<option' + (kidOf(n).tshirt === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>') +
           fld('pfPR' + i, 'Pronouns (optional)', '') +
           '<label class="tiny" style="display:block;text-align:left;margin:10px 0 4px">Does your child require an EpiPen? <span style="color:var(--gold3)">*</span></label>' +
           sel('pfEP' + i, 'Select\u2026', ['No', 'Yes \u2014 we\'ll bring two non-expired EpiPens']) +
@@ -1985,6 +2022,7 @@
         var iso = $('pfB' + i) ? (v('pfB' + i) || null) : null; // null never clobbers a saved birthday
         var reqIds = ['pfEP' + i, 'pfEA' + i, 'pfMA' + i, 'pfMED' + i, 'pfEN' + i, 'pfEPH' + i];
         if ($('pfB' + i)) reqIds.unshift('pfB' + i);
+        if ($('pfTS' + i)) reqIds.push('pfTS' + i);
         var missing = reqIds.filter(function(id){ return !v(id); });
         reqIds.forEach(function(id){ var el = $(id); if (el) el.style.borderColor = ''; });
         if (missing.length) {
@@ -1997,7 +2035,7 @@
         sb.rpc('update_my_camper_v2', {
           p_name: b.dataset.name, p_birthdate: iso,
           p_profile: {
-            pronouns: v('pfPR' + i), epipen: v('pfEP' + i),
+            tshirt: v('pfTS' + i), pronouns: v('pfPR' + i), epipen: v('pfEP' + i),
             env_allergies: v('pfEA' + i), med_allergies: v('pfMA' + i),
             medications: v('pfMED' + i),
             insurance_holder: v('pfIH' + i), insurance_policy: v('pfIP' + i), insurance_group: v('pfIG' + i),
