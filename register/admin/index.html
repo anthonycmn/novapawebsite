@@ -100,6 +100,7 @@
       <a data-s="orders">Orders</a>
       <a data-s="balances">Balances</a>
       <a data-s="inventory">Inventory</a>
+      <a data-s="campers">Campers</a>
       <a data-s="calendar">Calendar</a>
     </div>
     <div class="who"><span id="whoEmail"></span><br><a href="#" id="signOut">sign out</a></div>
@@ -132,6 +133,17 @@
       <div class="wrap-scroll"><table id="tblSummer"></table></div>
       <h2>All Programs</h2>
       <div class="wrap-scroll"><table id="tblActs"></table></div>
+    </section>
+
+    <section class="sec" id="s-campers">
+      <h2>Campers</h2>
+      <div class="stats" id="stCampers" style="margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <input type="text" id="campQ" placeholder="Search name or email\u2026" style="flex:1;min-width:220px;padding:10px 14px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:14px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="campMissing" style="accent-color:var(--gold,#C8892A)"> missing info only</label>
+        <button id="campCopy" style="padding:10px 14px;border:0;border-radius:10px;background:var(--gold,#C8892A);color:#1a1206;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px">Copy chase-list emails</button>
+      </div>
+      <div class="wrap-scroll"><table id="tblCampers"></table></div>
     </section>
 
     <section class="sec" id="s-calendar">
@@ -191,7 +203,81 @@
     sb.rpc('admin_orders').then(function(r){ renderOrders(r.data || []); });
     sb.rpc('admin_balances').then(function(r){ renderBalances(r.data || []); });
     sb.rpc('admin_inventory').then(function(r){ if (r.data) { INV = r.data; renderInventory(r.data); buildCal(); } });
+    sb.rpc('admin_campers').then(function(r){ CAMPERS = r.data || []; renderCampers(); });
   }
+
+  var CAMPERS = [];
+  function missingOf(c){
+    var p = c.profile || {};
+    var m = [];
+    if (!c.bday) m.push('birthday');
+    if (!p.tshirt) m.push('t-shirt');
+    if (!p.epipen) m.push('epipen');
+    if (!p.env_allergies) m.push('env allergies');
+    if (!p.med_allergies) m.push('med allergies');
+    if (!p.medications_yn && !p.medications) m.push('medications');
+    if (!p.insurance_yn && !p.insurance) m.push('insurance');
+    if (!p.doctor) m.push('doctor');
+    if (!p.emergency_name && !p.emergency_phone && !c.emergency) m.push('emergency');
+    return m;
+  }
+  function renderCampers(){
+    var q = ($('campQ').value || '').toLowerCase();
+    var onlyMissing = $('campMissing').checked;
+    var complete = 0, missing = 0;
+    CAMPERS.forEach(function(c){ (missingOf(c).length ? missing++ : complete++); });
+    $('stCampers').innerHTML =
+      stat(CAMPERS.length, 'campers') +
+      stat(complete, 'info complete', 'ok') +
+      stat(missing, 'missing info', missing ? 'bad' : 'ok');
+    var rows = CAMPERS.filter(function(c){
+      if (q && (c.name + ' ' + c.email).toLowerCase().indexOf(q) === -1) return false;
+      if (onlyMissing && !missingOf(c).length) return false;
+      return true;
+    });
+    if (!rows.length) { $('tblCampers').innerHTML = '<tr><td class="empty">no matches</td></tr>'; return; }
+    $('tblCampers').innerHTML =
+      '<tr><th>camper</th><th>family</th><th>birthday</th><th>missing</th><th>src</th></tr>' +
+      rows.slice(0, 400).map(function(c, i){
+        var m = missingOf(c);
+        var p = c.profile || {};
+        var det = [
+          ['T-shirt', p.tshirt], ['Pronouns', p.pronouns], ['EpiPen', p.epipen],
+          ['Env allergies', p.env_allergies], ['Med allergies', p.med_allergies],
+          ['Medications', p.medications || p.medications_yn],
+          ['Insurance', p.insurance || p.insurance_yn], ['Doctor', p.doctor],
+          ['Emergency', (p.emergency_name || '') + ' ' + (p.emergency_phone || '') || c.emergency],
+          ['Legacy allergies', c.allergies], ['Registered', (c.registered || []).join(', ')]
+        ].filter(function(x){ return x[1] && String(x[1]).trim(); })
+         .map(function(x){ return '<b>' + esc(x[0]) + ':</b> ' + esc(String(x[1]).trim()); }).join(' \u00b7 ');
+        return '<tr class="camp-row" data-i="' + i + '" style="cursor:pointer">' +
+          '<td>' + esc(c.name) + '</td>' +
+          '<td>' + esc(c.email) + '</td>' +
+          '<td>' + (c.bday || '\u2014') + '</td>' +
+          '<td>' + (m.length ? '<span class="tag bad">' + m.length + ': ' + esc(m.join(', ')) + '</span>' : '<span class="tag ok">complete</span>') + '</td>' +
+          '<td><span class="tag">' + esc(c.source || 'web') + '</span></td></tr>' +
+          '<tr class="camp-det" style="display:none"><td colspan="5" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' + (det || 'no details on file') + '</td></tr>';
+      }).join('') + (rows.length > 400 ? '<tr><td class="empty">+' + (rows.length - 400) + ' more \u2014 refine search</td></tr>' : '');
+    $('tblCampers').querySelectorAll('.camp-row').forEach(function(tr){
+      tr.addEventListener('click', function(){
+        var det = tr.nextElementSibling;
+        if (det) det.style.display = det.style.display === 'none' ? '' : 'none';
+      });
+    });
+  }
+  (function(){
+    var t=null;
+    $('campQ').addEventListener('input', function(){ clearTimeout(t); t=setTimeout(renderCampers, 150); });
+    $('campMissing').addEventListener('change', renderCampers);
+    $('campCopy').addEventListener('click', function(){
+      var emails = [];
+      CAMPERS.forEach(function(c){ if (missingOf(c).length && emails.indexOf(c.email) === -1) emails.push(c.email); });
+      navigator.clipboard.writeText(emails.join(', ')).then(function(){
+        $('campCopy').textContent = 'Copied ' + emails.length + ' emails';
+        setTimeout(function(){ $('campCopy').textContent = 'Copy chase-list emails'; }, 2500);
+      });
+    });
+  })();
 
   function renderStats(s){
     $('stRevenue').innerHTML =
