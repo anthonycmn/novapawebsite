@@ -58,10 +58,13 @@
   @keyframes fade { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
 
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px; }
-  input[type=email], input[type=text], input[type=number] {
+  input[type=email], input[type=text], input[type=number], select.pf {
     width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--line);
     background:rgba(8,17,31,0.65); color:#fff; font-size:16px; font-family:inherit;
   }
+  input.pfdate { width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.65); color:#fff; font-size:16px; font-family:inherit;
+    color-scheme:dark; -webkit-appearance:none; appearance:none; min-height:52px; }
   input::placeholder { color:rgba(255,255,255,0.4); }
   .btn {
     display:inline-block; width:100%; text-align:center; border:0; cursor:pointer;
@@ -376,7 +379,7 @@
 
   <!-- STEP: done -->
   <section class="step" id="st-done">
-    <h1 class="center">That's a <em>bow-worthy</em> decision.</h1>
+    <h1 class="center">Congrats! <em>You're registered.</em></h1>
     <p class="sub center" id="doneRecap"></p>
     <div class="card">
       <div class="sumrow head"><span>What happens next</span><span></span></div>
@@ -1426,30 +1429,52 @@
     items.forEach(function(it){ if (it.camper && names.indexOf(it.camper) === -1) names.push(it.camper); });
     var host = $('profileForms');
     if (!host || !names.length) return;
+    function bdayOf(n){
+      var k = state.kids.filter(function(k){ return k.name === n; })[0];
+      return (k && k.bday) || null;
+    }
+    var SHIRTS = ['Youth XS','Youth S','Youth M','Youth L','Adult S','Adult M','Adult L','Adult XL'];
     host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>One last thing — camper details</span><span></span></div>' +
-      '<p class="tiny" style="text-align:left;margin:0 0 10px">Takes 30 seconds per camper and saves you an email later. You can also do this anytime before the season.</p>' +
+      '<p class="tiny" style="text-align:left;margin:0 0 10px">A minute per camper — the same info you\'d fill out on the first day, done now.</p>' +
       names.map(function(n, i){
+        var bday = bdayOf(n);
+        var sel = function(id, label, opts){
+          return '<select class="pf" id="' + id + '" style="margin-bottom:8px"><option value="" disabled selected>' + label + '</option>' +
+            opts.map(function(o){ return '<option>' + o + '</option>'; }).join('') + '</select>';
+        };
         return '<div style="border-top:1px solid var(--line);padding:12px 0">' +
           '<div style="font-weight:700;color:#fff;margin-bottom:8px">' + esc(n) + '</div>' +
-          '<input type="text" id="pfB' + i + '" placeholder="Birthdate (MM/DD/YYYY)" style="margin-bottom:8px">' +
-          '<input type="text" id="pfA' + i + '" placeholder="Allergies or medical notes (or \'none\')" style="margin-bottom:8px">' +
-          '<input type="text" id="pfE' + i + '" placeholder="Emergency contact — name + phone">' +
+          (bday ? '' :
+            '<label class="tiny" style="display:block;text-align:left;margin:0 0 4px">Birthday</label>' +
+            '<input type="date" class="pfdate" id="pfB' + i + '" style="margin-bottom:8px">') +
+          sel('pfTS' + i, 'T-shirt size\u2026', SHIRTS) +
+          '<input type="text" id="pfPR' + i + '" placeholder="Pronouns (optional)" style="margin-bottom:8px">' +
+          sel('pfEP' + i, 'Does your child require an EpiPen?', ['No', 'Yes \u2014 we\'ll bring two non-expired EpiPens']) +
+          '<input type="text" id="pfEA' + i + '" placeholder="Environmental allergies (or \'none\')" style="margin-bottom:8px">' +
+          '<input type="text" id="pfMA' + i + '" placeholder="Medication allergies (or \'none\')" style="margin-bottom:8px">' +
+          '<input type="text" id="pfMED' + i + '" placeholder="Medications during the program (or \'none\')" style="margin-bottom:8px">' +
+          '<input type="text" id="pfINS' + i + '" placeholder="Medical insurance \u2014 policy holder, policy #, group #" style="margin-bottom:8px">' +
+          '<input type="text" id="pfDOC' + i + '" placeholder="Family doctor \u2014 name + phone" style="margin-bottom:8px">' +
+          '<input type="text" id="pfEN' + i + '" placeholder="Emergency contact name" style="margin-bottom:8px">' +
+          '<input type="tel" id="pfEPH' + i + '" placeholder="Emergency contact number" class="pfdate" style="min-height:0">' +
           '<button class="btn btn-ghost" data-pf="' + i + '" data-name="' + esc(n) + '" style="margin-top:8px;padding:10px">Save ' + esc(n.split(' ')[0]) + '\'s info</button>' +
           '<div class="tiny" id="pfS' + i + '"></div></div>';
       }).join('');
+    function v(id){ var el = $(id); return el ? (el.value || '').trim() : ''; }
     host.querySelectorAll('button[data-pf]').forEach(function(b){
       b.addEventListener('click', function(){
         var i = b.dataset.pf;
-        var bd = $('pfB' + i).value.trim();
-        var iso = null;
-        var mm = bd.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (mm) iso = mm[3] + '-' + ('0'+mm[1]).slice(-2) + '-' + ('0'+mm[2]).slice(-2);
-        sb.rpc('update_my_camper', {
+        var iso = $('pfB' + i) ? (v('pfB' + i) || null) : null; // null never clobbers a saved birthday
+        sb.rpc('update_my_camper_v2', {
           p_name: b.dataset.name, p_birthdate: iso,
-          p_allergies: $('pfA' + i).value.trim() || null,
-          p_emergency: $('pfE' + i).value.trim() || null
+          p_profile: {
+            tshirt: v('pfTS' + i), pronouns: v('pfPR' + i), epipen: v('pfEP' + i),
+            env_allergies: v('pfEA' + i), med_allergies: v('pfMA' + i),
+            medications: v('pfMED' + i), insurance: v('pfINS' + i), doctor: v('pfDOC' + i),
+            emergency_name: v('pfEN' + i), emergency_phone: v('pfEPH' + i)
+          }
         }).then(function(res){
-          $('pfS' + i).textContent = res.error ? 'Could not save — try again.' : '✓ Saved!';
+          $('pfS' + i).textContent = res.error ? 'Could not save \u2014 try again.' : '\u2713 Saved!';
         });
       });
     });
