@@ -566,18 +566,31 @@
     ev('reg_choice', { returning: true });
     go('st-remail'); $('emailInput').focus();
   });
-  $('choiceNew').addEventListener('click', function(){
-    ev('reg_choice', { returning: false });
-    if (!isCatMode() && !isPublicOpen()) { ev('reg_waitlist_shown'); go('st-waitlist'); $('wlEmail').focus(); return; }
-    // gate open (or catalog checkout): new families sign up normally
+  function openEmailSignup(){
+    if (state.email) return; // already signed in via magic link
     state.wlSignup = true;
-    if (isCatMode()) $('wlEyebrow').textContent = 'NOVAPA Registration';
+    if (state.catIds.length) $('wlEyebrow').textContent = 'NOVAPA Registration';
     $('wlH1').innerHTML = "What's your <em>email?</em>";
-    $('wlSub').textContent = "We'll send you a sign-in link to get started.";
+    $('wlSub').textContent = "We'll send you a sign-in link to get started \u2014 new and returning families welcome.";
     $('wlJoin').textContent = 'Continue';
     $('wlTiny').textContent = 'No password needed.';
     go('st-waitlist'); $('wlEmail').focus();
+  }
+  $('choiceNew').addEventListener('click', function(){
+    ev('reg_choice', { returning: false });
+    if (!isCatMode() && !state.catIds.length && !isPublicOpen()) { ev('reg_waitlist_shown'); go('st-waitlist'); $('wlEmail').focus(); return; }
+    openEmailSignup();
   });
+  // classes and non-BB camps are open registration — no new/returning gate at all
+  if (state.catIds.length) {
+    sb.rpc('catalog_list').then(function(res){
+      var rows = (res.data || []).filter(function(a){ return state.catIds.indexOf(a.id) !== -1; });
+      if (rows.length && rows.every(function(a){ return !a.bb_gated; })) {
+        state.openReg = true;
+        if (!state.email) openEmailSignup();
+      }
+    });
+  }
 
   $('emailGo').addEventListener('click', function(){ startEmail($('emailInput').value.trim()); });
   $('emailInput').addEventListener('keydown', function(e){ if(e.key==='Enter') startEmail($('emailInput').value.trim()); });
@@ -643,6 +656,9 @@
 
   // ---------- step: family ----------
   function loadFamily(){
+    sb.rpc('ensure_my_family').then(function(){ loadFamily2(); });
+  }
+  function loadFamily2(){
     Promise.all([
       sb.rpc('get_my_family'),
       sb.rpc('inventory_status'),
