@@ -557,6 +557,17 @@
   sb.auth.getSession().then(function(res){
     var session = res.data && res.data.session;
     if (session && session.user && session.user.email) {
+      // magic links can come back without the query — restore the checkout they started
+      if (!location.search) {
+        try {
+          var intent = JSON.parse(localStorage.getItem('nv_reg_intent') || 'null');
+          if (intent && intent.s && Date.now() - intent.t < 6 * 3600 * 1000) {
+            localStorage.removeItem('nv_reg_intent');
+            location.replace('/register/' + intent.s);
+            return;
+          }
+        } catch(e){}
+      } else { try { localStorage.removeItem('nv_reg_intent'); } catch(e){} }
       state.email = session.user.email.toLowerCase();
       loadFamily();
       return;
@@ -617,7 +628,11 @@
     }).catch(function(){ errEl.textContent='Something went wrong — try again.'; errEl.classList.add('on'); $('emailGo').disabled=false; });
   }
 
+  function rememberIntent(){
+    try { if (location.search) localStorage.setItem('nv_reg_intent', JSON.stringify({ s: location.search, t: Date.now() })); } catch(e){}
+  }
   function sendLink(){
+    rememberIntent();
     sb.auth.signInWithOtp({
       email: state.email,
       options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
@@ -646,6 +661,7 @@
     });
   }
   function sendLinkNew(){
+    rememberIntent();
     sb.auth.signInWithOtp({
       email: state.email,
       options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
