@@ -855,6 +855,7 @@
       : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(discRate(e.n) * 100) + '% off)'; }).join(' \u00b7 ');
   }
   function renderShowKids(){
+    $('sKidOpen').textContent = state.kids.length ? '+ Add another camper' : '+ Add a camper';
     document.querySelectorAll('#showBlocks .kids').forEach(function(host){
       var show = host.dataset.show;
       host.innerHTML = state.kids.map(function(k, i){
@@ -1143,7 +1144,7 @@
         (a.schedule_name ? ' · ' + esc(a.schedule_name) : '') + '</div>' +
         '<div class="tiny" style="text-align:left;margin:0 0 8px;color:var(--gold3)">' + priceLine + '</div>' + rows + '</div>';
     }).join('');
-    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add another camper</button>';
+    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
     $('assignBlocks').innerHTML = html;
     $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
       cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); });
