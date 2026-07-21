@@ -231,7 +231,7 @@
       stat(complete, 'info complete', 'ok') +
       stat(missing, 'missing info', missing ? 'bad' : 'ok');
     var rows = CAMPERS.filter(function(c){
-      if (q && (c.name + ' ' + c.email).toLowerCase().indexOf(q) === -1) return false;
+      if (q && (c.name + ' ' + (c.emails || [c.email]).join(' ')).toLowerCase().indexOf(q) === -1) return false;
       if (onlyMissing && !missingOf(c).length) return false;
       return true;
     });
@@ -250,12 +250,14 @@
           ['Legacy allergies', c.allergies], ['Registered', (c.registered || []).join(', ')]
         ].filter(function(x){ return x[1] && String(x[1]).trim(); })
          .map(function(x){ return '<b>' + esc(x[0]) + ':</b> ' + esc(String(x[1]).trim()); }).join(' \u00b7 ');
+        var emails = c.emails || [c.email];
+        var srcs = c.sources || [c.source || 'web'];
         return '<tr class="camp-row" data-i="' + i + '" style="cursor:pointer">' +
           '<td>' + esc(c.name) + '</td>' +
-          '<td>' + esc(c.email) + '</td>' +
+          '<td>' + emails.map(esc).join('<br>') + '</td>' +
           '<td>' + (c.bday || '\u2014') + '</td>' +
           '<td>' + (m.length ? '<span class="tag bad">' + m.length + ': ' + esc(m.join(', ')) + '</span>' : '<span class="tag ok">complete</span>') + '</td>' +
-          '<td><span class="tag">' + esc(c.source || 'web') + '</span></td></tr>' +
+          '<td>' + srcs.map(function(s){ return '<span class="tag">' + esc(s) + '</span>'; }).join(' ') + '</td></tr>' +
           '<tr class="camp-det" style="display:none"><td colspan="5" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' + (det || 'no details on file') + '</td></tr>';
       }).join('') + (rows.length > 400 ? '<tr><td class="empty">+' + (rows.length - 400) + ' more \u2014 refine search</td></tr>' : '');
     $('tblCampers').querySelectorAll('.camp-row').forEach(function(tr){
@@ -271,7 +273,10 @@
     $('campMissing').addEventListener('change', renderCampers);
     $('campCopy').addEventListener('click', function(){
       var emails = [];
-      CAMPERS.forEach(function(c){ if (missingOf(c).length && emails.indexOf(c.email) === -1) emails.push(c.email); });
+      CAMPERS.forEach(function(c){
+        if (!missingOf(c).length) return;
+        (c.emails || [c.email]).forEach(function(e){ if (e && emails.indexOf(e) === -1) emails.push(e); });
+      });
       navigator.clipboard.writeText(emails.join(', ')).then(function(){
         $('campCopy').textContent = 'Copied ' + emails.length + ' emails';
         setTimeout(function(){ $('campCopy').textContent = 'Copy chase-list emails'; }, 2500);
