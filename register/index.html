@@ -574,7 +574,8 @@
       sb.rpc('inventory_status'),
       sb.rpc('catalog_list'),
       sb.rpc('family_fee_due', { p_email: state.email }),
-      sb.rpc('my_camper_birthdates')
+      sb.rpc('my_camper_birthdates'),
+      sb.rpc('my_parent_name')
     ]).then(function(results){
       var fam = results[0].data;
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
@@ -582,6 +583,8 @@
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
       state.feeDue = !!results[3].data;
       var bdays = results[4] && results[4].data ? results[4].data : {};
+      var pn = results[5] && results[5].data;
+      if (pn && !$('parentName').value) $('parentName').value = pn;
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
