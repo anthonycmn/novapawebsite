@@ -559,7 +559,11 @@
     if (session && session.user && session.user.email) {
       state.email = session.user.email.toLowerCase();
       loadFamily();
+      return;
     }
+    // Bare landings (playbill QRs, typed URLs) see the summer landing page first.
+    // Anything intentional carries a query (?go, ?activity, ?season) or magic-link hash.
+    if (!location.search && !location.hash) location.replace('/summer-2027');
   });
 
   // ---------- step: gate (new or returning) ----------
