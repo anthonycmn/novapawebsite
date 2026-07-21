@@ -734,5 +734,33 @@
     </div>
   </div>
 </footer>
+<script>
+/* Mobile nav toggle (canonical) */
+(function(){
+  var btn = document.querySelector('.u-nav-toggle');
+  var links = document.querySelector('.u-nav .u-nav-links');
+  if (!btn || !links) return;
+  if (!links.id) links.id = 'u-nav-links';
+  function setOpen(open){
+    btn.classList.toggle('is-open', open);
+    links.classList.toggle('is-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    setOpen(!links.classList.contains('is-open'));
+  });
+  links.addEventListener('click', function(e){
+    if (e.target.tagName === 'A') setOpen(false);
+  });
+  document.addEventListener('click', function(e){
+    if (!links.contains(e.target) && !btn.contains(e.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') setOpen(false);
+  });
+})();
+</script>
 </body>
 </html>
