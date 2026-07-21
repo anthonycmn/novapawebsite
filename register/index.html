@@ -180,6 +180,10 @@
   .showb .d { font-size:13px; color:var(--ink-dim); margin:3px 0 10px; }
   .showb .kids { border-top:1px solid var(--line); padding-top:4px; }
 
+  .season-chips { display:flex; gap:8px; justify-content:center; margin:0 0 14px; }
+  .schip { padding:8px 18px; border-radius:100px; border:1px solid var(--line); color:var(--ink-dim);
+    font-size:12.5px; font-weight:700; letter-spacing:0.04em; cursor:pointer; transition:all .15s; }
+  .schip.sel { background:rgba(232,184,75,0.14); border-color:var(--gold3); color:var(--gold3); }
   /* add-camper date field */
   #sKidBday{ color-scheme:dark; width:100%; padding:14px 46px 14px 16px; font-size:16px; min-height:52px;
     -webkit-appearance:none; appearance:none; display:flex; align-items:center;
@@ -301,6 +305,11 @@
   <section class="step" id="st-shows">
     <h1>Choose your <em>shows.</em></h1>
     <p class="sub">Check each camper into their shows.</p>
+    <div class="season-chips" id="seasonChips">
+      <span class="schip" data-f="summer">Summer</span>
+      <span class="schip" data-f="year">Year Round</span>
+      <span class="schip" data-f="all">All</span>
+    </div>
     <div id="showBlocks">
       <div class="showb" data-show="httyd">
         <div class="poster" style="background-image:url('/register/img/httyd.jpg')"></div>
@@ -324,6 +333,22 @@
           <div class="t">Trolls The Musical JR.</div>
           <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00 · $995</div>
           <div class="kids" data-show="trolls"></div>
+        </div>
+      </div>
+      <div class="showb" data-fall="frozen">
+        <div class="poster" style="background-image:url('/register/img/frozen.jpg')"></div>
+        <div class="bd">
+          <div class="t">Disney&rsquo;s Frozen</div>
+          <div class="d">One evening a week · Sep 2026 – Feb 2027 · $695</div>
+          <div class="kids" data-fallshow="frozen"></div>
+        </div>
+      </div>
+      <div class="showb" data-fall="mermaid">
+        <div class="poster" style="background-image:url('/register/img/mermaid.jpg')"></div>
+        <div class="bd">
+          <div class="t">Disney&rsquo;s The Little Mermaid JR.</div>
+          <div class="d">One evening a week · Feb – May 2027 · $695</div>
+          <div class="kids" data-fallshow="mermaid"></div>
         </div>
       </div>
     </div>
@@ -461,10 +486,14 @@
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
-    state.fallMode = /[?&]season=fall/.test(location.search);
-    if (state.catIds.length || state.fallMode) {
+    var sm = location.search.match(/[?&]season=(fall|all)/);
+    state.seasonFilter = sm ? (sm[1] === 'fall' ? 'year' : 'all') : 'summer';
+    state.fallMode = false;
+    if (state.catIds.length) {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
       document.getElementById('payBack').dataset.back = 'st-assign';
+    } else if (state.seasonFilter !== 'summer') {
+      document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
     }
   })();
   var FALL_SHOWS = [
@@ -502,7 +531,7 @@
   function go(stepId){
     document.querySelectorAll('.step').forEach(function(s){ s.classList.remove('on'); });
     $(stepId).classList.add('on');
-    if (stepId !== 'st-shows' && !(state.fallMode && stepId === 'st-assign') && $('toast')) $('toast').classList.remove('on');
+    if (stepId !== 'st-shows' && $('toast')) $('toast').classList.remove('on');
     window.scrollTo({top:0});
     ev('reg_step_viewed', { step: stepId });
   }
@@ -653,12 +682,8 @@
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
-      if (state.fallMode) {
-        state.catItems = state.allCat.filter(function(a){ return /frozen|mermaid/i.test(a.name) && a.bookable && a.category !== 'class'; });
-        go('st-assign'); renderFallAssign(); startSoftTimer(); return;
-      }
       if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
-      renderShowKids(); go('st-shows'); startSoftTimer();
+      go('st-shows'); renderShowKids(); startSoftTimer();
     });
   }
   function firstNames(){
@@ -693,9 +718,8 @@
   $('famNext').addEventListener('click', function(){
     var errEl = $('famErr'); errEl.classList.remove('on');
     if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one camper.'; errEl.classList.add('on'); return; }
-    if (state.fallMode) { go('st-assign'); renderFallAssign(); startSoftTimer(); return; }
     if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
-    renderShowKids(); go('st-shows'); startSoftTimer();
+    go('st-shows'); renderShowKids(); startSoftTimer();
   });
   $('signout').addEventListener('click', function(e){
     e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
@@ -724,22 +748,17 @@
       errEl.textContent='Camper birthday, please!'; errEl.classList.add('on'); return;
     }
     var age = ageOn(bday, '2027-07-05'); // age when camp starts
-    if (!isCatMode() && !(age >= 5 && age <= 15)) {
-      errEl.textContent='Camps are for ages 5\u201315 \u2014 this camper will be ' + age + ' when camp starts.';
+    var fAge = ageOn(bday, '2026-09-15'); // age when the season starts
+    var okSummer = age >= 5 && age <= 15, okFall = fAge >= 5 && fAge <= 17;
+    if (!isCatMode() && !okSummer && !okFall) {
+      errEl.textContent='Our programs are for ages 5\u201317.';
       errEl.classList.add('on'); return;
-    }
-    if (state.fallMode) {
-      var fAge = ageOn(bday, '2026-09-15');
-      if (!(fAge >= 5 && fAge <= 17)) {
-        errEl.textContent='Shows are for ages 5\u201317 \u2014 this performer will be ' + fAge + ' when the season starts.';
-        errEl.classList.add('on'); return;
-      }
     }
     state.kids.push({ name:name, age:age, bday:bday, already:[], sel:true });
     sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday });
     $('sKidName').value=''; $('sKidBday').value=''; $('sKidBday').classList.add('isEmpty');
     $('kidModal').classList.remove('on');
-    if (state.fallMode) renderFallAssign(); else if (isCatMode()) renderCatAssign(); else renderShowKids();
+    if (isCatMode()) renderCatAssign(); else renderShowKids();
   });
 
   // ---------- step: shows + campers ----------
@@ -777,7 +796,17 @@
       });
       if (n) byKid.push({ name: k.name, n: n });
     });
-    if (!byKid.length) { t.textContent = 'Check a camper into a show to see your price.'; return; }
+    var fallN = 0;
+    state.kids.forEach(function(k, i){
+      if (!k.sel) return;
+      FALL_SHOWS.forEach(function(s){ if (fallCastOn(i, s.key)) fallN++; });
+    });
+    if (!byKid.length) {
+      t.textContent = fallN
+        ? '$695 per show \u00b7 one performer in both shows saves 10% on each.'
+        : 'Check a camper into a show to see your price.';
+      return;
+    }
     if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
     function label(n){ return n + ' show' + (n > 1 ? 's' : '') + ' selected, ' + Math.round(discRate(n) * 100) + '% off'; }
     if (byKid.length === 1) { t.textContent = label(byKid[0].n); return; }
@@ -813,49 +842,154 @@
       }).join('');
     });
     var blocks = $('showBlocks');
-    blocks.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+    blocks.querySelectorAll('input[type=checkbox][data-key]').forEach(function(cb){
       cb.addEventListener('change', function(){
         state.assign[cb.dataset.key].on = cb.checked;
         ev('reg_show_kid_toggled', { key: cb.dataset.key, on: cb.checked });
         renderShowKids();
       });
     });
-    blocks.querySelectorAll('.pill').forEach(function(p){
+    blocks.querySelectorAll('.pill[data-key]').forEach(function(p){
       p.addEventListener('click', function(){ state.assign[p.dataset.key].band = p.dataset.band; renderShowKids(); });
     });
+    renderFallCards();
+    applySeasonFilter();
     syncShows(); updateTicker(); upsellCheck();
+  }
+  function renderFallCards(){
+    var today = new Date().toISOString().slice(0,10);
+    document.querySelectorAll('#showBlocks .kids[data-fallshow]').forEach(function(host){
+      var sKey = host.dataset.fallshow;
+      var s = FALL_SHOWS.filter(function(x){ return x.key === sKey; })[0];
+      var acts = fallActsFor(sKey);
+      if (!acts.length) { host.innerHTML = ''; return; }
+      host.innerHTML = state.kids.map(function(k, i){
+        if (!k.sel) return '';
+        var age = ageOn(k.bday, s.start);
+        var onCast = fallCastOn(i, sKey);
+        var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
+        if (!eligible && onCast) { setFallCast(i, sKey, null); onCast = null; }
+        var pills = '';
+        if (onCast && eligible) {
+          pills = acts.map(function(a){
+            var r = castRange(a);
+            if (age != null && !(age >= r.min && age <= r.max)) return '';
+            var left = a.remaining;
+            var full = left != null && left <= 0;
+            var leftTag = (left != null && left < 20) ? ' <span class="left">' + (full ? 'Full' : left + ' more spots available') + '</span>' : '';
+            return '<span class="pill' + (onCast === a.id ? ' sel' : '') + '" data-fall="' + sKey + '" data-i="' + i + '" data-cast="' + a.id + '"' + (full ? ' data-full="1"' : '') + '>' + castLabel(a) + leftTag + '</span>';
+          }).join('');
+        }
+        var bdayRow = (onCast && !k.bday)
+          ? '<div class="bday-row"><label class="bday-lbl">Birthday <span class="req">(needed)</span></label>' +
+            '<input type="date" class="fallBday" data-i="' + i + '" data-fs="' + sKey + '" max="' + today + '"></div>' : '';
+        return '<div class="kid-row">' +
+          '<label class="kid-check"><input type="checkbox" data-fall="' + sKey + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + (eligible ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' +
+          (eligible ? '' : ' <span class="badge-done" style="opacity:.65">this show is for ages 5\u201317</span>') + '</label>' +
+          (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
+      }).join('');
+    });
+    var blocks = $('showBlocks');
+    blocks.querySelectorAll('input[type=checkbox][data-fall]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var i = +cb.dataset.i, sKey = cb.dataset.fall, k = state.kids[i];
+        if (cb.checked) {
+          var sd = FALL_SHOWS.filter(function(x){ return x.key === sKey; })[0];
+          setFallCast(i, sKey, defaultCastFor(sKey, ageOn(k.bday, sd.start)) || fallActsFor(sKey)[0].id);
+        } else setFallCast(i, sKey, null);
+        ev('reg_show_kid_toggled', { key: sKey + '|' + i, on: cb.checked });
+        renderShowKids();
+      });
+    });
+    blocks.querySelectorAll('.pill[data-fall]').forEach(function(p){
+      p.addEventListener('click', function(){
+        if (p.dataset.full) return;
+        setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
+        renderShowKids();
+      });
+    });
+    blocks.querySelectorAll('.fallBday').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var kid = state.kids[+inp.dataset.i];
+        if (!kid) return;
+        kid.bday = inp.value || null;
+        if (kid.bday) sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday });
+        renderShowKids();
+      });
+    });
+  }
+  function applySeasonFilter(){
+    var fl = state.seasonFilter;
+    document.querySelectorAll('#showBlocks .showb').forEach(function(card){
+      var isFall = !!card.dataset.fall;
+      card.style.display = (fl === 'all' || (fl === 'summer' && !isFall) || (fl === 'year' && isFall)) ? '' : 'none';
+    });
+    document.querySelectorAll('#seasonChips .schip').forEach(function(c){
+      c.classList.toggle('sel', c.dataset.f === fl);
+    });
   }
 
   // upsell toast \u2014 "In town? bundle another camp"
   var toastSig = { shown: null, dismissed: {} };
   function upsellCheck(){
     var t = $('toast');
-    if (!saleOn() || !document.querySelector('#st-shows.on')) { t.classList.remove('on'); return; }
+    if (!document.querySelector('#st-shows.on')) { t.classList.remove('on'); return; }
     var best = null;
-    state.kids.forEach(function(k, i){
-      if (best || !k.sel) return;
-      var mine = Object.keys(SHOW_NAMES).filter(function(show){
-        var a = state.assign[show + '|' + i];
-        return a && a.on;
-      });
-      if (mine.length >= 1 && mine.length < 3) {
-        var missing = Object.keys(SHOW_NAMES).filter(function(s){
-          return mine.indexOf(s) === -1 && (k.already || []).indexOf(s) === -1;
+    if (saleOn() && state.seasonFilter !== 'year') {
+      state.kids.forEach(function(k, i){
+        if (best || !k.sel) return;
+        var mine = Object.keys(SHOW_NAMES).filter(function(show){
+          var a = state.assign[show + '|' + i];
+          return a && a.on;
         });
-        if (missing.length) best = { kid: i, n: mine.length, show: missing[missing.length - 1] };
+        if (mine.length >= 1 && mine.length < 3) {
+          var missing = Object.keys(SHOW_NAMES).filter(function(s){
+            return mine.indexOf(s) === -1 && (k.already || []).indexOf(s) === -1;
+          });
+          if (missing.length) best = { kid: i, n: mine.length, show: missing[missing.length - 1] };
+        }
+      });
+    }
+    if (best) {
+      var sig = best.kid + '|' + best.n;
+      if (toastSig.dismissed[sig]) { t.classList.remove('on'); return; }
+      if (toastSig.shown === sig && t.classList.contains('on')) return;
+      toastSig.shown = sig;
+      var pct = Math.round(discRate(best.n + 1) * 100);
+      var nm = { httyd: 'Dragon', charlie: 'Charlie', trolls: 'Trolls' }[best.show];
+      $('toastMsg').innerHTML = 'In town <b>' + SHOW_DATES[best.show] + '</b>? Save <b>' + pct + '%</b> by bundling ' + nm + ' camp!';
+      t.dataset.mode = ''; t.dataset.show = best.show; t.dataset.kid = best.kid; t.dataset.sig = sig;
+      t.classList.add('on');
+      ev('reg_upsell_toast', { show: best.show, pct: pct });
+      return;
+    }
+    if (state.seasonFilter !== 'summer') {
+      var fbest = null;
+      state.kids.forEach(function(k, i){
+        if (fbest || !k.sel) return;
+        var have = FALL_SHOWS.filter(function(s){ return fallCastOn(i, s.key); });
+        if (have.length !== 1) return;
+        var other = FALL_SHOWS.filter(function(s){ return s.key !== have[0].key; })[0];
+        var age = ageOn(k.bday, other.start);
+        var can = fallActsFor(other.key).some(function(a){
+          var r = castRange(a);
+          return (age == null || (age >= r.min && age <= r.max)) && !(a.remaining != null && a.remaining <= 0);
+        });
+        if (can) fbest = { kid: i, show: other };
+      });
+      if (fbest) {
+        var fsig = 'fall|' + fbest.kid + '|' + fbest.show.key;
+        if (toastSig.dismissed[fsig]) { t.classList.remove('on'); return; }
+        if (toastSig.shown === fsig && t.classList.contains('on')) return;
+        toastSig.shown = fsig;
+        $('toastMsg').innerHTML = 'Add <b>' + fbest.show.title + '</b> and save <b>10%</b> on both shows!';
+        t.dataset.mode = 'fall'; t.dataset.show = fbest.show.key; t.dataset.kid = fbest.kid; t.dataset.sig = fsig;
+        t.classList.add('on');
+        ev('reg_upsell_toast', { show: fbest.show.key, pct: 10 });
+        return;
       }
-    });
-    if (!best) { t.classList.remove('on'); return; }
-    var sig = best.kid + '|' + best.n;
-    if (toastSig.dismissed[sig]) { t.classList.remove('on'); return; }
-    if (toastSig.shown === sig && t.classList.contains('on')) return;
-    toastSig.shown = sig;
-    var pct = Math.round(discRate(best.n + 1) * 100);
-    var nm = { httyd: 'Dragon', charlie: 'Charlie', trolls: 'Trolls' }[best.show];
-    $('toastMsg').innerHTML = 'In town <b>' + SHOW_DATES[best.show] + '</b>? Save <b>' + pct + '%</b> by bundling ' + nm + ' camp!';
-    t.dataset.show = best.show; t.dataset.kid = best.kid; t.dataset.sig = sig;
-    t.classList.add('on');
-    ev('reg_upsell_toast', { show: best.show, pct: pct });
+    }
+    t.classList.remove('on');
   }
   $('toastAdd').addEventListener('click', function(){
     var t = $('toast');
@@ -866,7 +1000,7 @@
       setFallCast(i, s, defaultCastFor(s, ageOn(k.bday, sd.start)) || fallActsFor(s)[0].id);
       t.classList.remove('on');
       ev('reg_upsell_toast_added', { show: s });
-      renderFallAssign();
+      renderShowKids();
       return;
     }
     var key = t.dataset.show + '|' + t.dataset.kid;
@@ -879,6 +1013,13 @@
     var t = $('toast');
     toastSig.dismissed[t.dataset.sig] = true;
     t.classList.remove('on');
+  });
+  document.querySelectorAll('#seasonChips .schip').forEach(function(c){
+    c.addEventListener('click', function(){
+      state.seasonFilter = c.dataset.f;
+      ev('reg_season_filter', { f: c.dataset.f });
+      renderShowKids();
+    });
   });
   // classes/school-year programs begin mid-September; age is measured at start
   var CLASS_START = '2026-09-14';
@@ -933,105 +1074,6 @@
       if (!(key in state.assign)) state.assign[key] = { on: false };
       state.assign[key].on = (a.id === castId);
     });
-  }
-  function renderFallAssign(){
-    document.querySelector('#st-assign h1').innerHTML = 'Choose your <em>shows.</em>';
-    document.querySelector('#st-assign .sub').textContent = 'Check each performer into their show. Do both and save 10%.';
-    var today = new Date().toISOString().slice(0,10);
-    var html = FALL_SHOWS.map(function(s){
-      var acts = fallActsFor(s.key);
-      if (!acts.length) return '';
-      var kidRows = state.kids.map(function(k, i){
-        if (!k.sel) return '';
-        var age = ageOn(k.bday, s.start);
-        var onCast = fallCastOn(i, s.key);
-        var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
-        var pills = '';
-        if (onCast && eligible) {
-          pills = acts.map(function(a){
-            var r = castRange(a);
-            if (age != null && !(age >= r.min && age <= r.max)) return '';
-            var left = a.remaining;
-            var full = left != null && left <= 0;
-            var leftTag = (left != null && left < 20) ? ' <span class="left">' + (full ? 'Full' : left + ' more spots available') + '</span>' : '';
-            return '<span class="pill' + (onCast === a.id ? ' sel' : '') + '" data-fall="' + s.key + '" data-i="' + i + '" data-cast="' + a.id + '"' + (full ? ' data-full="1"' : '') + '>' + castLabel(a) + leftTag + '</span>';
-          }).join('');
-        }
-        var bdayRow = (onCast && !k.bday)
-          ? '<div class="bday-row"><label class="bday-lbl">Birthday <span class="req">(needed)</span></label>' +
-            '<input type="date" class="fallBday" data-i="' + i + '" max="' + today + '"></div>' : '';
-        return '<div class="kid-row">' +
-          '<label class="kid-check"><input type="checkbox" data-fall="' + s.key + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + (eligible ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' +
-          (eligible ? '' : ' <span class="badge-done" style="opacity:.65">shows are for ages 5\u201317</span>') + '</label>' +
-          (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
-      }).join('');
-      return '<div class="showb"><div class="poster" style="background-image:url(\'' + s.img + '\')"></div>' +
-        '<div class="bd"><div class="t">' + s.title + '</div><div class="d">' + s.date + '</div>' +
-        '<div class="kids">' + kidRows + '</div></div></div>';
-    }).join('');
-    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add another camper</button>';
-    $('assignBlocks').innerHTML = html;
-    $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
-      cb.addEventListener('change', function(){
-        var i = +cb.dataset.i, s = cb.dataset.fall, k = state.kids[i];
-        if (cb.checked) {
-          var sd = FALL_SHOWS.filter(function(x){ return x.key === s; })[0];
-          setFallCast(i, s, defaultCastFor(s, ageOn(k.bday, sd.start)) || fallActsFor(s)[0].id);
-        } else setFallCast(i, s, null);
-        renderFallAssign();
-      });
-    });
-    $('assignBlocks').querySelectorAll('.pill').forEach(function(p){
-      p.addEventListener('click', function(){
-        if (p.dataset.full) return;
-        setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
-        renderFallAssign();
-      });
-    });
-    $('assignBlocks').querySelectorAll('.fallBday').forEach(function(inp){
-      inp.addEventListener('change', function(){
-        var kid = state.kids[+inp.dataset.i];
-        if (!kid) return;
-        kid.bday = inp.value || null;
-        if (kid.bday) sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday });
-        renderFallAssign();
-      });
-    });
-    var addBtn = $('cKidAdd');
-    if (addBtn) addBtn.addEventListener('click', function(){
-      $('kidErr').classList.remove('on');
-      $('kidModal').classList.add('on');
-      $('sKidName').focus();
-    });
-    $('catNext').disabled = false;
-    fallUpsellToast();
-  }
-  function fallUpsellToast(){
-    var t = $('toast');
-    if (!state.fallMode || !document.querySelector('#st-assign.on')) return;
-    var best = null;
-    state.kids.forEach(function(k, i){
-      if (best || !k.sel) return;
-      var have = FALL_SHOWS.filter(function(s){ return fallCastOn(i, s.key); });
-      if (have.length !== 1) return;
-      var other = FALL_SHOWS.filter(function(s){ return s.key !== have[0].key; })[0];
-      var age = ageOn(k.bday, other.start);
-      var acts = fallActsFor(other.key);
-      var can = acts.some(function(a){
-        var r = castRange(a);
-        return (age == null || (age >= r.min && age <= r.max)) && !(a.remaining != null && a.remaining <= 0);
-      });
-      if (can) best = { kid: i, show: other };
-    });
-    if (!best) { t.classList.remove('on'); return; }
-    var sig = 'fall|' + best.kid + '|' + best.show.key;
-    if (toastSig.dismissed[sig]) { t.classList.remove('on'); return; }
-    if (toastSig.shown === sig && t.classList.contains('on')) return;
-    toastSig.shown = sig;
-    $('toastMsg').innerHTML = 'Add <b>' + best.show.title + '</b> and save <b>10%</b> on both shows!';
-    t.dataset.mode = 'fall'; t.dataset.show = best.show.key; t.dataset.kid = best.kid; t.dataset.sig = sig;
-    t.classList.add('on');
-    ev('reg_upsell_toast', { show: best.show.key, pct: 10 });
   }
   function renderCatAssign(){
     var today = new Date().toISOString().slice(0,10);
@@ -1099,6 +1141,13 @@
         if (a && a.on) items.push({ show: show, band: a.band, camper: k.name, ci: i });
       });
     });
+    FALL_SHOWS.forEach(function(s){
+      state.kids.forEach(function(k, i){
+        if (!k.sel) return;
+        var cid = fallCastOn(i, s.key);
+        if (cid) items.push({ activity_id: cid, camper: k.name, ci: i });
+      });
+    });
     Object.keys(state.addons).forEach(function(key){
       var id = state.addons[key];
       if (id) items.push({ activity_id: id, camper: key.split('|')[1] });
@@ -1128,6 +1177,11 @@
     var errEl = isCatMode() ? $('catErr') : $('assignErr'); errEl.classList.remove('on');
     var items = buildItems();
     if (!items.length) { errEl.textContent = 'Check at least one camper into a show.'; errEl.classList.add('on'); return; }
+    var missingB = state.kids.some(function(k, i){
+      if (!k.sel || k.bday) return false;
+      return FALL_SHOWS.some(function(s){ return fallCastOn(i, s.key); });
+    });
+    if (missingB) { errEl.textContent = 'Add a birthday for each performer \u2014 it\u2019s under their show card.'; errEl.classList.add('on'); return; }
     $('assignNext').disabled = true; $('catNext').disabled = true;
     sb.rpc('acquire_hold_v3', { p_items: items }).then(function(res){
       $('assignNext').disabled = false; $('catNext').disabled = false;
@@ -1297,24 +1351,26 @@
     var byKid = {};
     items.forEach(function(it){ if (it.show) { var k = kidKey(it); byKid[k] = (byKid[k]||0)+1; } });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
-    var units = items.map(function(it){
+    var bund = [];
+    var units = items.map(function(it, i){
       if (it.show) return Math.round(C.PRICE * 100 * (1 - discRate(byKid[kidKey(it)])));
       var a = byIdAll[it.activity_id] || {};
       var base = a.price_cents || 69500;
       var kid = kidKey(it);
       var kidShowN = items.filter(function(x){ return !x.show && kidKey(x) === kid; }).length;
-      return (byKid[kid] || kidShowN >= 2) ? Math.round(base * 0.9) : base;
+      if (byKid[kid] || kidShowN >= 2) { bund[i] = true; return Math.round(base * 0.9); }
+      return base;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var coupon = state.coupon ? Math.round(subtotal * state.coupon.pct / 100) : 0;
     var net = subtotal - coupon;
     var ins = state.insurance ? Math.round(net * C.INSURANCE_PCT / 100) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = Math.round(net * 5 / 100);
-    return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, planFee:planFee, total:net + planFee + ins,
+    return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, planFee:planFee, total:net + planFee + ins,
              today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / C.INSTALLMENTS) };
   }
 
@@ -1369,15 +1425,22 @@
       var full = it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 0);
       return sum + Math.max(0, full - p.units[i]);
     }, 0);
+    function actShowName(a){
+      var nm = a.name || 'Show';
+      if (/frozen/i.test(nm)) return 'Frozen \u00b7 ' + castLabel(a);
+      if (/mermaid/i.test(nm)) return 'The Little Mermaid JR. \u00b7 ' + castLabel(a);
+      return nm;
+    }
     var rows = items.map(function(it, i){
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
-        : esc(it.camper) + ' — ' + esc((byIdAll[it.activity_id]||{}).name || 'Show') + ' <span class="savings">(10% bundle)</span>';
+        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '');
       var pct = it.show ? Math.round(discRate((byKid[kidKey(it)]||{}).n||0)*100) : 0;
       return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + '</span><span>' + money(p.units[i]) + '</span></div>';
     }).join('');
+    var allSummer = items.every(function(it){ return it.show; });
     $('summaryCard').innerHTML =
-      '<div class="sumrow head"><span>Your summer</span><span>per-kid launch pricing</span></div>' + rows +
+      '<div class="sumrow head"><span>' + (allSummer ? 'Your summer' : 'Your shows') + '</span><span>' + (allSummer ? 'per-kid launch pricing' : '') + '</span></div>' + rows +
       (savings > 0 ? '<div class="sumrow"><span class="savings">Launch-sale savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
       (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
       (p.ins ? '<div class="sumrow"><span>Tuition insurance (10%)</span><span>' + money(p.ins) + '</span></div>' : '') +
