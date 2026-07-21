@@ -338,7 +338,7 @@
     <div class="card">
       <div class="plan-toggle">
         <div class="plan-opt sel" data-plan="deposit">
-          <div class="p1">Reserve today</div>
+          <div class="p1">Pay in installments</div>
           <div class="p2">$180/registration now, monthly autopay (+5%)</div>
         </div>
         <div class="plan-opt" data-plan="full">
@@ -1242,7 +1242,9 @@
       '</b> starting ' + when + ' — automatic on this card.</p>';
   }
 
+  var paySeq = 0; // bumps on every reset/request; stale reg-pay responses are dropped
   function resetPayUI(){
+    paySeq++;
     state.clientSecret = null;
     $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none';
     $('expressCheckout').innerHTML = ''; $('expressWrap').style.display = 'none';
@@ -1258,6 +1260,7 @@
   $('payStart').addEventListener('click', startPayment);
   function startPayment(){
     if (!state.hold || state.clientSecret) return;
+    var mySeq = ++paySeq;
     var errEl = $('payErr'); errEl.classList.remove('on');
     if (!C.STRIPE_PUBLISHABLE_KEY) {
       errEl.textContent = 'Payments aren\'t configured yet (test build) — Stripe keys pending.';
@@ -1273,6 +1276,7 @@
       });
     }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
     .then(function(res){
+      if (mySeq !== paySeq) return; // user changed plan/insurance meanwhile — drop stale response
       $('payStart').disabled = false;
       if (!res.ok) {
         var msg = res.j.error === 'hold_expired' ? 'Your hold expired — re-hold your spots.'
@@ -1296,6 +1300,7 @@
       mountStripe();
       ev('reg_payment_started', { plan: state.plan, today_cents: res.j.pricing.today_cents });
     }).catch(function(){
+      if (mySeq !== paySeq) return;
       $('payStart').disabled = false;
       $('payErr').textContent = 'Network error — try again.'; $('payErr').classList.add('on');
     });
