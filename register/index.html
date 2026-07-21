@@ -1308,7 +1308,9 @@
       return state.insurance ? Math.round(u * 1.10) : u;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
-    var coupon = state.coupon ? Math.round(subtotal * state.coupon.pct / 100) : 0;
+    var coupon = !state.coupon ? 0
+      : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
+      : Math.min(state.coupon.amount_cents || 0, subtotal);
     var baseSubtotal = items.reduce(function(sum, it){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
@@ -1362,7 +1364,9 @@
       return base;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
-    var coupon = state.coupon ? Math.round(subtotal * state.coupon.pct / 100) : 0;
+    var coupon = !state.coupon ? 0
+      : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
+      : Math.min(state.coupon.amount_cents || 0, subtotal);
     var net = subtotal - coupon;
     var ins = state.insurance ? Math.round(net * C.INSURANCE_PCT / 100) : 0;
     var n = items.length;
@@ -1498,13 +1502,14 @@
     if (!code) return;
     sb.rpc('check_coupon', { p_code: code }).then(function(res){
       msg.style.display = 'block';
-      if (!res.data || !res.data.pct) {
+      if (!res.data || (!res.data.pct && !res.data.amount_cents)) {
         state.coupon = null;
         msg.style.color = 'var(--danger)'; msg.textContent = "That code isn't valid.";
         resetPayUI(); renderPay(); schedulePay(); return;
       }
-      state.coupon = { code: res.data.code, pct: res.data.pct };
-      msg.style.color = 'var(--ok)'; msg.textContent = res.data.code + ' applied \u2014 ' + res.data.pct + '% off.';
+      state.coupon = { code: res.data.code, pct: res.data.pct || 0, amount_cents: res.data.amount_cents || 0 };
+      msg.style.color = 'var(--ok)';
+      msg.textContent = res.data.code + ' applied \u2014 ' + (res.data.pct ? res.data.pct + '% off.' : money(res.data.amount_cents) + ' off.');
       ev('reg_coupon_applied', { code: res.data.code });
       resetPayUI(); renderPay(); schedulePay();
     });

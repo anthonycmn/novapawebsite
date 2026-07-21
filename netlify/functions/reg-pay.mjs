@@ -65,11 +65,12 @@ export default async (req) => {
 
   // coupon: validated server-side; invalid codes are a hard error so the
   // client never silently charges full price after showing a discount
-  let couponPct = 0;
+  let couponPct = 0, couponFixedCents = 0;
   if (couponCode) {
     const c = await anonRpc("check_coupon", { p_code: couponCode });
-    if (!c || !c.pct) return Response.json({ error: "bad_coupon" }, { status: 400 });
-    couponPct = c.pct;
+    if (!c || (!c.pct && !c.amount_cents)) return Response.json({ error: "bad_coupon" }, { status: 400 });
+    couponPct = c.pct || 0;
+    couponFixedCents = c.amount_cents || 0;
   }
 
   const items = hold.items;
@@ -108,7 +109,7 @@ export default async (req) => {
       return base;
     });
     const subtotal = unitPrices.reduce((s, v) => s + v, 0);
-    const couponCents = couponPct ? Math.round(subtotal * couponPct / 100) : 0;
+    const couponCents = couponPct ? Math.round(subtotal * couponPct / 100) : Math.min(couponFixedCents, subtotal);
     pricing = {
       todayCents: subtotal - couponCents, totalCents: subtotal - couponCents,
       subtotalCents: subtotal, couponCents,
@@ -130,7 +131,7 @@ export default async (req) => {
         start: showStartFor(byId[it.activity_id].name),
       })),
     ];
-    const p = priceCart(cart, plan, { insurance, couponPct });
+    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
     }
@@ -185,7 +186,7 @@ export default async (req) => {
       first_installment_utc: String(pricing.firstInstallmentUTC),
       insurance_cents: String(pricing.insuranceCents),
       insured: insurance ? "1" : "0",
-      coupon: couponPct ? couponCode.toUpperCase() : "",
+      coupon: (couponPct || couponFixedCents) ? couponCode.toUpperCase() : "",
       coupon_cents: String(pricing.couponCents || 0),
       plan_fee_cents: String(pricing.planFeeCents || 0),
       // IRS day-camp rule (Todd): FSA language only for daytime day camps —
@@ -207,7 +208,7 @@ export default async (req) => {
       unit_prices: pricing.unitPrices,
       subtotal_cents: pricing.subtotalCents,
       coupon_cents: pricing.couponCents || 0,
-      coupon: couponPct ? couponCode.toUpperCase() : null,
+      coupon: (couponPct || couponFixedCents) ? couponCode.toUpperCase() : null,
       plan_fee_cents: pricing.planFeeCents || 0,
       insurance_cents: pricing.insuranceCents,
       total_cents: pricing.totalCents,

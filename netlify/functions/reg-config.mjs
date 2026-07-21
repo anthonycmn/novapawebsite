@@ -115,6 +115,7 @@ export function priceCart(cart, plan, opts = {}) {
   const now = opts.now || new Date();
   const insurance = !!opts.insurance;
   const couponPct = Math.min(100, Math.max(0, opts.couponPct || 0));
+  const couponFixed = Math.max(0, opts.couponFixedCents || 0);
   const campsByKid = {};
   for (const it of cart) if (it.show) {
     const k = kidKey(it);
@@ -162,12 +163,15 @@ export function priceCart(cart, plan, opts = {}) {
   });
 
   const grossSubtotal = priced.reduce((s, it) => s + it.unit, 0);
-  const couponCents = couponPct ? Math.round(grossSubtotal * couponPct / 100) : 0;
+  const couponCents = couponPct
+    ? Math.round(grossSubtotal * couponPct / 100)
+    : Math.min(couponFixed, grossSubtotal);
   const subtotal = grossSubtotal - couponCents;
   // insurance covers camps/shows only — day camps excluded; coupon factor applies
+  const couponFactor = grossSubtotal > 0 ? subtotal / grossSubtotal : 1;
   const insurableCents = priced.reduce((s, it) => s + (it.daycamp ? 0 : it.unit), 0);
   const insuranceCents = insurance
-    ? Math.round(insurableCents * (1 - couponPct / 100) * INSURANCE_PCT / 100) : 0;
+    ? Math.round(insurableCents * couponFactor * INSURANCE_PCT / 100) : 0;
   const totalCents = subtotal + insuranceCents;
 
   // earliest start in cart governs the installment window
@@ -187,9 +191,8 @@ export function priceCart(cart, plan, opts = {}) {
   // day camps are cheap one-offs: charged in full today, never spread over installments
   const dayCampCents = priced.reduce((s, it) => s + (it.daycamp ? it.unit : 0), 0);
   const planCount = priced.filter((it) => !it.daycamp).length;
-  const factor = 1 - couponPct / 100;
   const depositCents = Math.min(
-    Math.round((DEPOSIT_PER_ITEM_CENTS * planCount + dayCampCents) * (couponPct ? factor : 1)),
+    Math.round((DEPOSIT_PER_ITEM_CENTS * planCount + dayCampCents) * (couponCents ? couponFactor : 1)),
     subtotal);
   const remainder = subtotal - depositCents;
   if (remainder <= 0) {
