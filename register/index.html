@@ -525,7 +525,7 @@
     return fit.length ? fit[fit.length - 1].id : null; // overlap ages land in the older company
   }
   function isCatMode(){ return state.catItems.length > 0; }
-  function catAllClasses(){ return state.catItems.every(function(a){ return a.category === 'class'; }); }
+  function catAllClasses(){ return state.catItems.length > 0 && state.catItems.every(function(a){ return a.category === 'class'; }); }
   function $(id){ return document.getElementById(id); }
   function ev(name, props){ try { window.posthog && window.posthog.capture(name, props||{}); } catch(e){} }
   function go(stepId){
