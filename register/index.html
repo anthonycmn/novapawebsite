@@ -58,7 +58,7 @@
   @keyframes fade { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
 
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px; }
-  input[type=email], input[type=text], input[type=number], select.pf {
+  input[type=email], input[type=text], input[type=tel], input[type=number], select.pf {
     width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--line);
     background:rgba(8,17,31,0.65); color:#fff; font-size:16px; font-family:inherit;
   }
@@ -1619,21 +1619,29 @@
           return '<select class="pf" id="' + id + '" style="margin-bottom:8px"><option value="" disabled selected>' + label + '</option>' +
             opts.map(function(o){ return '<option>' + o + '</option>'; }).join('') + '</select>';
         };
+        var fld = function(id, label, ph, type){
+          return '<label class="tiny" for="' + id + '" style="display:block;text-align:left;margin:10px 0 4px">' + label + '</label>' +
+            '<input type="' + (type || 'text') + '" id="' + id + '" placeholder="' + (ph || '') + '">';
+        };
         return '<div style="border-top:1px solid var(--line);padding:12px 0">' +
           '<div style="font-weight:700;color:#fff;margin-bottom:8px">' + esc(n) + '</div>' +
           (bday ? '' :
             '<label class="tiny" style="display:block;text-align:left;margin:0 0 4px">Birthday</label>' +
-            '<input type="date" class="pfdate" id="pfB' + i + '" style="margin-bottom:8px">') +
-          '<input type="text" id="pfPR' + i + '" placeholder="Pronouns (optional)" style="margin-bottom:8px">' +
-          sel('pfEP' + i, 'Does your child require an EpiPen?', ['No', 'Yes \u2014 we\'ll bring two non-expired EpiPens']) +
-          '<input type="text" id="pfEA' + i + '" placeholder="Environmental allergies (or \'none\')" style="margin-bottom:8px">' +
-          '<input type="text" id="pfMA' + i + '" placeholder="Medication allergies (or \'none\')" style="margin-bottom:8px">' +
-          '<input type="text" id="pfMED' + i + '" placeholder="Medications during the program (or \'none\')" style="margin-bottom:8px">' +
-          '<input type="text" id="pfINS' + i + '" placeholder="Medical insurance \u2014 policy holder, policy #, group #" style="margin-bottom:8px">' +
-          '<input type="text" id="pfDOC' + i + '" placeholder="Family doctor \u2014 name + phone" style="margin-bottom:8px">' +
-          '<input type="text" id="pfEN' + i + '" placeholder="Emergency contact name" style="margin-bottom:8px">' +
-          '<input type="tel" id="pfEPH' + i + '" placeholder="Emergency contact number" class="pfdate" style="min-height:0">' +
-          '<button class="btn btn-ghost" data-pf="' + i + '" data-name="' + esc(n) + '" style="margin-top:8px;padding:10px">Save ' + esc(n.split(' ')[0]) + '\'s info</button>' +
+            '<input type="date" class="pfdate" id="pfB' + i + '" style="margin-bottom:2px">') +
+          fld('pfPR' + i, 'Pronouns (optional)', '') +
+          '<label class="tiny" style="display:block;text-align:left;margin:10px 0 4px">Does your child require an EpiPen?</label>' +
+          sel('pfEP' + i, 'Select\u2026', ['No', 'Yes \u2014 we\'ll bring two non-expired EpiPens']) +
+          fld('pfEA' + i, 'Environmental allergies', 'None') +
+          fld('pfMA' + i, 'Medication allergies', 'None') +
+          fld('pfMED' + i, 'Medications during the program', 'None') +
+          fld('pfIH' + i, 'Insurance policy holder', '') +
+          fld('pfIP' + i, 'Insurance policy #', '') +
+          fld('pfIG' + i, 'Insurance group #', '') +
+          fld('pfDN' + i, 'Family doctor name', '') +
+          fld('pfDP' + i, 'Family doctor phone', '', 'tel') +
+          fld('pfEN' + i, 'Emergency contact name', '') +
+          fld('pfEPH' + i, 'Emergency contact number', '', 'tel') +
+          '<button class="btn btn-ghost" data-pf="' + i + '" data-name="' + esc(n) + '" style="margin-top:12px;padding:10px">Save ' + esc(n.split(' ')[0]) + '\'s info</button>' +
           '<div class="tiny" id="pfS' + i + '"></div></div>';
       }).join('');
     function v(id){ var el = $(id); return el ? (el.value || '').trim() : ''; }
@@ -1646,7 +1654,11 @@
           p_profile: {
             pronouns: v('pfPR' + i), epipen: v('pfEP' + i),
             env_allergies: v('pfEA' + i), med_allergies: v('pfMA' + i),
-            medications: v('pfMED' + i), insurance: v('pfINS' + i), doctor: v('pfDOC' + i),
+            medications: v('pfMED' + i),
+            insurance_holder: v('pfIH' + i), insurance_policy: v('pfIP' + i), insurance_group: v('pfIG' + i),
+            insurance: [v('pfIH' + i), v('pfIP' + i), v('pfIG' + i)].filter(Boolean).join(', '),
+            doctor_name: v('pfDN' + i), doctor_phone: v('pfDP' + i),
+            doctor: [v('pfDN' + i), v('pfDP' + i)].filter(Boolean).join(', '),
             emergency_name: v('pfEN' + i), emergency_phone: v('pfEPH' + i)
           }
         }).then(function(res){
