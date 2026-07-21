@@ -671,7 +671,7 @@
       errEl.textContent='Camper birthday, please!'; errEl.classList.add('on'); return;
     }
     var age = ageOn(bday, '2027-07-05'); // age when camp starts
-    if (!(age >= 5 && age <= 15)) {
+    if (!isCatMode() && !(age >= 5 && age <= 15)) {
       errEl.textContent='Camps are for ages 5\u201315 \u2014 this camper will be ' + age + ' when camp starts.';
       errEl.classList.add('on'); return;
     }
@@ -679,7 +679,7 @@
     sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday });
     $('sKidName').value=''; $('sKidBday').value='';
     $('kidModal').classList.remove('on');
-    renderShowKids();
+    if (isCatMode()) renderCatAssign(); else renderShowKids();
   });
 
   // ---------- step: shows + campers ----------
@@ -873,10 +873,7 @@
         (a.schedule_name ? ' · ' + esc(a.schedule_name) : '') + '</div>' +
         '<div class="tiny" style="text-align:left;margin:0 0 8px;color:var(--gold3)">' + priceLine + '</div>' + rows + '</div>';
     }).join('');
-    html += '<div class="addkid" style="margin-top:2px">' +
-      '<input type="text" id="cKidName" placeholder="Add another camper">' +
-      '<input type="date" id="cKidBday" max="' + today + '" style="flex:1;min-width:130px">' +
-      '<button class="btn btn-ghost" id="cKidAdd">Add</button></div>';
+    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add another camper</button>';
     $('assignBlocks').innerHTML = html;
     $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
       cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); });
@@ -889,15 +886,9 @@
     });
     var addBtn = $('cKidAdd');
     if (addBtn) addBtn.addEventListener('click', function(){
-      var name = $('cKidName').value.trim();
-      var bday = $('cKidBday').value;
-      var errEl = $('catErr'); errEl.classList.remove('on');
-      if (!name) { errEl.textContent = 'Camper name, please!'; errEl.classList.add('on'); return; }
-      if (state.kids.some(function(k){ return k.name.toLowerCase() === name.toLowerCase(); })) {
-        errEl.textContent = 'You already have a camper named ' + name + '.'; errEl.classList.add('on'); return;
-      }
-      state.kids.push({ name:name, age:null, bday: bday || null, already:[], sel:true });
-      renderCatAssign();
+      $('kidErr').classList.remove('on');
+      $('kidModal').classList.add('on');
+      $('sKidName').focus();
     });
     $('catNext').disabled = !catBirthdaysReady();
   }

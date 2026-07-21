@@ -162,6 +162,18 @@ export default async (req) => {
       p_unit_prices: unitPrices,
     });
 
+    // Save the parent's name so future checkouts prefill it.
+    if (m.parent_name && m.email) {
+      try {
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(m.email)}`, {
+          method: "PATCH",
+          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ parent_name: m.parent_name }),
+        });
+      } catch (e) { console.error("parent_name save failed:", e.message); }
+    }
+
     const paymentMethodId = typeof pi.payment_method === "string"
       ? pi.payment_method : pi.payment_method?.id;
     const customerId = typeof pi.customer === "string" ? pi.customer : pi.customer?.id;
