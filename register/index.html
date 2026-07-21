@@ -312,11 +312,7 @@
         </div>
       </div>
     </div>
-    <div class="addkid" style="margin-top:4px">
-      <input type="text" name="kname" id="sKidName" placeholder="Add another camper">
-      <input type="date" name="kbday" id="sKidBday" aria-label="Camper birthday">
-      <button class="btn btn-ghost" id="sKidAdd">Add</button>
-    </div>
+    <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
     <div class="err" id="assignErr"></div>
     <button class="btn" id="assignNext">Continue →</button>
@@ -415,6 +411,19 @@
   </div>
 </div>
 
+<!-- add camper modal -->
+<div class="modal-back" id="kidModal">
+  <div class="modal" style="width:100%;max-width:420px;text-align:left">
+    <h3 style="text-align:center">Add a camper</h3>
+    <input type="text" id="sKidName" placeholder="Camper name" style="margin-top:12px" autocomplete="off">
+    <label class="tiny" style="display:block;text-align:left;margin:12px 0 4px">Birthday</label>
+    <input type="date" id="sKidBday" aria-label="Camper birthday" style="color-scheme:dark">
+    <div class="err" id="kidErr"></div>
+    <button class="btn" id="sKidAdd">Add Camper</button>
+    <button class="btn btn-ghost" id="sKidCancel">Cancel</button>
+  </div>
+</div>
+
 <!-- upsell toast -->
 <div id="toast">
   <span id="toastMsg" class="tmsg"></span>
@@ -455,6 +464,7 @@
   function money(cents){ return '$' + (cents/100).toLocaleString('en-US', {minimumFractionDigits: cents%100 ? 2 : 0, maximumFractionDigits:2}); }
   function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
   function discRate(n){ if (new Date() > new Date(C.EARLYBIRD_END)) return 0; return n>=3?0.20:n===2?0.15:n>=1?0.10:0; }
+  function kidKey(it){ return it && it.ci != null ? 'i' + it.ci : (it && it.camper) || '?'; }
   function saleOn(){ return new Date() <= new Date(C.EARLYBIRD_END); }
   function addonActFor(kind, age){
     var re = kind === 'frozen' ? /frozen/i : /mermaid/i;
@@ -634,11 +644,20 @@
   $('signout2').addEventListener('click', function(e){
     e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
   });
+  $('sKidOpen').addEventListener('click', function(){
+    $('kidErr').classList.remove('on');
+    $('kidModal').classList.add('on');
+    $('sKidName').focus();
+  });
+  $('sKidCancel').addEventListener('click', function(){ $('kidModal').classList.remove('on'); });
   $('sKidAdd').addEventListener('click', function(){
     var name = $('sKidName').value.trim();
     var bday = $('sKidBday').value;
-    var errEl = $('assignErr'); errEl.classList.remove('on');
+    var errEl = $('kidErr'); errEl.classList.remove('on');
     if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
+    if (state.kids.some(function(k){ return k.name.toLowerCase() === name.toLowerCase(); })) {
+      errEl.textContent='You already have a camper named ' + name + '.'; errEl.classList.add('on'); return;
+    }
     if (!bday || bday > new Date().toISOString().slice(0,10)) {
       errEl.textContent='Camper birthday, please!'; errEl.classList.add('on'); return;
     }
@@ -650,6 +669,7 @@
     state.kids.push({ name:name, age:age, bday:bday, already:[], sel:true });
     sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday });
     $('sKidName').value=''; $('sKidBday').value='';
+    $('kidModal').classList.remove('on');
     renderShowKids();
   });
 
@@ -670,7 +690,7 @@
   function bandLabel(b){ return b === 'tech' ? 'Tech (10\u201315)' : ({'5-9':'Ages 5\u20138','9-12':'Ages 9\u201312','12-15':'Ages 13\u201315'})[b] || ('Ages ' + b); }
   function syncShows(){
     state.shows = Object.keys(SHOW_NAMES).filter(function(show){
-      return state.kids.some(function(k){ var a = state.assign[show + '|' + k.name]; return a && a.on; });
+      return state.kids.some(function(k, i){ var a = state.assign[show + '|' + i]; return k.sel && a && a.on; });
     });
     document.querySelectorAll('.showb').forEach(function(b){
       b.classList.toggle('sel', state.shows.indexOf(b.dataset.show) !== -1);
@@ -678,31 +698,32 @@
   }
   function updateTicker(){
     var t = $('tierTicker');
-    var byKid = {};
-    state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
+    var byKid = [];
+    state.kids.forEach(function(k, i){
+      if (!k.sel) return;
+      var n = 0;
       Object.keys(SHOW_NAMES).forEach(function(show){
-        var a = state.assign[show + '|' + k.name];
-        if (a && a.on) byKid[k.name] = (byKid[k.name] || 0) + 1;
+        var a = state.assign[show + '|' + i];
+        if (a && a.on) n++;
       });
+      if (n) byKid.push({ name: k.name, n: n });
     });
-    var names = Object.keys(byKid);
-    if (!names.length) { t.textContent = 'Check a camper into a show to see your price.'; return; }
+    if (!byKid.length) { t.textContent = 'Check a camper into a show to see your price.'; return; }
     if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
     function label(n){ return n + ' show' + (n > 1 ? 's' : '') + ' selected, ' + Math.round(discRate(n) * 100) + '% off'; }
-    if (names.length === 1) { t.textContent = label(byKid[names[0]]); return; }
-    var counts = names.map(function(n){ return byKid[n]; });
-    var uniform = counts.every(function(c){ return c === counts[0]; });
+    if (byKid.length === 1) { t.textContent = label(byKid[0].n); return; }
+    var uniform = byKid.every(function(e){ return e.n === byKid[0].n; });
     t.textContent = uniform
-      ? label(counts[0]) + ' each'
-      : names.map(function(n){ return n.split(' ')[0] + ': ' + byKid[n] + ' show' + (byKid[n] > 1 ? 's' : '') + ' (' + Math.round(discRate(byKid[n]) * 100) + '% off)'; }).join(' \u00b7 ');
+      ? label(byKid[0].n) + ' each'
+      : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(discRate(e.n) * 100) + '% off)'; }).join(' \u00b7 ');
   }
   function renderShowKids(){
-    var kids = state.kids.filter(function(k){ return k.sel; });
     document.querySelectorAll('#showBlocks .kids').forEach(function(host){
       var show = host.dataset.show;
-      host.innerHTML = kids.map(function(k){
+      host.innerHTML = state.kids.map(function(k, i){
+        if (!k.sel) return '';
         var already = (k.already||[]).indexOf(show) !== -1;
-        var key = show + '|' + k.name;
+        var key = show + '|' + i;
         if (!(key in state.assign)) {
           var defBands = bandsFor(k.age).filter(function(b){ return b !== 'tech'; });
           state.assign[key] = { on: false, band: defBands[0] || '9-12' };
@@ -739,19 +760,16 @@
   function upsellCheck(){
     var t = $('toast');
     if (!saleOn() || !document.querySelector('#st-shows.on')) { t.classList.remove('on'); return; }
-    var byKid = {};
-    state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
-      Object.keys(SHOW_NAMES).forEach(function(show){
-        var a = state.assign[show + '|' + k.name];
-        if (a && a.on) (byKid[k.name] = byKid[k.name] || []).push(show);
-      });
-    });
     var best = null;
-    Object.keys(byKid).forEach(function(name){
-      var n = byKid[name].length;
-      if (!best && n >= 1 && n < 3) {
-        var missing = Object.keys(SHOW_NAMES).filter(function(s){ return byKid[name].indexOf(s) === -1; });
-        best = { kid: name, n: n, show: missing[missing.length - 1] };
+    state.kids.forEach(function(k, i){
+      if (best || !k.sel) return;
+      var mine = Object.keys(SHOW_NAMES).filter(function(show){
+        var a = state.assign[show + '|' + i];
+        return a && a.on;
+      });
+      if (mine.length >= 1 && mine.length < 3) {
+        var missing = Object.keys(SHOW_NAMES).filter(function(s){ return mine.indexOf(s) === -1; });
+        best = { kid: i, n: mine.length, show: missing[missing.length - 1] };
       }
     });
     if (!best) { t.classList.remove('on'); return; }
@@ -810,8 +828,9 @@
   function catBirthdaysReady(){
     var need = false;
     state.catItems.forEach(function(a){
-      state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
-        var sel = state.assign['act' + a.id + '|' + k.name];
+      state.kids.forEach(function(k, i){
+        if (!k.sel) return;
+        var sel = state.assign['act' + a.id + '|' + i];
         if (sel && sel.on && !k.bday) need = true;
       });
     });
@@ -819,19 +838,20 @@
   }
   function renderCatAssign(){
     var today = new Date().toISOString().slice(0,10);
-    var kids = state.kids.filter(function(k){ return k.sel; });
+    var selCount = state.kids.filter(function(k){ return k.sel; }).length;
     var html = state.catItems.map(function(a){
       var priceLine = a.category === 'class'
         ? ((a.pricing||[])[0] || '$90/month') + ' per camper · first month due today'
         : ((a.pricing||[])[0] || '') + ' per camper';
-      var rows = kids.map(function(k){
-        var key = 'act' + a.id + '|' + k.name;
-        if (!(key in state.assign)) state.assign[key] = { on: kids.length === 1, band: null };
+      var rows = state.kids.map(function(k, ki){
+        if (!k.sel) return '';
+        var key = 'act' + a.id + '|' + ki;
+        if (!(key in state.assign)) state.assign[key] = { on: selCount === 1, band: null };
         var sel = state.assign[key];
         var warn = sel.on ? ageWarn(a, k) : '';
         var bdayRow = sel.on
           ? '<div class="bday-row"><label class="bday-lbl">Birthday' + (k.bday ? '' : ' <span class="req">(needed)</span>') + '</label>' +
-            '<input type="date" class="bdayInput" data-name="' + esc(k.name) + '" value="' + esc(k.bday || '') + '" max="' + today + '"></div>' +
+            '<input type="date" class="bdayInput" data-i="' + ki + '" value="' + esc(k.bday || '') + '" max="' + today + '"></div>' +
             (warn ? '<div class="agewarn">' + warn + '</div>' : '')
           : '';
         return '<div class="kid-row" style="flex-direction:column;align-items:stretch;gap:6px">' +
@@ -854,7 +874,7 @@
     });
     $('assignBlocks').querySelectorAll('.bdayInput').forEach(function(inp){
       inp.addEventListener('change', function(){
-        var kid = state.kids.filter(function(k){ return k.name === inp.dataset.name; })[0];
+        var kid = state.kids[+inp.dataset.i];
         if (kid) { kid.bday = inp.value || null; renderCatAssign(); }
       });
     });
@@ -864,6 +884,9 @@
       var bday = $('cKidBday').value;
       var errEl = $('catErr'); errEl.classList.remove('on');
       if (!name) { errEl.textContent = 'Camper name, please!'; errEl.classList.add('on'); return; }
+      if (state.kids.some(function(k){ return k.name.toLowerCase() === name.toLowerCase(); })) {
+        errEl.textContent = 'You already have a camper named ' + name + '.'; errEl.classList.add('on'); return;
+      }
       state.kids.push({ name:name, age:null, bday: bday || null, already:[], sel:true });
       renderCatAssign();
     });
@@ -873,17 +896,19 @@
     var items = [];
     if (isCatMode()) {
       state.catItems.forEach(function(a){
-        state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
-          var sel = state.assign['act' + a.id + '|' + k.name];
-          if (sel && sel.on) items.push({ activity_id: a.id, camper: k.name });
+        state.kids.forEach(function(k, i){
+          if (!k.sel) return;
+          var sel = state.assign['act' + a.id + '|' + i];
+          if (sel && sel.on) items.push({ activity_id: a.id, camper: k.name, ci: i });
         });
       });
       return items;
     }
     state.shows.forEach(function(show){
-      state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
-        var a = state.assign[show + '|' + k.name];
-        if (a && a.on) items.push({ show: show, band: a.band, camper: k.name });
+      state.kids.forEach(function(k, i){
+        if (!k.sel) return;
+        var a = state.assign[show + '|' + i];
+        if (a && a.on) items.push({ show: show, band: a.band, camper: k.name, ci: i });
       });
     });
     Object.keys(state.addons).forEach(function(key){
@@ -899,10 +924,11 @@
     // persist any birthdays we collected/updated
     var seen = {};
     state.catItems.forEach(function(a){
-      state.kids.filter(function(k){ return k.sel; }).forEach(function(k){
-        var sel = state.assign['act' + a.id + '|' + k.name];
-        if (sel && sel.on && k.bday && !seen[k.name]) {
-          seen[k.name] = 1;
+      state.kids.forEach(function(k, i){
+        if (!k.sel) return;
+        var sel = state.assign['act' + a.id + '|' + i];
+        if (sel && sel.on && k.bday && !seen[i]) {
+          seen[i] = 1;
           sb.rpc('set_my_camper_birthdate', { p_name: k.name, p_birthdate: k.bday });
         }
       });
@@ -1000,18 +1026,18 @@
     var items = state.hold ? state.hold.items : buildItems();
     var byId = {};
     state.catItems.forEach(function(a){ byId[a.id] = a; });
-    var firstChild = items.length ? items[0].camper : null;
+    var firstChild = items.length ? kidKey(items[0]) : null;
     var sib = [];
     var units = items.map(function(it, i){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class') {
         var base = 9000;
-        if (it.camper && it.camper !== firstChild) { base = Math.round(base * 0.95); sib[i] = true; }
+        if (kidKey(it) !== firstChild) { base = Math.round(base * 0.95); sib[i] = true; }
         return base;
       }
       var u = a.price_cents || 0;
       if (u <= 20000) { // day camp: sibling 5% for 2nd+ child, no insurance
-        if (it.camper && it.camper !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
+        if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
         return u;
       }
       return state.insurance ? Math.round(u * 1.10) : u;
@@ -1052,14 +1078,14 @@
   function localPricing(){
     var items = state.hold ? state.hold.items : buildItems();
     var byKid = {};
-    items.forEach(function(it){ if (it.show) { var k = it.camper||'?'; byKid[k] = (byKid[k]||0)+1; } });
+    items.forEach(function(it){ if (it.show) { var k = kidKey(it); byKid[k] = (byKid[k]||0)+1; } });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var units = items.map(function(it){
-      if (it.show) return Math.round(C.PRICE * 100 * (1 - discRate(byKid[it.camper||'?'])));
+      if (it.show) return Math.round(C.PRICE * 100 * (1 - discRate(byKid[kidKey(it)])));
       var a = byIdAll[it.activity_id] || {};
       var base = a.price_cents || 69500;
-      var kid = it.camper||'?';
-      var kidShowN = items.filter(function(x){ return !x.show && (x.camper||'?') === kid; }).length;
+      var kid = kidKey(it);
+      var kidShowN = items.filter(function(x){ return !x.show && kidKey(x) === kid; }).length;
       return (byKid[kid] || kidShowN >= 2) ? Math.round(base * 0.9) : base;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
@@ -1115,7 +1141,12 @@
     var p = localPricing();
     var items = p.items;
     var byKid = {};
-    items.forEach(function(it){ if (it.show) { var k = it.camper||'?'; byKid[k] = (byKid[k]||0)+1; } });
+    items.forEach(function(it){
+      if (!it.show) return;
+      var k = kidKey(it);
+      byKid[k] = byKid[k] || { n: 0, name: it.camper || '?' };
+      byKid[k].n++;
+    });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var savings = items.reduce(function(sum, it, i){
       var full = it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 0);
@@ -1125,7 +1156,7 @@
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
         : esc(it.camper) + ' — ' + esc((byIdAll[it.activity_id]||{}).name || 'Show') + ' <span class="savings">(10% bundle)</span>';
-      var pct = it.show ? Math.round(discRate(byKid[it.camper||'?'])*100) : 0;
+      var pct = it.show ? Math.round(discRate((byKid[kidKey(it)]||{}).n||0)*100) : 0;
       return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + '</span><span>' + money(p.units[i]) + '</span></div>';
     }).join('');
     $('summaryCard').innerHTML =
@@ -1150,9 +1181,9 @@
     var box = $('upsellBox');
     var html = '';
     if (saleOn()) {
-      var hints = Object.keys(byKid).filter(function(k){ return byKid[k] > 0 && byKid[k] < 3; }).map(function(k){
-        var next = Math.round(discRate(byKid[k]+1)*100);
-        return '<b>' + esc(k.split(' ')[0]) + '</b> is one show away from <b>' + next + '% off each camp</b>';
+      var hints = Object.keys(byKid).filter(function(k){ return byKid[k].n > 0 && byKid[k].n < 3; }).map(function(k){
+        var next = Math.round(discRate(byKid[k].n+1)*100);
+        return '<b>' + esc(byKid[k].name.split(' ')[0]) + '</b> is one show away from <b>' + next + '% off each camp</b>';
       });
       if (hints.length) {
         html += '<div>' + hints.join(' · ') + ' — <a href="#" id="upsellAdd">add a show →</a></div>';

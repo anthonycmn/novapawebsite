@@ -103,31 +103,35 @@ export function installmentDates(startISO, now = new Date()) {
 // Price a cart of one-time items (summer camps + BB shows may mix).
 // items: [{show, band, camper}] and/or [{activity_id, camper, name, price_cents, start}]
 // Returns per-item unit prices (discounts applied), totals, plan math.
+// Kid identity: items carry `ci` (camper index in the family) so two campers
+// with the same name never merge for per-kid tiers / sibling math.
+export const kidKey = (it) => (it && it.ci != null ? "i" + it.ci : (it && it.camper) || "?");
+
 export function priceCart(cart, plan, opts = {}) {
   const now = opts.now || new Date();
   const insurance = !!opts.insurance;
   const couponPct = Math.min(100, Math.max(0, opts.couponPct || 0));
   const campsByKid = {};
   for (const it of cart) if (it.show) {
-    const k = it.camper || "?";
+    const k = kidKey(it);
     campsByKid[k] = (campsByKid[k] || 0) + 1;
   }
   const kidsWithSummer = new Set(Object.keys(campsByKid));
   const isDayCampItem = (it) => !it.show && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
   const showsByKid = {};
   for (const it of cart) if (!it.show && !isDayCampItem(it)) {
-    const k = it.camper || "?";
+    const k = kidKey(it);
     (showsByKid[k] = showsByKid[k] || []).push(it);
   }
   // sibling (post-sale for BB; the tier is 0 then so no stacking)
-  const kidOrder = [...new Set(cart.map((it) => it.camper || "?"))];
+  const kidOrder = [...new Set(cart.map(kidKey))];
   const firstKid = kidOrder[0];
 
   const priced = cart.map((it) => {
     if (it.show) {
-      const rate = perKidRate(campsByKid[it.camper || "?"], now);
+      const rate = perKidRate(campsByKid[kidKey(it)], now);
       let unit = Math.round(PRICE_CENTS * (1 - rate));
-      if (rate === 0 && siblingActive(true, now) && (it.camper || "?") !== firstKid) {
+      if (rate === 0 && siblingActive(true, now) && kidKey(it) !== firstKid) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
       }
       return { ...it, unit, rate };
@@ -135,13 +139,13 @@ export function priceCart(cart, plan, opts = {}) {
     // day camp: no bundle/tier, sibling 5% for 2nd+ child (non-BB — runs now)
     if (isDayCampItem(it)) {
       let unit = it.price_cents;
-      if ((it.camper || "?") !== firstKid) {
+      if (kidKey(it) !== firstKid) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
       }
       return { ...it, unit, rate: 0, daycamp: true };
     }
     // BB show item (frozen/mermaid)
-    const kid = it.camper || "?";
+    const kid = kidKey(it);
     const kidShows = showsByKid[kid] || [];
     const bundled = kidShows.length >= 2 || kidsWithSummer.has(kid);
     let unit = it.price_cents;

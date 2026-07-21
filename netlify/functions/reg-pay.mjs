@@ -97,10 +97,11 @@ export default async (req) => {
 
   if (classItems.length) {
     if (plan !== "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
-    const firstChild = (classItems[0] || {}).camper;
+    const kk = (it) => (it && it.ci != null ? "i" + it.ci : (it && it.camper) || "");
+    const firstChild = kk(classItems[0] || {});
     const unitPrices = classItems.map((it) => {
       let base = CLASS_PRICE_CENTS;
-      if (it.camper && it.camper !== firstChild) {
+      if (kk(it) && kk(it) !== firstChild) {
         base = Math.round(base * (1 - SIBLING_PCT / 100)); // sibling runs now (non-BB)
       }
       // no insurance on classes — 30-day cancellation makes it pointless
