@@ -817,7 +817,7 @@
         var a = state.assign[show + '|' + i];
         if (a && a.on) n++;
       });
-      if (n) byKid.push({ name: k.name, n: n + (k.already || []).length });
+      if (n) byKid.push({ name: k.name, n: n + (k.already || []).filter(function(s){ return ['httyd','charlie','trolls'].indexOf(s) !== -1; }).length });
     });
     var fallN = 0;
     state.kids.forEach(function(k, i){
@@ -965,7 +965,7 @@
           var a = state.assign[show + '|' + i];
           return a && a.on;
         });
-        var eff = mine.length + (k.already || []).length;
+        var eff = mine.length + (k.already || []).filter(function(s){ return Object.keys(SHOW_NAMES).indexOf(s) !== -1; }).length;
         if (mine.length >= 1 && eff < 3) {
           var missing = Object.keys(SHOW_NAMES).filter(function(s){
             return mine.indexOf(s) === -1 && (k.already || []).indexOf(s) === -1;
@@ -1379,11 +1379,13 @@
     var items = state.hold ? state.hold.items : buildItems();
     var byKid = {};
     items.forEach(function(it){ if (it.show) { var k = kidKey(it); byKid[k] = (byKid[k]||0)+1; } });
-    // prior registrations count toward the tier (CJ)
+    // prior SUMMER CAMPS advance the camp tier (CJ); shows count separately
+    var SUMMER_SLUGS = ['httyd','charlie','trolls'];
+    function priorCamps(kid){ return (kid.already || []).filter(function(s){ return SUMMER_SLUGS.indexOf(s) !== -1; }).length; }
     Object.keys(byKid).forEach(function(k){
       var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1;
       var kid = state.kids[ci];
-      if (kid) byKid[k] += (kid.already || []).length;
+      if (kid) byKid[k] += priorCamps(kid);
     });
     items.forEach(function(it){
       if (it.show) return;
@@ -1470,10 +1472,11 @@
       byKid[k] = byKid[k] || { n: 0, name: it.camper || '?' };
       byKid[k].n++;
     });
+    var SUMMER_SLUGS2 = ['httyd','charlie','trolls'];
     Object.keys(byKid).forEach(function(k){
       var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1;
       var kid = state.kids[ci];
-      if (kid) byKid[k].n += (kid.already || []).length;
+      if (kid) byKid[k].n += (kid.already || []).filter(function(s){ return SUMMER_SLUGS2.indexOf(s) !== -1; }).length;
     });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var savings = items.reduce(function(sum, it, i){

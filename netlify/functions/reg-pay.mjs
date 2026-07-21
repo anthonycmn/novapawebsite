@@ -80,7 +80,8 @@ export default async (req) => {
 
   // prior registrations per kid (already_registered on their camper rows) —
   // they count toward the per-kid tier and the show bundle (CJ)
-  const priorByKid = {};
+  const priorCampsByKid = {}, priorShowsByKid = {};
+  const SUMMER_SLUGS = new Set(["httyd", "charlie", "trolls"]);
   try {
     const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const fr = await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}&select=id`, {
@@ -94,14 +95,20 @@ export default async (req) => {
       const camps = await cr.json();
       const byName = {};
       for (const c of (Array.isArray(camps) ? camps : [])) {
-        byName[String(c.name || "").trim().toLowerCase()] = (c.already_registered || []).length;
+        const reg = c.already_registered || [];
+        byName[String(c.name || "").trim().toLowerCase()] = {
+          camps: reg.filter((s) => SUMMER_SLUGS.has(s)).length,
+          shows: reg.filter((s) => !SUMMER_SLUGS.has(s)).length,
+        };
       }
       for (const it of items) {
-        const n = byName[String(it.camper || "").trim().toLowerCase()] || 0;
-        if (n) priorByKid[kidKey(it)] = n;
+        const p = byName[String(it.camper || "").trim().toLowerCase()];
+        if (!p) continue;
+        if (p.camps) priorCampsByKid[kidKey(it)] = p.camps;
+        if (p.shows) priorShowsByKid[kidKey(it)] = p.shows;
       }
     }
-  } catch (e) { console.error("priorByKid lookup failed:", e.message); }
+  } catch (e) { console.error("prior lookup failed:", e.message); }
 
   // resolve activity items
   let byId = {};
@@ -157,7 +164,7 @@ export default async (req) => {
         start: showStartFor(byId[it.activity_id].name),
       })),
     ];
-    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorByKid });
+    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
     }
