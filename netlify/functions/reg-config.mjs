@@ -167,11 +167,13 @@ export function priceCart(cart, plan, opts = {}) {
     ? Math.round(grossSubtotal * couponPct / 100)
     : Math.min(couponFixed, grossSubtotal);
   const subtotal = grossSubtotal - couponCents;
-  // insurance covers camps/shows only — day camps excluded; coupon factor applies
   const couponFactor = grossSubtotal > 0 ? subtotal / grossSubtotal : 1;
-  const insurableCents = priced.reduce((s, it) => s + (it.daycamp ? 0 : it.unit), 0);
+  // insurance covers camps/shows only (day camps excluded) and is ALWAYS
+  // 10% of the LIST price — discounts and coupons never shrink it
+  const listInsurableCents = priced.reduce(
+    (s, it) => s + (it.daycamp ? 0 : (it.show ? PRICE_CENTS : (it.price_cents || 0))), 0);
   const insuranceCents = insurance
-    ? Math.round(insurableCents * couponFactor * INSURANCE_PCT / 100) : 0;
+    ? Math.round(listInsurableCents * INSURANCE_PCT / 100) : 0;
   const totalCents = subtotal + insuranceCents;
 
   // earliest start in cart governs the installment window

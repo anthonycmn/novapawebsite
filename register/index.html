@@ -397,7 +397,7 @@
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:12px;cursor:pointer">
         <input type="checkbox" id="insOk" style="width:17px;height:17px;accent-color:var(--gold2)">
-        <span id="insLabel"><b>Add tuition insurance (+10%)</b></span>
+        <span id="insLabel"><b>Add tuition insurance</b></span>
       </label>
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:10px;cursor:pointer">
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
@@ -1321,7 +1321,7 @@
       // BB show: 10% when one kid does both shows, else sibling 5% for 2nd+ child
       if ((bbCount[kidKey(it)] || 0) >= 2) { u = Math.round(u * 0.90); bund[i] = true; }
       else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
-      return state.insurance ? Math.round(u * 1.10) : u;
+      return u;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var coupon = !state.coupon ? 0
@@ -1332,8 +1332,9 @@
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
       return sum + (a.price_cents || 0);
     }, 0);
-    return { items: items, units: units, sib: sib, bund: bund, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0,
-             total: subtotal - coupon, today: subtotal - coupon,
+    var ins = state.insurance ? Math.round(baseSubtotal * (C.INSURANCE_PCT || 10) / 100) : 0;
+    return { items: items, units: units, sib: sib, bund: bund, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0, ins: ins,
+             total: subtotal - coupon + ins, today: subtotal - coupon + ins,
              monthly: catAllClasses() ? units : [] };
   }
   function renderCatPay(){
@@ -1354,6 +1355,7 @@
       '<div class="sumrow head"><span>Your enrollment</span><span></span></div>' + rows +
       (p.fee ? '<div class="sumrow"><span>Annual family registration</span><span>' + money(p.fee) + '</span></div>' : '') +
       (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
+      (p.ins ? '<div class="sumrow"><span>Tuition insurance</span><span>' + money(p.ins) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
@@ -1384,13 +1386,20 @@
       : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
       : Math.min(state.coupon.amount_cents || 0, subtotal);
     var net = subtotal - coupon;
-    var ins = state.insurance ? Math.round(net * C.INSURANCE_PCT / 100) : 0;
+    var listIns = items.reduce(function(s, it){
+      if (it.show) return s + C.PRICE * 100;
+      var a2 = byIdAll[it.activity_id] || {};
+      var pc = a2.price_cents || 0;
+      if (a2.category === 'class' || pc <= 20000) return s;
+      return s + pc;
+    }, 0);
+    var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = Math.round(net * 5 / 100);
-    return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, planFee:planFee, total:net + planFee + ins,
+    return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
              today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / C.INSTALLMENTS) };
   }
 
@@ -1463,7 +1472,7 @@
       '<div class="sumrow head"><span>' + (allSummer ? 'Your summer' : 'Your shows') + '</span><span>' + (allSummer ? 'per-kid launch pricing' : '') + '</span></div>' + rows +
       (savings > 0 ? '<div class="sumrow"><span class="savings">Launch-sale savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
       (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
-      (p.ins ? '<div class="sumrow"><span>Tuition insurance (10%)</span><span>' + money(p.ins) + '</span></div>' : '') +
+      (p.ins ? '<div class="sumrow"><span>Tuition insurance</span><span>' + money(p.ins) + '</span></div>' : '') +
       (p.planFee ? '<div class="sumrow"><span>Payment plan (5%)</span><span>+' + money(p.planFee) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Total</span><span>' + money(p.total) + '</span></div>';
 
@@ -1473,7 +1482,7 @@
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
-    updateInsurance(items, p.subtotal);
+    updateInsurance(items, p.listIns);
     renderUpsells(p, byKid, byIdAll);
     renderShirts(items);
     setPayH1(p.today);
