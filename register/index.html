@@ -1611,8 +1611,9 @@
           return '<select class="pf" id="' + id + '" style="margin-bottom:8px"><option value="" disabled selected>' + label + '</option>' +
             opts.map(function(o){ return '<option>' + o + '</option>'; }).join('') + '</select>';
         };
-        var fld = function(id, label, ph, type){
-          return '<label class="tiny" for="' + id + '" style="display:block;text-align:left;margin:10px 0 4px">' + label + '</label>' +
+        var fld = function(id, label, ph, type, req){
+          return '<label class="tiny" for="' + id + '" style="display:block;text-align:left;margin:10px 0 4px">' + label +
+            (req ? ' <span style="color:var(--gold3)">*</span>' : '') + '</label>' +
             '<input type="' + (type || 'text') + '" id="' + id + '" placeholder="' + (ph || '') + '">';
         };
         return '<div style="border-top:1px solid var(--line);padding:12px 0">' +
@@ -1621,18 +1622,18 @@
             '<label class="tiny" style="display:block;text-align:left;margin:0 0 4px">Birthday</label>' +
             '<input type="date" class="pfdate" id="pfB' + i + '" style="margin-bottom:2px">') +
           fld('pfPR' + i, 'Pronouns (optional)', '') +
-          '<label class="tiny" style="display:block;text-align:left;margin:10px 0 4px">Does your child require an EpiPen?</label>' +
+          '<label class="tiny" style="display:block;text-align:left;margin:10px 0 4px">Does your child require an EpiPen? <span style="color:var(--gold3)">*</span></label>' +
           sel('pfEP' + i, 'Select\u2026', ['No', 'Yes \u2014 we\'ll bring two non-expired EpiPens']) +
-          fld('pfEA' + i, 'Environmental allergies', 'None') +
-          fld('pfMA' + i, 'Medication allergies', 'None') +
-          fld('pfMED' + i, 'Medications during the program', 'None') +
+          fld('pfEA' + i, 'Environmental allergies', 'Type None if none', null, true) +
+          fld('pfMA' + i, 'Medication allergies', 'Type None if none', null, true) +
+          fld('pfMED' + i, 'Medications during the program', 'Type None if none', null, true) +
           fld('pfIH' + i, 'Insurance policy holder', '') +
           fld('pfIP' + i, 'Insurance policy #', '') +
           fld('pfIG' + i, 'Insurance group #', '') +
           fld('pfDN' + i, 'Family doctor name', '') +
           fld('pfDP' + i, 'Family doctor phone', '', 'tel') +
-          fld('pfEN' + i, 'Emergency contact name', '') +
-          fld('pfEPH' + i, 'Emergency contact number', '', 'tel') +
+          fld('pfEN' + i, 'Emergency contact name', '', null, true) +
+          fld('pfEPH' + i, 'Emergency contact number', '', 'tel', true) +
           '<button class="btn btn-ghost" data-pf="' + i + '" data-name="' + esc(n) + '" style="margin-top:12px;padding:10px">Save ' + esc(n.split(' ')[0]) + '\'s info</button>' +
           '<div class="tiny" id="pfS' + i + '"></div></div>';
       }).join('');
@@ -1641,6 +1642,17 @@
       b.addEventListener('click', function(){
         var i = b.dataset.pf;
         var iso = $('pfB' + i) ? (v('pfB' + i) || null) : null; // null never clobbers a saved birthday
+        var reqIds = ['pfEP' + i, 'pfEA' + i, 'pfMA' + i, 'pfMED' + i, 'pfEN' + i, 'pfEPH' + i];
+        if ($('pfB' + i)) reqIds.unshift('pfB' + i);
+        var missing = reqIds.filter(function(id){ return !v(id); });
+        reqIds.forEach(function(id){ var el = $(id); if (el) el.style.borderColor = ''; });
+        if (missing.length) {
+          missing.forEach(function(id){ var el = $(id); if (el) el.style.borderColor = 'var(--gold3)'; });
+          $('pfS' + i).textContent = 'Please fill in the starred fields.';
+          var first = $(missing[0]); if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          return;
+        }
+        $('pfS' + i).textContent = '';
         sb.rpc('update_my_camper_v2', {
           p_name: b.dataset.name, p_birthdate: iso,
           p_profile: {
