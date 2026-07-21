@@ -5697,17 +5697,16 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     }
   }
 
-  // ─── Generate a reply (API first if enabled, then local KB) ─────────
+  // ─── Generate a reply (Claude first, local KB as fallback) ──────────
   async function generateReply(text) {
-    // If USE_LOCAL_KB is false, the API is required.
-    if (!USE_LOCAL_KB) {
-      const apiReply = await tryApi(text);
-      return apiReply || "I'm having trouble connecting right now. Please email <a href='mailto:info@novapa.org'>info@novapa.org</a> or call <a href='tel:5715712120'>(571) 571-2120</a>.";
+    const apiReply = await tryApi(text);
+    if (apiReply) return apiReply;
+    if (USE_LOCAL_KB) {
+      const match = matchIntent(text);
+      if (match) return match.response;
+      return fallbackResponse(text);
     }
-    // Otherwise, use the local NVPA knowledge base for instant, reliable answers.
-    const match = matchIntent(text);
-    if (match) return match.response;
-    return fallbackResponse(text);
+    return "I'm having trouble connecting right now. Please email <a href='mailto:info@novapa.org'>info@novapa.org</a> or call <a href='tel:5715712120'>(571) 571-2120</a>.";
   }
 
   // ─── Send a message ──────────────────────────────────────────────────
