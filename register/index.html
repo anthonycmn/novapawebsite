@@ -1430,25 +1430,87 @@
     });
   });
 
+  // FSA eligibility per Todd (IRS day-camp rules): daytime day camps only —
+  // BB summer camps + one-day specialty camps. NOT classes, show-participation
+  // fees (Frozen/Mermaid), adult programs, or campers 14+ at program start.
+  var FSA_DATES = { httyd:['2027-07-05','2027-07-16'], charlie:['2027-07-19','2027-07-30'], trolls:['2027-08-02','2027-08-13'] };
+  function fsaEligibleItems(items){
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    return (items || []).map(function(it, idx){ return { it: it, idx: idx }; }).filter(function(x){
+      var it = x.it;
+      var isDayCamp = false;
+      if (!it.show) {
+        var a = byIdAll[it.activity_id] || {};
+        isDayCamp = a.category === 'camp' && (a.price_cents || 0) <= 20000;
+        if (!isDayCamp) return false; // classes + school-year shows excluded
+      }
+      var k = it.ci != null ? state.kids[it.ci] : state.kids.filter(function(kk){ return kk.name === it.camper; })[0];
+      if (k && k.bday) {
+        var startISO = it.show ? FSA_DATES[it.show][0] : new Date().toISOString().slice(0,10);
+        if (ageOn(k.bday, startISO) >= 14) return false; // Todd: under-14 trigger
+      }
+      return true;
+    });
+  }
+  function fmtLong(iso){
+    var m = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var d = new Date(iso + 'T00:00:00');
+    return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
   function fsaReceipt(){
     var p = state.pricing || {};
     var items = (state.hold && state.hold.items) || [];
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var units = p.unit_prices || [];
-    var rows = items.map(function(it, i){
-      var prog = it.show ? (SHOW_NAMES[it.show] + ' — Summer Camp ' + ({httyd:'Jul 5–16 2027',charlie:'Jul 19–30 2027',trolls:'Aug 2–13 2027'})[it.show] || '')
-        : ((byIdAll[it.activity_id]||{}).name || 'Program');
-      return '<tr><td>' + esc(it.camper||'') + '</td><td>' + esc(prog) + '</td><td style="text-align:right">' + money(units[i]||0) + '</td></tr>';
+    var elig = fsaEligibleItems(items);
+    if (!elig.length) return;
+    var today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    var status = state.plan === 'deposit' ? 'Partially Paid (remaining balance on automatic monthly installments)' : 'Paid';
+    var blocks = elig.map(function(x){
+      var it = x.it, i = x.idx;
+      var name, dates, sched;
+      if (it.show) {
+        name = SHOW_NAMES[it.show] + ' \u2014 Broadway Bound Summer Camp';
+        dates = fmtLong(FSA_DATES[it.show][0]) + ' through ' + fmtLong(FSA_DATES[it.show][1]);
+        sched = 'Monday through Friday, 8:30 AM\u20134:00 PM';
+      } else {
+        var a = byIdAll[it.activity_id] || {};
+        name = (a.name || 'Day Camp').trim();
+        dates = (a.schedule_name || '').replace(/^.*\|\s*/, '') || 'See program schedule';
+        sched = 'Daytime camp hours';
+      }
+      var listPrice = it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 0);
+      var unit = units[i] != null ? units[i] : listPrice;
+      var disc = Math.max(0, listPrice - unit);
+      return '<div style="border:1px solid #ccc;padding:14px 16px;margin:12px 0">' +
+        row('Participant/Dependent', esc(it.camper || '')) +
+        row('Program', esc(name)) +
+        row('Type of Service', 'Summer Day Camp and Dependent Care Services') +
+        row('Dates Care Was Provided', esc(dates)) +
+        row('Camp Schedule', sched) +
+        row('Amount Charged for Eligible Care', money(listPrice)) +
+        (disc ? row('Discounts or Credits', '\u2212' + money(disc)) : '') +
+        row('Amount for Eligible Care After Discounts', money(unit)) +
+        '</div>';
     }).join('');
+    function row(l, v){ return '<p style="margin:3px 0"><b>' + l + ':</b> ' + v + '</p>'; }
     var w = window.open('', '_blank');
-    w.document.write('<html><head><title>NOVAPA Receipt</title></head><body style="font-family:Georgia,serif;max-width:640px;margin:40px auto;color:#111">' +
-      '<h2 style="margin-bottom:0">Northern Virginia Performing Arts</h2>' +
-      '<p style="margin-top:4px">18665 Conference Center Drive, Leesburg, VA 20176<br>Tax ID (EIN): 99-1421341 · cj@novapa.org</p>' +
-      '<h3>Dependent care services receipt</h3>' +
-      '<p>Date: ' + new Date().toLocaleDateString() + '<br>Parent/guardian: ' + esc($('parentName').value || state.email || '') + '</p>' +
-      '<table style="width:100%;border-collapse:collapse" border="1" cellpadding="6"><tr><th>Child</th><th>Program (dates of service)</th><th>Amount</th></tr>' + rows + '</table>' +
-      '<p><b>Paid today: ' + money(p.today_cents||0) + '</b>' + (p.total_cents && p.total_cents !== p.today_cents ? ' · Program total: ' + money(p.total_cents) + ' (remainder billed monthly)' : '') + '</p>' +
-      '<p style="font-size:13px">Provided for Dependent Care FSA reimbursement. Northern Virginia Performing Arts provides care and enrichment programming enabling parents/guardians to work.</p>' +
+    w.document.write('<html><head><title>NOVAPA Dependent Care Receipt</title></head>' +
+      '<body style="font-family:Georgia,serif;max-width:660px;margin:40px auto;color:#111;font-size:14px;line-height:1.5">' +
+      '<h2 style="margin-bottom:2px">DEPENDENT CARE / FSA RECEIPT INFORMATION</h2>' +
+      row('Dependent Care Provider', 'CJ Creative LLC dba Northern Virginia Performing Arts') +
+      row('Provider Address', '18665 Conference Center Drive, Leesburg, VA 20176') +
+      row('Federal Tax Identification Number / EIN', '99-1421341') +
+      blocks +
+      row('Payment Date', today) +
+      row('Amount Paid', money(p.today_cents || 0)) +
+      row('Payment Status', status) +
+      '<p style="margin-top:14px">This program was a daytime summer camp and did not include overnight care. The program provided supervision and care for the participant during the dates and hours listed above.</p>' +
+      '<p>The services were provided to enable the participant\u2019s parent or legal guardian to work, actively seek employment, or attend work-related responsibilities.</p>' +
+      '<p>The parent or legal guardian is responsible for confirming that the participant was under age 13 when the care was provided, or otherwise met the applicable IRS dependent-care eligibility requirements.</p>' +
+      '<p>Only charges attributable to eligible dependent-care services should be submitted for reimbursement. Credit card processing fees, merchandise, performance tickets, costumes, meals, transportation, and other non-care charges may not qualify for reimbursement.</p>' +
+      '<p>This receipt reflects payment information maintained by CJ Creative LLC dba Northern Virginia Performing Arts. Eligibility for reimbursement is determined by the participant\u2019s dependent-care plan administrator and applicable IRS rules.</p>' +
+      '<p><b>Provider Certification:</b> CJ Creative LLC dba Northern Virginia Performing Arts certifies that the information shown above accurately reflects the dependent-care services provided and the payments received.</p>' +
       '</body></html>');
     w.document.close(); w.print();
   }
@@ -1468,7 +1530,15 @@
     }
     renderProfileForms(items);
     var fb = document.getElementById('fsaBtn');
-    if (fb) fb.addEventListener('click', function(e){ e.preventDefault(); fsaReceipt(); });
+    if (fb) {
+      if (!fsaEligibleItems(items).length) {
+        // no qualifying day-camp items in this order — hide the FSA sentence
+        var fsaLine = fb.parentElement;
+        fsaLine.innerHTML = fsaLine.innerHTML.replace(/<br>\s*Using a Dependent Care FSA\?[\s\S]*$/, '');
+      } else {
+        fb.addEventListener('click', function(e){ e.preventDefault(); fsaReceipt(); });
+      }
+    }
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
     go('st-done');
   }
