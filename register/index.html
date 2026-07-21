@@ -461,11 +461,40 @@
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
-    if (state.catIds.length) {
+    state.fallMode = /[?&]season=fall/.test(location.search);
+    if (state.catIds.length || state.fallMode) {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
       document.getElementById('payBack').dataset.back = 'st-assign';
     }
   })();
+  var FALL_SHOWS = [
+    { key:'frozen',  title:"Disney's Frozen",                 img:'/register/img/frozen.jpg',
+      date:'One evening a week \u00b7 Sep 2026 \u2013 Feb 2027 \u00b7 $695', re:/frozen/i, start:'2026-09-15' },
+    { key:'mermaid', title:"Disney's The Little Mermaid JR.", img:'/register/img/mermaid.jpg',
+      date:'One evening a week \u00b7 Feb \u2013 May 2027 \u00b7 $695', re:/mermaid/i, start:'2027-02-03' }
+  ];
+  function fallActsFor(showKey){
+    var s = FALL_SHOWS.filter(function(x){ return x.key === showKey; })[0];
+    return state.allCat.filter(function(a){ return s.re.test(a.name) && a.bookable && a.category !== 'class'; })
+      .sort(function(a,b){ return castRange(a).min - castRange(b).min || castRange(a).max - castRange(b).max; });
+  }
+  function castRange(a){
+    var m = String(a.age_range||'').match(/(\d+)\s*[\u2013\u2014-]\s*(\d+)/);
+    return m ? { min:+m[1], max:+m[2] } : { min:5, max:17 };
+  }
+  function castLabel(a){
+    var nm = /teen/i.test(String(a.schedule_name||'') + ' ' + a.name) ? 'Teens'
+      : /junior/i.test(String(a.schedule_name||'') + ' ' + a.name) ? 'Junior'
+      : 'Kids';
+    var r = castRange(a);
+    return nm + ' (' + r.min + '\u2013' + r.max + ')';
+  }
+  function defaultCastFor(showKey, age){
+    var acts = fallActsFor(showKey);
+    if (age == null) return acts.length === 1 ? acts[0].id : null;
+    var fit = acts.filter(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
+    return fit.length ? fit[fit.length - 1].id : null; // overlap ages land in the older company
+  }
   function isCatMode(){ return state.catItems.length > 0; }
   function catAllClasses(){ return state.catItems.every(function(a){ return a.category === 'class'; }); }
   function $(id){ return document.getElementById(id); }
@@ -473,7 +502,7 @@
   function go(stepId){
     document.querySelectorAll('.step').forEach(function(s){ s.classList.remove('on'); });
     $(stepId).classList.add('on');
-    if (stepId !== 'st-shows' && $('toast')) $('toast').classList.remove('on');
+    if (stepId !== 'st-shows' && !(state.fallMode && stepId === 'st-assign') && $('toast')) $('toast').classList.remove('on');
     window.scrollTo({top:0});
     ev('reg_step_viewed', { step: stepId });
   }
@@ -624,6 +653,10 @@
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
+      if (state.fallMode) {
+        state.catItems = state.allCat.filter(function(a){ return /frozen|mermaid/i.test(a.name) && a.bookable && a.category !== 'class'; });
+        go('st-assign'); renderFallAssign(); startSoftTimer(); return;
+      }
       if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
       renderShowKids(); go('st-shows'); startSoftTimer();
     });
@@ -660,6 +693,7 @@
   $('famNext').addEventListener('click', function(){
     var errEl = $('famErr'); errEl.classList.remove('on');
     if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one camper.'; errEl.classList.add('on'); return; }
+    if (state.fallMode) { go('st-assign'); renderFallAssign(); startSoftTimer(); return; }
     if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
     renderShowKids(); go('st-shows'); startSoftTimer();
   });
@@ -694,11 +728,18 @@
       errEl.textContent='Camps are for ages 5\u201315 \u2014 this camper will be ' + age + ' when camp starts.';
       errEl.classList.add('on'); return;
     }
+    if (state.fallMode) {
+      var fAge = ageOn(bday, '2026-09-15');
+      if (!(fAge >= 5 && fAge <= 17)) {
+        errEl.textContent='Shows are for ages 5\u201317 \u2014 this performer will be ' + fAge + ' when the season starts.';
+        errEl.classList.add('on'); return;
+      }
+    }
     state.kids.push({ name:name, age:age, bday:bday, already:[], sel:true });
     sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday });
     $('sKidName').value=''; $('sKidBday').value=''; $('sKidBday').classList.add('isEmpty');
     $('kidModal').classList.remove('on');
-    if (isCatMode()) renderCatAssign(); else renderShowKids();
+    if (state.fallMode) renderFallAssign(); else if (isCatMode()) renderCatAssign(); else renderShowKids();
   });
 
   // ---------- step: shows + campers ----------
@@ -818,6 +859,16 @@
   }
   $('toastAdd').addEventListener('click', function(){
     var t = $('toast');
+    if (t.dataset.mode === 'fall') {
+      var i = +t.dataset.kid, s = t.dataset.show;
+      var sd = FALL_SHOWS.filter(function(x){ return x.key === s; })[0];
+      var k = state.kids[i];
+      setFallCast(i, s, defaultCastFor(s, ageOn(k.bday, sd.start)) || fallActsFor(s)[0].id);
+      t.classList.remove('on');
+      ev('reg_upsell_toast_added', { show: s });
+      renderFallAssign();
+      return;
+    }
     var key = t.dataset.show + '|' + t.dataset.kid;
     if (state.assign[key]) state.assign[key].on = true;
     t.classList.remove('on');
@@ -867,6 +918,120 @@
       });
     });
     return !need;
+  }
+  function fallCastOn(i, showKey){
+    var acts = fallActsFor(showKey);
+    for (var j = 0; j < acts.length; j++) {
+      var a = state.assign['act' + acts[j].id + '|' + i];
+      if (a && a.on) return acts[j].id;
+    }
+    return null;
+  }
+  function setFallCast(i, showKey, castId){
+    fallActsFor(showKey).forEach(function(a){
+      var key = 'act' + a.id + '|' + i;
+      if (!(key in state.assign)) state.assign[key] = { on: false };
+      state.assign[key].on = (a.id === castId);
+    });
+  }
+  function renderFallAssign(){
+    document.querySelector('#st-assign h1').innerHTML = 'Choose your <em>shows.</em>';
+    document.querySelector('#st-assign .sub').textContent = 'Check each performer into their show. Do both and save 10%.';
+    var today = new Date().toISOString().slice(0,10);
+    var html = FALL_SHOWS.map(function(s){
+      var acts = fallActsFor(s.key);
+      if (!acts.length) return '';
+      var kidRows = state.kids.map(function(k, i){
+        if (!k.sel) return '';
+        var age = ageOn(k.bday, s.start);
+        var onCast = fallCastOn(i, s.key);
+        var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
+        var pills = '';
+        if (onCast && eligible) {
+          pills = acts.map(function(a){
+            var r = castRange(a);
+            if (age != null && !(age >= r.min && age <= r.max)) return '';
+            var left = a.remaining;
+            var full = left != null && left <= 0;
+            var leftTag = (left != null && left < 20) ? ' <span class="left">' + (full ? 'Full' : left + ' more spots available') + '</span>' : '';
+            return '<span class="pill' + (onCast === a.id ? ' sel' : '') + '" data-fall="' + s.key + '" data-i="' + i + '" data-cast="' + a.id + '"' + (full ? ' data-full="1"' : '') + '>' + castLabel(a) + leftTag + '</span>';
+          }).join('');
+        }
+        var bdayRow = (onCast && !k.bday)
+          ? '<div class="bday-row"><label class="bday-lbl">Birthday <span class="req">(needed)</span></label>' +
+            '<input type="date" class="fallBday" data-i="' + i + '" max="' + today + '"></div>' : '';
+        return '<div class="kid-row">' +
+          '<label class="kid-check"><input type="checkbox" data-fall="' + s.key + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + (eligible ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' +
+          (eligible ? '' : ' <span class="badge-done" style="opacity:.65">shows are for ages 5\u201317</span>') + '</label>' +
+          (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
+      }).join('');
+      return '<div class="showb"><div class="poster" style="background-image:url(\'' + s.img + '\')"></div>' +
+        '<div class="bd"><div class="t">' + s.title + '</div><div class="d">' + s.date + '</div>' +
+        '<div class="kids">' + kidRows + '</div></div></div>';
+    }).join('');
+    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add another camper</button>';
+    $('assignBlocks').innerHTML = html;
+    $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var i = +cb.dataset.i, s = cb.dataset.fall, k = state.kids[i];
+        if (cb.checked) {
+          var sd = FALL_SHOWS.filter(function(x){ return x.key === s; })[0];
+          setFallCast(i, s, defaultCastFor(s, ageOn(k.bday, sd.start)) || fallActsFor(s)[0].id);
+        } else setFallCast(i, s, null);
+        renderFallAssign();
+      });
+    });
+    $('assignBlocks').querySelectorAll('.pill').forEach(function(p){
+      p.addEventListener('click', function(){
+        if (p.dataset.full) return;
+        setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
+        renderFallAssign();
+      });
+    });
+    $('assignBlocks').querySelectorAll('.fallBday').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var kid = state.kids[+inp.dataset.i];
+        if (!kid) return;
+        kid.bday = inp.value || null;
+        if (kid.bday) sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday });
+        renderFallAssign();
+      });
+    });
+    var addBtn = $('cKidAdd');
+    if (addBtn) addBtn.addEventListener('click', function(){
+      $('kidErr').classList.remove('on');
+      $('kidModal').classList.add('on');
+      $('sKidName').focus();
+    });
+    $('catNext').disabled = false;
+    fallUpsellToast();
+  }
+  function fallUpsellToast(){
+    var t = $('toast');
+    if (!state.fallMode || !document.querySelector('#st-assign.on')) return;
+    var best = null;
+    state.kids.forEach(function(k, i){
+      if (best || !k.sel) return;
+      var have = FALL_SHOWS.filter(function(s){ return fallCastOn(i, s.key); });
+      if (have.length !== 1) return;
+      var other = FALL_SHOWS.filter(function(s){ return s.key !== have[0].key; })[0];
+      var age = ageOn(k.bday, other.start);
+      var acts = fallActsFor(other.key);
+      var can = acts.some(function(a){
+        var r = castRange(a);
+        return (age == null || (age >= r.min && age <= r.max)) && !(a.remaining != null && a.remaining <= 0);
+      });
+      if (can) best = { kid: i, show: other };
+    });
+    if (!best) { t.classList.remove('on'); return; }
+    var sig = 'fall|' + best.kid + '|' + best.show.key;
+    if (toastSig.dismissed[sig]) { t.classList.remove('on'); return; }
+    if (toastSig.shown === sig && t.classList.contains('on')) return;
+    toastSig.shown = sig;
+    $('toastMsg').innerHTML = 'Add <b>' + best.show.title + '</b> and save <b>10%</b> on both shows!';
+    t.dataset.mode = 'fall'; t.dataset.show = best.show.key; t.dataset.kid = best.kid; t.dataset.sig = sig;
+    t.classList.add('on');
+    ev('reg_upsell_toast', { show: best.show.key, pct: 10 });
   }
   function renderCatAssign(){
     var today = new Date().toISOString().slice(0,10);
@@ -1062,7 +1227,15 @@
     var byId = {};
     state.catItems.forEach(function(a){ byId[a.id] = a; });
     var firstChild = items.length ? kidKey(items[0]) : null;
-    var sib = [];
+    var sib = [], bund = [];
+    var bbCount = {};
+    items.forEach(function(it){
+      var a = byId[it.activity_id] || {};
+      if (a.category !== 'class' && (a.price_cents || 0) > 20000) {
+        var k = kidKey(it);
+        bbCount[k] = (bbCount[k] || 0) + 1;
+      }
+    });
     var units = items.map(function(it, i){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class') {
@@ -1075,6 +1248,9 @@
         if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
         return u;
       }
+      // BB show: 10% when one kid does both shows, else sibling 5% for 2nd+ child
+      if ((bbCount[kidKey(it)] || 0) >= 2) { u = Math.round(u * 0.90); bund[i] = true; }
+      else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
       return state.insurance ? Math.round(u * 1.10) : u;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
@@ -1084,7 +1260,7 @@
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
       return sum + (a.price_cents || 0);
     }, 0);
-    return { items: items, units: units, sib: sib, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0,
+    return { items: items, units: units, sib: sib, bund: bund, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0,
              total: subtotal - coupon, today: subtotal - coupon,
              monthly: catAllClasses() ? units : [] };
   }
@@ -1093,7 +1269,12 @@
     var byId = {}; state.catItems.forEach(function(a){ byId[a.id] = a; });
     var rows = p.items.map(function(it, i){
       var a = byId[it.activity_id] || {};
-      return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(a.name || '') +
+      var nm = a.name || '';
+      if (state.fallMode) {
+        nm = (/frozen/i.test(nm) ? 'Frozen' : /mermaid/i.test(nm) ? 'The Little Mermaid JR.' : nm) + ' \u00b7 ' + castLabel(a);
+      }
+      return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(nm) +
+        (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
