@@ -10,6 +10,9 @@
 //    10% off either when bundled with a summer camp (camps keep their tier).
 //  - Sibling 5%: non-BB items (classes) immediately; BB camps/shows only
 //    after the launch sale ends. Never stacks with tier/bundle discounts.
+//  - Payment plans cost 5% more than paying in full (PLAN_FEE_PCT): the fee
+//    is added to the financed balance and spread across the installments —
+//    today's deposit is unchanged. Pay-in-full carts never pay it.
 //  - Deposit plans: $180/item today, monthly installments on the 1st,
 //    last installment no later than 14 days before the item's start date
 //    AND no later than May 1, 2027 (CJ: collect summer money earlier).
@@ -48,6 +51,7 @@ export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;  // O
 export const CLASS_SEASON_END_UTC = Date.UTC(2027, 6, 1, 4, 0, 0) / 1000;   // Jul 1 2027 (last pull Jun 1)
 export const SIBLING_PCT = 5;
 export const INSURANCE_PCT = 10;
+export const PLAN_FEE_PCT = 5;   // surcharge for choosing a payment plan
 // Items at or under this price are "day camps" ($70 one-day events):
 // pay-in-full only, no bundle/tier discounts, no insurance, sibling 5% now.
 export const DAY_CAMP_MAX_CENTS = 20000;
@@ -175,6 +179,7 @@ export function priceCart(cart, plan, opts = {}) {
   if (plan === "full" || payFullOnly) {
     return {
       items: priced, subtotal, couponCents, insuranceCents, totalCents,
+      planFeeCents: 0,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly, plan: "full",
     };
@@ -188,17 +193,21 @@ export function priceCart(cart, plan, opts = {}) {
     subtotal);
   const remainder = subtotal - depositCents;
   if (remainder <= 0) {
-    // coupon shrank the balance below the deposit — collect it all today
+    // coupon shrank the balance below the deposit — collect it all today (no plan fee)
     return {
       items: priced, subtotal, couponCents, insuranceCents, totalCents,
+      planFeeCents: 0,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly: false, plan: "full",
     };
   }
+  // choosing the plan costs 5% of the (discounted) balance, financed with it
+  const planFeeCents = Math.round(subtotal * PLAN_FEE_PCT / 100);
   const todayCents = depositCents + insuranceCents;
-  const installmentCents = Math.max(0, Math.ceil(remainder / schedule.length));
+  const installmentCents = Math.max(0, Math.ceil((remainder + planFeeCents) / schedule.length));
   return {
-    items: priced, subtotal, couponCents, insuranceCents, totalCents,
+    items: priced, subtotal, couponCents, insuranceCents,
+    totalCents: totalCents + planFeeCents, planFeeCents,
     todayCents, installmentCents, installmentDatesUTC: schedule,
     payFullOnly: false, plan: "deposit",
   };

@@ -137,6 +137,7 @@ export default async (req) => {
     pricing = {
       todayCents: p.todayCents, totalCents: p.totalCents, subtotalCents: p.subtotal,
       couponCents: p.couponCents || 0,
+      planFeeCents: p.planFeeCents || 0,
       insuranceCents: p.insuranceCents,
       installmentCents: p.installmentCents,
       nInstallments: p.installmentDatesUTC.length,
@@ -186,6 +187,7 @@ export default async (req) => {
       insured: insurance ? "1" : "0",
       coupon: couponPct ? couponCode.toUpperCase() : "",
       coupon_cents: String(pricing.couponCents || 0),
+      plan_fee_cents: String(pricing.planFeeCents || 0),
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       n_items: String(items.length),
@@ -202,6 +204,7 @@ export default async (req) => {
       subtotal_cents: pricing.subtotalCents,
       coupon_cents: pricing.couponCents || 0,
       coupon: couponPct ? couponCode.toUpperCase() : null,
+      plan_fee_cents: pricing.planFeeCents || 0,
       insurance_cents: pricing.insuranceCents,
       total_cents: pricing.totalCents,
       today_cents: pricing.todayCents,

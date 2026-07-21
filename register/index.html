@@ -339,11 +339,11 @@
       <div class="plan-toggle">
         <div class="plan-opt sel" data-plan="deposit">
           <div class="p1">Reserve today</div>
-          <div class="p2">$180 per registration now, rest on monthly autopay</div>
+          <div class="p2">$180 per registration now, rest on monthly autopay (5% plan fee)</div>
         </div>
         <div class="plan-opt" data-plan="full">
           <div class="p1">Pay in full</div>
-          <div class="p2">One payment, done</div>
+          <div class="p2">One payment — skip the 5% plan fee</div>
         </div>
       </div>
       <div id="payBreakdown"></div>
@@ -1092,13 +1092,13 @@
     var coupon = state.coupon ? Math.round(subtotal * state.coupon.pct / 100) : 0;
     var net = subtotal - coupon;
     var ins = state.insurance ? Math.round(net * C.INSURANCE_PCT / 100) : 0;
-    var total = net + ins;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, total:total, today:total, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, total:total, today:total, inst:0 };
-    return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, total:total,
-             today: deposit + ins, inst: Math.ceil((net - deposit) / C.INSTALLMENTS) };
+    if (net - deposit <= 0) return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    var planFee = Math.round(net * 5 / 100);
+    return { n:n, items:items, units:units, subtotal:net, coupon:coupon, ins:ins, planFee:planFee, total:net + planFee + ins,
+             today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / C.INSTALLMENTS) };
   }
 
   var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };
@@ -1164,13 +1164,14 @@
       (savings > 0 ? '<div class="sumrow"><span class="savings">Launch-sale savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
       (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
       (p.ins ? '<div class="sumrow"><span>Tuition insurance (10%)</span><span>' + money(p.ins) + '</span></div>' : '') +
+      (p.planFee ? '<div class="sumrow"><span>Payment plan (5%)</span><span>+' + money(p.planFee) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Total</span><span>' + money(p.total) + '</span></div>';
 
     $('payBreakdown').innerHTML = state.plan === 'deposit'
       ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card — fully paid at least 2 weeks before camp. Exact schedule shown before you pay.</p>'
+        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card. Includes the 5% plan fee' + (p.planFee ? ' (' + money(p.planFee) + ')' : '') + ' — pay in full to skip it.</p>'
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
+        '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no plan fee, no future charges.</p>';
 
     updateInsurance(items, p.subtotal);
     renderUpsells(p, byKid, byIdAll);
