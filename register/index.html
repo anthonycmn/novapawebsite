@@ -950,13 +950,25 @@
     var items = buildItems();
     if (!items.length) { errEl.textContent = 'Check at least one camper into a show.'; errEl.classList.add('on'); return; }
     $('assignNext').disabled = true; $('catNext').disabled = true;
-    sb.rpc('acquire_hold_v2', { p_items: items }).then(function(res){
+    sb.rpc('acquire_hold_v3', { p_items: items }).then(function(res){
       $('assignNext').disabled = false; $('catNext').disabled = false;
       if (res.error) {
         var msg = res.error.message || '';
         if (msg.indexOf('GATED') !== -1) {
           errEl.textContent = 'Registration is limited to returning NOVAPA families until August 1. Join the waitlist on the summer page for early access.';
           errEl.classList.add('on'); return;
+        }
+        if (msg.indexOf('DUPLICATE:') !== -1) {
+          var dp = msg.match(/DUPLICATE:([a-z]+):(.*)$/) || [];
+          errEl.textContent = (dp[2] || 'This camper') + ' is already registered for ' +
+            (SHOW_NAMES[dp[1]] || 'that camp') + ' — no need to register twice. Questions? info@novapa.org';
+          errEl.classList.add('on');
+          // uncheck the duplicate so they can continue with the rest
+          state.kids.forEach(function(k, i){
+            if (dp[2] && k.name === dp[2] && state.assign[dp[1] + '|' + i]) state.assign[dp[1] + '|' + i].on = false;
+          });
+          renderShowKids();
+          return;
         }
         if (msg.indexOf('SOLD_OUT_ACTIVITY') !== -1) {
           errEl.textContent = 'One of these programs just filled up.';

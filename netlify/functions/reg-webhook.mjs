@@ -234,6 +234,13 @@ export default async (req) => {
       });
     }
     // post-confirm side effects — never fail the webhook over these
+    try {
+      // record camper x camp so the double-book guard blocks repeat purchases
+      const holdItems = await serviceRpc("hold_items_admin", { p_hold_id: m.hold_id });
+      if (Array.isArray(holdItems) && holdItems.length) {
+        await serviceRpc("mark_registered", { p_email: m.email || "", p_items: holdItems });
+      }
+    } catch (e) { console.error("mark_registered failed:", e.message); }
     if (m.coupon) {
       try { await serviceRpc("redeem_coupon", { p_code: m.coupon }); }
       catch (e) { console.error("coupon redeem failed:", e.message); }
