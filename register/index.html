@@ -339,11 +339,11 @@
       <div class="plan-toggle">
         <div class="plan-opt sel" data-plan="deposit">
           <div class="p1">Reserve today</div>
-          <div class="p2">$180 per registration now, rest on monthly autopay (5% plan fee)</div>
+          <div class="p2">$180/registration now, monthly autopay (+5%)</div>
         </div>
         <div class="plan-opt" data-plan="full">
           <div class="p1">Pay in full</div>
-          <div class="p2">One payment — skip the 5% plan fee</div>
+          <div class="p2">One payment — save 5%</div>
         </div>
       </div>
       <div id="payBreakdown"></div>
@@ -1169,9 +1169,9 @@
 
     $('payBreakdown').innerHTML = state.plan === 'deposit'
       ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card. Includes the 5% plan fee' + (p.planFee ? ' (' + money(p.planFee) + ')' : '') + ' — pay in full to skip it.</p>'
+        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card.</p>'
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no plan fee, no future charges.</p>';
+        '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
     updateInsurance(items, p.subtotal);
     renderUpsells(p, byKid, byIdAll);
