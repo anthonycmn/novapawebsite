@@ -1527,6 +1527,53 @@
     w.document.close(); w.print();
   }
 
+  function goldConfetti(){
+    var cv = document.createElement('canvas');
+    cv.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:200';
+    document.body.appendChild(cv);
+    var ctx = cv.getContext('2d');
+    var W = cv.width = innerWidth * (devicePixelRatio || 1);
+    var H = cv.height = innerHeight * (devicePixelRatio || 1);
+    var COLORS = ['#E8B84B','#C8892A','#F7D98F','#FFF3D6','#B8860B'];
+    var parts = [];
+    for (var i = 0; i < 140; i++) {
+      parts.push({
+        x: Math.random() * W,
+        y: -Math.random() * H * 0.4,
+        w: (6 + Math.random() * 7) * (devicePixelRatio || 1),
+        h: (4 + Math.random() * 5) * (devicePixelRatio || 1),
+        vx: (Math.random() - 0.5) * 2.2,
+        vy: 2 + Math.random() * 3.5,
+        rot: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 0.25,
+        c: COLORS[i % COLORS.length],
+        sway: Math.random() * Math.PI * 2
+      });
+    }
+    var t0 = performance.now();
+    (function frame(now){
+      var elapsed = (now - t0) / 1000;
+      ctx.clearRect(0, 0, W, H);
+      var alive = false;
+      parts.forEach(function(p){
+        p.sway += 0.06;
+        p.x += p.vx + Math.sin(p.sway) * 1.4;
+        p.y += p.vy * (devicePixelRatio || 1);
+        p.rot += p.vr;
+        if (p.y < H + 30) alive = true;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, 4.2 - elapsed));
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.sway)));
+        ctx.restore();
+      });
+      if (alive && elapsed < 4.5) requestAnimationFrame(frame);
+      else cv.remove();
+    })(t0);
+  }
+
   function finish(){
     clearInterval(timerInt);
     $('holdChip').classList.remove('on'); $('topNote').style.display='';
@@ -1553,6 +1600,7 @@
     }
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
     go('st-done');
+    goldConfetti();
   }
   function renderProfileForms(items){
     var names = [];
