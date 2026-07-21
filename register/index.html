@@ -594,6 +594,10 @@
       var bdays = results[4] && results[4].data ? results[4].data : {};
       var pn = results[5] && results[5].data;
       if (pn && !$('parentName').value) $('parentName').value = pn;
+      $('parentName').addEventListener('change', function(){
+        var n = $('parentName').value.trim();
+        if (n) sb.rpc('set_my_parent_name', { p_name: n });
+      });
       var shirts = results[6] && results[6].data ? results[6].data : {};
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
@@ -1402,6 +1406,8 @@
       ece.on('click', function(e){
         if (shirtsBlocked()) return;      // no resolve() → wallet sheet stays closed
         if (policyBlocked()) return;
+        var n = $('parentName').value.trim();
+        if (n) sb.rpc('set_my_parent_name', { p_name: n });
         ev('reg_wallet_clicked');
         e.resolve();
       });
@@ -1429,6 +1435,8 @@
     $('payErr').classList.remove('on');
     if (shirtsBlocked()) return;
     if (policyBlocked()) return;
+    var pnv = $('parentName').value.trim();
+    if (pnv) sb.rpc('set_my_parent_name', { p_name: pnv });
     $('paySubmit').disabled = true;
     confirmNow().then(function(res){
       $('paySubmit').disabled = false;
