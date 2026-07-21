@@ -10,6 +10,7 @@
 //  - classes {activity_id, camper}: must be alone, plan=subscription
 //    ($90/mo, 5% sibling for 2nd+ child, insurance = monthly x1.10)
 import Stripe from "stripe";
+import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart,
   CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
@@ -152,6 +153,73 @@ export default async (req) => {
         ? `${it.camper || "Camper"} — ${SHOWS[it.show] || it.show} (${it.band})`
         : `${it.camper || "Camper"} — ${it.name}`)
       .join("; ");
+  }
+
+  // 100%-off orders: nothing to charge — skip Stripe entirely.
+  // (Not for class subscriptions: those still need the monthly plan created.)
+  if (pricing.todayCents === 0 && pricing.totalCents === 0 && plan !== "subscription") {
+    if (!body.confirm_free) {
+      return Response.json({
+        free: true,
+        pricing: {
+          n: items.length,
+          discount_pct: pricing.discountPct,
+          unit_prices: pricing.unitPrices,
+          subtotal_cents: pricing.subtotalCents,
+          coupon_cents: pricing.couponCents || 0,
+          coupon: (couponPct || couponFixedCents) ? couponCode.toUpperCase() : null,
+          plan_fee_cents: 0,
+          insurance_cents: pricing.insuranceCents,
+          total_cents: 0, today_cents: 0,
+          installment_cents: 0, n_installments: 0, first_installment_utc: 0,
+          monthly_items: [],
+        },
+      });
+    }
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const svc = async (fn, args) => {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+        method: "POST",
+        headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify(args),
+      });
+      const t = await r.text();
+      if (!r.ok) throw new Error(`rpc ${fn} failed ${r.status}: ${t.slice(0, 200)}`);
+      try { return JSON.parse(t); } catch { return t; }
+    };
+    await svc("confirm_order", {
+      p_hold_id: hold_id, p_email: email, p_parent_name: parent_name || null,
+      p_plan: "full", p_amount_today_cents: 0, p_total_cents: 0,
+      p_installment_cents: null, p_stripe_payment_intent: "free_" + hold_id,
+      p_stripe_customer: null, p_unit_prices: pricing.unitPrices,
+    });
+    try {
+      const held = await svc("hold_items_admin", { p_hold_id: hold_id });
+      if (Array.isArray(held) && held.length) await svc("mark_registered", { p_email: email, p_items: held });
+    } catch (e) { console.error("free order: mark_registered failed:", e.message); }
+    if (couponCode) {
+      try { await svc("redeem_coupon", { p_code: couponCode }); }
+      catch (e) { console.error("free order: redeem_coupon failed:", e.message); }
+    }
+    if (parent_name && email) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}`, {
+          method: "PATCH",
+          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ parent_name }),
+        });
+      } catch {}
+    }
+    try {
+      await sendConfirmationEmail({
+        email, parent_name: parent_name || "",
+        order_desc: description.slice(0, 480),
+        total_cents: "0", coupon: couponCode.toUpperCase(),
+        coupon_cents: String(pricing.couponCents || 0),
+        fsa_eligible: "0",
+      }, { amount_received: 0, amount: 0 });
+    } catch (e) { console.error("free order: email failed:", e.message); }
+    return Response.json({ confirmed: true });
   }
 
   if (pricing.todayCents < 50) {

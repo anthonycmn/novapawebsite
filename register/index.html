@@ -1332,7 +1332,8 @@
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
       return sum + (a.price_cents || 0);
     }, 0);
-    var ins = state.insurance ? Math.round(baseSubtotal * (C.INSURANCE_PCT || 10) / 100) : 0;
+    var insPctOff2 = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
+    var ins = state.insurance ? Math.round(baseSubtotal * (C.INSURANCE_PCT || 10) / 100 * (1 - insPctOff2 / 100)) : 0;
     return { items: items, units: units, sib: sib, bund: bund, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0, ins: ins,
              total: subtotal - coupon + ins, today: subtotal - coupon + ins,
              monthly: catAllClasses() ? units : [] };
@@ -1393,7 +1394,8 @@
       if (a2.category === 'class' || pc <= 20000) return s;
       return s + pc;
     }, 0);
-    var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100) : 0;
+    var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
+    var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
     if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
@@ -1595,7 +1597,7 @@
   }
 
   var paySeq = 0; // bumps on every reset/request; stale reg-pay responses are dropped
-  function resetPayUI(){
+  function resetPayUI(){ state.freeOrder = false;
     paySeq++;
     state.clientSecret = null;
     $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none';
@@ -1645,6 +1647,21 @@
         }
         $('payErr').textContent = msg; $('payErr').classList.add('on'); return;
       }
+      if (res.j.free) {
+        state.freeOrder = true;
+        state.clientSecret = null;
+        state.pricing = res.j.pricing;
+        $('payBreakdown').innerHTML = '<p class="tiny" style="text-align:left;margin-top:2px">No charge — your coupon covers the full amount.</p>';
+        setPayH1(0);
+        $('payH1').innerHTML = 'Complete your <em>registration.</em>';
+        $('expressWrap').style.display = 'none';
+        $('payStart').style.display = 'none';
+        $('paySubmit').innerHTML = 'Complete Registration — $0';
+        $('paySubmit').style.display = '';
+        ev('reg_payment_started', { plan: state.plan, today_cents: 0, free: true });
+        return;
+      }
+      state.freeOrder = false;
       state.clientSecret = res.j.client_secret;
       state.pricing = res.j.pricing;
       renderServerBreakdown(res.j.pricing);
@@ -1727,6 +1744,28 @@
     var pnv = $('parentName').value.trim();
     if (pnv) sb.rpc('set_my_parent_name', { p_name: pnv });
     $('paySubmit').disabled = true;
+    if (state.freeOrder) {
+      sb.auth.getSession().then(function(res){
+        var token = res.data && res.data.session && res.data.session.access_token;
+        return fetch('/api/reg-pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: pnv, insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, confirm_free: true })
+        });
+      }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+      .then(function(res){
+        $('paySubmit').disabled = false;
+        if (!res.ok || !res.j.confirmed) {
+          $('payErr').textContent = 'Could not complete the registration (' + ((res.j && res.j.error) || 'error') + ').';
+          $('payErr').classList.add('on'); ev('reg_payment_failed', { free: true }); return;
+        }
+        finish();
+      }).catch(function(){
+        $('paySubmit').disabled = false;
+        $('payErr').textContent = 'Network error — try again.'; $('payErr').classList.add('on');
+      });
+      return;
+    }
     confirmNow().then(function(res){
       $('paySubmit').disabled = false;
       if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed'); return; }

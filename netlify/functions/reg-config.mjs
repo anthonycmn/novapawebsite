@@ -172,8 +172,9 @@ export function priceCart(cart, plan, opts = {}) {
   // 10% of the LIST price — discounts and coupons never shrink it
   const listInsurableCents = priced.reduce(
     (s, it) => s + (it.daycamp ? 0 : (it.show ? PRICE_CENTS : (it.price_cents || 0))), 0);
+  // percent coupons cover insurance too (a 100% code means a $0 order)
   const insuranceCents = insurance
-    ? Math.round(listInsurableCents * INSURANCE_PCT / 100) : 0;
+    ? Math.round(listInsurableCents * INSURANCE_PCT / 100 * (1 - couponPct / 100)) : 0;
   const totalCents = subtotal + insuranceCents;
 
   // earliest start in cart governs the installment window
