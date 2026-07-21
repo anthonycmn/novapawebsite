@@ -356,6 +356,7 @@
         <button class="btn btn-ghost" id="couponApply">Apply</button>
       </div>
       <p class="tiny" id="couponMsg" style="display:none;text-align:left;margin-top:6px"></p>
+      <div id="shirtBlock" style="display:none;margin-top:8px"></div>
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)" style="margin-top:8px">
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:12px;cursor:pointer">
         <input type="checkbox" id="insOk" style="width:17px;height:17px;accent-color:var(--gold2)">
@@ -578,7 +579,8 @@
       sb.rpc('catalog_list'),
       sb.rpc('family_fee_due', { p_email: state.email }),
       sb.rpc('my_camper_birthdates'),
-      sb.rpc('my_parent_name')
+      sb.rpc('my_parent_name'),
+      sb.rpc('my_camper_shirts')
     ]).then(function(results){
       var fam = results[0].data;
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
@@ -588,10 +590,11 @@
       var bdays = results[4] && results[4].data ? results[4].data : {};
       var pn = results[5] && results[5].data;
       if (pn && !$('parentName').value) $('parentName').value = pn;
+      var shirts = results[6] && results[6].data ? results[6].data : {};
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
-        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), already:c.already_registered||[], sel:true };
+        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], sel:true };
       });
       var returning = state.kids.length > 0;
       $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your campers';
@@ -1076,6 +1079,7 @@
     document.querySelector('.plan-toggle').style.display = 'none';
     $('upsellBox').style.display = 'none';
     updateInsurance(p.items, p.baseSubtotal);
+    renderShirts(p.items);
     setPayH1(p.today);
     $('payBreakdown').innerHTML = catAllClasses()
       ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
@@ -1181,6 +1185,7 @@
 
     updateInsurance(items, p.subtotal);
     renderUpsells(p, byKid, byIdAll);
+    renderShirts(items);
     setPayH1(p.today);
   }
 
@@ -1246,6 +1251,47 @@
       '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today_cents) + '</span></div>' +
       '<p class="tiny" style="text-align:left;margin-top:2px">Then <b>' + p.n_installments + ' monthly payments of ' + money(p.installment_cents) +
       '</b> starting ' + when + ' — automatic on this card.</p>';
+  }
+
+  var SHIRT_SIZES = ['Youth XS','Youth S','Youth M','Youth L','Adult S','Adult M','Adult L','Adult XL'];
+  function renderShirts(items){
+    var host = $('shirtBlock');
+    var seen = {}, kids = [];
+    (items || []).forEach(function(it){
+      var i = it.ci;
+      if (i == null || seen[i]) return;
+      seen[i] = 1;
+      if (state.kids[i]) kids.push(i);
+    });
+    if (!kids.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
+    host.style.display = '';
+    host.innerHTML = '<div class="sumrow head" style="padding:4px 0"><span>T-shirt sizes</span><span></span></div>' +
+      kids.map(function(i){
+        var k = state.kids[i];
+        return '<div style="display:flex;align-items:center;gap:10px;margin-top:6px">' +
+          '<span style="flex:1;font-size:14.5px">' + esc(k.name) + '</span>' +
+          '<select class="pf shirtSel" data-i="' + i + '" style="width:auto;flex:1;padding:10px 12px;font-size:14px;margin:0">' +
+          '<option value=""' + (k.tshirt ? '' : ' selected') + ' disabled>Size\u2026</option>' +
+          SHIRT_SIZES.map(function(s){ return '<option' + (k.tshirt === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') +
+          '</select></div>';
+      }).join('');
+    host.querySelectorAll('.shirtSel').forEach(function(sl){
+      sl.addEventListener('change', function(){
+        var k = state.kids[+sl.dataset.i];
+        if (!k) return;
+        k.tshirt = sl.value;
+        sb.rpc('update_my_camper_v2', { p_name: k.name, p_birthdate: null, p_profile: { tshirt: sl.value } });
+        ev('reg_tshirt_selected', { size: sl.value });
+      });
+    });
+  }
+  function shirtsBlocked(){
+    var missing = Array.from(document.querySelectorAll('.shirtSel')).some(function(sl){ return !sl.value; });
+    if (!missing) return false;
+    var errEl = $('payErr');
+    errEl.textContent = 'Pick a t-shirt size for each camper.';
+    errEl.classList.add('on');
+    return true;
   }
 
   var paySeq = 0; // bumps on every reset/request; stale reg-pay responses are dropped
@@ -1347,7 +1393,8 @@
       });
       ece.on('loaderror', function(){ $('expressWrap').style.display = 'none'; });
       ece.on('click', function(e){
-        if (policyBlocked()) return;      // no resolve() → wallet sheet stays closed
+        if (shirtsBlocked()) return;      // no resolve() → wallet sheet stays closed
+        if (policyBlocked()) return;
         ev('reg_wallet_clicked');
         e.resolve();
       });
@@ -1373,6 +1420,7 @@
 
   $('paySubmit').addEventListener('click', function(){
     $('payErr').classList.remove('on');
+    if (shirtsBlocked()) return;
     if (policyBlocked()) return;
     $('paySubmit').disabled = true;
     confirmNow().then(function(res){
@@ -1433,7 +1481,6 @@
       var k = state.kids.filter(function(k){ return k.name === n; })[0];
       return (k && k.bday) || null;
     }
-    var SHIRTS = ['Youth XS','Youth S','Youth M','Youth L','Adult S','Adult M','Adult L','Adult XL'];
     host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>One last thing — camper details</span><span></span></div>' +
       '<p class="tiny" style="text-align:left;margin:0 0 10px">A minute per camper — the same info you\'d fill out on the first day, done now.</p>' +
       names.map(function(n, i){
@@ -1447,7 +1494,6 @@
           (bday ? '' :
             '<label class="tiny" style="display:block;text-align:left;margin:0 0 4px">Birthday</label>' +
             '<input type="date" class="pfdate" id="pfB' + i + '" style="margin-bottom:8px">') +
-          sel('pfTS' + i, 'T-shirt size\u2026', SHIRTS) +
           '<input type="text" id="pfPR' + i + '" placeholder="Pronouns (optional)" style="margin-bottom:8px">' +
           sel('pfEP' + i, 'Does your child require an EpiPen?', ['No', 'Yes \u2014 we\'ll bring two non-expired EpiPens']) +
           '<input type="text" id="pfEA' + i + '" placeholder="Environmental allergies (or \'none\')" style="margin-bottom:8px">' +
@@ -1468,7 +1514,7 @@
         sb.rpc('update_my_camper_v2', {
           p_name: b.dataset.name, p_birthdate: iso,
           p_profile: {
-            tshirt: v('pfTS' + i), pronouns: v('pfPR' + i), epipen: v('pfEP' + i),
+            pronouns: v('pfPR' + i), epipen: v('pfEP' + i),
             env_allergies: v('pfEA' + i), med_allergies: v('pfMA' + i),
             medications: v('pfMED' + i), insurance: v('pfINS' + i), doctor: v('pfDOC' + i),
             emergency_name: v('pfEN' + i), emergency_phone: v('pfEPH' + i)
