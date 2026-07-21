@@ -86,7 +86,7 @@ function confirmationHtml(m, pi) {
       <tr><td style="padding:18px 32px 6px">
         <p style="margin:0;font-size:13.5px;color:#555;line-height:1.7">
           Programs are held at the National Conference Center, 18980 Upper Belmont Place, Leesburg, VA 20176.<br>
-          Using a Dependent Care FSA? This email plus your Stripe receipt work for reimbursement (Tax ID 99-1421341).<br>
+          ${m.fsa_eligible === "1" ? 'Using a Dependent Care FSA? Print your dependent-care receipt from your confirmation page (Tax ID 99-1421341).<br>' : ""}
           All sales are final — full policies at <a href="https://www.northernvirginiaperformingarts.org/policies" style="color:${GOLD}">novapa.org/policies</a>.
         </p>
       </td></tr>

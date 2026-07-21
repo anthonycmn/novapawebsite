@@ -12,7 +12,7 @@
 import Stripe from "stripe";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart,
-  CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, showStartFor,
+  CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
 } from "./reg-config.mjs";
 
 async function anonRpc(fn, args, jwt) {
@@ -188,6 +188,10 @@ export default async (req) => {
       coupon: couponPct ? couponCode.toUpperCase() : "",
       coupon_cents: String(pricing.couponCents || 0),
       plan_fee_cents: String(pricing.planFeeCents || 0),
+      // IRS day-camp rule (Todd): FSA language only for daytime day camps —
+      // summer camps + one-day specialty camps. Never classes or show fees.
+      fsa_eligible: (summerItems.length > 0 ||
+        showItems.some((it) => (byId[it.activity_id].price_cents || 0) <= DAY_CAMP_MAX_CENTS)) ? "1" : "0",
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       n_items: String(items.length),
