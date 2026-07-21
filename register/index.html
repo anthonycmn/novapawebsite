@@ -817,7 +817,7 @@
         var a = state.assign[show + '|' + i];
         if (a && a.on) n++;
       });
-      if (n) byKid.push({ name: k.name, n: n });
+      if (n) byKid.push({ name: k.name, n: n + (k.already || []).length });
     });
     var fallN = 0;
     state.kids.forEach(function(k, i){
@@ -965,11 +965,12 @@
           var a = state.assign[show + '|' + i];
           return a && a.on;
         });
-        if (mine.length >= 1 && mine.length < 3) {
+        var eff = mine.length + (k.already || []).length;
+        if (mine.length >= 1 && eff < 3) {
           var missing = Object.keys(SHOW_NAMES).filter(function(s){
             return mine.indexOf(s) === -1 && (k.already || []).indexOf(s) === -1;
           });
-          if (missing.length) best = { kid: i, n: mine.length, show: missing[missing.length - 1] };
+          if (missing.length) best = { kid: i, n: eff, show: missing[missing.length - 1] };
         }
       });
     }
@@ -1378,6 +1379,17 @@
     var items = state.hold ? state.hold.items : buildItems();
     var byKid = {};
     items.forEach(function(it){ if (it.show) { var k = kidKey(it); byKid[k] = (byKid[k]||0)+1; } });
+    // prior registrations count toward the tier (CJ)
+    Object.keys(byKid).forEach(function(k){
+      var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1;
+      var kid = state.kids[ci];
+      if (kid) byKid[k] += (kid.already || []).length;
+    });
+    items.forEach(function(it){
+      if (it.show) return;
+      var kid = state.kids[it.ci];
+      if (kid && (kid.already || []).length && !byKid[kidKey(it)]) byKid[kidKey(it)] = 0.5; // marks the kid as having a camp for the show bundle
+    });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var bund = [];
     var units = items.map(function(it, i){
@@ -1457,6 +1469,11 @@
       var k = kidKey(it);
       byKid[k] = byKid[k] || { n: 0, name: it.camper || '?' };
       byKid[k].n++;
+    });
+    Object.keys(byKid).forEach(function(k){
+      var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1;
+      var kid = state.kids[ci];
+      if (kid) byKid[k].n += (kid.already || []).length;
     });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var savings = items.reduce(function(sum, it, i){

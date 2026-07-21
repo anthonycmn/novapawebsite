@@ -12,7 +12,7 @@
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
-  SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart,
+  SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
 } from "./reg-config.mjs";
 
@@ -78,6 +78,31 @@ export default async (req) => {
   const summerItems = items.filter((it) => it.show);
   const activityItems = items.filter((it) => it.activity_id);
 
+  // prior registrations per kid (already_registered on their camper rows) —
+  // they count toward the per-kid tier and the show bundle (CJ)
+  const priorByKid = {};
+  try {
+    const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const fr = await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}&select=id`, {
+      headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` },
+    });
+    const fams = await fr.json();
+    if (Array.isArray(fams) && fams.length) {
+      const cr = await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fams[0].id}&select=name,already_registered`, {
+        headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` },
+      });
+      const camps = await cr.json();
+      const byName = {};
+      for (const c of (Array.isArray(camps) ? camps : [])) {
+        byName[String(c.name || "").trim().toLowerCase()] = (c.already_registered || []).length;
+      }
+      for (const it of items) {
+        const n = byName[String(it.camper || "").trim().toLowerCase()] || 0;
+        if (n) priorByKid[kidKey(it)] = n;
+      }
+    }
+  } catch (e) { console.error("priorByKid lookup failed:", e.message); }
+
   // resolve activity items
   let byId = {};
   if (activityItems.length) {
@@ -132,7 +157,7 @@ export default async (req) => {
         start: showStartFor(byId[it.activity_id].name),
       })),
     ];
-    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents });
+    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorByKid });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
     }

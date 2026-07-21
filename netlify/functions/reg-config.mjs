@@ -116,12 +116,18 @@ export function priceCart(cart, plan, opts = {}) {
   const insurance = !!opts.insurance;
   const couponPct = Math.min(100, Math.max(0, opts.couponPct || 0));
   const couponFixed = Math.max(0, opts.couponFixedCents || 0);
+  // priorByKid: camps/shows the kid ALREADY registered for (Sawyer/Regpack/web).
+  // CJ: prior registrations count toward the per-kid tier — 2 on the books
+  // means a 3rd in the cart prices at the 20% tier (cart items only, no retro).
+  const priorByKid = opts.priorByKid || {};
   const campsByKid = {};
   for (const it of cart) if (it.show) {
     const k = kidKey(it);
     campsByKid[k] = (campsByKid[k] || 0) + 1;
   }
+  for (const k of Object.keys(campsByKid)) campsByKid[k] += (priorByKid[k] || 0);
   const kidsWithSummer = new Set(Object.keys(campsByKid));
+  for (const it of cart) if (!it.show && (priorByKid[kidKey(it)] || 0) > 0) kidsWithSummer.add(kidKey(it));
   const isDayCampItem = (it) => !it.show && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
   const showsByKid = {};
   for (const it of cart) if (!it.show && !isDayCampItem(it)) {
