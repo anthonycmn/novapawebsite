@@ -16,7 +16,7 @@ import { SUPABASE_URL } from "./reg-config.mjs";
 const SITE = "https://www.northernvirginiaperformingarts.org";
 // linkexpired only applies to requests made after this moment (Jason 7/22:
 // "only new ones" — the old backlog moved on days ago and stays untouched)
-const LINKEXPIRED_EPOCH = Date.parse("2026-07-23T02:00:00Z");
+const LINKEXPIRED_EPOCH = Date.parse("2026-07-22T22:00:00Z"); // 6pm ET Jul 22
 const SHOW_TITLES = {
   httyd: "How to Train Your Dragon JR.",
   charlie: "Charlie and the Chocolate Factory JR.",
