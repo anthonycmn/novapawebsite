@@ -62,6 +62,11 @@ async function sendMail({ to, subject, html, refs }) {
 }
 
 export default async () => {
+  // Only the published production deploy runs the engine. Branch deploys share
+  // the same database — two runners = duplicate sends (learned 7/22 the hard way).
+  if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
+    return new Response("skipped: non-production context", { status: 200 });
+  }
   const now = Date.now();
 
   // sequence templates
@@ -182,6 +187,17 @@ export default async () => {
       camps: joinNames(camps),
       link: `${SITE}/register/?go=1&utm_source=retarget&utm_campaign=${st.seq}_${next.step}`,
     };
+    // claim the step FIRST (conditional on current stage) — if another runner
+    // got here before us, zero rows come back and we skip. A claimed-but-failed
+    // send means one missed email, never a duplicate.
+    const claim = await fetch(`${SUPABASE_URL}/rest/v1/retarget_state?email=eq.${encodeURIComponent(email)}&stage=eq.${st.stage}&status=eq.active`, {
+      method: "PATCH",
+      headers: { ...svcHeaders(), Prefer: "return=representation" },
+      body: JSON.stringify({ stage: next.step, updated_at: new Date().toISOString() }),
+    });
+    let claimedRows = [];
+    try { claimedRows = await claim.json(); } catch {}
+    if (!Array.isArray(claimedRows) || !claimedRows.length) continue;
     try {
       const refs = Array.isArray(st.msg_refs) ? st.msg_refs : [];
       const msgId = await sendMail({
@@ -193,10 +209,10 @@ export default async () => {
       refs.push(msgId);
       await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, {
         method: "PATCH",
-        body: JSON.stringify({ stage: next.step, last_sent_at: new Date().toISOString(), msg_refs: refs, updated_at: new Date().toISOString() }),
+        body: JSON.stringify({ last_sent_at: new Date().toISOString(), msg_refs: refs, updated_at: new Date().toISOString() }),
       });
       log.sent++;
-    } catch (e) { console.error(`send failed ${email}:`, e.message); }
+    } catch (e) { console.error(`send failed ${email} (step claimed, not retried):`, e.message); }
   }
 
   // ---- linkexpired: requested a link, never signed in ----
@@ -215,10 +231,20 @@ export default async () => {
         link: `${SITE}/register/?go=1&utm_source=retarget&utm_campaign=linkexpired`,
       };
       try {
+        // claim by inserting the state row first — duplicate insert returns
+        // nothing, so only one runner ever sends
+        const ins = await fetch(`${SUPABASE_URL}/rest/v1/retarget_state`, {
+          method: "POST",
+          headers: { ...svcHeaders(), Prefer: "resolution=ignore-duplicates,return=representation" },
+          body: JSON.stringify({ email, seq: "linkexpired", stage: 1, status: "done", ctx: { parent } }),
+        });
+        let insRows = [];
+        try { insRows = await ins.json(); } catch {}
+        if (!Array.isArray(insRows) || !insRows.length) continue;
         const msgId = await sendMail({ to: email, subject: render(lxSteps[0].subject, vars), html: render(lxSteps[0].body, vars) });
-        await svc("retarget_state", {
-          method: "POST", headers: { Prefer: "resolution=ignore-duplicates" },
-          body: JSON.stringify({ email, seq: "linkexpired", stage: 1, status: "done", last_sent_at: new Date().toISOString(), msg_refs: [msgId], ctx: { parent } }),
+        await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ last_sent_at: new Date().toISOString(), msg_refs: [msgId], updated_at: new Date().toISOString() }),
         });
         log.sent++;
       } catch (e) { console.error(`linkexpired send failed ${email}:`, e.message); }
