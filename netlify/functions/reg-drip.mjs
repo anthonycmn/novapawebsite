@@ -229,5 +229,4 @@ export default async () => {
   return new Response(JSON.stringify(log), { status: 200 });
 };
 
-// PAUSED (Jason, pre-review): schedule disabled — no runs, no sends.
-// To arm the engine, restore:  export const config = { schedule: "*/15 * * * *" };
+export const config = { schedule: "*/15 * * * *" };
