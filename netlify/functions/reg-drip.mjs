@@ -9,10 +9,14 @@
 // - Any purchase at any point -> status 'purchased', no more emails ever.
 // - Once past step 1, new checkout sessions never re-enroll or reset.
 // - Never enroll an email that has ever purchased.
-// - 'linkexpired': requested a sign-in link, never signed in -> one nudge.
+// - 'linkexpired': requested a sign-in link AFTER the epoch below, never
+//   signed in -> one nudge. Historical non-entries are never contacted.
 import { SUPABASE_URL } from "./reg-config.mjs";
 
 const SITE = "https://www.northernvirginiaperformingarts.org";
+// linkexpired only applies to requests made after this moment (Jason 7/22:
+// "only new ones" — the old backlog moved on days ago and stays untouched)
+const LINKEXPIRED_EPOCH = Date.parse("2026-07-23T02:00:00Z");
 const SHOW_TITLES = {
   httyd: "How to Train Your Dragon JR.",
   charlie: "Charlie and the Chocolate Factory JR.",
@@ -226,8 +230,9 @@ export default async () => {
       // link must actually go stale before we claim it expired
       const lastLink = Math.max(...[u.created_at, u.confirmation_sent_at, u.recovery_sent_at, u.email_change_sent_at]
         .filter(Boolean).map((t) => new Date(t).getTime()));
+      if (lastLink < LINKEXPIRED_EPOCH) continue; // pre-launch backlog: never nudge
       if (now - lastLink < lxSteps[0].delay_minutes * 60000) continue; // their link is still fresh
-      if (now - lastLink > 5 * 86400000) continue; // too old, skip
+      if (now - lastLink > 2 * 86400000) continue; // stale, skip
       const parent = firstName(parentByEmail[email]);
       const vars = {
         parentName: parent || "there", parentComma: parent ? " " + parent : "",
