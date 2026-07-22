@@ -167,6 +167,9 @@
       <div id="accBody" style="display:none">
         <h2>By program / show</h2>
         <div class="wrap-scroll"><table id="tblAccProg"></table></div>
+        <h2 style="margin-top:22px">Upcoming cash (auto-billing)</h2>
+        <div class="wrap-scroll"><table id="tblAccCash"></table></div>
+        <div class="wrap-scroll" style="margin-top:10px"><table id="tblAccCashDetail"></table></div>
         <h2 style="margin-top:22px">Reconciliation</h2>
         <div class="wrap-scroll"><table id="tblAccRec"></table></div>
         <h2 style="margin-top:22px">Transactions</h2>
@@ -416,6 +419,32 @@
           return '<td class="num">' + (isMoney ? money0(v) : v) + '</td>';
         }).join('') + '<td class="num"><b>' + (isMoney ? money0(tot) : tot) + '</b></td></tr>';
       }).join('');
+
+    // upcoming cash forecast (all future scheduled pulls, unfiltered)
+    var up = d.upcoming || [];
+    var byMonth = {};
+    up.forEach(function(u){
+      var m = u.date.slice(0,7);
+      var g = byMonth[m] = byMonth[m] || { total:0, n:0, inst:0, cls:0 };
+      g.total += u.amount; g.n += 1;
+      if (u.kind === 'installment') g.inst += u.amount; else g.cls += u.amount;
+    });
+    var months = Object.keys(byMonth).sort();
+    var upTot = up.reduce(function(s,u){ return s + u.amount; }, 0);
+    $('tblAccCash').innerHTML = months.length
+      ? '<tr><th>month</th><th class="num">payments</th><th class="num">camp installments</th><th class="num">class tuition</th><th class="num">expected cash</th></tr>' +
+        months.map(function(m){
+          var g = byMonth[m];
+          return '<tr><td>' + m + '</td><td class="num">' + g.n + '</td><td class="num">' + money0(g.inst) + '</td><td class="num">' + money0(g.cls) + '</td><td class="num"><b>' + money0(g.total) + '</b></td></tr>';
+        }).join('') +
+        '<tr><td><b>TOTAL scheduled</b></td><td class="num">' + up.length + '</td><td></td><td></td><td class="num"><b>' + money0(upTot) + '</b></td></tr>'
+      : '<tr><td class="empty">no scheduled future payments</td></tr>';
+    $('tblAccCashDetail').innerHTML = up.length
+      ? '<tr><th>date</th><th>family</th><th>type</th><th class="num">amount</th></tr>' +
+        up.slice(0, 60).map(function(u){
+          return '<tr><td>' + u.date + '</td><td>' + esc(u.email || u.ref) + '</td><td><span class="tag">' + u.kind + '</span></td><td class="num">' + money0(u.amount) + '</td></tr>';
+        }).join('') + (up.length > 60 ? '<tr><td class="sub" colspan="4">+ ' + (up.length-60) + ' more (in the CSV)</td></tr>' : '')
+      : '';
 
     // reconciliation (whole year, payment basis, unfiltered)
     var sales = d.orders.filter(function(o){ return +String(o.created_at).slice(0,4) === year; })

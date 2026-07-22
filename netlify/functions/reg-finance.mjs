@@ -110,9 +110,75 @@ export default async (req) => {
   }
   for (const t of txns) if (t.charge && chargePayout[t.charge]) t.payout_date = chargePayout[t.charge];
 
+  // --- cash-flow forecast: every future auto-billing pull (Todd) ---
+  // Classes ride subscriptions; camp installment plans ride subscription
+  // schedules (not_started until the first pull). Walk both.
+  const upcoming = [];
+  const priceCache = {};
+  async function priceAmt(priceId) {
+    if (typeof priceId === "object" && priceId) return priceId.unit_amount || 0;
+    if (priceCache[priceId] != null) return priceCache[priceId];
+    try {
+      const p = await stripe.prices.retrieve(priceId);
+      priceCache[priceId] = p.unit_amount || 0;
+    } catch { priceCache[priceId] = 0; }
+    return priceCache[priceId];
+  }
+  const schedByRef = {};
+  for (const o of orders) if (o.stripe_schedule) schedByRef[o.stripe_schedule] = o;
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  // class + released-schedule subscriptions
+  try {
+    const subs = await stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.items.data.price"] });
+    for (const s of subs.data) {
+      if (["canceled", "incomplete", "incomplete_expired", "unpaid"].includes(s.status)) continue;
+      let monthly = 0;
+      for (const it of s.items.data) monthly += (it.price.unit_amount || 0) * (it.quantity || 1);
+      if (!monthly) continue;
+      const o = schedByRef[s.id] || (s.schedule && schedByRef[s.schedule]);
+      // next pulls: monthly from the later of now / trial_end, until cancel_at
+      let t = Math.max(s.trial_end || 0, s.current_period_end || 0, nowSec);
+      const stop = s.cancel_at || (t + 366 * 86400);
+      const d0 = new Date(t * 1000);
+      let d = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), d0.getUTCDate() >= 2 ? d0.getUTCDate() : d0.getUTCDate(), 12));
+      for (let i = 0; i < 14; i++) {
+        const ts = Math.floor(d.getTime() / 1000);
+        if (ts > stop) break;
+        if (ts > nowSec) upcoming.push({ date: d.toISOString().slice(0, 10), amount: monthly, kind: "class/monthly", email: o ? o.email : null, ref: s.id });
+        d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), 12));
+      }
+    }
+  } catch (e) { console.error("subs forecast:", e.message); }
+
+  // not-yet-started installment schedules
+  try {
+    const scheds = await stripe.subscriptionSchedules.list({ limit: 100 });
+    for (const sc of scheds.data) {
+      if (sc.status !== "not_started" && sc.status !== "active") continue;
+      if (sc.subscription) continue; // already counted via subscriptions above
+      const o = schedByRef[sc.id];
+      for (const ph of (sc.phases || [])) {
+        let monthly = 0;
+        for (const it of (ph.items || [])) monthly += (await priceAmt(it.price)) * (it.quantity || 1);
+        if (!monthly) continue;
+        let d = new Date((ph.start_date || nowSec) * 1000);
+        const end = ph.end_date || (ph.start_date + 366 * 86400);
+        for (let i = 0; i < 14; i++) {
+          const ts = Math.floor(d.getTime() / 1000);
+          if (ts >= end) break;
+          if (ts > nowSec) upcoming.push({ date: d.toISOString().slice(0, 10), amount: monthly, kind: "installment", email: o ? o.email : null, ref: sc.id });
+          d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), 12));
+        }
+      }
+    }
+  } catch (e) { console.error("scheds forecast:", e.message); }
+
+  upcoming.sort((a, b) => a.date < b.date ? -1 : 1);
+
   return Response.json({
     year, orders, items_by_order: itemsByOrder, activities,
-    transactions: txns, refunds, disputes, payouts,
+    transactions: txns, refunds, disputes, payouts, upcoming,
   });
 };
 
