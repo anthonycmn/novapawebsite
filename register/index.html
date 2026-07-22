@@ -523,8 +523,12 @@
   function defaultCastFor(showKey, age){
     var acts = fallActsFor(showKey);
     if (age == null) return acts.length === 1 ? acts[0].id : null;
+    // default = the band whose range strictly contains the age; the one-year
+    // grace band is offered as a pill but never auto-picked
     var fit = acts.filter(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
-    return fit.length ? fit[fit.length - 1].id : null; // overlap ages land in the older company
+    if (fit.length) return fit[fit.length - 1].id;
+    var near = acts.filter(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= r.max; });
+    return near.length ? near[0].id : null;
   }
   function isCatMode(){ return state.catItems.length > 0; }
   function catAllClasses(){ return state.catItems.length > 0 && state.catItems.every(function(a){ return a.category === 'class'; }); }
@@ -807,13 +811,21 @@
     var kids = state.kids.filter(function(k){ return k.sel; }).length;
     return state.shows.length * Math.max(1, kids); // estimate before assignment
   }
+  function campAge(k){
+    // age when camp starts, not age today — an 11-year-old who turns 12 by
+    // July 2027 belongs in the older conversation
+    if (k && k.bday) return ageOn(k.bday, '2027-07-05');
+    return k ? k.age : null;
+  }
   function bandsFor(age){
     if (age == null) return ['5-9','9-12','12-15','tech'];
+    // bands overlap at the edges on purpose (CJ): grades don't map 1:1 to age,
+    // so a kid within a year of a band's floor may choose it — parent's call
     var b = [];
     if (age >= 5 && age <= 9) b.push('5-9');
-    if (age >= 9 && age <= 12) b.push('9-12');
-    if (age >= 12 && age <= 15) b.push('12-15');
-    if (age >= 10 && age <= 15) b.push('tech');
+    if (age >= 8 && age <= 12) b.push('9-12');
+    if (age >= 11 && age <= 15) b.push('12-15');
+    if (age >= 9 && age <= 15) b.push('tech');
     return b;
   }
   function bandLabel(b){ return b === 'tech' ? 'Tech (10\u201315)' : ({'5-9':'Ages 5\u20138','9-12':'Ages 9\u201312','12-15':'Ages 13\u201315'})[b] || ('Ages ' + b); }
@@ -863,15 +875,16 @@
       host.innerHTML = state.kids.map(function(k, i){
         if (!k.sel) return '';
         var already = (k.already||[]).indexOf(show) !== -1;
-        var noBand = k.age != null && bandsFor(k.age).length === 0;
+        var kAge = campAge(k);
+        var noBand = kAge != null && bandsFor(kAge).length === 0;
         var key = show + '|' + i;
         if (!(key in state.assign)) {
-          var defBands = bandsFor(k.age).filter(function(b){ return b !== 'tech'; });
+          var defBands = bandsFor(kAge).filter(function(b){ return b !== 'tech'; });
           state.assign[key] = { on: false, band: defBands[0] || '9-12' };
         }
         if (already || noBand) state.assign[key].on = false;
         var a = state.assign[key];
-        var pills = (!a.on || already) ? '' : bandsFor(k.age).map(function(b){
+        var pills = (!a.on || already) ? '' : bandsFor(kAge).map(function(b){
           var left = state.inventory[show + '|' + b];
           var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Full' : left + ' more spots available') + '</span>' : '';
           return '<span class="pill' + (a.band === b ? ' sel' : '') + '" data-key="' + esc(key) + '" data-band="' + b + '">' + bandLabel(b) + leftTag + '</span>';
@@ -909,13 +922,13 @@
         if (!k.sel) return '';
         var age = ageOn(k.bday, s.start);
         var onCast = fallCastOn(i, sKey);
-        var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
+        var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= r.max; });
         if (!eligible && onCast) { setFallCast(i, sKey, null); onCast = null; }
         var pills = '';
         if (onCast && eligible) {
           pills = acts.map(function(a){
             var r = castRange(a);
-            if (age != null && !(age >= r.min && age <= r.max)) return '';
+            if (age != null && !(age >= r.min - 1 && age <= r.max)) return '';
             var left = a.remaining;
             var full = left != null && left <= 0;
             var leftTag = (left != null && left < 20) ? ' <span class="left">' + (full ? 'Full' : left + ' more spots available') + '</span>' : '';
