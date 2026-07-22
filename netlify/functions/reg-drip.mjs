@@ -220,11 +220,14 @@ export default async () => {
   if (lxSteps.length) {
     for (const u of users) {
       const email = String(u.email || "").toLowerCase();
-      if (!email || u.last_sign_in_at) continue; // they got in
+      if (!email || u.last_sign_in_at) continue; // clicked a link at some point — never nudge
       if (purchased.has(email) || stateByEmail[email]) continue;
-      const created = new Date(u.created_at).getTime();
-      if (now - created < lxSteps[0].delay_minutes * 60000) continue; // still fresh
-      if (now - created > 5 * 86400000) continue; // too old, skip
+      // measure from their LATEST link request, not account creation — a fresh
+      // link must actually go stale before we claim it expired
+      const lastLink = Math.max(...[u.created_at, u.confirmation_sent_at, u.recovery_sent_at, u.email_change_sent_at]
+        .filter(Boolean).map((t) => new Date(t).getTime()));
+      if (now - lastLink < lxSteps[0].delay_minutes * 60000) continue; // their link is still fresh
+      if (now - lastLink > 5 * 86400000) continue; // too old, skip
       const parent = firstName(parentByEmail[email]);
       const vars = {
         parentName: parent || "there", parentComma: parent ? " " + parent : "",
