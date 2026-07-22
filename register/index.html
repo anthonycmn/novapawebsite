@@ -621,7 +621,7 @@
       if (!res.data) {
         $('emailGo').disabled = false;
         ev('reg_email_unknown');
-        errEl.textContent = "We couldn't find that email — try again with one you've signed up with before.";
+        errEl.innerHTML = "We couldn't find that email — try one you've used with NOVAPA before, or email <a href='mailto:jason@novapa.org' style='color:var(--gold3)'>jason@novapa.org</a> and we'll link your account.";
         errEl.classList.add('on'); return;
       }
       sendLink();
