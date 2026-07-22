@@ -106,6 +106,7 @@
       <a data-s="inventory">Inventory</a>
       <a data-s="campers">Campers</a>
       <a data-s="calendar">Calendar</a>
+      <a data-s="accounting">Accounting</a>
     </div>
     <div class="who"><span id="whoEmail"></span><br><a href="#" id="signOut">sign out</a></div>
   </div>
@@ -148,6 +149,31 @@
         <button id="campCopy" style="padding:10px 14px;border:0;border-radius:10px;background:var(--gold,#C8892A);color:#1a1206;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px">Copy chase-list emails</button>
       </div>
       <div class="wrap-scroll"><table id="tblCampers"></table></div>
+    </section>
+
+    <section class="sec" id="s-accounting">
+      <h2>Accounting</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <select id="accYear" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px"></select>
+        <select id="accProgram" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px"><option value="">All programs</option></select>
+        <select id="accBasis" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px">
+          <option value="payment">By payment date</option>
+          <option value="program">By program date</option>
+        </select>
+        <button class="tag" id="accLoad" style="cursor:pointer;border:0;padding:8px 16px">Load</button>
+        <button class="tag" id="accCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
+        <span class="sub" id="accStatus"></span>
+      </div>
+      <div id="accBody" style="display:none">
+        <h2>By program / show</h2>
+        <div class="wrap-scroll"><table id="tblAccProg"></table></div>
+        <h2 style="margin-top:22px">Reconciliation</h2>
+        <div class="wrap-scroll"><table id="tblAccRec"></table></div>
+        <h2 style="margin-top:22px">Transactions</h2>
+        <div class="wrap-scroll"><table id="tblAccTx"></table></div>
+        <p class="sub" style="margin-top:12px">Web platform only. Sawyer and Regpack keep their own reports; legacy outstanding balances live in the Balances tab.
+        Not applicable on this platform (always $0): customer card surcharges, registration fees, platform booking fees, tickets/merch (sold via BookTix).</p>
+      </div>
     </section>
 
     <section class="sec" id="s-calendar">
@@ -274,6 +300,188 @@
   (function(){
     var t=null;
     $('campQ').addEventListener('input', function(){ clearTimeout(t); t=setTimeout(renderCampers, 150); });
+
+  // ---------- accounting ----------
+  var ACC = null;
+  (function(){
+    var y = new Date().getFullYear();
+    for (var i = y; i >= 2026; i--) $('accYear').insertAdjacentHTML('beforeend', '<option>' + i + '</option>');
+  })();
+  function accProgOf(it, actsById){
+    if (it.show) return ({httyd:'HTTYD Jr (Summer)',charlie:'Charlie Jr (Summer)',trolls:'Trolls Jr (Summer)'})[it.show] || it.show;
+    var a = actsById[it.activity_id] || {};
+    return a.name || ('activity ' + it.activity_id);
+  }
+  function accProgDate(it, actsById){
+    if (it.show) return ({httyd:'2027-07-05',charlie:'2027-07-19',trolls:'2027-08-02'})[it.show];
+    var a = actsById[it.activity_id] || {};
+    if (/frozen/i.test(a.name||'')) return '2026-09-15';
+    if (/mermaid/i.test(a.name||'')) return '2027-02-03';
+    return '2026-09-14'; // classes/day camps: season start
+  }
+  function money0(c){ return usd2(c); }
+  $('accLoad').addEventListener('click', function(){
+    $('accStatus').textContent = 'loading\u2026';
+    sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-finance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ year: +$('accYear').value })
+      });
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.error) { $('accStatus').textContent = 'error: ' + d.error; return; }
+      ACC = d;
+      $('accStatus').textContent = d.transactions.length + ' payments, ' + d.orders.length + ' orders';
+      var progs = {};
+      d.orders.forEach(function(o){ (d.items_by_order[o.id]||[]).forEach(function(it){
+        progs[accProgOf(it, accActsById())] = 1; }); });
+      $('accProgram').innerHTML = '<option value="">All programs</option>' +
+        Object.keys(progs).sort().map(function(p){ return '<option>' + esc(p) + '</option>'; }).join('');
+      $('accBody').style.display = ''; $('accCsv').style.display = '';
+      renderAccounting();
+    }).catch(function(e){ $('accStatus').textContent = 'network error'; });
+  });
+  $('accProgram').addEventListener('change', function(){ if (ACC) renderAccounting(); });
+  $('accBasis').addEventListener('change', function(){ if (ACC) renderAccounting(); });
+  function accActsById(){
+    var m = {}; (ACC.activities||[]).forEach(function(a){ m[a.id] = a; }); return m;
+  }
+  function renderAccounting(){
+    var d = ACC, byId = accActsById(), year = d.year;
+    var progFilter = $('accProgram').value;
+    var basis = $('accBasis').value;
+    var txByPi = {}; d.transactions.forEach(function(t){ txByPi[t.pi] = t; });
+
+    // per-order rollup rows -> aggregate per program
+    var agg = {};
+    function row(p){ return agg[p] = agg[p] || { gross:0, ins:0, disc:0, comps:0, planFee:0, invoiced:0, collected:0, fees:0, refunds:0, outstanding:0, future:0, n:0 }; }
+    d.orders.forEach(function(o){
+      var its = d.items_by_order[o.id] || [];
+      if (!its.length) return;
+      var oProgs = {}; its.forEach(function(it){ oProgs[accProgOf(it, byId)] = 1; });
+      var progList = Object.keys(oProgs);
+      if (progFilter && progList.indexOf(progFilter) === -1) return;
+      var oYear = basis === 'program'
+        ? Math.max.apply(null, its.map(function(it){ return +accProgDate(it, byId).slice(0,4); }))
+        : +String(o.created_at).slice(0,4);
+      if (oYear !== year) return;
+      var t = txByPi[o.stripe_payment_intent] || {};
+      var m = t.metadata || {};
+      var free = String(o.stripe_payment_intent||'').indexOf('free_') === 0;
+      var share = 1 / progList.length; // order-level amounts split evenly across its programs
+      progList.forEach(function(p){
+        var g = row(p);
+        g.n += 1;
+        var listGross = its.filter(function(it){ return accProgOf(it, byId) === p; })
+          .reduce(function(s, it){ return s + (it.unit_cents || it.price_cents || (byId[it.activity_id]||{}).price_cents || (it.show ? 99500 : 0)); }, 0);
+        g.gross += listGross;
+        g.ins += Math.round((+m.insurance_cents || 0) * share);
+        g.disc += Math.round((+m.coupon_cents || 0) * share);
+        g.planFee += Math.round((+m.plan_fee_cents || 0) * share);
+        if (free) g.comps += Math.round(listGross);
+        g.invoiced += Math.round((o.total_cents || 0) * share);
+        var collected = t.amount_received != null ? t.amount_received : (o.amount_today_cents || 0);
+        g.collected += Math.round(collected * share);
+        g.fees += Math.round((t.fee || 0) * share);
+        g.refunds += Math.round((t.refunded || 0) * share);
+        var out = Math.max(0, (o.total_cents || 0) - collected);
+        g.outstanding += Math.round(out * share);
+        if (o.stripe_schedule) g.future += Math.round(out * share);
+      });
+    });
+    var lines = [
+      ['Orders', 'n', 0], ['Gross tuition (list)', 'gross', 1], ['Tuition insurance', 'ins', 1],
+      ['Revenue excl. insurance', null, 1], ['Discounts (coupons)', 'disc', 1], ['Complimentary (100% off)', 'comps', 1],
+      ['Payment-plan fees (5%)', 'planFee', 1], ['Refunds', 'refunds', 1],
+      ['Stripe processing fees (ours)', 'fees', 1], ['Total invoiced', 'invoiced', 1], ['Total collected', 'collected', 1],
+      ['Outstanding balances', 'outstanding', 1], ['Future scheduled', 'future', 1],
+      ['Net revenue', null, 1], ['Net cash received', null, 1],
+    ];
+    var progs = Object.keys(agg).sort();
+    $('tblAccProg').innerHTML =
+      '<tr><th>line</th>' + progs.map(function(p){ return '<th class="num">' + esc(p) + '</th>'; }).join('') + '<th class="num">TOTAL</th></tr>' +
+      lines.map(function(L){
+        var name = L[0], key = L[1], isMoney = L[2];
+        function val(g){
+          if (key) return g[key];
+          if (name === 'Revenue excl. insurance') return g.invoiced - g.ins;
+          if (name === 'Net revenue') return g.invoiced - g.refunds;
+          if (name === 'Net cash received') return g.collected - g.fees - g.refunds;
+          return 0;
+        }
+        var tot = progs.reduce(function(s,p){ return s + val(agg[p]); }, 0);
+        return '<tr><td>' + name + '</td>' + progs.map(function(p){
+          var v = val(agg[p]);
+          return '<td class="num">' + (isMoney ? money0(v) : v) + '</td>';
+        }).join('') + '<td class="num"><b>' + (isMoney ? money0(tot) : tot) + '</b></td></tr>';
+      }).join('');
+
+    // reconciliation (whole year, payment basis, unfiltered)
+    var sales = d.orders.filter(function(o){ return +String(o.created_at).slice(0,4) === year; })
+      .reduce(function(s,o){ return s + (o.total_cents||0); }, 0);
+    var collected = d.transactions.reduce(function(s,t){ return s + (t.amount_received||0); }, 0);
+    var fees = d.transactions.reduce(function(s,t){ return s + (t.fee||0); }, 0);
+    var refunded = d.refunds.reduce(function(s,r){ return s + r.amount; }, 0);
+    var disputed = d.disputes.reduce(function(s,x){ return s + x.amount; }, 0);
+    var deposited = d.payouts.filter(function(p){ return p.status === 'paid'; }).reduce(function(s,p){ return s + p.amount; }, 0);
+    var pendingPo = d.payouts.filter(function(p){ return p.status !== 'paid'; }).reduce(function(s,p){ return s + p.amount; }, 0);
+    var diff = collected - fees - refunded - disputed - deposited - pendingPo;
+    $('tblAccRec').innerHTML = [
+      ['Total sales recorded (orders)', sales], ['Total payments collected (Stripe)', collected],
+      ['Refunds', -refunded], ['Chargebacks', -disputed], ['Processing fees', -fees],
+      ['Deposited to bank (paid payouts)', deposited], ['Payouts in transit', pendingPo],
+      ['Unreconciled difference (collected - fees - refunds - chargebacks - deposits)', diff],
+    ].map(function(r){ return '<tr><td>' + r[0] + '</td><td class="num">' + money0(r[1]) + '</td></tr>'; }).join('');
+
+    // transaction detail
+    var ordByPi = {}; d.orders.forEach(function(o){ ordByPi[o.stripe_payment_intent] = o; });
+    $('tblAccTx').innerHTML =
+      '<tr><th>payment date</th><th>payer</th><th>students</th><th>program(s)</th><th>session</th><th>order</th><th>transaction</th><th class="num">amount</th><th class="num">fee</th><th class="num">refunded</th><th>method</th><th>payout date</th></tr>' +
+      d.transactions.filter(function(t){ return t.status === 'succeeded'; }).map(function(t){
+        var o = ordByPi[t.pi];
+        var its = o ? (d.items_by_order[o.id]||[]) : [];
+        var pset = {}; var sset = {}; var kset = {};
+        its.forEach(function(it){ pset[accProgOf(it, byId)]=1; sset[accProgDate(it, byId)]=1; if (it.camper_name) kset[it.camper_name]=1; });
+        return '<tr><td>' + new Date(t.created*1000).toISOString().slice(0,10) + '</td>' +
+          '<td>' + esc(o ? (o.parent_name || o.email) : (t.metadata.email || '')) + '</td>' +
+          '<td>' + esc(Object.keys(kset).join(', ')) + '</td>' +
+          '<td>' + esc(Object.keys(pset).join(', ') || (t.metadata.order_desc||'').slice(0,60)) + '</td>' +
+          '<td>' + Object.keys(sset).sort().join(', ') + '</td>' +
+          '<td class="sub">' + (o ? o.id.slice(0,8) : '') + '</td>' +
+          '<td class="sub">' + t.pi.slice(0,14) + '</td>' +
+          '<td class="num">' + money0(t.amount_received||0) + '</td>' +
+          '<td class="num">' + money0(t.fee||0) + '</td>' +
+          '<td class="num">' + (t.refunded ? money0(t.refunded) : '') + '</td>' +
+          '<td>' + esc(t.method||'') + '</td>' +
+          '<td>' + (t.payout_date ? new Date(t.payout_date*1000).toISOString().slice(0,10) : 'pending') + '</td></tr>';
+      }).join('');
+  }
+  $('accCsv').addEventListener('click', function(){
+    if (!ACC) return;
+    var rows = [['payment_date','payer','students','programs','session_dates','order_id','transaction_id','amount','fee','refunded','method','processor','payout_date']];
+    var byId = accActsById();
+    var ordByPi = {}; ACC.orders.forEach(function(o){ ordByPi[o.stripe_payment_intent] = o; });
+    ACC.transactions.filter(function(t){ return t.status === 'succeeded'; }).forEach(function(t){
+      var o = ordByPi[t.pi]; var its = o ? (ACC.items_by_order[o.id]||[]) : [];
+      rows.push([
+        new Date(t.created*1000).toISOString().slice(0,10),
+        o ? (o.parent_name || o.email) : (t.metadata.email||''),
+        its.map(function(it){ return it.camper_name; }).filter(Boolean).join('; '),
+        its.map(function(it){ return accProgOf(it, byId); }).join('; '),
+        its.map(function(it){ return accProgDate(it, byId); }).join('; '),
+        o ? o.id : '', t.pi,
+        ((t.amount_received||0)/100).toFixed(2), ((t.fee||0)/100).toFixed(2), ((t.refunded||0)/100).toFixed(2),
+        t.method||'', 'Stripe',
+        t.payout_date ? new Date(t.payout_date*1000).toISOString().slice(0,10) : 'pending'
+      ]);
+    });
+    var csv = rows.map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'novapa-accounting-' + ACC.year + '.csv';
+    a.click();
+  });
     $('campMissing').addEventListener('change', renderCampers);
     $('campCopy').addEventListener('click', function(){
       var emails = [];
