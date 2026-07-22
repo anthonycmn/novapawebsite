@@ -528,12 +528,31 @@
         '<span class="tag gold">' + esc(s.seq) + ' · step ' + s.step + '</span>' +
         '<label class="sub">delay <input type="number" data-mk="delay" value="' + s.delay_minutes + '" style="width:80px;padding:6px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff"> min (' + hrs + ')</label>' +
         '<label class="sub"><input type="checkbox" data-mk="enabled" ' + (s.enabled ? 'checked' : '') + '> enabled</label>' +
-        '<button class="tag ok" data-mk-save="' + s.id + '" style="cursor:pointer;border:0;margin-left:auto">Save</button>' +
+        '<button class="tag" data-mk-test="' + s.id + '" style="cursor:pointer;border:0;margin-left:auto">Send test to me</button>' +
+        '<button class="tag ok" data-mk-save="' + s.id + '" style="cursor:pointer;border:0">Save</button>' +
         '<span class="sub" data-mk-msg></span></div>' +
         '<input type="text" data-mk="subject" value="' + esc(s.subject).replace(/"/g,'&quot;') + '" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-weight:600;margin-bottom:8px">' +
         '<textarea data-mk="body" rows="8" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:13.5px;line-height:1.5">' + esc(s.body) + '</textarea>' +
         '</div>';
     }).join('');
+    $('mkSeqs').querySelectorAll('[data-mk-test]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var card = b.closest('.card');
+        b.textContent = 'sending...'; b.disabled = true;
+        sb.auth.getSession().then(function(res){
+          var token = res.data && res.data.session && res.data.session.access_token;
+          return fetch('/api/reg-drip-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ step_id: +b.dataset.mkTest })
+          });
+        }).then(function(r){ return r.json(); }).then(function(j){
+          b.disabled = false; b.textContent = 'Send test to me';
+          card.querySelector('[data-mk-msg]').textContent = j.ok ? 'test sent to ' + j.to : ('failed: ' + (j.error || 'error'));
+          setTimeout(function(){ card.querySelector('[data-mk-msg]').textContent = ''; }, 4000);
+        }).catch(function(){ b.disabled = false; b.textContent = 'Send test to me'; });
+      });
+    });
     $('mkSeqs').querySelectorAll('[data-mk-save]').forEach(function(b){
       b.addEventListener('click', function(){
         var card = b.closest('.card');
