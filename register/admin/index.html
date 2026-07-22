@@ -327,7 +327,7 @@
   function renderOrders(rows){
     if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
     $('tblOrders').innerHTML =
-      '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th>sawyer</th></tr>' +
+      '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th>sawyer</th><th></th></tr>' +
       rows.map(function(o){
         return '<tr><td>' + dt(o.created_at) + '</td>' +
           '<td>' + esc(o.parent_name || '') + '<div class="sub">' + esc(o.email) + '</div></td>' +
@@ -335,8 +335,32 @@
           '<td><span class="tag ' + (o.plan==='subscription'?'gold':'') + '">' + o.plan + '</span></td>' +
           '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
           '<td class="num">' + usd2(o.total_cents) + '</td>' +
-          '<td>' + (o.sawyer_entered ? '<span class="tag ok">✓</span>' : '<span class="tag bad">no</span>') + '</td></tr>';
+          '<td>' + (o.sawyer_entered ? '<span class="tag ok">✓</span>' : '<span class="tag bad">no</span>') + '</td>' +
+          '<td><button class="tag bad ord-del" data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + (o.items||'').slice(0,80)) + '" style="cursor:pointer;border:0">delete</button></td></tr>';
       }).join('');
+    $('tblOrders').querySelectorAll('.ord-del').forEach(function(b){
+      b.addEventListener('click', function(){
+        var msg = 'Delete this order?\n\n' + b.dataset.who +
+          '\n\nThis frees the spots, un-marks the campers, and removes the order record.' +
+          '\nIt does NOT refund the payment or cancel any Stripe schedule - do that in Stripe.';
+        if (!confirm(msg)) return;
+        b.disabled = true; b.textContent = '...';
+        sb.rpc('admin_delete_order', { p_order_id: b.dataset.id }).then(function(r){
+          if (r.error || (r.data && r.data.error)) {
+            alert('Delete failed: ' + ((r.data && r.data.error) || r.error.message));
+            b.disabled = false; b.textContent = 'delete';
+            return;
+          }
+          var d = r.data || {};
+          if (d.stripe_schedule || (d.stripe_pi && String(d.stripe_pi).indexOf('free_') !== 0)) {
+            alert('Removed. Reminder - in Stripe:' +
+              (d.stripe_pi && String(d.stripe_pi).indexOf('free_') !== 0 ? '\n- refund payment ' + d.stripe_pi : '') +
+              (d.stripe_schedule ? '\n- cancel subscription/schedule ' + d.stripe_schedule : ''));
+          }
+          sb.rpc('admin_orders').then(function(rr){ renderOrders(rr.data || []); });
+        });
+      });
+    });
   }
 
   function renderBalances(rows){
