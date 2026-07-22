@@ -13,6 +13,10 @@
 import { SUPABASE_URL } from "./reg-config.mjs";
 
 const SITE = "https://www.northernvirginiaperformingarts.org";
+// Gmail Workspace shares one 2,000/day budget across magic links, receipts and
+// this drip — and bursts of similar mail trip Google's abuse detection. Keep
+// each 15-min run small so the backlog drains at a human-looking pace.
+const MAX_SENDS_PER_RUN = 25;
 const SHOW_TITLES = {
   httyd: "How to Train Your Dragon JR.",
   charlie: "Charlie and the Chocolate Factory JR.",
@@ -147,6 +151,7 @@ export default async () => {
 
   // ---- sends ----
   for (const st of states2) {
+    if (log.sent >= MAX_SENDS_PER_RUN) break;
     const email = st.email;
     if (purchased.has(email)) {
       await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, { method: "PATCH", body: JSON.stringify({ status: "purchased", updated_at: new Date().toISOString() }) });
@@ -203,6 +208,7 @@ export default async () => {
   const lxSteps = stepsBySeq["linkexpired"] || [];
   if (lxSteps.length) {
     for (const u of users) {
+      if (log.sent >= MAX_SENDS_PER_RUN) break;
       const email = String(u.email || "").toLowerCase();
       if (!email || u.last_sign_in_at) continue; // they got in
       if (purchased.has(email) || stateByEmail[email]) continue;
