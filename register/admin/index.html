@@ -107,6 +107,7 @@
       <a data-s="campers">Campers</a>
       <a data-s="calendar">Calendar</a>
       <a data-s="accounting">Accounting</a>
+      <a data-s="marketing">Marketing</a>
     </div>
     <div class="who"><span id="whoEmail"></span><br><a href="#" id="signOut">sign out</a></div>
   </div>
@@ -149,6 +150,16 @@
         <button id="campCopy" style="padding:10px 14px;border:0;border-radius:10px;background:var(--gold,#C8892A);color:#1a1206;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px">Copy chase-list emails</button>
       </div>
       <div class="wrap-scroll"><table id="tblCampers"></table></div>
+    </section>
+
+    <section class="sec" id="s-marketing">
+      <h2>Marketing — retargeting sequences</h2>
+      <div class="stats" id="mkStats" style="margin-bottom:14px"></div>
+      <div id="mkSeqs"></div>
+      <h2 style="margin-top:22px">Leads</h2>
+      <div class="wrap-scroll"><table id="tblMkLeads"></table></div>
+      <p class="sub" style="margin-top:10px">The engine runs every 15 minutes. Buyers are removed automatically and never re-enter.
+      Edits to subject/body/delay apply from the next run. Variables: {parentName} {camperName} {camperNames} {camp} {camps} {link}</p>
     </section>
 
     <section class="sec" id="s-accounting">
@@ -486,6 +497,83 @@
           '<td>' + (t.payout_date ? new Date(t.payout_date*1000).toISOString().slice(0,10) : 'pending') + '</td></tr>';
       }).join('');
   }
+  // ---------- marketing ----------
+  var MK = null;
+  function loadMarketing(){
+    sb.rpc('marketing_get').then(function(r){
+      MK = r.data;
+      if (!MK) { $('mkStats').innerHTML = '<div class="empty">no data — run the SQL setup</div>'; return; }
+      renderMarketing();
+    });
+  }
+  function mkStageName(seq, stage, status){
+    if (status === 'purchased') return 'PURCHASED';
+    if (status === 'stopped') return 'stopped';
+    if (status === 'done') return 'sequence finished';
+    return stage === 0 ? 'waiting (30m window)' : 'email ' + stage + ' sent';
+  }
+  function renderMarketing(){
+    var pipe = MK.pipeline || [];
+    var total = pipe.reduce(function(s,p){ return s + p.n; }, 0);
+    var bought = pipe.filter(function(p){ return p.status === 'purchased'; }).reduce(function(s,p){ return s + p.n; }, 0);
+    var active = pipe.filter(function(p){ return p.status === 'active'; }).reduce(function(s,p){ return s + p.n; }, 0);
+    $('mkStats').innerHTML =
+      '<div class="stat"><div class="v">' + total + '</div><div class="l">total leads</div></div>' +
+      '<div class="stat"><div class="v">' + active + '</div><div class="l">in sequence</div></div>' +
+      '<div class="stat"><div class="v gold">' + bought + '</div><div class="l">converted</div></div>';
+    $('mkSeqs').innerHTML = (MK.sequences || []).map(function(s){
+      var hrs = s.delay_minutes >= 60 ? (s.delay_minutes/60) + 'h' : s.delay_minutes + 'm';
+      return '<div class="card" style="border:1px solid var(--line,rgba(255,255,255,0.12));border-radius:12px;padding:14px;margin-bottom:12px">' +
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
+        '<span class="tag gold">' + esc(s.seq) + ' · step ' + s.step + '</span>' +
+        '<label class="sub">delay <input type="number" data-mk="delay" value="' + s.delay_minutes + '" style="width:80px;padding:6px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff"> min (' + hrs + ')</label>' +
+        '<label class="sub"><input type="checkbox" data-mk="enabled" ' + (s.enabled ? 'checked' : '') + '> enabled</label>' +
+        '<button class="tag ok" data-mk-save="' + s.id + '" style="cursor:pointer;border:0;margin-left:auto">Save</button>' +
+        '<span class="sub" data-mk-msg></span></div>' +
+        '<input type="text" data-mk="subject" value="' + esc(s.subject).replace(/"/g,'&quot;') + '" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-weight:600;margin-bottom:8px">' +
+        '<textarea data-mk="body" rows="8" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:13.5px;line-height:1.5">' + esc(s.body) + '</textarea>' +
+        '</div>';
+    }).join('');
+    $('mkSeqs').querySelectorAll('[data-mk-save]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var card = b.closest('.card');
+        var g = function(k){ return card.querySelector('[data-mk="' + k + '"]'); };
+        b.textContent = '...';
+        sb.rpc('marketing_save_step', {
+          p_id: +b.dataset.mkSave,
+          p_delay: +g('delay').value || 30,
+          p_subject: g('subject').value,
+          p_body: g('body').value,
+          p_enabled: g('enabled').checked
+        }).then(function(r){
+          b.textContent = 'Save';
+          card.querySelector('[data-mk-msg]').textContent = r.error ? 'save failed' : 'saved';
+          setTimeout(function(){ card.querySelector('[data-mk-msg]').textContent = ''; }, 2500);
+        });
+      });
+    });
+    var leads = MK.recent || [];
+    $('tblMkLeads').innerHTML = leads.length
+      ? '<tr><th>email</th><th>parent</th><th>camps</th><th>seq</th><th>state</th><th>last send</th><th></th></tr>' +
+        leads.map(function(l){
+          var c = l.ctx || {};
+          return '<tr><td>' + esc(l.email) + '</td><td>' + esc(c.parent || '') + '</td>' +
+            '<td class="sub">' + esc((c.camps || []).join(', ')) + '</td>' +
+            '<td><span class="tag">' + esc(l.seq) + '</span></td>' +
+            '<td><span class="tag ' + (l.status === 'purchased' ? 'ok' : l.status === 'active' ? 'gold' : '') + '">' + mkStageName(l.seq, l.stage, l.status) + '</span></td>' +
+            '<td class="sub">' + (l.sent ? dt(l.sent) : '—') + '</td>' +
+            '<td>' + (l.status === 'active' ? '<button class="tag bad mk-stop" data-email="' + esc(l.email) + '" style="cursor:pointer;border:0">stop</button>' : '') + '</td></tr>';
+        }).join('')
+      : '<tr><td class="empty">no leads yet — the engine enrolls sign-ins automatically</td></tr>';
+    $('tblMkLeads').querySelectorAll('.mk-stop').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (!confirm('Stop all remaining emails to ' + b.dataset.email + '?')) return;
+        sb.rpc('marketing_stop', { p_email: b.dataset.email }).then(loadMarketing);
+      });
+    });
+  }
+  loadMarketing();
+
   $('accCsv').addEventListener('click', function(){
     if (!ACC) return;
     var rows = [['payment_date','payer','students','programs','session_dates','order_id','transaction_id','amount','fee','refunded','method','processor','payout_date']];
