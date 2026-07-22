@@ -281,6 +281,7 @@
       <p style="font-weight:700; color:#fff; font-size:18px">You're on the list.</p>
       <p class="tiny">Watch your inbox the morning of August 1.</p>
     </div>
+    <p class="tiny" id="wlOpenNow" style="margin-top:14px">Don't want to wait? <a href="/classes" style="color:var(--gold3)">Classes and day camps</a> are open to everyone right now — no waitlist.</p>
   </section>
 
   <!-- STEP: family -->
@@ -588,6 +589,7 @@
     if (state.catIds.length) $('wlEyebrow').textContent = 'NOVAPA Registration';
     $('wlH1').innerHTML = "What's your <em>email?</em>";
     $('wlSub').textContent = "We'll send you a sign-in link to get started \u2014 new and returning families welcome.";
+    $('wlOpenNow').style.display = 'none';
     $('wlJoin').textContent = 'Continue';
     $('wlTiny').textContent = 'No password needed.';
     go('st-waitlist'); $('wlEmail').focus();
