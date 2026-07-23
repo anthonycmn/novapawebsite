@@ -653,20 +653,9 @@
     $('stSummer').innerHTML =
       stat(s.summer_taken + ' / ' + s.summer_cap, 'spots taken', 'gold') +
       stat(s.active_holds, 'active holds');
-    patchSummerStat();
   }
-
-  // add regpack-sold summer kids to spots taken — they consume seats inside the
-  // same caps, Sawyer's counts just don't know about them
-  function patchSummerStat(){
-    var n = window.__rpSummer || 0;
-    if (!n) return;
-    var cell = $('stSummer') && $('stSummer').querySelector('.v');
-    if (cell && !cell.getAttribute('data-rp')) {
-      cell.setAttribute('data-rp', '1');
-      cell.textContent = cell.textContent.replace(/^(\d+)/, function(m){ return (+m + n); });
-    }
-  }
+  // (regpack summer kids were folded into inventory.booked on 7/22 — no
+  // separate stat patch anymore, the base numbers already include them)
 
   function renderOrders(rows){
     if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
@@ -743,7 +732,7 @@
       shows.map(function(sh){
         var rpN = rp[sh] || 0;
         return '<tr><td><b>' + SHOWL[sh] + '</b>' +
-          (rpN ? '<div class="sub">+' + rpN + ' regpack</div>' : '') + '</td>' +
+          (rpN ? '<div class="sub">incl. ' + rpN + ' regpack</div>' : '') + '</td>' +
           bands.map(function(b){
           var r = by[sh+'|'+b] || {};
           var taken = (r.booked||0) + (r.held||0);
@@ -753,9 +742,8 @@
         }).join('') + '</tr>';
       }).join('');
 
-    // regpack summer kids aren't in the band grid (no band data) — count them in the stat card
-    window.__rpSummer = Object.keys(rp).reduce(function(a,k){ return a + rp[k]; }, 0);
-    patchSummerStat();
+    // regpack summer kids live inside inventory.booked since 7/22 (age-assigned
+    // bands) — the grid and stats count them natively now
 
     function bar(left, cap, taken){
       var pct = cap ? Math.round(taken/cap*100) : 0;
