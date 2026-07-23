@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVAPA Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --bg:#0B1422; --panel:#101D31; --line:rgba(255,255,255,0.09);
+    --ink:#E8EDF5; --dim:#7C8AA0; --gold:#E8B84B; --ok:#4FC98C; --bad:#E8654B;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
+  a { color:var(--gold); text-decoration:none; }
+
+  .layout { display:flex; min-height:100vh; }
+  .side { width:184px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--line);
+    padding:20px 0; position:sticky; top:0; height:100vh; display:flex; flex-direction:column; }
+  .logo { font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.2em; font-size:13px;
+    color:#fff; padding:0 20px 18px; }
+  .logo em { color:var(--gold); font-style:normal; }
+  .nav a { display:block; padding:10px 20px; color:var(--dim); font-weight:500; border-left:2px solid transparent; }
+  .nav a.on { color:#fff; border-left-color:var(--gold); background:rgba(232,184,75,0.06); }
+  .side .who { margin-top:auto; padding:14px 20px 0; font-size:11px; color:var(--dim); border-top:1px solid var(--line); word-break:break-all; }
+
+  .main { flex:1; padding:26px 30px 60px; min-width:0; }
+  .sec { display:none; }
+  .sec.on { display:block; }
+  h2 { font-size:15px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:0.1em; margin:26px 0 12px; }
+  h2:first-child { margin-top:0; }
+
+  .stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:10px; }
+  .stat { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .stat .v { font-size:24px; font-weight:700; color:#fff; letter-spacing:-0.01em; }
+  .stat .v.gold { color:var(--gold); } .stat .v.ok { color:var(--ok); } .stat .v.bad { color:var(--bad); }
+  .stat .l { font-size:11px; color:var(--dim); margin-top:3px; text-transform:uppercase; letter-spacing:0.06em; }
+
+  table { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  th { text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--dim);
+    padding:9px 12px; border-bottom:1px solid var(--line); font-weight:600; }
+  td { padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sub { color:var(--dim); font-size:12px; }
+  .tag { display:inline-block; font-size:10px; padding:2px 7px; border-radius:99px; background:rgba(255,255,255,0.07); color:var(--dim); }
+  .tag.ok { background:rgba(79,201,140,0.13); color:var(--ok); }
+  .tag.bad { background:rgba(232,101,75,0.13); color:var(--bad); }
+  .tag.gold { background:rgba(232,184,75,0.13); color:var(--gold); }
+  .bar { height:5px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden; min-width:70px; }
+  .bar i { display:block; height:100%; background:var(--gold); }
+  .bar i.full { background:var(--bad); }
+  .wrap-scroll { overflow-x:auto; }
+
+  /* calendar */
+  .cal-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+  .cal-head b { font-size:17px; min-width:150px; text-align:center; }
+  .cal-head button { background:var(--panel); border:1px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:6px 12px; cursor:pointer; font-family:inherit; }
+  .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cal .dow { font-size:10px; color:var(--dim); text-transform:uppercase; text-align:center; padding:4px 0; }
+  .cal .day { background:var(--panel); border:1px solid var(--line); border-radius:8px; min-height:74px; padding:5px 6px; font-size:11px; }
+  .cal .day.blank { background:none; border-color:transparent; }
+  .cal .day .d { color:var(--dim); font-size:10.5px; margin-bottom:3px; }
+  .cal .day.today .d { color:var(--gold); font-weight:700; }
+  .cal .ev { display:block; background:rgba(232,184,75,0.14); color:var(--gold); border-radius:4px;
+    padding:1px 5px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal .ev.c2026 { background:rgba(124,138,160,0.16); color:#9fb0c8; }
+
+  /* login */
+  #login { max-width:320px; margin:16vh auto 0; text-align:center; }
+  #login .logo { padding:0 0 22px; font-size:16px; }
+  #login input { width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel); color:#fff; font-size:15px; font-family:inherit; margin-bottom:10px; }
+  #login button { width:100%; padding:12px; border:0; border-radius:10px; background:var(--gold);
+    color:#1a1206; font-weight:700; font-size:15px; cursor:pointer; font-family:inherit; }
+  #login .msg { margin-top:12px; color:var(--dim); font-size:13px; }
+  .empty { color:var(--dim); padding:20px; text-align:center; }
+</style>
+<meta name="theme-color" content="#08111F">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<style>html{background:#08111F}</style>
+</head>
+<body>
+
+<div id="login" style="display:none">
+  <div class="logo">NOVA<em>PA</em> · ADMIN</div>
+  <input type="email" id="lgEmail" placeholder="admin email">
+  <button id="lgGo">Send sign-in link</button>
+  <div class="msg" id="lgMsg"></div>
+</div>
+
+<div class="layout" id="app" style="display:none">
+  <div class="side">
+    <div class="logo">NOVA<em>PA</em></div>
+    <div class="nav" id="nav">
+      <a data-s="overview" class="on">Overview</a>
+      <a data-s="orders">Orders</a>
+      <a data-s="balances">Balances</a>
+      <a data-s="inventory">Inventory</a>
+      <a data-s="campers">Campers</a>
+      <a data-s="calendar">Calendar</a>
+      <a data-s="accounting">Accounting</a>
+      <a data-s="marketing">Marketing</a>
+    </div>
+    <div class="who"><span id="whoEmail"></span><br><a href="#" id="signOut">sign out</a></div>
+  </div>
+
+  <div class="main">
+    <section class="sec on" id="s-overview">
+      <h2>Revenue</h2>
+      <div class="stats" id="stRevenue"></div>
+      <h2>Outstanding</h2>
+      <div class="stats" id="stOut"></div>
+      <h2>People</h2>
+      <div class="stats" id="stPeople"></div>
+      <h2>Summer 2027</h2>
+      <div class="stats" id="stSummer"></div>
+    </section>
+
+    <section class="sec" id="s-orders">
+      <h2>Web Orders</h2>
+      <div class="wrap-scroll"><table id="tblOrders"></table></div>
+    </section>
+
+    <section class="sec" id="s-balances">
+      <div class="stats" id="stBal" style="margin-bottom:14px"></div>
+      <div class="wrap-scroll"><table id="tblBal"></table></div>
+    </section>
+
+    <section class="sec" id="s-inventory">
+      <h2>Summer 2027</h2>
+      <div class="wrap-scroll"><table id="tblSummer"></table></div>
+      <h2>All Programs</h2>
+      <div class="wrap-scroll"><table id="tblActs"></table></div>
+    </section>
+
+    <section class="sec" id="s-campers">
+      <h2>Campers</h2>
+      <div class="stats" id="stCampers" style="margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <input type="text" id="campQ" placeholder="Search name or email\u2026" style="flex:1;min-width:220px;padding:10px 14px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:14px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="campMissing" style="accent-color:var(--gold,#C8892A)"> missing info only</label>
+        <button id="campCopy" style="padding:10px 14px;border:0;border-radius:10px;background:var(--gold,#C8892A);color:#1a1206;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px">Copy chase-list emails</button>
+      </div>
+      <div class="wrap-scroll"><table id="tblCampers"></table></div>
+    </section>
+
+    <section class="sec" id="s-marketing">
+      <h2>Marketing — retargeting sequences</h2>
+      <div class="stats" id="mkStats" style="margin-bottom:14px"></div>
+      <div id="mkSeqs"></div>
+      <h2 style="margin-top:22px">Leads</h2>
+      <div class="wrap-scroll"><table id="tblMkLeads"></table></div>
+      <p class="sub" style="margin-top:10px">The engine runs every 15 minutes. Buyers are removed automatically and never re-enter.
+      Edits to subject/body/delay apply from the next run. Variables: {parentName} {camperName} {camperNames} {camp} {camps} {link}</p>
+    </section>
+
+    <section class="sec" id="s-accounting">
+      <h2>Accounting</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <select id="accYear" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px"></select>
+        <select id="accProgram" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px"><option value="">All programs</option></select>
+        <select id="accBasis" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px">
+          <option value="payment">By payment date</option>
+          <option value="program">By program date</option>
+        </select>
+        <button class="tag" id="accLoad" style="cursor:pointer;border:0;padding:8px 16px">Load</button>
+        <button class="tag" id="accCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
+        <span class="sub" id="accStatus"></span>
+      </div>
+      <div id="accBody" style="display:none">
+        <h2>By program / show</h2>
+        <div class="wrap-scroll"><table id="tblAccProg"></table></div>
+        <h2 style="margin-top:22px">Upcoming cash (auto-billing)</h2>
+        <div class="wrap-scroll"><table id="tblAccCash"></table></div>
+        <div class="wrap-scroll" style="margin-top:10px"><table id="tblAccCashDetail"></table></div>
+        <h2 style="margin-top:22px">Reconciliation</h2>
+        <div class="wrap-scroll"><table id="tblAccRec"></table></div>
+        <h2 style="margin-top:22px">Transactions</h2>
+        <div class="wrap-scroll"><table id="tblAccTx"></table></div>
+        <p class="sub" style="margin-top:12px">Web platform only. Sawyer and Regpack keep their own reports; legacy outstanding balances live in the Balances tab.
+        Not applicable on this platform (always $0): customer card surcharges, registration fees, platform booking fees, tickets/merch (sold via BookTix).</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-calendar">
+      <div class="cal-head">
+        <button id="calPrev">‹</button><b id="calTitle"></b><button id="calNext">›</button>
+      </div>
+      <div class="cal" id="calGrid"></div>
+      <h2>Weekly / Ongoing</h2>
+      <div class="wrap-scroll"><table id="tblOngoing"></table></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var C = window.NOVAREG;
+  var sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  var SHOWL = { httyd:'Dragon', charlie:'Charlie', trolls:'Trolls' };
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function usd(c){ if (c==null) return '—'; return '$' + (c/100).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+  function usd2(c){ if (c==null) return '—'; return '$' + (c/100).toLocaleString('en-US',{minimumFractionDigits:2}); }
+  function dt(s){ if(!s) return '—'; var d=new Date(s); return (d.getMonth()+1)+'/'+d.getDate()+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); }
+  function stat(v, l, cls){ return '<div class="stat"><div class="v ' + (cls||'') + '">' + v + '</div><div class="l">' + l + '</div></div>'; }
+
+  // ---- auth ----
+  sb.auth.getSession().then(function(res){
+    var s = res.data && res.data.session;
+    if (!s) { $('login').style.display=''; return; }
+    sb.rpc('is_admin').then(function(r){
+      if (!r.data) { $('login').style.display=''; $('lgMsg').textContent = 'No access for ' + (s.user.email||''); sb.auth.signOut(); return; }
+      $('app').style.display='flex';
+      $('whoEmail').textContent = s.user.email;
+      boot();
+    });
+  });
+  $('lgGo').addEventListener('click', function(){
+    var em = $('lgEmail').value.trim();
+    if (!em) return;
+    sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + '/register/admin/', shouldCreateUser: true } })
+      .then(function(r){ $('lgMsg').textContent = r.error ? r.error.message : 'Link sent — check email.'; });
+  });
+  $('signOut').addEventListener('click', function(e){ e.preventDefault(); sb.auth.signOut().then(function(){ location.reload(); }); });
+
+  // ---- nav ----
+  document.querySelectorAll('#nav a').forEach(function(a){
+    a.addEventListener('click', function(){
+      document.querySelectorAll('#nav a').forEach(function(x){ x.classList.remove('on'); });
+      document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
+      a.classList.add('on'); $('s-' + a.dataset.s).classList.add('on');
+    });
+  });
+
+  var INV = null;
+  function boot(){
+    sb.rpc('admin_stats').then(function(r){ if (r.data) renderStats(r.data); });
+    sb.rpc('admin_orders').then(function(r){ renderOrders(r.data || []); });
+    sb.rpc('admin_balances').then(function(r){ renderBalances(r.data || []); });
+    sb.rpc('admin_inventory').then(function(r){ if (r.data) { INV = r.data; renderInventory(r.data); buildCal(); } });
+    sb.rpc('admin_campers').then(function(r){ CAMPERS = r.data || []; renderCampers(); });
+  }
+
+  var CAMPERS = [];
+  function missingOf(c){
+    var p = c.profile || {};
+    var m = [];
+    if (!c.bday) m.push('birthday');
+    if (!p.tshirt) m.push('t-shirt');
+    if (!p.epipen) m.push('epipen');
+    if (!p.env_allergies) m.push('env allergies');
+    if (!p.med_allergies) m.push('med allergies');
+    if (!p.medications_yn && !p.medications) m.push('medications');
+    if (!p.insurance_yn && !p.insurance) m.push('insurance');
+    if (!p.doctor) m.push('doctor');
+    if (!p.emergency_name && !p.emergency_phone && !c.emergency) m.push('emergency');
+    return m;
+  }
+  function renderCampers(){
+    var q = ($('campQ').value || '').toLowerCase();
+    var onlyMissing = $('campMissing').checked;
+    var complete = 0, missing = 0;
+    CAMPERS.forEach(function(c){ (missingOf(c).length ? missing++ : complete++); });
+    $('stCampers').innerHTML =
+      stat(CAMPERS.length, 'campers') +
+      stat(complete, 'info complete', 'ok') +
+      stat(missing, 'missing info', missing ? 'bad' : 'ok');
+    var rows = CAMPERS.filter(function(c){
+      if (q && (c.name + ' ' + (c.emails || [c.email]).join(' ')).toLowerCase().indexOf(q) === -1) return false;
+      if (onlyMissing && !missingOf(c).length) return false;
+      return true;
+    });
+    if (!rows.length) { $('tblCampers').innerHTML = '<tr><td class="empty">no matches</td></tr>'; return; }
+    $('tblCampers').innerHTML =
+      '<tr><th>camper</th><th>family</th><th>birthday</th><th>missing</th><th>src</th></tr>' +
+      rows.slice(0, 400).map(function(c, i){
+        var m = missingOf(c);
+        var p = c.profile || {};
+        var det = [
+          ['T-shirt', p.tshirt], ['Pronouns', p.pronouns], ['EpiPen', p.epipen],
+          ['Env allergies', p.env_allergies], ['Med allergies', p.med_allergies],
+          ['Medications', p.medications || p.medications_yn],
+          ['Insurance', p.insurance || p.insurance_yn], ['Doctor', p.doctor],
+          ['Emergency', (p.emergency_name || '') + ' ' + (p.emergency_phone || '') || c.emergency],
+          ['Legacy allergies', c.allergies], ['Registered', (c.registered || []).join(', ')]
+        ].filter(function(x){ return x[1] && String(x[1]).trim(); })
+         .map(function(x){ return '<b>' + esc(x[0]) + ':</b> ' + esc(String(x[1]).trim()); }).join(' \u00b7 ');
+        var emails = c.emails || [c.email];
+        var srcs = c.sources || [c.source || 'web'];
+        return '<tr class="camp-row" data-i="' + i + '" style="cursor:pointer">' +
+          '<td>' + esc(c.name) + '</td>' +
+          '<td>' + emails.map(esc).join('<br>') + '</td>' +
+          '<td>' + (c.bday || '\u2014') + '</td>' +
+          '<td>' + (m.length ? '<span class="tag bad">' + m.length + ': ' + esc(m.join(', ')) + '</span>' : '<span class="tag ok">complete</span>') + '</td>' +
+          '<td>' + srcs.map(function(s){ return '<span class="tag">' + esc(s) + '</span>'; }).join(' ') + '</td></tr>' +
+          '<tr class="camp-det" style="display:none"><td colspan="5" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' + (det || 'no details on file') + '</td></tr>';
+      }).join('') + (rows.length > 400 ? '<tr><td class="empty">+' + (rows.length - 400) + ' more \u2014 refine search</td></tr>' : '');
+    $('tblCampers').querySelectorAll('.camp-row').forEach(function(tr){
+      tr.addEventListener('click', function(){
+        var det = tr.nextElementSibling;
+        if (det) det.style.display = det.style.display === 'none' ? '' : 'none';
+      });
+    });
+  }
+  (function(){
+    var t=null;
+    $('campQ').addEventListener('input', function(){ clearTimeout(t); t=setTimeout(renderCampers, 150); });
+
+  // ---------- accounting ----------
+  var ACC = null;
+  (function(){
+    var y = new Date().getFullYear();
+    for (var i = y; i >= 2026; i--) $('accYear').insertAdjacentHTML('beforeend', '<option>' + i + '</option>');
+  })();
+  function accProgOf(it, actsById){
+    if (it.show) return ({httyd:'HTTYD Jr (Summer)',charlie:'Charlie Jr (Summer)',trolls:'Trolls Jr (Summer)'})[it.show] || it.show;
+    var a = actsById[it.activity_id] || {};
+    return a.name || ('activity ' + it.activity_id);
+  }
+  function accProgDate(it, actsById){
+    if (it.show) return ({httyd:'2027-07-05',charlie:'2027-07-19',trolls:'2027-08-02'})[it.show];
+    var a = actsById[it.activity_id] || {};
+    if (/frozen/i.test(a.name||'')) return '2026-09-15';
+    if (/mermaid/i.test(a.name||'')) return '2027-02-03';
+    return '2026-09-14'; // classes/day camps: season start
+  }
+  function money0(c){ return usd2(c); }
+  $('accLoad').addEventListener('click', function(){
+    $('accStatus').textContent = 'loading\u2026';
+    sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-finance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ year: +$('accYear').value })
+      });
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.error) { $('accStatus').textContent = 'error: ' + d.error; return; }
+      ACC = d;
+      $('accStatus').textContent = d.transactions.length + ' payments, ' + d.orders.length + ' orders';
+      var progs = {};
+      d.orders.forEach(function(o){ (d.items_by_order[o.id]||[]).forEach(function(it){
+        progs[accProgOf(it, accActsById())] = 1; }); });
+      $('accProgram').innerHTML = '<option value="">All programs</option>' +
+        Object.keys(progs).sort().map(function(p){ return '<option>' + esc(p) + '</option>'; }).join('');
+      $('accBody').style.display = ''; $('accCsv').style.display = '';
+      renderAccounting();
+    }).catch(function(e){ $('accStatus').textContent = 'network error'; });
+  });
+  $('accProgram').addEventListener('change', function(){ if (ACC) renderAccounting(); });
+  $('accBasis').addEventListener('change', function(){ if (ACC) renderAccounting(); });
+  function accActsById(){
+    var m = {}; (ACC.activities||[]).forEach(function(a){ m[a.id] = a; }); return m;
+  }
+  function renderAccounting(){
+    var d = ACC, byId = accActsById(), year = d.year;
+    var progFilter = $('accProgram').value;
+    var basis = $('accBasis').value;
+    var txByPi = {}; d.transactions.forEach(function(t){ txByPi[t.pi] = t; });
+
+    // per-order rollup rows -> aggregate per program
+    var agg = {};
+    function row(p){ return agg[p] = agg[p] || { gross:0, ins:0, disc:0, comps:0, planFee:0, invoiced:0, collected:0, fees:0, refunds:0, outstanding:0, future:0, n:0 }; }
+    d.orders.forEach(function(o){
+      var its = d.items_by_order[o.id] || [];
+      if (!its.length) return;
+      var oProgs = {}; its.forEach(function(it){ oProgs[accProgOf(it, byId)] = 1; });
+      var progList = Object.keys(oProgs);
+      if (progFilter && progList.indexOf(progFilter) === -1) return;
+      var oYear = basis === 'program'
+        ? Math.max.apply(null, its.map(function(it){ return +accProgDate(it, byId).slice(0,4); }))
+        : +String(o.created_at).slice(0,4);
+      if (oYear !== year) return;
+      var t = txByPi[o.stripe_payment_intent] || {};
+      var m = t.metadata || {};
+      var free = String(o.stripe_payment_intent||'').indexOf('free_') === 0;
+      var share = 1 / progList.length; // order-level amounts split evenly across its programs
+      progList.forEach(function(p){
+        var g = row(p);
+        g.n += 1;
+        var listGross = its.filter(function(it){ return accProgOf(it, byId) === p; })
+          .reduce(function(s, it){ return s + (it.unit_cents || it.price_cents || (byId[it.activity_id]||{}).price_cents || (it.show ? 99500 : 0)); }, 0);
+        g.gross += listGross;
+        g.ins += Math.round((+m.insurance_cents || 0) * share);
+        g.disc += Math.round((+m.coupon_cents || 0) * share);
+        g.planFee += Math.round((+m.plan_fee_cents || 0) * share);
+        if (free) g.comps += Math.round(listGross);
+        g.invoiced += Math.round((o.total_cents || 0) * share);
+        var collected = t.amount_received != null ? t.amount_received : (o.amount_today_cents || 0);
+        g.collected += Math.round(collected * share);
+        g.fees += Math.round((t.fee || 0) * share);
+        g.refunds += Math.round((t.refunded || 0) * share);
+        var out = Math.max(0, (o.total_cents || 0) - collected);
+        g.outstanding += Math.round(out * share);
+        if (o.stripe_schedule) g.future += Math.round(out * share);
+      });
+    });
+    var lines = [
+      ['Orders', 'n', 0], ['Gross tuition (list)', 'gross', 1], ['Tuition insurance', 'ins', 1],
+      ['Revenue excl. insurance', null, 1], ['Discounts (coupons)', 'disc', 1], ['Complimentary (100% off)', 'comps', 1],
+      ['Payment-plan fees (5%)', 'planFee', 1], ['Refunds', 'refunds', 1],
+      ['Stripe processing fees (ours)', 'fees', 1], ['Total invoiced', 'invoiced', 1], ['Total collected', 'collected', 1],
+      ['Outstanding balances', 'outstanding', 1], ['Future scheduled', 'future', 1],
+      ['Net revenue', null, 1], ['Net cash received', null, 1],
+    ];
+    var progs = Object.keys(agg).sort();
+    $('tblAccProg').innerHTML =
+      '<tr><th>line</th>' + progs.map(function(p){ return '<th class="num">' + esc(p) + '</th>'; }).join('') + '<th class="num">TOTAL</th></tr>' +
+      lines.map(function(L){
+        var name = L[0], key = L[1], isMoney = L[2];
+        function val(g){
+          if (key) return g[key];
+          if (name === 'Revenue excl. insurance') return g.invoiced - g.ins;
+          if (name === 'Net revenue') return g.invoiced - g.refunds;
+          if (name === 'Net cash received') return g.collected - g.fees - g.refunds;
+          return 0;
+        }
+        var tot = progs.reduce(function(s,p){ return s + val(agg[p]); }, 0);
+        return '<tr><td>' + name + '</td>' + progs.map(function(p){
+          var v = val(agg[p]);
+          return '<td class="num">' + (isMoney ? money0(v) : v) + '</td>';
+        }).join('') + '<td class="num"><b>' + (isMoney ? money0(tot) : tot) + '</b></td></tr>';
+      }).join('');
+
+    // upcoming cash forecast (all future scheduled pulls, unfiltered)
+    var up = d.upcoming || [];
+    var byMonth = {};
+    up.forEach(function(u){
+      var m = u.date.slice(0,7);
+      var g = byMonth[m] = byMonth[m] || { total:0, n:0, inst:0, cls:0 };
+      g.total += u.amount; g.n += 1;
+      if (u.kind === 'installment') g.inst += u.amount; else g.cls += u.amount;
+    });
+    var months = Object.keys(byMonth).sort();
+    var upTot = up.reduce(function(s,u){ return s + u.amount; }, 0);
+    $('tblAccCash').innerHTML = months.length
+      ? '<tr><th>month</th><th class="num">payments</th><th class="num">camp installments</th><th class="num">class tuition</th><th class="num">expected cash</th></tr>' +
+        months.map(function(m){
+          var g = byMonth[m];
+          return '<tr><td>' + m + '</td><td class="num">' + g.n + '</td><td class="num">' + money0(g.inst) + '</td><td class="num">' + money0(g.cls) + '</td><td class="num"><b>' + money0(g.total) + '</b></td></tr>';
+        }).join('') +
+        '<tr><td><b>TOTAL scheduled</b></td><td class="num">' + up.length + '</td><td></td><td></td><td class="num"><b>' + money0(upTot) + '</b></td></tr>'
+      : '<tr><td class="empty">no scheduled future payments</td></tr>';
+    $('tblAccCashDetail').innerHTML = up.length
+      ? '<tr><th>date</th><th>family</th><th>type</th><th class="num">amount</th></tr>' +
+        up.slice(0, 60).map(function(u){
+          return '<tr><td>' + u.date + '</td><td>' + esc(u.email || u.ref) + '</td><td><span class="tag">' + u.kind + '</span></td><td class="num">' + money0(u.amount) + '</td></tr>';
+        }).join('') + (up.length > 60 ? '<tr><td class="sub" colspan="4">+ ' + (up.length-60) + ' more (in the CSV)</td></tr>' : '')
+      : '';
+
+    // reconciliation (whole year, payment basis, unfiltered)
+    var sales = d.orders.filter(function(o){ return +String(o.created_at).slice(0,4) === year; })
+      .reduce(function(s,o){ return s + (o.total_cents||0); }, 0);
+    var collected = d.transactions.reduce(function(s,t){ return s + (t.amount_received||0); }, 0);
+    var fees = d.transactions.reduce(function(s,t){ return s + (t.fee||0); }, 0);
+    var refunded = d.refunds.reduce(function(s,r){ return s + r.amount; }, 0);
+    var disputed = d.disputes.reduce(function(s,x){ return s + x.amount; }, 0);
+    var deposited = d.payouts.filter(function(p){ return p.status === 'paid'; }).reduce(function(s,p){ return s + p.amount; }, 0);
+    var pendingPo = d.payouts.filter(function(p){ return p.status !== 'paid'; }).reduce(function(s,p){ return s + p.amount; }, 0);
+    var diff = collected - fees - refunded - disputed - deposited - pendingPo;
+    $('tblAccRec').innerHTML = [
+      ['Total sales recorded (orders)', sales], ['Total payments collected (Stripe)', collected],
+      ['Refunds', -refunded], ['Chargebacks', -disputed], ['Processing fees', -fees],
+      ['Deposited to bank (paid payouts)', deposited], ['Payouts in transit', pendingPo],
+      ['Unreconciled difference (collected - fees - refunds - chargebacks - deposits)', diff],
+    ].map(function(r){ return '<tr><td>' + r[0] + '</td><td class="num">' + money0(r[1]) + '</td></tr>'; }).join('');
+
+    // transaction detail
+    var ordByPi = {}; d.orders.forEach(function(o){ ordByPi[o.stripe_payment_intent] = o; });
+    $('tblAccTx').innerHTML =
+      '<tr><th>payment date</th><th>payer</th><th>students</th><th>program(s)</th><th>session</th><th>order</th><th>transaction</th><th class="num">amount</th><th class="num">fee</th><th class="num">refunded</th><th>method</th><th>payout date</th></tr>' +
+      d.transactions.filter(function(t){ return t.status === 'succeeded'; }).map(function(t){
+        var o = ordByPi[t.pi];
+        var its = o ? (d.items_by_order[o.id]||[]) : [];
+        var pset = {}; var sset = {}; var kset = {};
+        its.forEach(function(it){ pset[accProgOf(it, byId)]=1; sset[accProgDate(it, byId)]=1; if (it.camper_name) kset[it.camper_name]=1; });
+        return '<tr><td>' + new Date(t.created*1000).toISOString().slice(0,10) + '</td>' +
+          '<td>' + esc(o ? (o.parent_name || o.email) : (t.metadata.email || '')) + '</td>' +
+          '<td>' + esc(Object.keys(kset).join(', ')) + '</td>' +
+          '<td>' + esc(Object.keys(pset).join(', ') || (t.metadata.order_desc||'').slice(0,60)) + '</td>' +
+          '<td>' + Object.keys(sset).sort().join(', ') + '</td>' +
+          '<td class="sub">' + (o ? o.id.slice(0,8) : '') + '</td>' +
+          '<td class="sub">' + t.pi.slice(0,14) + '</td>' +
+          '<td class="num">' + money0(t.amount_received||0) + '</td>' +
+          '<td class="num">' + money0(t.fee||0) + '</td>' +
+          '<td class="num">' + (t.refunded ? money0(t.refunded) : '') + '</td>' +
+          '<td>' + esc(t.method||'') + '</td>' +
+          '<td>' + (t.payout_date ? new Date(t.payout_date*1000).toISOString().slice(0,10) : 'pending') + '</td></tr>';
+      }).join('');
+  }
+  // ---------- marketing ----------
+  var MK = null;
+  function loadMarketing(){
+    sb.rpc('marketing_get').then(function(r){
+      MK = r.data;
+      if (!MK) { $('mkStats').innerHTML = '<div class="empty">no data — run the SQL setup</div>'; return; }
+      renderMarketing();
+    });
+  }
+  function mkStageName(seq, stage, status){
+    if (status === 'purchased') return 'PURCHASED';
+    if (status === 'stopped') return 'stopped';
+    if (status === 'done') return 'sequence finished';
+    return stage === 0 ? 'waiting (30m window)' : 'email ' + stage + ' sent';
+  }
+  function renderMarketing(){
+    var pipe = MK.pipeline || [];
+    var total = pipe.reduce(function(s,p){ return s + p.n; }, 0);
+    var bought = pipe.filter(function(p){ return p.status === 'purchased'; }).reduce(function(s,p){ return s + p.n; }, 0);
+    var active = pipe.filter(function(p){ return p.status === 'active'; }).reduce(function(s,p){ return s + p.n; }, 0);
+    $('mkStats').innerHTML =
+      '<div class="stat"><div class="v">' + total + '</div><div class="l">total leads</div></div>' +
+      '<div class="stat"><div class="v">' + active + '</div><div class="l">in sequence</div></div>' +
+      '<div class="stat"><div class="v gold">' + bought + '</div><div class="l">converted</div></div>';
+    $('mkSeqs').innerHTML = (MK.sequences || []).map(function(s){
+      var hrs = s.delay_minutes >= 60 ? (s.delay_minutes/60) + 'h' : s.delay_minutes + 'm';
+      return '<div class="card" style="border:1px solid var(--line,rgba(255,255,255,0.12));border-radius:12px;padding:14px;margin-bottom:12px">' +
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
+        '<span class="tag gold">' + esc(s.seq) + ' · step ' + s.step + '</span>' +
+        '<label class="sub">delay <input type="number" data-mk="delay" value="' + s.delay_minutes + '" style="width:80px;padding:6px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff"> min (' + hrs + ')</label>' +
+        '<label class="sub"><input type="checkbox" data-mk="enabled" ' + (s.enabled ? 'checked' : '') + '> enabled</label>' +
+        '<button class="tag" data-mk-test="' + s.id + '" style="cursor:pointer;border:0;margin-left:auto">Send test to me</button>' +
+        '<button class="tag ok" data-mk-save="' + s.id + '" style="cursor:pointer;border:0">Save</button>' +
+        '<span class="sub" data-mk-msg></span></div>' +
+        '<input type="text" data-mk="subject" value="' + esc(s.subject).replace(/"/g,'&quot;') + '" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-weight:600;margin-bottom:8px">' +
+        '<textarea data-mk="body" rows="8" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:13.5px;line-height:1.5">' + esc(s.body) + '</textarea>' +
+        '</div>';
+    }).join('');
+    $('mkSeqs').querySelectorAll('[data-mk-test]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var card = b.closest('.card');
+        b.textContent = 'sending...'; b.disabled = true;
+        sb.auth.getSession().then(function(res){
+          var token = res.data && res.data.session && res.data.session.access_token;
+          return fetch('/api/reg-drip-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ step_id: +b.dataset.mkTest })
+          });
+        }).then(function(r){ return r.json(); }).then(function(j){
+          b.disabled = false; b.textContent = 'Send test to me';
+          card.querySelector('[data-mk-msg]').textContent = j.ok ? 'test sent to ' + j.to : ('failed: ' + (j.error || 'error'));
+          setTimeout(function(){ card.querySelector('[data-mk-msg]').textContent = ''; }, 4000);
+        }).catch(function(){ b.disabled = false; b.textContent = 'Send test to me'; });
+      });
+    });
+    $('mkSeqs').querySelectorAll('[data-mk-save]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var card = b.closest('.card');
+        var g = function(k){ return card.querySelector('[data-mk="' + k + '"]'); };
+        b.textContent = '...';
+        sb.rpc('marketing_save_step', {
+          p_id: +b.dataset.mkSave,
+          p_delay: +g('delay').value || 30,
+          p_subject: g('subject').value,
+          p_body: g('body').value,
+          p_enabled: g('enabled').checked
+        }).then(function(r){
+          b.textContent = 'Save';
+          card.querySelector('[data-mk-msg]').textContent = r.error ? 'save failed' : 'saved';
+          setTimeout(function(){ card.querySelector('[data-mk-msg]').textContent = ''; }, 2500);
+        });
+      });
+    });
+    var leads = MK.recent || [];
+    $('tblMkLeads').innerHTML = leads.length
+      ? '<tr><th>email</th><th>parent</th><th>camps</th><th>seq</th><th>state</th><th>last send</th><th></th></tr>' +
+        leads.map(function(l){
+          var c = l.ctx || {};
+          return '<tr><td>' + esc(l.email) + '</td><td>' + esc(c.parent || '') + '</td>' +
+            '<td class="sub">' + esc((c.camps || []).join(', ')) + '</td>' +
+            '<td><span class="tag">' + esc(l.seq) + '</span></td>' +
+            '<td><span class="tag ' + (l.status === 'purchased' ? 'ok' : l.status === 'active' ? 'gold' : '') + '">' + mkStageName(l.seq, l.stage, l.status) + '</span></td>' +
+            '<td class="sub">' + (l.sent ? dt(l.sent) : '—') + '</td>' +
+            '<td>' + (l.status === 'active' ? '<button class="tag bad mk-stop" data-email="' + esc(l.email) + '" style="cursor:pointer;border:0">stop</button>' : '') + '</td></tr>';
+        }).join('')
+      : '<tr><td class="empty">no leads yet — the engine enrolls sign-ins automatically</td></tr>';
+    $('tblMkLeads').querySelectorAll('.mk-stop').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (!confirm('Stop all remaining emails to ' + b.dataset.email + '?')) return;
+        sb.rpc('marketing_stop', { p_email: b.dataset.email }).then(loadMarketing);
+      });
+    });
+  }
+  loadMarketing();
+
+  $('accCsv').addEventListener('click', function(){
+    if (!ACC) return;
+    var rows = [['payment_date','payer','students','programs','session_dates','order_id','transaction_id','amount','fee','refunded','method','processor','payout_date']];
+    var byId = accActsById();
+    var ordByPi = {}; ACC.orders.forEach(function(o){ ordByPi[o.stripe_payment_intent] = o; });
+    ACC.transactions.filter(function(t){ return t.status === 'succeeded'; }).forEach(function(t){
+      var o = ordByPi[t.pi]; var its = o ? (ACC.items_by_order[o.id]||[]) : [];
+      rows.push([
+        new Date(t.created*1000).toISOString().slice(0,10),
+        o ? (o.parent_name || o.email) : (t.metadata.email||''),
+        its.map(function(it){ return it.camper_name; }).filter(Boolean).join('; '),
+        its.map(function(it){ return accProgOf(it, byId); }).join('; '),
+        its.map(function(it){ return accProgDate(it, byId); }).join('; '),
+        o ? o.id : '', t.pi,
+        ((t.amount_received||0)/100).toFixed(2), ((t.fee||0)/100).toFixed(2), ((t.refunded||0)/100).toFixed(2),
+        t.method||'', 'Stripe',
+        t.payout_date ? new Date(t.payout_date*1000).toISOString().slice(0,10) : 'pending'
+      ]);
+    });
+    var csv = rows.map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'novapa-accounting-' + ACC.year + '.csv';
+    a.click();
+  });
+    $('campMissing').addEventListener('change', renderCampers);
+    $('campCopy').addEventListener('click', function(){
+      var emails = [];
+      CAMPERS.forEach(function(c){
+        if (!missingOf(c).length) return;
+        (c.emails || [c.email]).forEach(function(e){ if (e && emails.indexOf(e) === -1) emails.push(e); });
+      });
+      navigator.clipboard.writeText(emails.join(', ')).then(function(){
+        $('campCopy').textContent = 'Copied ' + emails.length + ' emails';
+        setTimeout(function(){ $('campCopy').textContent = 'Copy chase-list emails'; }, 2500);
+      });
+    });
+  })();
+
+  function renderStats(s){
+    $('stRevenue').innerHTML =
+      stat(usd(s.web_collected_cents), 'web collected', 'ok') +
+      stat(usd(s.web_booked_value_cents), 'web booked value') +
+      stat(s.web_orders, 'web orders') +
+      stat(s.web_orders_7d, 'orders · 7d') +
+      stat(usd(s.regpack_collected_cents), 'regpack collected', 'ok') +
+      stat(usd(s.sawyer_collected_cents), 'sawyer collected', 'ok');
+    $('stOut').innerHTML =
+      stat(usd(s.regpack_outstanding_cents), 'regpack outstanding', 'bad') +
+      stat(s.regpack_outstanding_count, 'accounts owing') +
+      stat(usd(s.sawyer_outstanding_cents), 'sawyer outstanding', s.sawyer_outstanding_cents ? 'bad' : '') +
+      stat(s.sawyer_outstanding_count, 'sawyer owing') +
+      stat(usd((s.regpack_due_now_cents || 0) + (s.sawyer_due_now_cents || 0)), 'overdue now', 'bad');
+    $('stPeople').innerHTML =
+      stat(s.families, 'families') +
+      stat(s.campers, 'campers') +
+      stat(s.waitlist, 'waitlist');
+    $('stSummer').innerHTML =
+      stat(s.summer_taken + ' / ' + s.summer_cap, 'spots taken', 'gold') +
+      stat(s.active_holds, 'active holds');
+  }
+  // (regpack summer kids were folded into inventory.booked on 7/22 — no
+  // separate stat patch anymore, the base numbers already include them)
+
+  function renderOrders(rows){
+    if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
+    $('tblOrders').innerHTML =
+      '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th>sawyer</th><th></th></tr>' +
+      rows.map(function(o){
+        return '<tr><td>' + dt(o.created_at) + '</td>' +
+          '<td>' + esc(o.parent_name || '') + '<div class="sub">' + esc(o.email) + '</div></td>' +
+          '<td>' + esc(o.items || '') + '</td>' +
+          '<td><span class="tag ' + (o.plan==='subscription'?'gold':'') + '">' + o.plan + '</span></td>' +
+          '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
+          '<td class="num">' + usd2(o.total_cents) + '</td>' +
+          '<td>' + (o.sawyer_entered ? '<span class="tag ok">✓</span>' : '<span class="tag bad">no</span>') + '</td>' +
+          '<td><button class="tag bad ord-del" data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + (o.items||'').slice(0,80)) + '" style="cursor:pointer;border:0">delete</button></td></tr>';
+      }).join('');
+    $('tblOrders').querySelectorAll('.ord-del').forEach(function(b){
+      b.addEventListener('click', function(){
+        var msg = 'Delete this order?\n\n' + b.dataset.who +
+          '\n\nThis frees the spots, un-marks the campers, and removes the order record.' +
+          '\nIt does NOT refund the payment or cancel any Stripe schedule - do that in Stripe.';
+        if (!confirm(msg)) return;
+        b.disabled = true; b.textContent = '...';
+        sb.rpc('admin_delete_order', { p_order_id: b.dataset.id }).then(function(r){
+          if (r.error || (r.data && r.data.error)) {
+            alert('Delete failed: ' + ((r.data && r.data.error) || r.error.message));
+            b.disabled = false; b.textContent = 'delete';
+            return;
+          }
+          var d = r.data || {};
+          if (d.stripe_schedule || (d.stripe_pi && String(d.stripe_pi).indexOf('free_') !== 0)) {
+            alert('Removed. Reminder - in Stripe:' +
+              (d.stripe_pi && String(d.stripe_pi).indexOf('free_') !== 0 ? '\n- refund payment ' + d.stripe_pi : '') +
+              (d.stripe_schedule ? '\n- cancel subscription/schedule ' + d.stripe_schedule : ''));
+          }
+          sb.rpc('admin_orders').then(function(rr){ renderOrders(rr.data || []); });
+        });
+      });
+    });
+  }
+
+  function renderBalances(rows){
+    var owing = rows.filter(function(r){ return (r.balance_cents||0) > 0; });
+    var tot = owing.reduce(function(s,r){ return s + r.balance_cents; }, 0);
+    var dueNow = owing.reduce(function(s,r){ return s + (r.due_now_cents||0); }, 0);
+    var auto = owing.filter(function(r){ return r.has_saved_pm; }).length;
+    $('stBal').innerHTML =
+      stat(usd(tot), 'outstanding', 'bad') +
+      stat(usd(dueNow), 'due now') +
+      stat(owing.length, 'accounts') +
+      stat(auto + ' / ' + owing.length, 'card on file');
+    $('tblBal').innerHTML =
+      '<tr><th>name</th><th>email</th><th class="num">ordered</th><th class="num">paid</th><th class="num">balance</th><th class="num">due now</th><th class="num">future</th><th>autobill</th><th>src</th></tr>' +
+      owing.map(function(r){
+        return '<tr><td>' + esc(r.person_name) + '</td>' +
+          '<td class="sub">' + esc(r.parent_email || '?') + '</td>' +
+          '<td class="num">' + usd2(r.total_order_cents) + '</td>' +
+          '<td class="num">' + usd2(r.total_paid_cents) + '</td>' +
+          '<td class="num" style="color:var(--bad);font-weight:700">' + usd2(r.balance_cents) + '</td>' +
+          '<td class="num">' + usd2(r.due_now_cents) + '</td>' +
+          '<td class="num">' + usd2(r.due_future_cents) + '</td>' +
+          '<td>' + (r.has_saved_pm ? '<span class="tag ok">✓</span>' : '<span class="tag bad">—</span>') + '</td>' +
+          '<td><span class="tag">' + r.source + '</span></td></tr>';
+      }).join('');
+  }
+
+  function renderInventory(inv){
+    var sum = inv.summer || [];
+    var rp = inv.summer_regpack || {};
+    var shows = ['httyd','charlie','trolls'];
+    var bands = ['5-9','9-12','12-15','tech'];
+    var by = {}; sum.forEach(function(r){ by[r.show+'|'+r.band] = r; });
+    $('tblSummer').innerHTML =
+      '<tr><th></th>' + bands.map(function(b){ return '<th>' + b + '</th>'; }).join('') + '</tr>' +
+      shows.map(function(sh){
+        return '<tr><td><b>' + SHOWL[sh] + '</b></td>' +
+          bands.map(function(b){
+          var r = by[sh+'|'+b] || {};
+          var taken = (r.booked||0) + (r.held||0);
+          var pct = r.cap ? Math.round(taken/r.cap*100) : 0;
+          return '<td><b>' + (r.cap - taken) + '</b> <span class="sub">left / ' + r.cap + '</span>' +
+            '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div></td>';
+        }).join('') + '</tr>';
+      }).join('');
+
+    // regpack summer kids live inside inventory.booked since 7/22 (age-assigned
+    // bands) — the grid and stats count them natively now
+
+    function bar(left, cap, taken){
+      var pct = cap ? Math.round(taken/cap*100) : 0;
+      return '<b>' + left + '</b> <span class="sub">left / ' + cap + '</span>' +
+        '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div>';
+    }
+
+    var acts = (inv.activities || []);
+    function summerInvRow(a){
+      // Summer 2027 listings mirror the live inventory grid (which already
+      // includes sawyer + regpack + web) — the activity rows themselves go
+      // stale because web/regpack registrations only update `inventory`.
+      var n = (a.name || '').toLowerCase();
+      var show = /dragon/.test(n) ? 'httyd' : /charlie|chocolate/.test(n) ? 'charlie' : /trolls/.test(n) ? 'trolls' : null;
+      if (!show || !/broadway bound/.test(n) || a.category === 'class') return null;
+      var band = /tech/.test(n) ? 'tech' : null;
+      if (!band) {
+        var m = String(a.age || a.age_range || '').match(/(\d+)/);
+        band = m ? (+m[1] <= 5 ? '5-9' : +m[1] >= 12 ? '12-15' : '9-12') : null;
+      }
+      return band ? by[show + '|' + band] : null;
+    }
+    $('tblActs').innerHTML =
+      '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th style="min-width:130px">spots</th><th class="num">enrolled</th><th></th></tr>' +
+      acts.map(function(a){
+        var cap, taken, left, parts = [];
+        var invRow = summerInvRow(a);
+        if (invRow) {
+          cap = invRow.cap;
+          taken = (invRow.booked || 0) + (invRow.held || 0);
+          left = Math.max(0, cap - taken);
+          parts.push('live grid');
+        } else {
+          // non-summer: left = cap − sawyer − regpack − web
+          cap = a.capacity;
+          var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
+          var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
+          taken = sawyer + (a.regpack||0) + (a.sold||0);
+          left = (cap != null) ? Math.max(0, cap - taken) : null;
+          if (sawyer) parts.push(sawyer + ' sawyer');
+          if (a.regpack) parts.push(a.regpack + ' regpack');
+          if (a.sold) parts.push(a.sold + ' web');
+        }
+        return '<tr><td>' + esc(a.name) + '</td>' +
+          '<td class="sub">' + esc(a.schedule || '') + '</td>' +
+          '<td class="sub">' + esc(a.age || '') + '</td>' +
+          '<td class="num">' + usd(a.price_cents) + (a.category==='class'?'<span class="sub">/mo</span>':'') + '</td>' +
+          '<td>' + (cap != null ? bar(left, cap, taken) : '<span class="sub">—</span>') + '</td>' +
+          '<td class="num">' + (taken || '0') + (parts.length ? '<div class="sub">' + parts.join(' · ') + '</div>' : '') + '</td>' +
+          '<td>' + (a.bb_gated ? '<span class="tag gold">returning-only til Aug 1</span>' : '') + '</td></tr>';
+      }).join('');
+  }
+
+  // ---- calendar ----
+  var calY, calM;
+  function parseEvents(){
+    var evs = [];
+    (INV && INV.activities || []).forEach(function(a){
+      var m = (a.schedule || '').match(/^(\d{1,2})\/(\d{1,2})\s*-\s*(\d{1,2})\/(\d{1,2})$/);
+      if (!m) return;
+      var year = (a.raw_in_progress === 'true') ? 2026 : (a.bb_gated ? 2027 : (parseInt(m[1],10) >= 9 ? 2026 : 2027));
+      evs.push({ name: a.name, y: year,
+        start: new Date(year, parseInt(m[1],10)-1, parseInt(m[2],10)),
+        end: new Date(year, parseInt(m[3],10)-1, parseInt(m[4],10)) });
+    });
+    return evs;
+  }
+  function buildCal(){
+    var now = new Date();
+    if (calY === undefined) { calY = now.getFullYear(); calM = now.getMonth(); }
+    var evs = parseEvents();
+    var first = new Date(calY, calM, 1);
+    var days = new Date(calY, calM+1, 0).getDate();
+    $('calTitle').textContent = first.toLocaleString('en-US',{month:'long',year:'numeric'});
+    var html = ['S','M','T','W','T','F','S'].map(function(d){ return '<div class="dow">'+d+'</div>'; }).join('');
+    for (var i = 0; i < first.getDay(); i++) html += '<div class="day blank"></div>';
+    for (var d = 1; d <= days; d++) {
+      var cur = new Date(calY, calM, d);
+      var todays = evs.filter(function(e){ return cur >= e.start && cur <= e.end; });
+      var isToday = cur.toDateString() === now.toDateString();
+      html += '<div class="day' + (isToday?' today':'') + '"><div class="d">' + d + '</div>' +
+        todays.slice(0,3).map(function(e){
+          return '<span class="ev' + (e.y===2026?' c2026':'') + '" title="' + esc(e.name) + '">' + esc(e.name.replace(/Broadway Bound\s*\|?\s*/i,'')) + '</span>';
+        }).join('') + (todays.length>3 ? '<span class="sub">+' + (todays.length-3) + '</span>' : '') + '</div>';
+    }
+    $('calGrid').innerHTML = html;
+
+    var ongoing = (INV.activities || []).filter(function(a){ return !/^\d{1,2}\//.test(a.schedule || ''); });
+    $('tblOngoing').innerHTML =
+      '<tr><th>program</th><th>schedule</th><th>ages</th></tr>' +
+      ongoing.map(function(a){
+        return '<tr><td>' + esc(a.name) + '</td><td class="sub">' + esc(a.schedule || '—') + '</td><td class="sub">' + esc(a.age || '') + '</td></tr>';
+      }).join('');
+  }
+  $('calPrev').addEventListener('click', function(){ calM--; if (calM<0){calM=11;calY--;} buildCal(); });
+  $('calNext').addEventListener('click', function(){ calM++; if (calM>11){calM=0;calY++;} buildCal(); });
+})();
+</script>
+</body>
+</html>

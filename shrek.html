@@ -3488,63 +3488,12 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 </style>
 <script src="/posthog.js" defer></script>
 <link rel="stylesheet" href="reg-banner.css">
+<meta name="theme-color" content="#08111F">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<style>html{background:#08111F}</style>
 </head>
  <body class="has-u-nav">
-  <!-- ══ REGISTRATION OPEN BANNER ══ -->
-  <div class="nvreg-banner" id="nvregBanner" style="margin-top:0">
-    <a class="nvreg-link" href="https://www.hisawyer.com/nova-performing-arts/schedules?location_id%5B%5D=202081&amp;schedule_id=camps&amp;widget_tags=summer+camp" target="_blank" rel="noopener" aria-label="Registration is now open — register today">
-      <span class="nvreg-pill">Now Open · 2026–27</span>
-      <span class="nvreg-title">Registration Is <em>Now Open!</em></span>
-      <span class="nvreg-sep"></span>
-      <span class="nvreg-meta">Classes · Camps · Productions</span>
-      <span class="nvreg-cta">Register Now <span class="nvreg-arr">&#8594;</span></span>
-    </a>
-    <button class="nvreg-close" id="nvregClose" type="button" aria-label="Dismiss announcement">&times;</button>
-  </div>
-  <style>
-   .nvreg-banner { position: relative; z-index: 8600; overflow: hidden;
-     background: linear-gradient(90deg, #08111F 0%, #0F1E36 45%, #166534 100%);
-     border-bottom: 1px solid rgba(232,184,75,0.35); box-shadow: 0 4px 18px rgba(0,0,0,0.35); }
-   .nvreg-banner::before { content:''; position:absolute; inset:0; pointer-events:none;
-     background: repeating-linear-gradient(45deg, transparent, transparent 18px, rgba(232,184,75,0.05) 18px, rgba(232,184,75,0.05) 19px); }
-   .nvreg-link { display:flex; align-items:center; justify-content:center; gap:22px;
-     padding:11px 56px 11px 24px; text-decoration:none; color:#fff;
-     font-family:'DM Sans', sans-serif; position:relative; transition:background .25s ease; }
-   .nvreg-link:hover { background: rgba(22,101,52,0.28); }
-   .nvreg-pill { display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
-     background: rgba(232,184,75,0.18); border:1px solid rgba(232,184,75,0.55); color:#F7D98F;
-     padding:4px 12px; border-radius:100px; font-family:'Cinzel', serif; font-size:9.5px;
-     font-weight:700; letter-spacing:0.22em; text-transform:uppercase; }
-   .nvreg-pill::before { content:''; width:6px; height:6px; border-radius:50%; background:#E8B84B;
-     box-shadow:0 0 8px #E8B84B; animation: nvreg-pulse 1.8s ease-in-out infinite; }
-   @keyframes nvreg-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
-   .nvreg-title { font-family:'Cormorant Garamond', serif; font-size:17px; font-weight:600; letter-spacing:0.01em; color:#fff; }
-   .nvreg-title em { color:#F7D98F; font-style:italic; font-weight:700; }
-   .nvreg-sep { width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,0.35); flex-shrink:0; }
-   .nvreg-meta { font-size:11px; font-weight:500; color:rgba(255,255,255,0.78); letter-spacing:0.06em; text-transform:uppercase; }
-   .nvreg-cta { display:inline-flex; align-items:center; gap:7px; flex-shrink:0; font-size:11px; font-weight:700; color:#F7D98F; letter-spacing:0.12em; text-transform:uppercase; }
-   .nvreg-arr { transition: transform .25s ease; font-size:14px; }
-   .nvreg-link:hover .nvreg-arr { transform: translateX(4px); }
-   .nvreg-close { position:absolute; right:14px; top:50%; transform:translateY(-50%);
-     width:26px; height:26px; border-radius:50%; border:1px solid rgba(255,255,255,0.18);
-     background:rgba(0,0,0,0.25); color:rgba(255,255,255,0.7); font-size:14px; line-height:1;
-     cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; z-index:2;
-     transition: background .2s,color .2s,border-color .2s; }
-   .nvreg-close:hover { background:rgba(255,255,255,0.08); color:#fff; border-color:rgba(232,184,75,0.5); }
-   @media (max-width:900px){ .nvreg-link{ gap:12px; padding:9px 48px 9px 16px; flex-wrap:wrap; }
-     .nvreg-title{ font-size:14px; } .nvreg-meta{ font-size:10px; } .nvreg-cta{ font-size:10px; } .nvreg-sep{ display:none; } }
-   @media (max-width:520px){ .nvreg-pill{ font-size:8.5px; padding:3px 9px; letter-spacing:0.18em; }
-     .nvreg-title{ font-size:13px; } .nvreg-cta{ display:none; } }
-  </style>
-  <script>
-  (function(){
-    var b=document.getElementById('nvregBanner'), c=document.getElementById('nvregClose');
-    if(!b||!c) return;
-    try{ if(sessionStorage.getItem('nvregDismissed')==='1'){ b.style.display='none'; return; } }catch(e){}
-    c.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation();
-      b.style.display='none'; try{ sessionStorage.setItem('nvregDismissed','1'); }catch(e){} });
-  })();
-  </script>
 
   <nav class="u-nav">
   <a class="u-nav-logo" href="index.html">
@@ -3555,7 +3504,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <a href="index.html">Home</a>
     <a href="classes.html">Classes</a>
     <a href="broadway-bound.html">Broadway Bound</a>
-    <a href="teen-conservatory.html">Teen Conservatory</a>
     <a href="summer-2027.html">Summer Camps</a>
     <a href="camp-info.html">2026 Camp Info</a>
     <a href="coaching.html">Coaching</a>
@@ -3568,7 +3516,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   </button>
 </nav>
   <!-- reg-banner-sitewide -->
-  <a href="summer-2027.html" class="audition-banner" aria-label="Register now for Broadway Bound &mdash; limited registration available">
+  <a href="summer-2027.html" class="audition-banner" aria-label="Private registration for Summer 2027 now open &mdash; register now">
    <div class="audition-banner-inner">
     <div class="audition-banner-icon" aria-hidden="true">
      <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3577,9 +3525,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      </svg>
     </div>
     <div class="audition-banner-text">
-     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Limited Registration Available</div>
-     <div class="audition-banner-title">Register Now for <span>Broadway Bound</span> Summer Camp &rsquo;27</div>
-     <div class="audition-banner-sub">Three musicals &middot; Ages 5&ndash;15 &middot; Save up to 20% through August 15</div>
+     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Private Registration Now Open</div>
+     <div class="audition-banner-title">Summer 2027 <span>Broadway Bound</span> Camps</div>
+     <div class="audition-banner-sub">Get up to 20% off.</div>
     </div>
     <div class="audition-banner-cta">
      <span>Register Now</span>
@@ -3870,7 +3818,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <a href="camp-info.html">Camp Parent Info</a>
       <a href="coaching.html">College Audition Coaching</a>
       <a href="https://novapa.booktix.com" rel="noopener" target="_blank">Box Office &amp; Tickets</a>
-      <a href="novapa_registration.html">Registration Is Now Open</a>
+      <a href="/register/">Registration Is Now Open</a>
     </div>
     <div class="footer-col">
       <div class="footer-col-head">Explore</div>
@@ -3887,7 +3835,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <a href="tel:5715712120">Call (571) 571-2120</a>
       <a href="index.html#contact">Contact Form</a>
       <a href="https://calendly.com/novapa/free-consultation-15-minutes" rel="noopener" target="_blank">Free Consultation</a>
-      <a href="novapa_registration.html">Registration Is Now Open</a>
+      <a href="/register/">Registration Is Now Open</a>
     </div>
   </div>
   <div class="footer-divider"></div>
@@ -4421,7 +4369,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     // === Registration ===
     registration: {
       keywords: ['register', 'registration', 'sign up', 'signup', 'enroll', 'enrol', 'when can i sign', 'how do i sign', 'how to register', 'when does registration', 'when open', 'opens', 'family fee'],
-      response: `<strong>Registration for the 2026–27 Season is now open!</strong><br><br>Here's what you need to know:<br>• <strong>Annual family registration:</strong> $25 (covers all children in your household)<br>• <strong>Sibling discount:</strong> 5% off per additional child<br>• <strong>Classes begin:</strong> September 14, 2026<br>• <strong>Season runs:</strong> September 14, 2026 – June 11, 2027<br><br>The date was adjusted to accommodate our new subscription-based, more affordable programming.<br><br>👉 <a href="https://www.northernvirginiaperformingarts.org/novapa_registration">Register here when it opens →</a><br><br>Anything specific you'd like to know about programs before registering?`
+      response: `<strong>Registration for the 2026–27 Season is now open!</strong><br><br>Here's what you need to know:<br>• <strong>Annual family registration:</strong> $25 (covers all children in your household)<br>• <strong>Sibling discount:</strong> 5% off per additional child<br>• <strong>Classes begin:</strong> September 14, 2026<br>• <strong>Season runs:</strong> September 14, 2026 – June 11, 2027<br><br>The date was adjusted to accommodate our new subscription-based, more affordable programming.<br><br>👉 <a href="/register/">Register here when it opens →</a><br><br>Anything specific you'd like to know about programs before registering?`
     },
 
     // === Summer Camps ===
@@ -4433,7 +4381,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     // === Teen Conservatory ===
     teenConservatory: {
       keywords: ['teen conservatory', 'conservatory', 'teen', 'audition', 'auditions', 'teen audition', 'tryout', 'try out', 'audition based', 'dual enrollment', 'de program'],
-      response: `<strong>Teen Conservatory Auditions 🌟</strong><br><br>For ages 13–18, our audition-based Teen Conservatory offers intensive, professional-track training in acting, dance, voice, and musical theatre. Includes our <strong>dual-enrollment (DE) program</strong> and conservatory productions.<br><br><strong>This season's Teen Conservatory shows:</strong><br>• Dear Evan Hansen (HS Version) — August 2026<br>• Sweeney Todd (School Edition) — October 2026<br><br>Three shows. One unforgettable season.<br><br>👉 <a href="https://www.northernvirginiaperformingarts.org/teen_conservatory_auditions">Reserve your audition slot →</a><br><br>Would you like to know about audition requirements or what to prepare?`
+      response: `<strong>Broadway Bound Teen 🌟</strong><br><br>Our audition-based teen track (formerly Teen Conservatory) is the next step for Broadway Bound graduates, ages 13\u201318. This season's casts are already set \u2014 cast members register through their HiSawyer account.<br><br>Teens who want to perform this season: check out <strong>Frozen Teens</strong> and <strong>The Little Mermaid Teens</strong>!<br><br>👉 <a href="/register/">Register for teen shows \u2192</a>`
     },
 
     // === College Audition Coaching ===
@@ -4645,17 +4593,16 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     }
   }
 
-  // ─── Generate a reply (API first if enabled, then local KB) ─────────
+  // ─── Generate a reply (Claude first, local KB as fallback) ──────────
   async function generateReply(text) {
-    // If USE_LOCAL_KB is false, the API is required.
-    if (!USE_LOCAL_KB) {
-      const apiReply = await tryApi(text);
-      return apiReply || "I'm having trouble connecting right now. Please email <a href='mailto:info@novapa.org'>info@novapa.org</a> or call <a href='tel:5715712120'>(571) 571-2120</a>.";
+    const apiReply = await tryApi(text);
+    if (apiReply) return apiReply;
+    if (USE_LOCAL_KB) {
+      const match = matchIntent(text);
+      if (match) return match.response;
+      return fallbackResponse(text);
     }
-    // Otherwise, use the local NVPA knowledge base for instant, reliable answers.
-    const match = matchIntent(text);
-    if (match) return match.response;
-    return fallbackResponse(text);
+    return "I'm having trouble connecting right now. Please email <a href='mailto:info@novapa.org'>info@novapa.org</a> or call <a href='tel:5715712120'>(571) 571-2120</a>.";
   }
 
   // ─── Send a message ──────────────────────────────────────────────────

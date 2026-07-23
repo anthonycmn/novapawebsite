@@ -22,6 +22,7 @@
     if (localStorage.getItem('novapa_internal') === '1') return;
   } catch (e) { /* localStorage blocked — fall through, still track */ }
   if (/^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname)) return;
+  if (/\.netlify\.app$/.test(location.hostname)) return; // staging/branch deploys never track
 
   function cookieYesAnalyticsConsent() {
     var m = document.cookie.match(/(?:^|;\s*)cookieyes-consent=([^;]*)/);
@@ -75,7 +76,8 @@
           cta_href: href,
           page_path: page
         });
-      } else if (href.indexOf('novapa_registration') !== -1 || href === '#register') {
+      } else if (href.indexOf('novapa_registration') !== -1 || href === '#register' ||
+                 href.indexOf('/register/') === 0 || href.indexOf('register/catalog') !== -1) {
         capture('registration_cta_clicked', {
           cta_text: (a.textContent || '').trim().slice(0, 80),
           cta_href: href,
