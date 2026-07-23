@@ -828,7 +828,7 @@
     if (age >= 9 && age <= 15) b.push('tech');
     return b;
   }
-  function bandLabel(b){ return b === 'tech' ? 'Tech (10\u201315)' : ({'5-9':'Ages 5\u20138','9-12':'Ages 9\u201312','12-15':'Ages 13\u201315'})[b] || ('Ages ' + b); }
+  function bandLabel(b){ return b === 'tech' ? 'Tech (10\u201315)' : ({'5-9':'Ages 5\u20139','9-12':'Ages 9\u201312','12-15':'Ages 12\u201315'})[b] || ('Ages ' + b); }
   function syncShows(){
     state.shows = Object.keys(SHOW_NAMES).filter(function(show){
       return state.kids.some(function(k, i){ var a = state.assign[show + '|' + i]; return k.sel && a && a.on; });
