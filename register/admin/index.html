@@ -750,22 +750,22 @@
     }
 
     var acts = (inv.activities || []);
+    function summerInvRow(a){
+      // Summer 2027 listings mirror the live inventory grid (which already
+      // includes sawyer + regpack + web) — the activity rows themselves go
+      // stale because web/regpack registrations only update `inventory`.
+      var n = (a.name || '').toLowerCase();
+      var show = /dragon/.test(n) ? 'httyd' : /charlie|chocolate/.test(n) ? 'charlie' : /trolls/.test(n) ? 'trolls' : null;
+      if (!show || !/broadway bound/.test(n) || a.category === 'class') return null;
+      var band = /tech/.test(n) ? 'tech' : null;
+      if (!band) {
+        var m = String(a.age || a.age_range || '').match(/(\d+)/);
+        band = m ? (+m[1] <= 5 ? '5-9' : +m[1] >= 12 ? '12-15' : '9-12') : null;
+      }
+      return band ? by[show + '|' + band] : null;
+    }
     $('tblActs').innerHTML =
       '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th style="min-width:130px">spots</th><th class="num">enrolled</th><th></th></tr>' +
-      function summerInvRow(a){
-        // Summer 2027 listings mirror the live inventory grid (which already
-        // includes sawyer + regpack + web) — the activity rows themselves go
-        // stale because web/regpack registrations only update `inventory`.
-        var n = (a.name || '').toLowerCase();
-        var show = /dragon/.test(n) ? 'httyd' : /charlie|chocolate/.test(n) ? 'charlie' : /trolls/.test(n) ? 'trolls' : null;
-        if (!show || !/broadway bound/.test(n) || a.category === 'class') return null;
-        var band = /tech/.test(n) ? 'tech' : null;
-        if (!band) {
-          var m = String(a.age || a.age_range || '').match(/(\d+)/);
-          band = m ? (+m[1] <= 5 ? '5-9' : +m[1] >= 12 ? '12-15' : '9-12') : null;
-        }
-        return band ? by[show + '|' + band] : null;
-      }
       acts.map(function(a){
         var cap, taken, left, parts = [];
         var invRow = summerInvRow(a);
