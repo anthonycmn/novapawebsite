@@ -730,9 +730,7 @@
     $('tblSummer').innerHTML =
       '<tr><th></th>' + bands.map(function(b){ return '<th>' + b + '</th>'; }).join('') + '</tr>' +
       shows.map(function(sh){
-        var rpN = rp[sh] || 0;
-        return '<tr><td><b>' + SHOWL[sh] + '</b>' +
-          (rpN ? '<div class="sub">incl. ' + rpN + ' regpack</div>' : '') + '</td>' +
+        return '<tr><td><b>' + SHOWL[sh] + '</b></td>' +
           bands.map(function(b){
           var r = by[sh+'|'+b] || {};
           var taken = (r.booked||0) + (r.held||0);
@@ -754,18 +752,39 @@
     var acts = (inv.activities || []);
     $('tblActs').innerHTML =
       '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th style="min-width:130px">spots</th><th class="num">enrolled</th><th></th></tr>' +
+      function summerInvRow(a){
+        // Summer 2027 listings mirror the live inventory grid (which already
+        // includes sawyer + regpack + web) — the activity rows themselves go
+        // stale because web/regpack registrations only update `inventory`.
+        var n = (a.name || '').toLowerCase();
+        var show = /dragon/.test(n) ? 'httyd' : /charlie|chocolate/.test(n) ? 'charlie' : /trolls/.test(n) ? 'trolls' : null;
+        if (!show || !/broadway bound/.test(n) || a.category === 'class') return null;
+        var band = /tech/.test(n) ? 'tech' : null;
+        if (!band) {
+          var m = String(a.age || a.age_range || '').match(/(\d+)/);
+          band = m ? (+m[1] <= 5 ? '5-9' : +m[1] >= 12 ? '12-15' : '9-12') : null;
+        }
+        return band ? by[show + '|' + band] : null;
+      }
       acts.map(function(a){
-        // cap = full room; regpack kids consume slots inside it (Sawyer's own
-        // remaining count doesn't know about them) — left = cap − sawyer − regpack − web
-        var cap = a.capacity;
-        var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
-        var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
-        var taken = sawyer + (a.regpack||0) + (a.sold||0);
-        var left = (cap != null) ? Math.max(0, cap - taken) : null;
-        var parts = [];
-        if (sawyer) parts.push(sawyer + ' sawyer');
-        if (a.regpack) parts.push(a.regpack + ' regpack');
-        if (a.sold) parts.push(a.sold + ' web');
+        var cap, taken, left, parts = [];
+        var invRow = summerInvRow(a);
+        if (invRow) {
+          cap = invRow.cap;
+          taken = (invRow.booked || 0) + (invRow.held || 0);
+          left = Math.max(0, cap - taken);
+          parts.push('live grid');
+        } else {
+          // non-summer: left = cap − sawyer − regpack − web
+          cap = a.capacity;
+          var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
+          var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
+          taken = sawyer + (a.regpack||0) + (a.sold||0);
+          left = (cap != null) ? Math.max(0, cap - taken) : null;
+          if (sawyer) parts.push(sawyer + ' sawyer');
+          if (a.regpack) parts.push(a.regpack + ' regpack');
+          if (a.sold) parts.push(a.sold + ' web');
+        }
         return '<tr><td>' + esc(a.name) + '</td>' +
           '<td class="sub">' + esc(a.schedule || '') + '</td>' +
           '<td class="sub">' + esc(a.age || '') + '</td>' +
