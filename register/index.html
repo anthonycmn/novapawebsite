@@ -306,6 +306,7 @@
   <section class="step" id="st-shows">
     <h1>Choose your <em>shows.</em></h1>
     <p class="sub">Check each camper into their shows.</p>
+    <p class="tiny" style="margin:-4px 0 12px">Campers in the same age group are in the same cast and show &mdash; siblings and friends who choose the same group perform together.</p>
     <div class="season-chips" id="seasonChips">
       <span class="schip" data-f="summer">Summer</span>
       <span class="schip" data-f="year">Year Round</span>
@@ -355,6 +356,7 @@
     </div>
     <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
+    <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; $180 per registration reserves your spot today, the rest on monthly autopay.</p>
     <div class="err" id="assignErr"></div>
     <button class="btn" id="assignNext">Continue →</button>
     <p class="tiny">Nothing is charged yet. Signed in as <span id="whoami2"></span> · <a href="#" id="signout2">not you?</a></p>
@@ -864,10 +866,15 @@
     }
     if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
     function label(n){ return n + ' show' + (n > 1 ? 's' : '') + ' selected, ' + Math.round(discRate(n) * 100) + '% off'; }
-    if (byKid.length === 1) { t.textContent = label(byKid[0].n); return; }
+    function nudge(n){
+      if (n === 1) return ' \u00b7 add a 2nd camp for ' + Math.round(discRate(2) * 100) + '% off both';
+      if (n === 2) return ' \u00b7 add the 3rd for ' + Math.round(discRate(3) * 100) + '% off everything';
+      return '';
+    }
+    if (byKid.length === 1) { t.textContent = label(byKid[0].n) + nudge(byKid[0].n); return; }
     var uniform = byKid.every(function(e){ return e.n === byKid[0].n; });
     t.textContent = uniform
-      ? label(byKid[0].n) + ' each'
+      ? label(byKid[0].n) + ' each' + nudge(byKid[0].n)
       : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(discRate(e.n) * 100) + '% off)'; }).join(' \u00b7 ');
   }
   function renderShowKids(){
