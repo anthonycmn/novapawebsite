@@ -14,6 +14,9 @@
 import { SUPABASE_URL } from "./reg-config.mjs";
 
 const SITE = "https://www.northernvirginiaperformingarts.org";
+// Drip is the only bursty sender on the shared Gmail 2k/day budget — cap each
+// 15-min run. Magic links are Supabase-side and untouched by this.
+const MAX_SENDS_PER_RUN = 25;
 // linkexpired only applies to requests made after this moment (Jason 7/22:
 // "only new ones" — the old backlog moved on days ago and stays untouched)
 const LINKEXPIRED_EPOCH = Date.parse("2026-07-22T22:00:00Z"); // 6pm ET Jul 22
@@ -156,6 +159,7 @@ export default async () => {
 
   // ---- sends ----
   for (const st of states2) {
+    if (log.sent >= MAX_SENDS_PER_RUN) break;
     const email = st.email;
     if (purchased.has(email)) {
       await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, { method: "PATCH", body: JSON.stringify({ status: "purchased", updated_at: new Date().toISOString() }) });
@@ -223,6 +227,7 @@ export default async () => {
   const lxSteps = stepsBySeq["linkexpired"] || [];
   if (lxSteps.length) {
     for (const u of users) {
+      if (log.sent >= MAX_SENDS_PER_RUN) break;
       const email = String(u.email || "").toLowerCase();
       if (!email || u.last_sign_in_at) continue; // clicked a link at some point — never nudge
       if (purchased.has(email) || stateByEmail[email]) continue;

@@ -182,6 +182,36 @@ export default async (req) => {
       try { await serviceRpc("redeem_coupon", { p_code: m.coupon }); }
       catch (e) { console.error("coupon redeem failed:", e.message); }
     }
+    // internal heads-up to the admin list (Todd/CJ) — one email per order,
+    // failure-isolated like everything else post-payment
+    try {
+      const key2 = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const ar = await fetch(`${SUPABASE_URL}/rest/v1/admin_emails?select=email`, {
+        headers: { apikey: key2, Authorization: `Bearer ${key2}` },
+      });
+      const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
+      if (admins.length) {
+        const { default: nodemailer } = await import("nodemailer");
+        const t2 = nodemailer.createTransport({
+          host: "smtp.gmail.com", port: 465, secure: true,
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        });
+        const paid = ((pi.amount_received ?? pi.amount) / 100).toFixed(2);
+        const total = ((parseInt(m.total_cents || "0", 10) || 0) / 100).toFixed(2);
+        await t2.sendMail({
+          from: `NOVAPA Registrations <${process.env.SMTP_USER}>`,
+          to: admins.join(", "),
+          subject: `New registration: ${m.parent_name || m.email} — $${paid}`,
+          html: [
+            `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt;`,
+            `${(m.order_desc || "").split("; ").join("<br>")}`,
+            `Plan: ${m.plan} · Paid today: $${paid} · Order total: $${total}` +
+              (m.coupon ? ` · Coupon: ${m.coupon}` : ""),
+            `<a href="https://www.northernvirginiaperformingarts.org/register/admin/">Open admin dashboard</a>`,
+          ].join("<br><br>"),
+        });
+      }
+    } catch (e) { console.error("admin notify failed:", e.message); }
     try { await sendConfirmationEmail(m, pi); }
     catch (e) { console.error("confirmation email failed:", e.message); }
 
