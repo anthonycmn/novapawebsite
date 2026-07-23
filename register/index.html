@@ -626,7 +626,9 @@
     sb.rpc('email_known', { p_email: state.email }).then(function(res){
       if (!res.data) {
         $('emailGo').disabled = false;
-        ev('reg_email_unknown');
+        ev('reg_email_unknown', { email: state.email });
+        // bank the lead — dedupes server-side, failure is invisible to the user
+        try { sb.rpc('join_waitlist', { p_email: state.email, p_source: 'unknown-email' }); } catch(e){}
         errEl.innerHTML = "We couldn't find that email — try one you've used with NOVAPA before, or email <a href='mailto:jason@novapa.org' style='color:var(--gold3)'>jason@novapa.org</a> and we'll link your account.";
         errEl.classList.add('on'); return;
       }
