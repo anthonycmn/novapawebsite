@@ -124,12 +124,30 @@ export default async () => {
   for (const s of steps) (stepsBySeq[s.seq] = stepsBySeq[s.seq] || []).push(s);
 
   // all orders (suppression) + holds + families/campers context
-  const [orders, holds, families] = await Promise.all([
+  const [orders, holds, families, activities] = await Promise.all([
     svc("orders?select=email,created_at&limit=2000"),
     svc("holds?select=email,items,created_at,expires_at&order=created_at.desc&limit=1000"),
     svc("families?select=email,parent_name&limit=2000"),
+    svc("activities?select=id,name&limit=2000"),
   ]);
   const purchased = new Set(orders.map((o) => String(o.email || "").toLowerCase()));
+  // Cart items are either a summer camp (it.show) or a catalog item
+  // (it.activity_id) — Mean Girls, Frozen, Mermaid, classes. Without this the
+  // catalog half resolved to nothing and every email fell back to the generic
+  // "Summer 2027", naming the wrong program in the exact line meant to be
+  // personal.
+  const actNameById = {};
+  for (const a of activities) actNameById[a.id] = a.name || "";
+  const prettyActName = (raw) => {
+    const n = String(raw || "");
+    if (/mean girls/i.test(n)) return "Mean Girls";
+    if (/frozen/i.test(n)) return "Frozen";
+    if (/mermaid/i.test(n)) return "The Little Mermaid JR.";
+    return n.split("|").pop().trim() || n.trim();
+  };
+  const itemTitle = (it) => it.show
+    ? SHOW_TITLES[it.show]
+    : (it.activity_id != null ? prettyActName(actNameById[it.activity_id]) : null);
   const parentByEmail = {};
   for (const f of families) parentByEmail[String(f.email).toLowerCase()] = f.parent_name || "";
   const holdsByEmail = {};
@@ -176,7 +194,7 @@ export default async () => {
       // build context from their latest hold, if any
       const hs = holdsByEmail[email] || [];
       const items = hs.length ? (hs[0].items || []) : [];
-      const campTitles = [...new Set(items.map((it) => it.show ? SHOW_TITLES[it.show] : null).filter(Boolean))];
+      const campTitles = [...new Set(items.map(itemTitle).filter(Boolean))];
       const campers = [...new Set(items.map((it) => firstName(it.camper)).filter(Boolean))];
       const parent = firstName(parentByEmail[email]);
       await svc("retarget_state", {
@@ -224,8 +242,15 @@ export default async () => {
     }
 
     const ctx = st.ctx || {};
-    const campers = ctx.campers || [];
-    const camps = (ctx.camps && ctx.camps.length) ? ctx.camps : ["Summer 2027"];
+    // Enrollment fires on sign-in, which is often BEFORE the cart exists, so
+    // ctx can be empty or stale. Prefer their latest hold at send time — that's
+    // the cart they actually walked away from.
+    const latestItems = (holdsByEmail[email] || [])[0]?.items || [];
+    const liveCamps = [...new Set(latestItems.map(itemTitle).filter(Boolean))];
+    const liveCampers = [...new Set(latestItems.map((it) => firstName(it.camper)).filter(Boolean))];
+    const campers = liveCampers.length ? liveCampers : (ctx.campers || []);
+    const camps = liveCamps.length ? liveCamps
+      : (ctx.camps && ctx.camps.length) ? ctx.camps : ["Summer 2027"];
     const vars = {
       parentName: ctx.parent || "there",
       parentComma: ctx.parent ? " " + ctx.parent : "",
