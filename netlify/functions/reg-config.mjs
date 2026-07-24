@@ -71,8 +71,15 @@ export const CAMP_START = {
 export function showStartFor(name) {
   if (/frozen/i.test(name)) return "2026-09-15";
   if (/mermaid/i.test(name)) return "2027-02-03";
+  if (/mean girls/i.test(name)) return "2027-06-14";
   return null;
 }
+
+// Broadway Bound Teens summer intensive (Mean Girls). Its discount is its own
+// rule: flat 10% through Aug 1 (the private-registration window — everyone in
+// the gate is a returning family), full price once registration opens to the
+// public. It never joins the camp tier or the fall-show bundle.
+export const MEANGIRLS_ID = 990001;
 
 export function perKidRate(nCampsForKid, now = new Date()) {
   if (now > new Date(EARLYBIRD_END)) return 0;
@@ -156,6 +163,11 @@ export function priceCart(cart, plan, opts = {}) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
       }
       return { ...it, unit, rate: 0, daycamp: true };
+    }
+    // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
+    if (it.activity_id === MEANGIRLS_ID) {
+      const rate = now <= new Date(PUBLIC_OPEN_AT) ? 0.10 : 0;
+      return { ...it, unit: Math.round((it.price_cents || 0) * (1 - rate)), rate };
     }
     // BB show item (frozen/mermaid)
     const kid = kidKey(it);

@@ -1349,7 +1349,7 @@
     var byId = {};
     state.catItems.forEach(function(a){ byId[a.id] = a; });
     var firstChild = items.length ? kidKey(items[0]) : null;
-    var sib = [], bund = [];
+    var sib = [], bund = [], mg = [];
     var bbCount = {};
     items.forEach(function(it){
       var a = byId[it.activity_id] || {};
@@ -1370,6 +1370,11 @@
         if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
         return u;
       }
+      // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
+      if (it.activity_id === 990001) {
+        if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { u = Math.round(u * 0.90); mg[i] = true; }
+        return u;
+      }
       // BB show: 10% when one kid does both shows, else sibling 5% for 2nd+ child
       if ((bbCount[kidKey(it)] || 0) >= 2) { u = Math.round(u * 0.90); bund[i] = true; }
       else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
@@ -1386,7 +1391,7 @@
     }, 0);
     var insPctOff2 = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(baseSubtotal * (C.INSURANCE_PCT || 10) / 100 * (1 - insPctOff2 / 100)) : 0;
-    return { items: items, units: units, sib: sib, bund: bund, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0, ins: ins,
+    return { items: items, units: units, sib: sib, bund: bund, mg: mg, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0, ins: ins,
              total: subtotal - coupon + ins, today: subtotal - coupon + ins,
              monthly: catAllClasses() ? units : [] };
   }
@@ -1401,6 +1406,7 @@
       }
       return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(nm) +
         (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') +
+        (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
