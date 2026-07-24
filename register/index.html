@@ -1165,11 +1165,22 @@
           '<label class="kid-check"><input type="checkbox" data-key="' + esc(key) + '" ' + (sel.on ? 'checked' : '') + '> ' +
           '<span>' + esc(k.name) + '</span></label>' + bdayRow + '</div>';
       }).join('');
-      return '<div class="card"><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px">' +
+      // poster header, summer-card style — /register/img/meangirls.jpg wins if
+      // the licensed art file exists; the branded gradient shows until then
+      var poster = a.id === 990001
+        ? '<div class="poster" style="background-image:url(\'/register/img/meangirls.jpg\'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%);display:flex;align-items:center;justify-content:center;min-height:170px;aspect-ratio:auto">' +
+          '<div style="text-align:center;padding:18px">' +
+          '<div style="font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.92)">Broadway Bound Teens · Summer 2027</div>' +
+          '<div style="font-family:\'Cormorant Garamond\',serif;font-size:40px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 2px 14px rgba(0,0,0,0.3)">Mean Girls</div>' +
+          '<div style="font-size:12.5px;color:rgba(255,255,255,0.92);margin-top:4px">Ages 13–18 · Four Performances · Jun 25–27</div>' +
+          '</div></div>'
+        : '';
+      var inner = '<div class="card"' + (poster ? ' style="border:0;margin:0;border-radius:0"' : '') + '><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px">' +
         esc(a.name) + '</div>' +
         '<div class="tiny" style="text-align:left;margin:0 0 4px">' + esc(a.age_range || '') +
         (a.schedule_name ? ' · ' + esc(a.schedule_name) : '') + '</div>' +
         '<div class="tiny" style="text-align:left;margin:0 0 8px;color:var(--gold3)">' + priceLine + '</div>' + rows + '</div>';
+      return poster ? '<div class="showb">' + poster + inner + '</div>' : inner;
     }).join('');
     html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
     $('assignBlocks').innerHTML = html;
