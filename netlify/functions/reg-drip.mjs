@@ -251,6 +251,11 @@ export default async () => {
     const campers = liveCampers.length ? liveCampers : (ctx.campers || []);
     const camps = liveCamps.length ? liveCamps
       : (ctx.camps && ctx.camps.length) ? ctx.camps : ["Summer 2027"];
+    // Return them to the cart they left. A catalog cart (Mean Girls, a fall
+    // show, a class) deep-links by activity id; dropping those people on the
+    // summer camp picker with ?go=1 is a dead end that reads as a broken link.
+    const actIds = [...new Set(latestItems.map((it) => it.activity_id).filter((v) => v != null))];
+    const entry = actIds.length ? `activity=${actIds.join(",")}` : "go=1";
     const vars = {
       parentName: ctx.parent || "there",
       parentComma: ctx.parent ? " " + ctx.parent : "",
@@ -259,7 +264,7 @@ export default async () => {
       camp: camps[0],
       campName: camps[0],
       camps: joinNames(camps),
-      link: `${SITE}/register/?go=1&utm_source=retarget&utm_campaign=${st.seq}_${next.step}`,
+      link: `${SITE}/register/?${entry}&utm_source=retarget&utm_campaign=${st.seq}_${next.step}`,
     };
     // claim the step FIRST (conditional on current stage) — if another runner
     // got here before us, zero rows come back and we skip. A claimed-but-failed
