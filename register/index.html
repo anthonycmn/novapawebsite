@@ -715,7 +715,7 @@
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
-        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], sel:true };
+        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], verified:c.verified||[], sel:true };
       });
       var returning = state.kids.length > 0;
       $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your campers';
@@ -744,7 +744,7 @@
       return '<div class="kid-row"><label class="kid-check">' +
         '<input type="checkbox" data-i="'+i+'" '+(k.sel?'checked':'')+'> ' +
         '<span>'+esc(k.name)+(k.age?' <span style="color:var(--ink-dim)">· '+k.age+'</span>':'')+'</span>' +
-        (k.already && k.already.length ? ' <span class="badge-done">✓ already in '+k.already.length+' camp'+(k.already.length>1?'s':'')+'</span>' : '') +
+        (k.verified && k.verified.length ? ' <span class="badge-done">✓ already in '+k.verified.length+' camp'+(k.verified.length>1?'s':'')+'</span>' : '') +
         '</label></div>';
     }).join('');
     $('kidList').innerHTML = html || '<p class="tiny" style="text-align:left">No campers yet — add your first below.</p>';
@@ -883,7 +883,10 @@
       var show = host.dataset.show;
       host.innerHTML = state.kids.map(function(k, i){
         if (!k.sel) return '';
-        var already = (k.already||[]).indexOf(show) !== -1;
+        // only web-paid orders block a checkout; imported (sawyer/regpack) marks
+        // still feed the discount tiers but must never disable a kid — some of
+        // those imports came from unpaid carts (Boney/Choi incidents)
+        var already = (k.verified||[]).indexOf(show) !== -1;
         var kAge = campAge(k);
         var noBand = kAge != null && bandsFor(kAge).length === 0;
         var key = show + '|' + i;
