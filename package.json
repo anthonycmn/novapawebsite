@@ -4,7 +4,8 @@
   "description": "NoVAPA static site + Netlify Functions (SPOT chatbot)",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",
-    "stripe": "^18.0.0",
-    "nodemailer": "^6.9.14"
+    "imapflow": "^1.5.0",
+    "nodemailer": "^6.9.14",
+    "stripe": "^18.0.0"
   }
 }

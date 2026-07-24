@@ -715,7 +715,7 @@
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
-        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], sel:true };
+        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], verified:c.verified||[], sel:true };
       });
       var returning = state.kids.length > 0;
       $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your campers';
@@ -744,7 +744,7 @@
       return '<div class="kid-row"><label class="kid-check">' +
         '<input type="checkbox" data-i="'+i+'" '+(k.sel?'checked':'')+'> ' +
         '<span>'+esc(k.name)+(k.age?' <span style="color:var(--ink-dim)">· '+k.age+'</span>':'')+'</span>' +
-        (k.already && k.already.length ? ' <span class="badge-done">✓ already in '+k.already.length+' camp'+(k.already.length>1?'s':'')+'</span>' : '') +
+        (k.verified && k.verified.length ? ' <span class="badge-done">✓ already in '+k.verified.length+' camp'+(k.verified.length>1?'s':'')+'</span>' : '') +
         '</label></div>';
     }).join('');
     $('kidList').innerHTML = html || '<p class="tiny" style="text-align:left">No campers yet — add your first below.</p>';
@@ -883,7 +883,10 @@
       var show = host.dataset.show;
       host.innerHTML = state.kids.map(function(k, i){
         if (!k.sel) return '';
-        var already = (k.already||[]).indexOf(show) !== -1;
+        // only web-paid orders block a checkout; imported (sawyer/regpack) marks
+        // still feed the discount tiers but must never disable a kid — some of
+        // those imports came from unpaid carts (Boney/Choi incidents)
+        var already = (k.verified||[]).indexOf(show) !== -1;
         var kAge = campAge(k);
         var noBand = kAge != null && bandsFor(kAge).length === 0;
         var key = show + '|' + i;
@@ -1809,7 +1812,7 @@
         $('payErr').classList.remove('on');
         confirmNow().then(function(res){
           if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed', { wallet: true }); return; }
-          if (res.paymentIntent && res.paymentIntent.status === 'succeeded') finish();
+          if (res.paymentIntent && res.paymentIntent.status === 'succeeded') { state.piId = res.paymentIntent.id; finish(); }
         });
       });
       ece.mount('#expressCheckout');
@@ -1862,9 +1865,12 @@
     });
   });
 
-  // FSA eligibility per Todd (IRS day-camp rules): daytime day camps only —
-  // BB summer camps + one-day specialty camps. NOT classes, show-participation
-  // fees (Frozen/Mermaid), adult programs, or campers 14+ at program start.
+  // FSA eligibility (IRS Pub. 503): daytime day camps only — BB summer camps +
+  // one-day specialty camps. NOT classes, show-participation fees
+  // (Frozen/Mermaid), adult programs, or campers 13+ when care starts (the IRS
+  // qualifying-child rule is UNDER 13). No birthday on file = not eligible;
+  // checkout requires birthdays so a missing one means stale data, and for a
+  // tax document we fail closed.
   var FSA_DATES = { httyd:['2027-07-05','2027-07-16'], charlie:['2027-07-19','2027-07-30'], trolls:['2027-08-02','2027-08-13'] };
   function fsaEligibleItems(items){
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
@@ -1877,11 +1883,9 @@
         if (!isDayCamp) return false; // classes + school-year shows excluded
       }
       var k = it.ci != null ? state.kids[it.ci] : state.kids.filter(function(kk){ return kk.name === it.camper; })[0];
-      if (k && k.bday) {
-        var startISO = it.show ? FSA_DATES[it.show][0] : new Date().toISOString().slice(0,10);
-        if (ageOn(k.bday, startISO) >= 14) return false; // Todd: under-14 trigger
-      }
-      return true;
+      if (!k || !k.bday) return false;
+      var startISO = it.show ? FSA_DATES[it.show][0] : new Date().toISOString().slice(0,10);
+      return ageOn(k.bday, startISO) < 13;
     });
   }
   function fmtLong(iso){
@@ -1918,7 +1922,8 @@
         row('Participant/Dependent', esc(it.camper || '')) +
         row('Program', esc(name)) +
         row('Type of Service', 'Summer Day Camp and Dependent Care Services') +
-        row('Dates Care Was Provided', esc(dates)) +
+        row(it.show && new Date(FSA_DATES[it.show][1] + 'T23:59:59') < new Date()
+          ? 'Dates Care Was Provided' : 'Scheduled Dates of Care (future services)', esc(dates)) +
         row('Camp Schedule', sched) +
         row('Amount Charged for Eligible Care', money(listPrice)) +
         (disc ? row('Discounts or Credits', '\u2212' + money(disc)) : '') +
@@ -1932,17 +1937,23 @@
       '<h2 style="margin-bottom:2px">DEPENDENT CARE / FSA RECEIPT INFORMATION</h2>' +
       row('Dependent Care Provider', 'CJ Creative LLC dba Northern Virginia Performing Arts') +
       row('Provider Address', '18665 Conference Center Drive, Leesburg, VA 20176') +
+      row('Website', 'www.northernvirginiaperformingarts.org') +
+      row('Email', 'info@novapa.org') +
+      row('Phone', '(571) 571-2120') +
       row('Federal Tax Identification Number / EIN', '99-1421341') +
+      row('Paid By (Parent/Guardian)', esc(($('parentName') && $('parentName').value.trim()) || '') + ' &lt;' + esc(state.email || '') + '&gt;') +
       blocks +
       row('Payment Date', today) +
       row('Amount Paid', money(p.today_cents || 0)) +
       row('Payment Status', status) +
+      row('Issue Date of This Receipt', today) +
       '<p style="margin-top:14px">This program was a daytime summer camp and did not include overnight care. The program provided supervision and care for the participant during the dates and hours listed above.</p>' +
-      '<p>The services were provided to enable the participant\u2019s parent or legal guardian to work, actively seek employment, or attend work-related responsibilities.</p>' +
+      '<p>The services were provided to enable the participant\u2019s parent or legal guardian to work or actively seek employment.</p>' +
       '<p>The parent or legal guardian is responsible for confirming that the participant was under age 13 when the care was provided, or otherwise met the applicable IRS dependent-care eligibility requirements.</p>' +
       '<p>Only charges attributable to eligible dependent-care services should be submitted for reimbursement. Credit card processing fees, merchandise, performance tickets, costumes, meals, transportation, and other non-care charges may not qualify for reimbursement.</p>' +
       '<p>This receipt reflects payment information maintained by CJ Creative LLC dba Northern Virginia Performing Arts. Eligibility for reimbursement is determined by the participant\u2019s dependent-care plan administrator and applicable IRS rules.</p>' +
-      '<p><b>Provider Certification:</b> CJ Creative LLC dba Northern Virginia Performing Arts certifies that the information shown above accurately reflects the dependent-care services provided and the payments received.</p>' +
+      '<p><b>Provider Certification:</b> CJ Creative LLC dba Northern Virginia Performing Arts certifies that the payment information and scheduled dependent-care services shown above accurately reflect its current registration and payment records. This document does not certify that future services have already been provided.</p>' +
+      row('Authorized Representative', 'Todd Cimino-Johnson, CFO') +
       '</body></html>');
     w.document.close(); w.print();
   }
@@ -2024,7 +2035,13 @@
         var fsaLine = fb.parentElement;
         fsaLine.innerHTML = fsaLine.innerHTML.replace(/<br>\s*Using a Dependent Care FSA\?[\s\S]*$/, '');
       } else {
-        fb.addEventListener('click', function(e){ e.preventDefault(); fsaReceipt(); });
+        fb.addEventListener('click', function(e){
+          e.preventDefault();
+          // server receipt has the order number + Todd's certification layout;
+          // the local renderer is only a fallback when we somehow lack the PI id
+          if (state.piId) window.open('/api/fsa-receipt?pi=' + encodeURIComponent(state.piId), '_blank');
+          else fsaReceipt();
+        });
       }
     }
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });

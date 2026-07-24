@@ -68,6 +68,46 @@ async function sendMail({ to, subject, html, refs }) {
   return info.messageId;
 }
 
+// Anyone who has emailed us is in a human conversation — automated steps stop.
+// Reads the shared inbox over IMAP (same Gmail app password as SMTP) and stops
+// every active sequence whose lead appears as a sender. Failure-isolated: an
+// IMAP hiccup skips the check for this run, never the sends.
+async function stopRepliers(states) {
+  const active = states.filter((s) => s.status === "active");
+  if (!active.length) return 0;
+  const senders = new Set();
+  try {
+    const { ImapFlow } = await import("imapflow");
+    const client = new ImapFlow({
+      host: "imap.gmail.com", port: 993, secure: true,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      logger: false,
+    });
+    await client.connect();
+    const lock = await client.getMailboxLock("INBOX");
+    try {
+      const since = new Date(Date.now() - 5 * 24 * 3600 * 1000);
+      for await (const msg of client.fetch({ since }, { envelope: true })) {
+        for (const a of msg.envelope?.from || []) senders.add(String(a.address || "").toLowerCase());
+      }
+    } finally { lock.release(); }
+    await client.logout();
+  } catch (e) {
+    console.error("imap reply check failed:", e.message);
+    return 0;
+  }
+  let stopped = 0;
+  for (const s of active) {
+    if (!senders.has(String(s.email).toLowerCase())) continue;
+    const rows = await svc(
+      `retarget_state?email=eq.${encodeURIComponent(s.email)}&status=eq.active`,
+      { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "stopped" }) }
+    );
+    if (Array.isArray(rows) && rows.length) { stopped++; s.status = "stopped"; }
+  }
+  return stopped;
+}
+
 export default async () => {
   // Only the published production deploy runs the engine. Branch deploys share
   // the same database — two runners = duplicate sends (learned 7/22 the hard way).
@@ -115,7 +155,8 @@ export default async () => {
   const stateByEmail = {};
   for (const s of states) stateByEmail[s.email] = s;
 
-  const log = { enrolled: 0, reset: 0, sent: 0, purchased_out: 0 };
+  const log = { enrolled: 0, reset: 0, sent: 0, purchased_out: 0, replied_stop: 0 };
+  log.replied_stop = await stopRepliers(states);
 
   // ---- enrollment + anchor resets ----
   for (const u of users) {
