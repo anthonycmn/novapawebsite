@@ -16,6 +16,16 @@ import {
   CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
 } from "./reg-config.mjs";
 
+// first day of care per summer camp — the date the IRS under-13 test runs on
+const CAMP_STARTS = { httyd: "2027-07-05", charlie: "2027-07-19", trolls: "2027-08-02" };
+function fsaUnder13(bday, startISO) {
+  if (!bday) return false;
+  const b = new Date(bday + "T00:00:00"), s = startISO ? new Date(startISO + "T00:00:00") : new Date();
+  let age = s.getFullYear() - b.getFullYear();
+  if (s.getMonth() < b.getMonth() || (s.getMonth() === b.getMonth() && s.getDate() < b.getDate())) age--;
+  return age < 13;
+}
+
 async function anonRpc(fn, args, jwt) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: "POST",
@@ -81,6 +91,7 @@ export default async (req) => {
   // prior registrations per kid (already_registered on their camper rows) —
   // they count toward the per-kid tier and the show bundle (CJ)
   const priorCampsByKid = {}, priorShowsByKid = {};
+  const bdayByKid = {};
   const SUMMER_SLUGS = new Set(["httyd", "charlie", "trolls"]);
   try {
     const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -89,7 +100,7 @@ export default async (req) => {
     });
     const fams = await fr.json();
     if (Array.isArray(fams) && fams.length) {
-      const cr = await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fams[0].id}&select=name,already_registered`, {
+      const cr = await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fams[0].id}&select=name,already_registered,birthdate`, {
         headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` },
       });
       const camps = await cr.json();
@@ -99,6 +110,7 @@ export default async (req) => {
         byName[String(c.name || "").trim().toLowerCase()] = {
           camps: reg.filter((s) => SUMMER_SLUGS.has(s)).length,
           shows: reg.filter((s) => !SUMMER_SLUGS.has(s)).length,
+          bday: c.birthdate || null,
         };
       }
       for (const it of items) {
@@ -106,6 +118,7 @@ export default async (req) => {
         if (!p) continue;
         if (p.camps) priorCampsByKid[kidKey(it)] = p.camps;
         if (p.shows) priorShowsByKid[kidKey(it)] = p.shows;
+        if (p.bday) bdayByKid[kidKey(it)] = p.bday;
       }
     }
   } catch (e) { console.error("prior lookup failed:", e.message); }
@@ -289,10 +302,15 @@ export default async (req) => {
       coupon: (couponPct || couponFixedCents) ? couponCode.toUpperCase() : "",
       coupon_cents: String(pricing.couponCents || 0),
       plan_fee_cents: String(pricing.planFeeCents || 0),
-      // IRS day-camp rule (Todd): FSA language only for daytime day camps —
-      // summer camps + one-day specialty camps. Never classes or show fees.
-      fsa_eligible: (summerItems.length > 0 ||
-        showItems.some((it) => (byId[it.activity_id].price_cents || 0) <= DAY_CAMP_MAX_CENTS)) ? "1" : "0",
+      // IRS Pub. 503: FSA language only for daytime day camps (summer camps +
+      // one-day specialty camps, never classes or show fees) AND only when the
+      // camper is under 13 when care starts. No birthday on file = not
+      // eligible (checkout collects birthdays; fail closed on a tax flag).
+      fsa_eligible: (
+        summerItems.some((it) => fsaUnder13(bdayByKid[kidKey(it)], CAMP_STARTS[it.show])) ||
+        showItems.some((it) => (byId[it.activity_id].price_cents || 0) <= DAY_CAMP_MAX_CENTS &&
+          fsaUnder13(bdayByKid[kidKey(it)], null))
+      ) ? "1" : "0",
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       n_items: String(items.length),

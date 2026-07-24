@@ -1865,9 +1865,12 @@
     });
   });
 
-  // FSA eligibility per Todd (IRS day-camp rules): daytime day camps only —
-  // BB summer camps + one-day specialty camps. NOT classes, show-participation
-  // fees (Frozen/Mermaid), adult programs, or campers 14+ at program start.
+  // FSA eligibility (IRS Pub. 503): daytime day camps only — BB summer camps +
+  // one-day specialty camps. NOT classes, show-participation fees
+  // (Frozen/Mermaid), adult programs, or campers 13+ when care starts (the IRS
+  // qualifying-child rule is UNDER 13). No birthday on file = not eligible;
+  // checkout requires birthdays so a missing one means stale data, and for a
+  // tax document we fail closed.
   var FSA_DATES = { httyd:['2027-07-05','2027-07-16'], charlie:['2027-07-19','2027-07-30'], trolls:['2027-08-02','2027-08-13'] };
   function fsaEligibleItems(items){
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
@@ -1880,11 +1883,9 @@
         if (!isDayCamp) return false; // classes + school-year shows excluded
       }
       var k = it.ci != null ? state.kids[it.ci] : state.kids.filter(function(kk){ return kk.name === it.camper; })[0];
-      if (k && k.bday) {
-        var startISO = it.show ? FSA_DATES[it.show][0] : new Date().toISOString().slice(0,10);
-        if (ageOn(k.bday, startISO) >= 14) return false; // Todd: under-14 trigger
-      }
-      return true;
+      if (!k || !k.bday) return false;
+      var startISO = it.show ? FSA_DATES[it.show][0] : new Date().toISOString().slice(0,10);
+      return ageOn(k.bday, startISO) < 13;
     });
   }
   function fmtLong(iso){
