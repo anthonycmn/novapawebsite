@@ -1,9 +1,10 @@
-// Standalone dependent-care (FSA) receipt, linked from confirmation emails so
-// parents can reprint it after the checkout tab is gone. Keyed by the Stripe
-// PaymentIntent id — high-entropy, known only from the parent's own email.
-// Mirrors the checkout's fsaReceipt() exactly: IRS Pub. 503 gating (daytime
-// day camps only, camper under 13 when care starts, missing birthday fails
-// closed) and the same document text Todd approved.
+// Standalone dependent-care (FSA) receipt, linked from confirmation emails and
+// the confirmation page. Keyed by the Stripe PaymentIntent id — high-entropy,
+// known only from the parent's own email/session.
+// IRS Pub. 503 gating: daytime day camps only, camper under 13 when care
+// starts, missing birthday fails closed. Document layout per Todd (CFO):
+// payer identification, contact block, order number, issue date, past/future
+// date labeling decided at print time, and his certification language.
 import { SUPABASE_URL, PRICE_CENTS, DAY_CAMP_MAX_CENTS } from "./reg-config.mjs";
 
 const CAMP_STARTS = { httyd: "2027-07-05", charlie: "2027-07-19", trolls: "2027-08-02" };
@@ -35,7 +36,7 @@ function fmtLong(iso) {
   const d = new Date(iso + "T00:00:00");
   return `${m[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
-function money(c) { return "$" + (c / 100).toFixed(2); }
+function money(c) { return "$" + (c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function esc(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 function row(l, v) { return `<p style="margin:3px 0"><b>${l}:</b> ${v}</p>`; }
 
@@ -45,8 +46,10 @@ export default async (req) => {
 
   let order, items;
   try {
-    const orders = await db(`orders?stripe_payment_intent=eq.${encodeURIComponent(pi)}&status=eq.paid&select=id,email,plan,amount_today_cents,created_at`);
-    if (!orders.length) return new Response("Receipt not found", { status: 404 });
+    const orders = await db(`orders?stripe_payment_intent=eq.${encodeURIComponent(pi)}&status=eq.paid&select=id,order_no,email,parent_name,plan,amount_today_cents,created_at`);
+    if (!orders.length) {
+      return new Response("<html><body style=\"font-family:Georgia,serif;max-width:660px;margin:40px auto\"><h3>Receipt not ready yet</h3><p>If you just completed checkout, your receipt is still being generated — refresh this page in a minute. Questions? <a href=\"mailto:info@novapa.org\">info@novapa.org</a>.</p></body></html>", { status: 404, headers: { "Content-Type": "text/html" } });
+    }
     order = orders[0];
     items = await db(`order_items?order_id=eq.${order.id}&select=camper_name,show,activity_id,unit_price_cents`);
   } catch (e) {
@@ -84,24 +87,31 @@ export default async (req) => {
     return new Response("<html><body style=\"font-family:Georgia,serif;max-width:660px;margin:40px auto\"><h3>No FSA-eligible items on this order</h3><p>Dependent-care receipts cover daytime day camps for campers under age 13. Questions? Email <a href=\"mailto:info@novapa.org\">info@novapa.org</a>.</p></body></html>", { status: 200, headers: { "Content-Type": "text/html" } });
   }
 
+  const now = new Date();
   const status = order.plan === "deposit"
     ? "Partially Paid (remaining balance on automatic monthly installments)"
     : "Paid";
-  const payDate = new Date(order.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "America/New_York" });
+  const fmtDate = (d) => d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "America/New_York" });
+  const payDate = fmtDate(new Date(order.created_at));
+  const issueDate = fmtDate(now);
 
   const blocks = eligible.map((it) => {
-    let name, dates, sched, listPrice;
+    let name, dates, sched, listPrice, dateLabel;
     if (it.show) {
       name = `${SHOW_NAMES[it.show]} — Broadway Bound Summer Camp`;
       dates = `${fmtLong(CAMP_STARTS[it.show])} through ${fmtLong(CAMP_ENDS[it.show])}`;
       sched = "Monday through Friday, 8:30 AM–4:00 PM";
       listPrice = PRICE_CENTS;
+      // label decided at print time: past camps read as provided, future as scheduled
+      dateLabel = new Date(CAMP_ENDS[it.show] + "T23:59:59") < now
+        ? "Dates Care Was Provided" : "Scheduled Dates of Care (future services)";
     } else {
       const a = actById[it.activity_id];
       name = (a.name || "Day Camp").trim();
       dates = (a.schedule_name || "").replace(/^.*\|\s*/, "") || "See program schedule";
       sched = "Daytime camp hours";
       listPrice = a.price_cents || 0;
+      dateLabel = "Dates of Care";
     }
     const unit = it.unit_price_cents != null ? it.unit_price_cents : listPrice;
     const disc = Math.max(0, listPrice - unit);
@@ -109,7 +119,7 @@ export default async (req) => {
       row("Participant/Dependent", esc(it.camper_name)) +
       row("Program", esc(name)) +
       row("Type of Service", "Summer Day Camp and Dependent Care Services") +
-      row("Dates Care Was Provided", esc(dates)) +
+      row(dateLabel, esc(dates)) +
       row("Camp Schedule", sched) +
       row("Amount Charged for Eligible Care", money(listPrice)) +
       (disc ? row("Discounts or Credits", "−" + money(disc)) : "") +
@@ -122,17 +132,24 @@ export default async (req) => {
     `<h2 style="margin-bottom:2px">DEPENDENT CARE / FSA RECEIPT INFORMATION</h2>` +
     row("Dependent Care Provider", "CJ Creative LLC dba Northern Virginia Performing Arts") +
     row("Provider Address", "18665 Conference Center Drive, Leesburg, VA 20176") +
+    row("Website", `<a href="https://www.northernvirginiaperformingarts.org" style="color:#996f1f">www.northernvirginiaperformingarts.org</a>`) +
+    row("Email", `<a href="mailto:info@novapa.org" style="color:#996f1f">info@novapa.org</a>`) +
+    row("Phone", "(571) 571-2120") +
     row("Federal Tax Identification Number / EIN", "99-1421341") +
+    row("Order Number", esc(String(order.order_no || ""))) +
+    row("Paid By (Parent/Guardian)", esc(order.parent_name || "") + " &lt;" + esc(order.email) + "&gt;") +
     blocks +
     row("Payment Date", payDate) +
     row("Amount Paid", money(order.amount_today_cents || 0)) +
     row("Payment Status", status) +
+    row("Issue Date of This Receipt", issueDate) +
     `<p style="margin-top:14px">This program was a daytime summer camp and did not include overnight care. The program provided supervision and care for the participant during the dates and hours listed above.</p>` +
-    `<p>The services were provided to enable the participant’s parent or legal guardian to work, actively seek employment, or attend work-related responsibilities.</p>` +
+    `<p>The services were provided to enable the participant’s parent or legal guardian to work or actively seek employment.</p>` +
     `<p>The parent or legal guardian is responsible for confirming that the participant was under age 13 when the care was provided, or otherwise met the applicable IRS dependent-care eligibility requirements.</p>` +
     `<p>Only charges attributable to eligible dependent-care services should be submitted for reimbursement. Credit card processing fees, merchandise, performance tickets, costumes, meals, transportation, and other non-care charges may not qualify for reimbursement.</p>` +
     `<p>This receipt reflects payment information maintained by CJ Creative LLC dba Northern Virginia Performing Arts. Eligibility for reimbursement is determined by the participant’s dependent-care plan administrator and applicable IRS rules.</p>` +
-    `<p><b>Provider Certification:</b> CJ Creative LLC dba Northern Virginia Performing Arts certifies that the information shown above accurately reflects the dependent-care services provided and the payments received.</p>` +
+    `<p><b>Provider Certification:</b> CJ Creative LLC dba Northern Virginia Performing Arts certifies that the payment information and scheduled dependent-care services shown above accurately reflect its current registration and payment records. This document does not certify that future services have already been provided.</p>` +
+    row("Authorized Representative", "Todd Cimino-Johnson, CFO") +
     `<p style="margin-top:20px"><a href="javascript:window.print()" style="color:#996f1f">Print this receipt</a></p>` +
     `</body></html>`;
   return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });

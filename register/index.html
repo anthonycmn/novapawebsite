@@ -1812,7 +1812,7 @@
         $('payErr').classList.remove('on');
         confirmNow().then(function(res){
           if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed', { wallet: true }); return; }
-          if (res.paymentIntent && res.paymentIntent.status === 'succeeded') finish();
+          if (res.paymentIntent && res.paymentIntent.status === 'succeeded') { state.piId = res.paymentIntent.id; finish(); }
         });
       });
       ece.mount('#expressCheckout');
@@ -1922,7 +1922,8 @@
         row('Participant/Dependent', esc(it.camper || '')) +
         row('Program', esc(name)) +
         row('Type of Service', 'Summer Day Camp and Dependent Care Services') +
-        row('Dates Care Was Provided', esc(dates)) +
+        row(it.show && new Date(FSA_DATES[it.show][1] + 'T23:59:59') < new Date()
+          ? 'Dates Care Was Provided' : 'Scheduled Dates of Care (future services)', esc(dates)) +
         row('Camp Schedule', sched) +
         row('Amount Charged for Eligible Care', money(listPrice)) +
         (disc ? row('Discounts or Credits', '\u2212' + money(disc)) : '') +
@@ -1936,17 +1937,23 @@
       '<h2 style="margin-bottom:2px">DEPENDENT CARE / FSA RECEIPT INFORMATION</h2>' +
       row('Dependent Care Provider', 'CJ Creative LLC dba Northern Virginia Performing Arts') +
       row('Provider Address', '18665 Conference Center Drive, Leesburg, VA 20176') +
+      row('Website', 'www.northernvirginiaperformingarts.org') +
+      row('Email', 'info@novapa.org') +
+      row('Phone', '(571) 571-2120') +
       row('Federal Tax Identification Number / EIN', '99-1421341') +
+      row('Paid By (Parent/Guardian)', esc(($('parentName') && $('parentName').value.trim()) || '') + ' &lt;' + esc(state.email || '') + '&gt;') +
       blocks +
       row('Payment Date', today) +
       row('Amount Paid', money(p.today_cents || 0)) +
       row('Payment Status', status) +
+      row('Issue Date of This Receipt', today) +
       '<p style="margin-top:14px">This program was a daytime summer camp and did not include overnight care. The program provided supervision and care for the participant during the dates and hours listed above.</p>' +
-      '<p>The services were provided to enable the participant\u2019s parent or legal guardian to work, actively seek employment, or attend work-related responsibilities.</p>' +
+      '<p>The services were provided to enable the participant\u2019s parent or legal guardian to work or actively seek employment.</p>' +
       '<p>The parent or legal guardian is responsible for confirming that the participant was under age 13 when the care was provided, or otherwise met the applicable IRS dependent-care eligibility requirements.</p>' +
       '<p>Only charges attributable to eligible dependent-care services should be submitted for reimbursement. Credit card processing fees, merchandise, performance tickets, costumes, meals, transportation, and other non-care charges may not qualify for reimbursement.</p>' +
       '<p>This receipt reflects payment information maintained by CJ Creative LLC dba Northern Virginia Performing Arts. Eligibility for reimbursement is determined by the participant\u2019s dependent-care plan administrator and applicable IRS rules.</p>' +
-      '<p><b>Provider Certification:</b> CJ Creative LLC dba Northern Virginia Performing Arts certifies that the information shown above accurately reflects the dependent-care services provided and the payments received.</p>' +
+      '<p><b>Provider Certification:</b> CJ Creative LLC dba Northern Virginia Performing Arts certifies that the payment information and scheduled dependent-care services shown above accurately reflect its current registration and payment records. This document does not certify that future services have already been provided.</p>' +
+      row('Authorized Representative', 'Todd Cimino-Johnson, CFO') +
       '</body></html>');
     w.document.close(); w.print();
   }
@@ -2028,7 +2035,13 @@
         var fsaLine = fb.parentElement;
         fsaLine.innerHTML = fsaLine.innerHTML.replace(/<br>\s*Using a Dependent Care FSA\?[\s\S]*$/, '');
       } else {
-        fb.addEventListener('click', function(e){ e.preventDefault(); fsaReceipt(); });
+        fb.addEventListener('click', function(e){
+          e.preventDefault();
+          // server receipt has the order number + Todd's certification layout;
+          // the local renderer is only a fallback when we somehow lack the PI id
+          if (state.piId) window.open('/api/fsa-receipt?pi=' + encodeURIComponent(state.piId), '_blank');
+          else fsaReceipt();
+        });
       }
     }
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
