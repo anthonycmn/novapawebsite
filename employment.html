@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employment | Northern Virginia Performing Arts</title>
+  <meta name="description" content="Join the NoVAPA team — tell us the roles you're interested in, your availability, and send us your résumé. We keep every submission on file for future openings.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/favicon.png">
+  <meta name="theme-color" content="#08111F">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+  <script src="/posthog.js" defer></script>
+  <style>
+    :root{ --navy:#08111F; --navy2:#0F1E36; --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F; }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    html{ background:#08111F; }
+    body{ font-family:'DM Sans',sans-serif; background:linear-gradient(160deg,#08111F 0%,#0F1E36 55%,#08111F 100%); color:#fff; line-height:1.6; min-height:100vh; }
+    a{ color:inherit; }
+    .p-nav{ display:flex; align-items:center; justify-content:space-between; padding:15px 40px; border-bottom:1px solid rgba(232,184,75,0.15); position:sticky; top:0; background:rgba(8,17,31,0.92); backdrop-filter:blur(10px); z-index:100; }
+    .p-logo{ font-family:'Cinzel',serif; font-weight:700; letter-spacing:.09em; color:#fff; text-decoration:none; font-size:15px; }
+    .p-logo span{ color:var(--gold2); }
+    .p-nav-links{ display:flex; gap:22px; align-items:center; }
+    .p-nav-links a{ text-decoration:none; font-size:13px; color:rgba(255,255,255,0.72); }
+    .p-nav-links a:hover{ color:#fff; }
+    .p-nav-cta{ background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#08111F !important; padding:9px 20px; border-radius:100px; font-weight:700; font-size:12.5px; }
+    .e-hero{ text-align:center; padding:60px 24px 22px; }
+    .e-eyebrow{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:var(--gold2); }
+    .e-hero h1{ font-family:'Cormorant Garamond',serif; font-size:clamp(36px,6vw,58px); font-weight:800; margin:12px 0 12px; line-height:1.05; }
+    .e-hero p{ max-width:600px; margin:0 auto; color:rgba(255,255,255,0.7); font-size:16px; }
+    .e-wrap{ max-width:760px; margin:0 auto; padding:14px 24px 60px; }
+    .e-card{ background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:18px; padding:30px 28px; }
+    .e-sec{ font-family:'Cinzel',serif; font-size:11.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold2); margin:26px 0 12px; padding-bottom:9px; border-bottom:1px solid rgba(232,184,75,0.2); }
+    .e-sec:first-of-type{ margin-top:4px; }
+    .e-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media (max-width:620px){ .e-row{ grid-template-columns:1fr; } .p-nav{ padding:14px 18px; } .p-nav-links{ gap:14px; } .e-card{ padding:22px 18px; } }
+    label.e-lbl{ display:block; font-size:12.5px; color:rgba(255,255,255,0.62); margin:12px 0 5px; letter-spacing:.02em; }
+    .req{ color:var(--gold3); }
+    input[type=text], input[type=email], input[type=tel], select, textarea{
+      width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); border-radius:10px;
+      padding:11px 13px; color:#fff; font-family:'DM Sans',sans-serif; font-size:15px; }
+    input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--gold2); background:rgba(255,255,255,0.09); }
+    textarea{ min-height:110px; resize:vertical; }
+    select option{ background:#0F1E36; color:#fff; }
+    .e-checks{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; }
+    @media (max-width:620px){ .e-checks{ grid-template-columns:1fr; } }
+    .e-check{ display:flex; align-items:flex-start; gap:9px; font-size:14px; color:rgba(255,255,255,0.86); padding:7px 10px; border:1px solid rgba(255,255,255,0.1); border-radius:10px; cursor:pointer; background:rgba(255,255,255,0.02); }
+    .e-check:hover{ border-color:rgba(232,184,75,0.4); }
+    .e-check input{ margin-top:3px; accent-color:var(--gold2); flex:none; }
+    .e-file{ border:1px dashed rgba(232,184,75,0.42); border-radius:12px; padding:16px; text-align:center; background:rgba(232,184,75,0.05); }
+    .e-file input{ display:block; margin:8px auto 0; font-size:13px; color:rgba(255,255,255,0.75); max-width:100%; }
+    .e-hint{ font-size:12px; color:rgba(255,255,255,0.45); margin-top:6px; }
+    .e-btn{ width:100%; margin-top:22px; background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#08111F; border:0; border-radius:100px;
+      padding:15px 20px; font-family:'Cinzel',serif; font-weight:700; font-size:14px; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; }
+    .e-btn:disabled{ opacity:.55; cursor:default; }
+    .e-msg{ margin-top:14px; padding:12px 14px; border-radius:10px; font-size:14px; display:none; }
+    .e-msg.err{ display:block; background:rgba(220,70,70,0.14); border:1px solid rgba(220,70,70,0.45); color:#ffbdbd; }
+    .e-done{ display:none; text-align:center; padding:34px 20px; }
+    .e-done h2{ font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; margin-bottom:10px; }
+    .e-done p{ color:rgba(255,255,255,0.7); max-width:440px; margin:0 auto; }
+    .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+    footer{ text-align:center; padding:26px 20px 40px; color:rgba(255,255,255,0.45); font-size:13px; border-top:1px solid rgba(255,255,255,0.07); }
+    footer a{ color:var(--gold3); text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<nav class="p-nav">
+  <a class="p-logo" href="/">NOVA<span>PA</span></a>
+  <div class="p-nav-links">
+    <a href="/classes">Classes</a>
+    <a href="/broadway-bound">Broadway Bound</a>
+    <a href="/summer-2027">Summer Camps</a>
+    <a class="p-nav-cta" href="/register/?go=1">Register &rarr;</a>
+  </div>
+</nav>
+
+<div class="e-hero">
+  <div class="e-eyebrow">Join Our Team</div>
+  <h1>Work at NOVAPA</h1>
+  <p>We're always looking for teaching artists, production crew, and camp staff who love working with young performers. Tell us what you're interested in — we keep every submission on file and reach out when a matching role opens.</p>
+</div>
+
+<div class="e-wrap">
+  <div class="e-card" id="formCard">
+    <form id="applyForm" novalidate>
+
+      <div class="e-sec">Your Information</div>
+      <div class="e-row">
+        <div>
+          <label class="e-lbl" for="full_name">Full name <span class="req">*</span></label>
+          <input type="text" id="full_name" name="full_name" autocomplete="name" required>
+        </div>
+        <div>
+          <label class="e-lbl" for="email">Email <span class="req">*</span></label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+      </div>
+      <div class="e-row">
+        <div>
+          <label class="e-lbl" for="phone">Phone</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel">
+        </div>
+        <div>
+          <label class="e-lbl" for="experience">Experience level</label>
+          <select id="experience">
+            <option value="">Select…</option>
+            <option>Student / just starting out</option>
+            <option>1–3 years</option>
+            <option>3–7 years</option>
+            <option>7+ years</option>
+            <option>Professional / union</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="e-sec">Positions You're Interested In <span class="req">*</span></div>
+      <div class="e-checks" id="posBox"></div>
+
+      <div class="e-sec">Availability</div>
+      <div class="e-checks" id="availBox"></div>
+      <label class="e-lbl" for="earliest_start">Earliest you could start</label>
+      <input type="text" id="earliest_start" placeholder="e.g. Immediately, or September 2026">
+
+      <div class="e-sec">Résumé</div>
+      <div class="e-file">
+        <div style="font-size:14px;color:rgba(255,255,255,0.8)">Attach your résumé (optional)</div>
+        <input type="file" id="resume" accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
+        <div class="e-hint">PDF, Word, or plain text · up to 3 MB</div>
+      </div>
+
+      <div class="e-sec">Anything Else</div>
+      <label class="e-lbl" for="message">Tell us a bit about yourself</label>
+      <textarea id="message" placeholder="Training, teaching or performance experience, what draws you to NOVAPA…"></textarea>
+
+      <div class="hp"><label>Website<input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>
+
+      <button class="e-btn" id="submitBtn" type="submit">Submit Interest Form</button>
+      <div class="e-msg err" id="errBox"></div>
+      <p class="e-hint" style="text-align:center;margin-top:12px">
+        This is a general interest form, not an application for a specific opening.
+        Questions? <a href="mailto:info@novapa.org" style="color:var(--gold3)">info@novapa.org</a>
+      </p>
+    </form>
+  </div>
+
+  <div class="e-done" id="doneCard">
+    <h2>Thank you &mdash; we've got it.</h2>
+    <p>Your information is on file with our team. We'll reach out directly when a role matching your interests and availability opens up.</p>
+  </div>
+</div>
+
+<footer>
+  Northern Virginia Performing Arts &middot; Leesburg, VA &middot;
+  <a href="mailto:info@novapa.org">info@novapa.org</a> &middot;
+  <a href="tel:5715712120">(571) 571-2120</a>
+</footer>
+
+<script>
+(function(){
+  var POSITIONS = [
+    'Teaching Artist — Theatre / Acting',
+    'Teaching Artist — Dance',
+    'Teaching Artist — Voice / Music',
+    'Teaching Artist — Musical Theatre',
+    'Music Director / Accompanist',
+    'Choreographer',
+    'Director / Assistant Director',
+    'Summer Camp Staff / Counselor',
+    'Production & Technical Theatre',
+    'Stage Management',
+    'Front Desk / Administrative',
+    'Marketing / Social Media',
+    'Substitute / On-Call'
+  ];
+  var AVAILABILITY = [
+    'Weekday daytime',
+    'Weekday after-school (3–6pm)',
+    'Weekday evenings (6–9pm)',
+    'Saturdays',
+    'Summer camps (weekdays, full-day)',
+    'Seasonal productions / tech weeks'
+  ];
+  var MAX_BYTES = 3 * 1024 * 1024;
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function boxes(host, list, group){
+    host.innerHTML = list.map(function(v, i){
+      return '<label class="e-check"><input type="checkbox" data-g="' + group + '" value="' + esc(v) + '" id="' + group + i + '"><span>' + esc(v) + '</span></label>';
+    }).join('');
+  }
+  boxes($('posBox'), POSITIONS, 'pos');
+  boxes($('availBox'), AVAILABILITY, 'avail');
+  function picked(group){
+    return [].slice.call(document.querySelectorAll('input[data-g="' + group + '"]:checked')).map(function(c){ return c.value; });
+  }
+  function ev(name, props){ try { if (window.posthog && window.posthog.capture) window.posthog.capture(name, props || {}); } catch(e){} }
+  function fail(msg){
+    var e = $('errBox'); e.textContent = msg; e.classList.add('err');
+    $('submitBtn').disabled = false; $('submitBtn').textContent = 'Submit Interest Form';
+  }
+  function readFile(f){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(String(r.result).split(',')[1] || ''); };
+      r.onerror = function(){ rej(new Error('read')); };
+      r.readAsDataURL(f);
+    });
+  }
+  ev('employment_form_viewed');
+
+  $('applyForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    $('errBox').classList.remove('err');
+    var name = $('full_name').value.trim();
+    var email = $('email').value.trim();
+    if (!name) return fail('Please enter your name.');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('Please enter a valid email address.');
+    var positions = picked('pos');
+    if (!positions.length) return fail('Please choose at least one position you’re interested in.');
+    var f = $('resume').files[0];
+    if (f && f.size > MAX_BYTES) return fail('That résumé is larger than 3 MB — please attach a smaller file.');
+
+    $('submitBtn').disabled = true; $('submitBtn').textContent = 'Sending…';
+
+    Promise.resolve(f ? readFile(f) : null).then(function(b64){
+      return fetch('/api/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: name, email: email, phone: $('phone').value.trim(),
+          positions: positions, availability: picked('avail'),
+          earliest_start: $('earliest_start').value.trim(),
+          experience: $('experience').value,
+          message: $('message').value.trim(),
+          website: $('website').value,
+          resume: b64 ? { data: b64, name: f.name, type: f.type || 'application/pdf' } : null
+        })
+      });
+    }).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){ return { ok: r.ok, j: j }; });
+    }).then(function(out){
+      if (!out.ok || out.j.error) {
+        var m = {
+          resume_type: 'That file type isn’t supported — please attach a PDF, Word doc, or text file.',
+          resume_too_big: 'That résumé is larger than 3 MB — please attach a smaller file.',
+          resume_upload_failed: 'We couldn’t save that résumé. Try again, or submit without it and email it to info@novapa.org.',
+          email_invalid: 'Please enter a valid email address.',
+          position_required: 'Please choose at least one position.'
+        }[out.j.error] || 'Something went wrong on our end. Please try again, or email info@novapa.org.';
+        ev('employment_form_error', { code: out.j.error || 'unknown' });
+        return fail(m);
+      }
+      ev('employment_form_submitted', { positions: positions.length, resume: !!f });
+      $('formCard').style.display = 'none';
+      $('doneCard').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }).catch(function(){
+      fail('Network error — please check your connection and try again.');
+    });
+  });
+})();
+</script>
+</body>
+</html>
