@@ -175,6 +175,7 @@
   .showb { background:var(--card); border:2px solid var(--line); border-radius:18px; overflow:hidden; margin-bottom:16px; transition:border-color .15s; }
   .showb.sel { border-color:var(--gold2); }
   .showb .poster { aspect-ratio:880/625; max-height:300px; width:100%; background-size:cover; background-position:center top; }
+  .showb .poster.mg-poster { aspect-ratio:920/430; max-height:220px; background-position:center center; }
   .showb .bd { padding:16px 18px 14px; }
   .showb .t { font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:700; color:#fff; line-height:1.15; }
   .showb .d { font-size:13px; color:var(--ink-dim); margin:3px 0 10px; }
@@ -356,12 +357,7 @@
            as Summer (it runs June 2027) while the fall-cast renderer still
            drives its checkboxes via data-fallshow. -->
       <div class="showb" data-teen="meangirls">
-        <div class="poster" style="background-image:url('/register/img/meangirls.jpg'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%);display:flex;align-items:center;justify-content:center;min-height:150px;aspect-ratio:auto">
-          <div style="text-align:center;padding:16px">
-            <div style="font-family:'Cinzel',serif;font-size:10.5px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.92)">Broadway Bound Teens</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 2px 14px rgba(0,0,0,0.3)">Mean Girls</div>
-          </div>
-        </div>
+        <div class="poster mg-poster" style="background-image:url('/register/img/meangirls.jpg'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%)"></div>
         <div class="bd">
           <div class="t">Mean Girls &mdash; Teens</div>
           <div class="d">Ages 13–18 · June 14–24, 2027 · Performances Jun 25–27 · $995</div>
@@ -1196,13 +1192,10 @@
       }).join('');
       // poster header, summer-card style — /register/img/meangirls.jpg wins if
       // the licensed art file exists; the branded gradient shows until then
+      // real show art carries the title, so no text overlay — the gradient is
+      // only a fallback if the file is ever missing
       var poster = a.id === MG_ID
-        ? '<div class="poster" style="background-image:url(\'/register/img/meangirls.jpg\'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%);display:flex;align-items:center;justify-content:center;min-height:170px;aspect-ratio:auto">' +
-          '<div style="text-align:center;padding:18px">' +
-          '<div style="font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.92)">Broadway Bound Teens · Summer 2027</div>' +
-          '<div style="font-family:\'Cormorant Garamond\',serif;font-size:40px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 2px 14px rgba(0,0,0,0.3)">Mean Girls</div>' +
-          '<div style="font-size:12.5px;color:rgba(255,255,255,0.92);margin-top:4px">Ages 13–18 · Four Performances · Jun 25–27</div>' +
-          '</div></div>'
+        ? '<div class="poster mg-poster" style="background-image:url(\'/register/img/meangirls.jpg\'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%)"></div>'
         : '';
       var inner = '<div class="card"' + (poster ? ' style="border:0;margin:0;border-radius:0"' : '') + '><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px">' +
         esc(a.name) + '</div>' +
