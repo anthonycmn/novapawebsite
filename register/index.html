@@ -352,6 +352,22 @@
           <div class="kids" data-fallshow="mermaid"></div>
         </div>
       </div>
+      <!-- Teens summer intensive. No data-fall, so the season filter counts it
+           as Summer (it runs June 2027) while the fall-cast renderer still
+           drives its checkboxes via data-fallshow. -->
+      <div class="showb" data-teen="meangirls">
+        <div class="poster" style="background-image:url('/register/img/meangirls.jpg'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%);display:flex;align-items:center;justify-content:center;min-height:150px;aspect-ratio:auto">
+          <div style="text-align:center;padding:16px">
+            <div style="font-family:'Cinzel',serif;font-size:10.5px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.92)">Broadway Bound Teens</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 2px 14px rgba(0,0,0,0.3)">Mean Girls</div>
+          </div>
+        </div>
+        <div class="bd">
+          <div class="t">Mean Girls &mdash; Teens</div>
+          <div class="d">Ages 13–18 · June 14–24, 2027 · Performances Jun 25–27 · $995</div>
+          <div class="kids" data-fallshow="meangirls"></div>
+        </div>
+      </div>
     </div>
     <p class="tiny" style="margin:10px 0 4px">This year, campers in the same age group are in the same cast and show!</p>
     <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
@@ -500,11 +516,17 @@
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
     }
   })();
+  var MG_ID = 990001; // Broadway Bound Teens | Mean Girls
   var FALL_SHOWS = [
     { key:'frozen',  title:"Disney's Frozen",                 img:'/register/img/frozen.jpg',
       date:'One evening a week \u00b7 Sep 2026 \u2013 Feb 2027 \u00b7 $695', re:/frozen/i, start:'2026-09-15' },
     { key:'mermaid', title:"Disney's The Little Mermaid JR.", img:'/register/img/mermaid.jpg',
-      date:'One evening a week \u00b7 Feb \u2013 May 2027 \u00b7 $695', re:/mermaid/i, start:'2027-02-03' }
+      date:'One evening a week \u00b7 Feb \u2013 May 2027 \u00b7 $695', re:/mermaid/i, start:'2027-02-03' },
+    // Summer teen intensive \u2014 same activity-driven plumbing as the fall casts,
+    // one cast only, so no cast pills ever render.
+    { key:'meangirls', title:'Mean Girls \u2014 Teens', img:'/register/img/meangirls.jpg',
+      date:'Ages 13\u201318 \u00b7 June 14\u201324, 2027 \u00b7 $995', re:/mean girls/i,
+      start:'2027-06-14', ages:'13\u201318' }
   ];
   function fallActsFor(showKey){
     var s = FALL_SHOWS.filter(function(x){ return x.key === showKey; })[0];
@@ -936,8 +958,15 @@
         var onCast = fallCastOn(i, sKey);
         var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= r.max; });
         if (!eligible && onCast) { setFallCast(i, sKey, null); onCast = null; }
+        // single-cast programs (Mean Girls) have no choice to make — skip the
+        // pill row and surface any scarcity on the checkbox line instead
+        var soloTag = '';
+        if (acts.length === 1) {
+          var l1 = acts[0].remaining;
+          if (l1 != null && l1 < 20) soloTag = ' <span class="left">' + (l1 <= 0 ? 'Full' : l1 + ' more spots available') + '</span>';
+        }
         var pills = '';
-        if (onCast && eligible) {
+        if (onCast && eligible && acts.length > 1) {
           pills = acts.map(function(a){
             var r = castRange(a);
             if (age != null && !(age >= r.min - 1 && age <= r.max)) return '';
@@ -952,7 +981,7 @@
             '<input type="date" class="fallBday" data-i="' + i + '" data-fs="' + sKey + '" max="' + today + '"></div>' : '';
         return '<div class="kid-row">' +
           '<label class="kid-check"><input type="checkbox" data-fall="' + sKey + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + (eligible ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' +
-          (eligible ? '' : ' <span class="badge-done" style="opacity:.65">this show is for ages 5\u201317</span>') + '</label>' +
+          (eligible ? soloTag : ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
       }).join('');
     });
@@ -1167,7 +1196,7 @@
       }).join('');
       // poster header, summer-card style — /register/img/meangirls.jpg wins if
       // the licensed art file exists; the branded gradient shows until then
-      var poster = a.id === 990001
+      var poster = a.id === MG_ID
         ? '<div class="poster" style="background-image:url(\'/register/img/meangirls.jpg\'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%);display:flex;align-items:center;justify-content:center;min-height:170px;aspect-ratio:auto">' +
           '<div style="text-align:center;padding:18px">' +
           '<div style="font-family:\'Cinzel\',serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.92)">Broadway Bound Teens · Summer 2027</div>' +
@@ -1382,7 +1411,7 @@
         return u;
       }
       // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
-      if (it.activity_id === 990001) {
+      if (it.activity_id === MG_ID) {
         if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { u = Math.round(u * 0.90); mg[i] = true; }
         return u;
       }
@@ -1418,6 +1447,7 @@
       return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(nm) +
         (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') +
         (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
+        (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
@@ -1449,18 +1479,24 @@
       if (kid) byKid[k] += priorCamps(kid);
     });
     items.forEach(function(it){
-      if (it.show) return;
+      if (it.show || it.activity_id === MG_ID) return;
       var kid = state.kids[it.ci];
       if (kid && (kid.already || []).length && !byKid[kidKey(it)]) byKid[kidKey(it)] = 0.5; // marks the kid as having a camp for the show bundle
     });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
-    var bund = [];
+    var bund = [], mg = [];
     var units = items.map(function(it, i){
       if (it.show) return Math.round(C.PRICE * 100 * (1 - discRate(byKid[kidKey(it)])));
       var a = byIdAll[it.activity_id] || {};
       var base = a.price_cents || 69500;
+      // Mean Girls: flat 10% through Aug 1 — never stacks with the camp tier or
+      // the show bundle, and never counts toward another item's bundle either
+      if (it.activity_id === MG_ID) {
+        if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { mg[i] = true; return Math.round(base * 0.9); }
+        return base;
+      }
       var kid = kidKey(it);
-      var kidShowN = items.filter(function(x){ return !x.show && kidKey(x) === kid; }).length;
+      var kidShowN = items.filter(function(x){ return !x.show && x.activity_id !== MG_ID && kidKey(x) === kid; }).length;
       if (byKid[kid] || kidShowN >= 2) { bund[i] = true; return Math.round(base * 0.9); }
       return base;
     });
@@ -1479,11 +1515,11 @@
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = Math.round(net * 5 / 100);
-    return { n:n, items:items, units:units, bund:bund, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+    return { n:n, items:items, units:units, bund:bund, mg:mg, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
              today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / C.INSTALLMENTS) };
   }
 
@@ -1553,7 +1589,7 @@
     var rows = items.map(function(it, i){
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
-        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '');
+        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
       var pct = it.show ? Math.round(discRate((byKid[kidKey(it)]||{}).n||0)*100) : 0;
       return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + '</span><span>' + money(p.units[i]) + '</span></div>';
     }).join('');

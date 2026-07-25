@@ -139,7 +139,9 @@ export function priceCart(cart, plan, opts = {}) {
   for (const it of cart) if (!it.show && (priorCampsByKid[kidKey(it)] || 0) > 0) kidsWithSummer.add(kidKey(it));
   const isDayCampItem = (it) => !it.show && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
   const showsByKid = {};
-  for (const it of cart) if (!it.show && !isDayCampItem(it)) {
+  // Mean Girls is excluded: its flat 10% neither stacks nor counts toward the
+  // fall-show bundle for a kid's other programs
+  for (const it of cart) if (!it.show && !isDayCampItem(it) && it.activity_id !== MEANGIRLS_ID) {
     const k = kidKey(it);
     (showsByKid[k] = showsByKid[k] || []).push(it);
   }
