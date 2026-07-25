@@ -317,7 +317,7 @@
         <div class="poster" style="background-image:url('/register/img/httyd.jpg')"></div>
         <div class="bd">
           <div class="t">How to Train Your Dragon JR.</div>
-          <div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:00 · $995</div>
+          <div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:00 · $995<br><span style="color:var(--gold3)">Performances Jul 16–17</span></div>
           <div class="kids" data-show="httyd"></div>
         </div>
       </div>
@@ -325,7 +325,7 @@
         <div class="poster" style="background-image:url('/register/img/charlie.jpg')"></div>
         <div class="bd">
           <div class="t">Charlie and the Chocolate Factory JR.</div>
-          <div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:00 · $995</div>
+          <div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:00 · $995<br><span style="color:var(--gold3)">Performances Jul 30–31</span></div>
           <div class="kids" data-show="charlie"></div>
         </div>
       </div>
@@ -333,7 +333,7 @@
         <div class="poster" style="background-image:url('/register/img/trolls.jpg')"></div>
         <div class="bd">
           <div class="t">Trolls The Musical JR.</div>
-          <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00 · $995</div>
+          <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00 · $995<br><span style="color:var(--gold3)">Performances Aug 13–14</span></div>
           <div class="kids" data-show="trolls"></div>
         </div>
       </div>
@@ -513,6 +513,15 @@
     }
   })();
   var MG_ID = 990001; // Broadway Bound Teens | Mean Girls
+  // Closing-weekend showtimes (CJ) — same pattern every camp, second Friday
+  // and Saturday, split by age group.
+  var SHOWTIMES = {
+    '5-9':   'FRI 5:00 PM &middot; SAT 11:00 AM',
+    '9-12':  'FRI 7:00 PM &middot; SAT 1:00 PM',
+    '12-15': 'SAT 4:00 PM &middot; SAT 7:00 PM',
+    'tech':  'all performances, FRI&ndash;SAT'
+  };
+  var PERF_DAYS = { httyd:['Fri Jul 16','Sat Jul 17'], charlie:['Fri Jul 30','Sat Jul 31'], trolls:['Fri Aug 13','Sat Aug 14'] };
   var FALL_SHOWS = [
     { key:'frozen',  title:"Disney's Frozen",                 img:'/register/img/frozen.jpg',
       date:'One evening a week \u00b7 Sep 2026 \u2013 Feb 2027 \u00b7 $695', re:/frozen/i, start:'2026-09-15' },
@@ -919,11 +928,17 @@
           var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Full' : left + ' more spots available') + '</span>' : '';
           return '<span class="pill' + (a.band === b ? ' sel' : '') + '" data-key="' + esc(key) + '" data-band="' + b + '">' + bandLabel(b) + leftTag + '</span>';
         }).join('');
+        // showtimes differ by age group, so state them once a group is chosen —
+        // grandparents book travel around these
+        var showT = (a.on && !already && a.band && SHOWTIMES[a.band] && PERF_DAYS[show])
+          ? '<div class="tiny" style="text-align:left;margin:4px 0 0;opacity:.75">Performances: ' +
+            SHOWTIMES[a.band].replace('FRI', PERF_DAYS[show][0]).replace('SAT', PERF_DAYS[show][1]) + '</div>'
+          : '';
         return '<div class="kid-row">' +
           '<label class="kid-check"><input type="checkbox" data-key="' + esc(key) + '" ' + (a.on ? 'checked' : '') + ((already || noBand) ? ' disabled' : '') + '> <span>' + esc(k.name) + '</span>' +
           (already ? ' <span class="badge-done">\u2713 already registered</span>' :
            noBand ? ' <span class="badge-done" style="opacity:.65">camps are for ages 5\u201315</span>' : '') + '</label>' +
-          (pills ? '<div class="pills">' + pills + '</div>' : '') + '</div>';
+          (pills ? '<div class="pills">' + pills + '</div>' : '') + showT + '</div>';
       }).join('');
     });
     var blocks = $('showBlocks');
