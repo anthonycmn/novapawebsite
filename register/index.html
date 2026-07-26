@@ -1535,6 +1535,14 @@
   // How many monthly installments a given first-session date allows — mirrors
   // installmentDates() in reg-config.mjs so the warning below matches what the
   // server will actually schedule.
+
+  function squeezeNote(sq, actualN){
+    var n = actualN != null ? actualN : sq.now;
+    return '<p class="tiny" style="text-align:left;margin-top:8px;padding:9px 11px;border:1px solid rgba(232,184,75,0.35);border-radius:9px;background:rgba(232,184,75,0.07)">' +
+      '<b>' + esc(sq.names) + '</b> begins ' + sq.starts + ', and a payment plan has to finish before your first program starts \u2014 ' +
+      'so this cart is ' + n + ' payment' + (n === 1 ? '' : 's') + ' instead of ' + sq.could + '. ' +
+      'Checking out ' + esc(sq.names) + ' separately would let your other programs spread over ' + sq.could + ' months.</p>';
+  }
   function instCountFor(startDate){
     if (!startDate) return 0;
     var lastOk = Math.min(startDate.getTime() - (C.PAY_FULL_CUTOFF_DAYS || 14) * 86400000,
@@ -1655,10 +1663,7 @@
     $('payBreakdown').innerHTML = state.plan === 'deposit'
       ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card.</p>' +
-        (squeeze ? '<p class="tiny" style="text-align:left;margin-top:8px;padding:9px 11px;border:1px solid rgba(232,184,75,0.35);border-radius:9px;background:rgba(232,184,75,0.07)">' +
-          '<b>' + esc(squeeze.names) + '</b> begins ' + squeeze.starts + ', and a plan has to finish before your first program starts \u2014 so this cart is ' +
-          squeeze.now + ' payment' + (squeeze.now === 1 ? '' : 's') + ' instead of ' + squeeze.could + '. ' +
-          'Checking out ' + esc(squeeze.names) + ' on its own would let your other programs spread over ' + squeeze.could + ' months.</p>' : '')
+        (squeeze ? squeezeNote(squeeze) : '')
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
@@ -1727,10 +1732,14 @@
     var first = p.first_installment_utc ? new Date(p.first_installment_utc * 1000) : null;
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var when = first ? (months[first.getUTCMonth()] + ' ' + first.getUTCFullYear()) : '';
+    // this render is authoritative (server numbers) and lands after renderPay,
+    // so the squeeze notice has to be repeated here or it gets wiped
+    var sq = planSqueeze((state.hold && state.hold.items) || buildItems());
     $('payBreakdown').innerHTML =
       '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today_cents) + '</span></div>' +
       '<p class="tiny" style="text-align:left;margin-top:2px">Then <b>' + p.n_installments + ' monthly payments of ' + money(p.installment_cents) +
-      '</b> starting ' + when + ' — automatic on this card.</p>';
+      '</b> starting ' + when + ' — automatic on this card.</p>' +
+      (sq && sq.could > p.n_installments ? squeezeNote(sq, p.n_installments) : '');
   }
 
   var SHIRT_SIZES = ['Youth XS','Youth S','Youth M','Youth L','Adult S','Adult M','Adult L','Adult XL'];
