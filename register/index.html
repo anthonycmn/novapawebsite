@@ -611,6 +611,71 @@
     if (!location.search && !location.hash) location.replace('/summer-2027');
   });
 
+
+  // ---------- cart cache ----------
+  // Selections live only in memory, so a refresh, an accidental back-swipe, or
+  // a phone locking mid-checkout used to lose everything. Persist by camper
+  // NAME (not array index — the roster can reorder after a merge or an add) and
+  // scope to the signed-in email so a shared device never inherits someone
+  // else's cart.
+  var CART_KEY = 'nv_cart', CART_TTL = 24 * 3600 * 1000;
+  // A cart belongs to the checkout it was built in, not just to the account.
+  // Summer, a fall link and a Teen Conservatory link each price differently and
+  // carry a different plan, so restoring one into another produced a page that
+  // showed the full amount while the server charged a deposit.
+  function cartScope(){
+    return state.catIds.length ? 'a:' + state.catIds.slice().sort().join(',')
+                               : 's:' + state.seasonFilter;
+  }
+  function saveCart(){
+    try {
+      if (!state.email) return;
+      var sel = [];
+      Object.keys(state.assign).forEach(function(k){
+        var a = state.assign[k];
+        if (!a || !a.on) return;
+        var bits = k.split('|'), kid = state.kids[+bits[1]];
+        if (!kid || !kid.name) return;
+        sel.push({ k: bits[0], kid: kid.name, band: a.band || null });
+      });
+      if (!sel.length && !state.coupon) { localStorage.removeItem(CART_KEY); return; }
+      localStorage.setItem(CART_KEY, JSON.stringify({
+        e: state.email, t: Date.now(), sel: sel, sc: cartScope(),
+        season: state.seasonFilter, ins: !!state.insurance,
+        plan: state.plan, coupon: state.coupon ? state.coupon.code : null
+      }));
+    } catch(e){}
+  }
+  function clearCart(){ try { localStorage.removeItem(CART_KEY); } catch(e){} }
+  function restoreCart(){
+    try {
+      var raw = localStorage.getItem(CART_KEY);
+      if (!raw) return 0;
+      var c = JSON.parse(raw);
+      if (!c || c.e !== state.email) return 0;              // different account
+      if (c.sc !== cartScope()) return 0;                   // a different checkout — leave it be
+      if (Date.now() - (c.t || 0) > CART_TTL) { clearCart(); return 0; }
+      var n = 0;
+      (c.sel || []).forEach(function(x){
+        var i = -1;
+        for (var j = 0; j < state.kids.length; j++) {
+          if (state.kids[j].name === x.kid) { i = j; break; }
+        }
+        if (i < 0) return;                                   // camper no longer on the account
+        state.assign[x.k + '|' + i] = { on: true, band: x.band };
+        n++;
+      });
+      // catalog links derive their plan from the item type (shows pay in full,
+      // classes subscribe) — a cached plan must never override that
+      if (c.plan && !state.catIds.length) state.plan = c.plan;
+      state.insurance = !!c.ins;
+      if (n) ev('reg_cart_restored', { items: n });
+      return n;
+    } catch(e){ return 0; }
+  }
+
+
+
   // ---------- step: gate (new or returning) ----------
   $('choiceReturning').addEventListener('click', function(){
     ev('reg_choice', { returning: true });
@@ -634,7 +699,9 @@
   });
   // classes and non-BB camps are open registration — no new/returning gate at all
   if (state.catIds.length) {
-    sb.rpc('catalog_list').then(function(res){
+    // p_ids also unhides unlisted programs (Teen Conservatory) when the link
+    // names them — that opt-in is the only way they are reachable at all.
+    sb.rpc('catalog_list', { p_ids: state.catIds }).then(function(res){
       var rows = (res.data || []).filter(function(a){ return state.catIds.indexOf(a.id) !== -1; });
       if (rows.length && rows.every(function(a){ return !a.bb_gated; })) {
         state.openReg = true;
@@ -720,7 +787,7 @@
     Promise.all([
       sb.rpc('get_my_family'),
       sb.rpc('inventory_status'),
-      sb.rpc('catalog_list'),
+      sb.rpc('catalog_list', { p_ids: state.catIds }),
       sb.rpc('family_fee_due', { p_email: state.email }),
       sb.rpc('my_camper_birthdates'),
       sb.rpc('my_parent_name'),
@@ -756,6 +823,7 @@
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
+      restoreCart();
       if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
       go('st-shows'); renderShowKids(); startSoftTimer();
     });
@@ -796,10 +864,10 @@
     go('st-shows'); renderShowKids(); startSoftTimer();
   });
   $('signout').addEventListener('click', function(e){
-    e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
+    e.preventDefault(); clearCart(); sb.auth.signOut().then(function(){ location.href='/register/'; });
   });
   $('signout2').addEventListener('click', function(e){
-    e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
+    e.preventDefault(); clearCart(); sb.auth.signOut().then(function(){ location.href='/register/'; });
   });
   $('sKidOpen').addEventListener('click', function(){
     $('kidErr').classList.remove('on');
@@ -946,11 +1014,11 @@
       cb.addEventListener('change', function(){
         state.assign[cb.dataset.key].on = cb.checked;
         ev('reg_show_kid_toggled', { key: cb.dataset.key, on: cb.checked });
-        renderShowKids();
+        renderShowKids(); saveCart();
       });
     });
     blocks.querySelectorAll('.pill[data-key]').forEach(function(p){
-      p.addEventListener('click', function(){ state.assign[p.dataset.key].band = p.dataset.band; renderShowKids(); });
+      p.addEventListener('click', function(){ state.assign[p.dataset.key].band = p.dataset.band; renderShowKids(); saveCart(); });
     });
     renderFallCards();
     applySeasonFilter();
@@ -1005,14 +1073,14 @@
           setFallCast(i, sKey, defaultCastFor(sKey, ageOn(k.bday, sd.start)) || fallActsFor(sKey)[0].id);
         } else setFallCast(i, sKey, null);
         ev('reg_show_kid_toggled', { key: sKey + '|' + i, on: cb.checked });
-        renderShowKids();
+        renderShowKids(); saveCart();
       });
     });
     blocks.querySelectorAll('.pill[data-fall]').forEach(function(p){
       p.addEventListener('click', function(){
         if (p.dataset.full) return;
         setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
-        renderShowKids();
+        renderShowKids(); saveCart();
       });
     });
     blocks.querySelectorAll('.fallBday').forEach(function(inp){
@@ -1124,7 +1192,7 @@
   });
   document.querySelectorAll('#seasonChips .schip').forEach(function(c){
     c.addEventListener('click', function(){
-      state.seasonFilter = c.dataset.f;
+      state.seasonFilter = c.dataset.f; saveCart();
       ev('reg_season_filter', { f: c.dataset.f });
       renderShowKids();
     });
@@ -1222,7 +1290,7 @@
     html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
     $('assignBlocks').innerHTML = html;
     $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
-      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); });
+      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); saveCart(); });
     });
     $('assignBlocks').querySelectorAll('.bdayInput').forEach(function(inp){
       inp.addEventListener('change', function(){
@@ -1455,7 +1523,6 @@
       return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(nm) +
         (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') +
         (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
-        (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
@@ -1532,6 +1599,58 @@
   }
 
   var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };
+  // How many monthly installments a given first-session date allows — mirrors
+  // installmentDates() in reg-config.mjs so the warning below matches what the
+  // server will actually schedule.
+
+  function squeezeNote(sq, actualN){
+    var n = actualN != null ? actualN : sq.now;
+    return '<p class="tiny" style="text-align:left;margin-top:8px;padding:9px 11px;border:1px solid rgba(232,184,75,0.35);border-radius:9px;background:rgba(232,184,75,0.07)">' +
+      '<b>' + esc(sq.names) + '</b> begins ' + sq.starts + ', and a payment plan has to finish before your first program starts \u2014 ' +
+      'so this cart is ' + n + ' payment' + (n === 1 ? '' : 's') + ' instead of ' + sq.could + '. ' +
+      'Checking out ' + esc(sq.names) + ' separately would let your other programs spread over ' + sq.could + ' months.</p>';
+  }
+  function instCountFor(startDate){
+    if (!startDate) return 0;
+    var lastOk = Math.min(startDate.getTime() - (C.PAY_FULL_CUTOFF_DAYS || 14) * 86400000,
+                          new Date(C.LAST_INSTALLMENT).getTime());
+    var n = 0, now = new Date();
+    var d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 4, 0, 0));
+    while (d.getTime() <= lastOk && n < C.INSTALLMENTS) {
+      n++; d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 4, 0, 0));
+    }
+    return n;
+  }
+  // A cart's plan length is set by its EARLIEST program, so one autumn show can
+  // compress payments for camps eleven months out. Detect only that case.
+  function planSqueeze(items){
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    var rows = [];
+    items.forEach(function(it){
+      if (it.show && CAMP_START[it.show]) { rows.push({ s: CAMP_START[it.show], n: SHOW_NAMES[it.show] }); return; }
+      if (!it.activity_id) return;
+      var nm = (byIdAll[it.activity_id] || {}).name || '';
+      if (/frozen/i.test(nm)) rows.push({ s:'2026-09-15', n:"Disney's Frozen" });
+      else if (/mermaid/i.test(nm)) rows.push({ s:'2027-02-03', n:'The Little Mermaid JR.' });
+      else if (it.activity_id === MG_ID) rows.push({ s:'2027-06-14', n:'Mean Girls' });
+      // Teen Conservatory anchors on opening night, matching showStartFor()
+      else if (/sweeney/i.test(nm)) rows.push({ s:'2026-10-23', n:'Sweeney Todd' });
+      else if (/hadestown/i.test(nm)) rows.push({ s:'2027-03-05', n:'Hadestown' });
+    });
+    if (rows.length < 2) return null;
+    rows.sort(function(a,b){ return a.s < b.s ? -1 : a.s > b.s ? 1 : 0; });
+    var first = rows[0].s;
+    var later = rows.filter(function(r){ return r.s !== first; });
+    if (!later.length) return null;
+    var nowN = instCountFor(new Date(first + 'T00:00:00-04:00'));
+    var couldN = instCountFor(new Date(later[0].s + 'T00:00:00-04:00'));
+    if (couldN - nowN < 2) return null; // not a meaningful squeeze — stay quiet
+    var names = [];
+    rows.forEach(function(r){ if (r.s === first && names.indexOf(r.n) === -1) names.push(r.n); });
+    return { names: names.join(' and '), now: nowN, could: couldN,
+             starts: fmtDate(new Date(first + 'T00:00:00-04:00')) };
+  }
+
   function cartStartDate(items){
     var starts = [];
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
@@ -1541,6 +1660,11 @@
         var n = (byIdAll[it.activity_id]||{}).name || '';
         if (/frozen/i.test(n)) starts.push('2026-09-15');
         else if (/mermaid/i.test(n)) starts.push('2027-02-03');
+        // Insurance keys off the real program start, not opening night: the
+        // refund window is about dropping out, so Sweeney (already rehearsing)
+        // falls outside every tier and the offer never appears for it.
+        else if (/sweeney/i.test(n)) starts.push('2026-08-17');
+        else if (/hadestown/i.test(n)) starts.push('2026-11-16');
       }
     });
     starts.sort();
@@ -1610,9 +1734,11 @@
       (p.planFee ? '<div class="sumrow"><span>Payment plan (5%)</span><span>+' + money(p.planFee) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Total</span><span>' + money(p.total) + '</span></div>';
 
+    var squeeze = state.plan === 'deposit' ? planSqueeze(items) : null;
     $('payBreakdown').innerHTML = state.plan === 'deposit'
       ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card.</p>'
+        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card.</p>' +
+        (squeeze ? squeezeNote(squeeze) : '')
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
@@ -1677,14 +1803,26 @@
   $('couponInput').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); applyCoupon(); } });
 
   function renderServerBreakdown(p){
+    // The server's number is what actually gets charged. In catalog mode the
+    // summary card's own "Due today" was never reconciled against it, so when
+    // the two pricing paths disagreed the card and the pay button quietly
+    // showed different amounts. Let the server win.
+    if (isCatMode() && p.today_cents != null) {
+      var tot = $('summaryCard').querySelector('.sumrow.total span:last-child');
+      if (tot) tot.textContent = money(p.today_cents);
+    }
     if (state.plan !== 'deposit' || !p.n_installments) return;
     var first = p.first_installment_utc ? new Date(p.first_installment_utc * 1000) : null;
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var when = first ? (months[first.getUTCMonth()] + ' ' + first.getUTCFullYear()) : '';
+    // this render is authoritative (server numbers) and lands after renderPay,
+    // so the squeeze notice has to be repeated here or it gets wiped
+    var sq = planSqueeze((state.hold && state.hold.items) || buildItems());
     $('payBreakdown').innerHTML =
       '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today_cents) + '</span></div>' +
       '<p class="tiny" style="text-align:left;margin-top:2px">Then <b>' + p.n_installments + ' monthly payments of ' + money(p.installment_cents) +
-      '</b> starting ' + when + ' — automatic on this card.</p>';
+      '</b> starting ' + when + ' — automatic on this card.</p>' +
+      (sq && sq.could > p.n_installments ? squeezeNote(sq, p.n_installments) : '');
   }
 
   var SHIRT_SIZES = ['Youth XS','Youth S','Youth M','Youth L','Adult S','Adult M','Adult L','Adult XL'];
@@ -2068,6 +2206,7 @@
 
   function finish(){
     clearInterval(timerInt);
+    clearCart();
     $('holdChip').classList.remove('on'); $('topNote').style.display='';
     var p = state.pricing;
     var items = state.hold.items;
