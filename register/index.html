@@ -1532,6 +1532,47 @@
   }
 
   var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };
+  // How many monthly installments a given first-session date allows — mirrors
+  // installmentDates() in reg-config.mjs so the warning below matches what the
+  // server will actually schedule.
+  function instCountFor(startDate){
+    if (!startDate) return 0;
+    var lastOk = Math.min(startDate.getTime() - (C.PAY_FULL_CUTOFF_DAYS || 14) * 86400000,
+                          new Date(C.LAST_INSTALLMENT).getTime());
+    var n = 0, now = new Date();
+    var d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 4, 0, 0));
+    while (d.getTime() <= lastOk && n < C.INSTALLMENTS) {
+      n++; d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 4, 0, 0));
+    }
+    return n;
+  }
+  // A cart's plan length is set by its EARLIEST program, so one autumn show can
+  // compress payments for camps eleven months out. Detect only that case.
+  function planSqueeze(items){
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    var rows = [];
+    items.forEach(function(it){
+      if (it.show && CAMP_START[it.show]) { rows.push({ s: CAMP_START[it.show], n: SHOW_NAMES[it.show] }); return; }
+      if (!it.activity_id) return;
+      var nm = (byIdAll[it.activity_id] || {}).name || '';
+      if (/frozen/i.test(nm)) rows.push({ s:'2026-09-15', n:"Disney's Frozen" });
+      else if (/mermaid/i.test(nm)) rows.push({ s:'2027-02-03', n:'The Little Mermaid JR.' });
+      else if (it.activity_id === MG_ID) rows.push({ s:'2027-06-14', n:'Mean Girls' });
+    });
+    if (rows.length < 2) return null;
+    rows.sort(function(a,b){ return a.s < b.s ? -1 : a.s > b.s ? 1 : 0; });
+    var first = rows[0].s;
+    var later = rows.filter(function(r){ return r.s !== first; });
+    if (!later.length) return null;
+    var nowN = instCountFor(new Date(first + 'T00:00:00-04:00'));
+    var couldN = instCountFor(new Date(later[0].s + 'T00:00:00-04:00'));
+    if (couldN - nowN < 2) return null; // not a meaningful squeeze — stay quiet
+    var names = [];
+    rows.forEach(function(r){ if (r.s === first && names.indexOf(r.n) === -1) names.push(r.n); });
+    return { names: names.join(' and '), now: nowN, could: couldN,
+             starts: fmtDate(new Date(first + 'T00:00:00-04:00')) };
+  }
+
   function cartStartDate(items){
     var starts = [];
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
@@ -1610,9 +1651,14 @@
       (p.planFee ? '<div class="sumrow"><span>Payment plan (5%)</span><span>+' + money(p.planFee) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Total</span><span>' + money(p.total) + '</span></div>';
 
+    var squeeze = state.plan === 'deposit' ? planSqueeze(items) : null;
     $('payBreakdown').innerHTML = state.plan === 'deposit'
       ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card.</p>'
+        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card.</p>' +
+        (squeeze ? '<p class="tiny" style="text-align:left;margin-top:8px;padding:9px 11px;border:1px solid rgba(232,184,75,0.35);border-radius:9px;background:rgba(232,184,75,0.07)">' +
+          '<b>' + esc(squeeze.names) + '</b> begins ' + squeeze.starts + ', and a plan has to finish before your first program starts \u2014 so this cart is ' +
+          squeeze.now + ' payment' + (squeeze.now === 1 ? '' : 's') + ' instead of ' + squeeze.could + '. ' +
+          'Checking out ' + esc(squeeze.names) + ' on its own would let your other programs spread over ' + squeeze.could + ' months.</p>' : '')
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
 
