@@ -23,3 +23,19 @@
   to = "/summer-2027.html"
   status = 301
   force = true
+
+# 2026 Camp Parent Info is retired from public navigation. Old links and
+# bookmarks go to the current summer camp page. The original page is kept
+# for staff/webmaster reference at /camp-info-2026-archive.html, which is
+# intentionally NOT redirected.
+[[redirects]]
+  from = "/camp-info"
+  to = "/summer-2027.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/camp-info.html"
+  to = "/summer-2027.html"
+  status = 301
+  force = true
