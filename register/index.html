@@ -611,6 +611,71 @@
     if (!location.search && !location.hash) location.replace('/summer-2027');
   });
 
+
+  // ---------- cart cache ----------
+  // Selections live only in memory, so a refresh, an accidental back-swipe, or
+  // a phone locking mid-checkout used to lose everything. Persist by camper
+  // NAME (not array index — the roster can reorder after a merge or an add) and
+  // scope to the signed-in email so a shared device never inherits someone
+  // else's cart.
+  var CART_KEY = 'nv_cart', CART_TTL = 24 * 3600 * 1000;
+  function saveCart(){
+    try {
+      if (!state.email) return;
+      var sel = [];
+      Object.keys(state.assign).forEach(function(k){
+        var a = state.assign[k];
+        if (!a || !a.on) return;
+        var bits = k.split('|'), kid = state.kids[+bits[1]];
+        if (!kid || !kid.name) return;
+        sel.push({ k: bits[0], kid: kid.name, band: a.band || null });
+      });
+      if (!sel.length && !state.coupon) { localStorage.removeItem(CART_KEY); return; }
+      localStorage.setItem(CART_KEY, JSON.stringify({
+        e: state.email, t: Date.now(), sel: sel,
+        season: state.seasonFilter, ins: !!state.insurance,
+        plan: state.plan, coupon: state.coupon ? state.coupon.code : null
+      }));
+    } catch(e){}
+  }
+  function clearCart(){ try { localStorage.removeItem(CART_KEY); } catch(e){} }
+  function restoreCart(){
+    try {
+      var raw = localStorage.getItem(CART_KEY);
+      if (!raw) return 0;
+      var c = JSON.parse(raw);
+      if (!c || c.e !== state.email) return 0;              // different account
+      if (Date.now() - (c.t || 0) > CART_TTL) { clearCart(); return 0; }
+      var n = 0;
+      (c.sel || []).forEach(function(x){
+        var i = -1;
+        for (var j = 0; j < state.kids.length; j++) {
+          if (state.kids[j].name === x.kid) { i = j; break; }
+        }
+        if (i < 0) return;                                   // camper no longer on the account
+        state.assign[x.k + '|' + i] = { on: true, band: x.band };
+        n++;
+      });
+      if (c.season) state.seasonFilter = c.season;
+      if (c.plan) state.plan = c.plan;
+      state.insurance = !!c.ins;
+      if (n) ev('reg_cart_restored', { items: n });
+      return n;
+    } catch(e){ return 0; }
+  }
+
+
+  function showCartRestored(){
+    var host = document.querySelector('#st-shows .sub');
+    if (!host || document.getElementById('cartBack')) return;
+    var el = document.createElement('p');
+    el.id = 'cartBack';
+    el.className = 'tiny';
+    el.style.cssText = 'margin:6px 0 0;color:var(--gold3)';
+    el.textContent = 'We saved your picks from last time — everything below is how you left it.';
+    host.parentNode.insertBefore(el, host.nextSibling);
+  }
+
   // ---------- step: gate (new or returning) ----------
   $('choiceReturning').addEventListener('click', function(){
     ev('reg_choice', { returning: true });
@@ -756,8 +821,10 @@
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
+      var restored = restoreCart();
       if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
       go('st-shows'); renderShowKids(); startSoftTimer();
+      if (restored) showCartRestored();
     });
   }
   function firstNames(){
@@ -796,10 +863,10 @@
     go('st-shows'); renderShowKids(); startSoftTimer();
   });
   $('signout').addEventListener('click', function(e){
-    e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
+    e.preventDefault(); clearCart(); sb.auth.signOut().then(function(){ location.href='/register/'; });
   });
   $('signout2').addEventListener('click', function(e){
-    e.preventDefault(); sb.auth.signOut().then(function(){ location.href='/register/'; });
+    e.preventDefault(); clearCart(); sb.auth.signOut().then(function(){ location.href='/register/'; });
   });
   $('sKidOpen').addEventListener('click', function(){
     $('kidErr').classList.remove('on');
@@ -946,11 +1013,11 @@
       cb.addEventListener('change', function(){
         state.assign[cb.dataset.key].on = cb.checked;
         ev('reg_show_kid_toggled', { key: cb.dataset.key, on: cb.checked });
-        renderShowKids();
+        renderShowKids(); saveCart();
       });
     });
     blocks.querySelectorAll('.pill[data-key]').forEach(function(p){
-      p.addEventListener('click', function(){ state.assign[p.dataset.key].band = p.dataset.band; renderShowKids(); });
+      p.addEventListener('click', function(){ state.assign[p.dataset.key].band = p.dataset.band; renderShowKids(); saveCart(); });
     });
     renderFallCards();
     applySeasonFilter();
@@ -1005,14 +1072,14 @@
           setFallCast(i, sKey, defaultCastFor(sKey, ageOn(k.bday, sd.start)) || fallActsFor(sKey)[0].id);
         } else setFallCast(i, sKey, null);
         ev('reg_show_kid_toggled', { key: sKey + '|' + i, on: cb.checked });
-        renderShowKids();
+        renderShowKids(); saveCart();
       });
     });
     blocks.querySelectorAll('.pill[data-fall]').forEach(function(p){
       p.addEventListener('click', function(){
         if (p.dataset.full) return;
         setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
-        renderShowKids();
+        renderShowKids(); saveCart();
       });
     });
     blocks.querySelectorAll('.fallBday').forEach(function(inp){
@@ -1124,7 +1191,7 @@
   });
   document.querySelectorAll('#seasonChips .schip').forEach(function(c){
     c.addEventListener('click', function(){
-      state.seasonFilter = c.dataset.f;
+      state.seasonFilter = c.dataset.f; saveCart();
       ev('reg_season_filter', { f: c.dataset.f });
       renderShowKids();
     });
@@ -1222,7 +1289,7 @@
     html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
     $('assignBlocks').innerHTML = html;
     $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
-      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); });
+      cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); saveCart(); });
     });
     $('assignBlocks').querySelectorAll('.bdayInput').forEach(function(inp){
       inp.addEventListener('change', function(){
@@ -2123,6 +2190,7 @@
 
   function finish(){
     clearInterval(timerInt);
+    clearCart();
     $('holdChip').classList.remove('on'); $('topNote').style.display='';
     var p = state.pricing;
     var items = state.hold.items;
