@@ -689,7 +689,9 @@
   });
   // classes and non-BB camps are open registration — no new/returning gate at all
   if (state.catIds.length) {
-    sb.rpc('catalog_list').then(function(res){
+    // p_ids also unhides unlisted programs (Teen Conservatory) when the link
+    // names them — that opt-in is the only way they are reachable at all.
+    sb.rpc('catalog_list', { p_ids: state.catIds }).then(function(res){
       var rows = (res.data || []).filter(function(a){ return state.catIds.indexOf(a.id) !== -1; });
       if (rows.length && rows.every(function(a){ return !a.bb_gated; })) {
         state.openReg = true;
@@ -775,7 +777,7 @@
     Promise.all([
       sb.rpc('get_my_family'),
       sb.rpc('inventory_status'),
-      sb.rpc('catalog_list'),
+      sb.rpc('catalog_list', { p_ids: state.catIds }),
       sb.rpc('family_fee_due', { p_email: state.email }),
       sb.rpc('my_camper_birthdates'),
       sb.rpc('my_parent_name'),
@@ -1511,7 +1513,6 @@
       return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(nm) +
         (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') +
         (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
-        (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
@@ -1622,6 +1623,9 @@
       if (/frozen/i.test(nm)) rows.push({ s:'2026-09-15', n:"Disney's Frozen" });
       else if (/mermaid/i.test(nm)) rows.push({ s:'2027-02-03', n:'The Little Mermaid JR.' });
       else if (it.activity_id === MG_ID) rows.push({ s:'2027-06-14', n:'Mean Girls' });
+      // Teen Conservatory anchors on opening night, matching showStartFor()
+      else if (/sweeney/i.test(nm)) rows.push({ s:'2026-10-23', n:'Sweeney Todd' });
+      else if (/hadestown/i.test(nm)) rows.push({ s:'2027-03-05', n:'Hadestown' });
     });
     if (rows.length < 2) return null;
     rows.sort(function(a,b){ return a.s < b.s ? -1 : a.s > b.s ? 1 : 0; });
@@ -1646,6 +1650,11 @@
         var n = (byIdAll[it.activity_id]||{}).name || '';
         if (/frozen/i.test(n)) starts.push('2026-09-15');
         else if (/mermaid/i.test(n)) starts.push('2027-02-03');
+        // Insurance keys off the real program start, not opening night: the
+        // refund window is about dropping out, so Sweeney (already rehearsing)
+        // falls outside every tier and the offer never appears for it.
+        else if (/sweeney/i.test(n)) starts.push('2026-08-17');
+        else if (/hadestown/i.test(n)) starts.push('2026-11-16');
       }
     });
     starts.sort();

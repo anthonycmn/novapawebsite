@@ -68,10 +68,16 @@ export const CAMP_START = {
   httyd: "2027-07-05", charlie: "2027-07-19", trolls: "2027-08-02",
 };
 // Year-round BB shows (earliest session of each group — conservative).
+// This date is the installment anchor only: a plan has to finish before the
+// program it pays for. For the Teen Conservatory shows that anchor is opening
+// night, not the first rehearsal — both casts are already set and rehearsing,
+// so the thing we are collecting against is the run, not the start date.
 export function showStartFor(name) {
   if (/frozen/i.test(name)) return "2026-09-15";
   if (/mermaid/i.test(name)) return "2027-02-03";
   if (/mean girls/i.test(name)) return "2027-06-14";
+  if (/sweeney/i.test(name)) return "2026-10-23";
+  if (/hadestown/i.test(name)) return "2027-03-05";
   return null;
 }
 
@@ -80,6 +86,16 @@ export function showStartFor(name) {
 // the gate is a returning family), full price once registration opens to the
 // public. It never joins the camp tier or the fall-show bundle.
 export const MEANGIRLS_ID = 990001;
+
+// Teen Conservatory (Sweeney Todd, Hadestown). Unlisted — reachable only by a
+// direct ?activity= link sent to families who are already cast. Their discount
+// is the one the Teen Conservatory page advertises and nothing else: 10% when
+// one performer does both shows. They deliberately do NOT touch the summer
+// funnel — a prior summer camp must not quietly knock $89.50 off a seat these
+// families were already invoiced $895 for, and doing one of them must not
+// confer the fall-show bundle on Frozen or Mermaid.
+export const TEEN_CONSERVATORY_IDS = [1960809, 1960811];
+const isTeenCon = (it) => TEEN_CONSERVATORY_IDS.includes(it.activity_id);
 
 export function perKidRate(nCampsForKid, now = new Date()) {
   if (now > new Date(EARLYBIRD_END)) return 0;
@@ -139,9 +155,10 @@ export function priceCart(cart, plan, opts = {}) {
   for (const it of cart) if (!it.show && (priorCampsByKid[kidKey(it)] || 0) > 0) kidsWithSummer.add(kidKey(it));
   const isDayCampItem = (it) => !it.show && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
   const showsByKid = {};
-  // Mean Girls is excluded: its flat 10% neither stacks nor counts toward the
-  // fall-show bundle for a kid's other programs
-  for (const it of cart) if (!it.show && !isDayCampItem(it) && it.activity_id !== MEANGIRLS_ID) {
+  // Mean Girls and the Teen Conservatory shows are excluded: each carries its
+  // own flat rule, which neither stacks nor counts toward the fall-show bundle
+  // for a kid's other programs
+  for (const it of cart) if (!it.show && !isDayCampItem(it) && it.activity_id !== MEANGIRLS_ID && !isTeenCon(it)) {
     const k = kidKey(it);
     (showsByKid[k] = showsByKid[k] || []).push(it);
   }
@@ -165,6 +182,17 @@ export function priceCart(cart, plan, opts = {}) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
       }
       return { ...it, unit, rate: 0, daycamp: true };
+    }
+    // Teen Conservatory: 10% each when one performer does both shows — the
+    // exact offer on the Teen Conservatory page — otherwise list, with the
+    // ordinary 5% for a second child. Nothing in the summer cart reaches it.
+    if (isTeenCon(it)) {
+      const kid = kidKey(it);
+      const both = cart.filter((x) => isTeenCon(x) && kidKey(x) === kid).length >= 2;
+      if (both) return { ...it, unit: Math.round((it.price_cents || 0) * 0.9), rate: 0.10 };
+      const unit = kid === firstKid ? it.price_cents
+        : Math.round(it.price_cents * (1 - SIBLING_PCT / 100));
+      return { ...it, unit, rate: 0 };
     }
     // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
     if (it.activity_id === MEANGIRLS_ID) {
