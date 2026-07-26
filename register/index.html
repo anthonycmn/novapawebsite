@@ -665,16 +665,6 @@
   }
 
 
-  function showCartRestored(){
-    var host = document.querySelector('#st-shows .sub');
-    if (!host || document.getElementById('cartBack')) return;
-    var el = document.createElement('p');
-    el.id = 'cartBack';
-    el.className = 'tiny';
-    el.style.cssText = 'margin:6px 0 0;color:var(--gold3)';
-    el.textContent = 'We saved your picks from last time — everything below is how you left it.';
-    host.parentNode.insertBefore(el, host.nextSibling);
-  }
 
   // ---------- step: gate (new or returning) ----------
   $('choiceReturning').addEventListener('click', function(){
@@ -821,10 +811,9 @@
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
-      var restored = restoreCart();
+      restoreCart();
       if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
       go('st-shows'); renderShowKids(); startSoftTimer();
-      if (restored) showCartRestored();
     });
   }
   function firstNames(){
