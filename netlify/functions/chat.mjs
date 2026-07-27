@@ -24,7 +24,7 @@ FACTS ABOUT NOVAPA
 
 About: Northern Virginia's performing arts conservatory. Dance, theatre, voice, musical theatre, and film training from Tiny Tots (age 2) through adults. Mission: "Create. Belong. Inspire." Tagline: Changing lives & building futures — it's more than a show.
 
-Registration (2026–27 season): Opened June 1, 2026. Annual family registration fee $25 (covers all children in the household). Sibling discount: 5% off per additional child. Classes begin September 14, 2026; season runs through June 11, 2027. New for 2026–27: subscription-based, more affordable programming. Register: https://www.northernvirginiaperformingarts.org/novapa_registration
+Registration (2026–27 season): Opened June 1, 2026. One family registration covers all children in the household, at no charge. Sibling discount: 5% off per additional child. Classes begin September 14, 2026; season runs through June 11, 2027. New for 2026–27: subscription-based, more affordable programming. Register: https://www.northernvirginiaperformingarts.org/novapa_registration
 
 Location: Current studio at the National Conference Center, 18980 Upper Belmont Place, Leesburg, VA 20176. Coming soon: a new 10,000 sq ft Creative Arts Center in the heart of Ashburn, planned to open by Labor Day Weekend 2026. Directions: https://maps.google.com?q=18980+Upper+Belmont+Place+Leesburg+VA+20176
 
@@ -43,7 +43,7 @@ Broadway Bound Teen (formerly Teen Conservatory): Audition-based teen track, age
 
 College audition coaching: One-on-one and small-group coaching — audition prep, acting technique, vocal performance, on-camera work, pre-screen filming, essays & artistic statements. For BFA programs, conservatories, or exploring. Press Submit Weekend — a 3-day College Audition Intensive, August 28–30, 2026, limited to 12 students: https://www.northernvirginiaperformingarts.org/press-submit — Coaching packages: https://www.northernvirginiaperformingarts.org/coaching — Free 15-min consultation: https://calendly.com/novapa/free-consultation-15-minutes
 
-Pricing: $25 annual family registration; 5% sibling discount; subscription-based pricing new for 2026–27. Individual class/camp tuition varies by program, age group, and sessions. Coaching packages range from single sessions to full audition-season support. For a custom quote: info@novapa.org or (571) 571-2120.
+Pricing: no family registration fee; 5% sibling discount; subscription-based pricing new for 2026–27. Individual class/camp tuition varies by program, age group, and sessions. Coaching packages range from single sessions to full audition-season support. For a custom quote: info@novapa.org or (571) 571-2120.
 
 2026–27 productions (nine shows): Shrek Jr. — Summer 2026 (Kids & Jr); Dear Evan Hansen (HS Version) — August 2026 (Teen Conservatory); Sweeney Todd (School Ed.) — October 2026 (Teen Conservatory); A Christmas Carol — December 2026 (Kids & Teens); Disney Frozen — Jan–Feb 2027 (Kids · Jr · Teens, biggest multi-cast event); The Little Mermaid Jr. — May 2027 (Jr & Teens); How to Train Your Dragon Jr. — July 2027; Charlie and the Chocolate Factory Jr. — July 2027; Trolls Jr. — August 2027. Tickets/box office: https://novapa.booktix.com
 
