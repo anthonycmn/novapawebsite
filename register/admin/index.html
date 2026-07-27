@@ -107,6 +107,7 @@
       <a data-s="campers">Campers</a>
       <a data-s="calendar">Calendar</a>
       <a data-s="accounting">Accounting</a>
+      <a data-s="cashflow">Cash Flow</a>
       <a data-s="marketing">Marketing</a>
       <a data-s="hiring">Hiring</a>
     </div>
@@ -187,15 +188,30 @@
       <div id="accBody" style="display:none">
         <h2>By program / show</h2>
         <div class="wrap-scroll"><table id="tblAccProg"></table></div>
-        <h2 style="margin-top:22px">Upcoming cash (auto-billing)</h2>
-        <div class="wrap-scroll"><table id="tblAccCash"></table></div>
-        <div class="wrap-scroll" style="margin-top:10px"><table id="tblAccCashDetail"></table></div>
         <h2 style="margin-top:22px">Reconciliation</h2>
         <div class="wrap-scroll"><table id="tblAccRec"></table></div>
         <h2 style="margin-top:22px">Transactions</h2>
         <div class="wrap-scroll"><table id="tblAccTx"></table></div>
         <p class="sub" style="margin-top:12px">Web platform only. Sawyer and Regpack keep their own reports; legacy outstanding balances live in the Balances tab.
         Not applicable on this platform (always $0): customer card surcharges, registration fees, platform booking fees, tickets/merch (sold via BookTix).</p>
+      </div>
+    </section>
+
+    <section class="sec" id="s-cashflow">
+      <h2>Cash flow forecast</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <button class="tag" id="cfLoad" style="cursor:pointer;border:0;padding:8px 16px">Refresh</button>
+        <button class="tag" id="cfCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
+        <span class="sub" id="cfStatus"></span>
+      </div>
+      <div id="cfBody" style="display:none">
+        <h2>By month</h2>
+        <div class="wrap-scroll"><table id="tblCfMonth"></table></div>
+        <h2 style="margin-top:22px">Every scheduled payment</h2>
+        <div class="wrap-scroll"><table id="tblCfDetail"></table></div>
+        <p class="sub" style="margin-top:12px">Every future auto-billing pull Stripe currently has on file &mdash; camp installments and class tuition.
+        All pulls are charged on the 1st of the month. This is <em>scheduled</em> cash, not guaranteed: a failed card keeps appearing until Stripe's retries give up,
+        and nothing here includes new registrations that haven't happened yet.</p>
       </div>
     </section>
 
@@ -247,6 +263,9 @@
       document.querySelectorAll('#nav a').forEach(function(x){ x.classList.remove('on'); });
       document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
       a.classList.add('on'); $('s-' + a.dataset.s).classList.add('on');
+      // the forecast is cheap and always wanted — fetch it the first time the
+      // tab is opened rather than making Todd hunt for a Load button
+      if (a.dataset.s === 'cashflow' && !CF) loadCashflow();
     });
   });
 
@@ -366,6 +385,78 @@
       renderAccounting();
     }).catch(function(e){ $('accStatus').textContent = 'network error'; });
   });
+  // ---- Cash Flow (Todd) ----
+  // Its own tab rather than a section of Accounting: this is a forward-looking
+  // forecast, so it has no year, no program filter and no date basis. It asks
+  // the endpoint for forecast_only so it never waits on the year's payment
+  // history it doesn't use.
+  var CF = null;
+  function loadCashflow(){
+    $('cfStatus').textContent = 'loading…';
+    sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-finance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ forecast_only: true })
+      });
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.error) { $('cfStatus').textContent = 'error: ' + d.error; return; }
+      CF = d.upcoming || [];
+      $('cfBody').style.display = ''; $('cfCsv').style.display = '';
+      renderCashflow();
+    }).catch(function(){ $('cfStatus').textContent = 'network error'; });
+  }
+  function renderCashflow(){
+    var up = CF || [];
+    var byMonth = {};
+    up.forEach(function(u){
+      var m = u.date.slice(0,7);
+      var g = byMonth[m] = byMonth[m] || { total:0, n:0, inst:0, cls:0 };
+      g.total += u.amount; g.n += 1;
+      if (u.kind === 'installment') g.inst += u.amount; else g.cls += u.amount;
+    });
+    var months = Object.keys(byMonth).sort();
+    var upTot = up.reduce(function(s,u){ return s + u.amount; }, 0);
+    var run = 0;
+    $('cfStatus').textContent = up.length + ' scheduled payments · ' + money0(upTot) + ' across ' + months.length + ' months';
+    $('tblCfMonth').innerHTML = months.length
+      ? '<tr><th>month</th><th class="num">payments</th><th class="num">camp installments</th><th class="num">class tuition</th><th class="num">expected cash</th><th class="num">running total</th></tr>' +
+        months.map(function(m){
+          var g = byMonth[m]; run += g.total;
+          return '<tr><td>' + cfMonthLabel(m) + '</td><td class="num">' + g.n + '</td><td class="num">' + money0(g.inst) +
+            '</td><td class="num">' + money0(g.cls) + '</td><td class="num"><b>' + money0(g.total) + '</b></td><td class="num sub">' + money0(run) + '</td></tr>';
+        }).join('') +
+        '<tr><td><b>TOTAL scheduled</b></td><td class="num">' + up.length + '</td><td></td><td></td><td class="num"><b>' + money0(upTot) + '</b></td><td></td></tr>'
+      : '<tr><td class="empty">no scheduled future payments</td></tr>';
+    $('tblCfDetail').innerHTML = up.length
+      ? '<tr><th>date</th><th>family</th><th>type</th><th class="num">amount</th></tr>' +
+        up.map(function(u){
+          return '<tr><td>' + u.date + '</td><td>' + esc(u.email || u.ref) + '</td><td><span class="tag">' +
+            (u.kind === 'installment' ? 'camp installment' : 'class tuition') + '</span></td><td class="num">' + money0(u.amount) + '</td></tr>';
+        }).join('')
+      : '';
+  }
+  function cfMonthLabel(m){
+    var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var b = m.split('-');
+    return MN[+b[1] - 1] + ' ' + b[0];
+  }
+  $('cfLoad').addEventListener('click', loadCashflow);
+  $('cfCsv').addEventListener('click', function(){
+    if (!CF) return;
+    var rows = [['scheduled_date','family','type','amount','stripe_ref']];
+    CF.forEach(function(u){
+      rows.push([u.date, u.email || '', u.kind === 'installment' ? 'camp installment' : 'class tuition',
+                 (u.amount/100).toFixed(2), u.ref]);
+    });
+    var csv = rows.map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'novapa-cashflow-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+  });
+
   $('accProgram').addEventListener('change', function(){ if (ACC) renderAccounting(); });
   $('accBasis').addEventListener('change', function(){ if (ACC) renderAccounting(); });
   function accActsById(){
@@ -440,32 +531,6 @@
           return '<td class="num">' + (isMoney ? money0(v) : v) + '</td>';
         }).join('') + '<td class="num"><b>' + (isMoney ? money0(tot) : tot) + '</b></td></tr>';
       }).join('');
-
-    // upcoming cash forecast (all future scheduled pulls, unfiltered)
-    var up = d.upcoming || [];
-    var byMonth = {};
-    up.forEach(function(u){
-      var m = u.date.slice(0,7);
-      var g = byMonth[m] = byMonth[m] || { total:0, n:0, inst:0, cls:0 };
-      g.total += u.amount; g.n += 1;
-      if (u.kind === 'installment') g.inst += u.amount; else g.cls += u.amount;
-    });
-    var months = Object.keys(byMonth).sort();
-    var upTot = up.reduce(function(s,u){ return s + u.amount; }, 0);
-    $('tblAccCash').innerHTML = months.length
-      ? '<tr><th>month</th><th class="num">payments</th><th class="num">camp installments</th><th class="num">class tuition</th><th class="num">expected cash</th></tr>' +
-        months.map(function(m){
-          var g = byMonth[m];
-          return '<tr><td>' + m + '</td><td class="num">' + g.n + '</td><td class="num">' + money0(g.inst) + '</td><td class="num">' + money0(g.cls) + '</td><td class="num"><b>' + money0(g.total) + '</b></td></tr>';
-        }).join('') +
-        '<tr><td><b>TOTAL scheduled</b></td><td class="num">' + up.length + '</td><td></td><td></td><td class="num"><b>' + money0(upTot) + '</b></td></tr>'
-      : '<tr><td class="empty">no scheduled future payments</td></tr>';
-    $('tblAccCashDetail').innerHTML = up.length
-      ? '<tr><th>date</th><th>family</th><th>type</th><th class="num">amount</th></tr>' +
-        up.slice(0, 60).map(function(u){
-          return '<tr><td>' + u.date + '</td><td>' + esc(u.email || u.ref) + '</td><td><span class="tag">' + u.kind + '</span></td><td class="num">' + money0(u.amount) + '</td></tr>';
-        }).join('') + (up.length > 60 ? '<tr><td class="sub" colspan="4">+ ' + (up.length-60) + ' more (in the CSV)</td></tr>' : '')
-      : '';
 
     // reconciliation (whole year, payment basis, unfiltered)
     var sales = d.orders.filter(function(o){ return +String(o.created_at).slice(0,4) === year; })
