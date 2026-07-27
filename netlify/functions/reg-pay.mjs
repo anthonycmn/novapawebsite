@@ -243,7 +243,9 @@ export default async (req) => {
       if (Array.isArray(held) && held.length) await svc("mark_registered", { p_email: email, p_items: held });
     } catch (e) { console.error("free order: mark_registered failed:", e.message); }
     if (couponCode) {
-      try { await svc("redeem_coupon", { p_code: couponCode }); }
+      // pass what was actually applied — a credit is spent down by that amount,
+      // not consumed whole
+      try { await svc("redeem_coupon", { p_code: couponCode, p_applied_cents: pricing.couponCents || 0 }); }
       catch (e) { console.error("free order: redeem_coupon failed:", e.message); }
     }
     if (parent_name && email) {

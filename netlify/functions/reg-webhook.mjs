@@ -179,8 +179,14 @@ export default async (req) => {
       }
     } catch (e) { console.error("mark_registered failed:", e.message); }
     if (m.coupon) {
-      try { await serviceRpc("redeem_coupon", { p_code: m.coupon }); }
-      catch (e) { console.error("coupon redeem failed:", e.message); }
+      // coupon_cents is what the order actually applied; a credit is spent down
+      // by exactly that, so an unused balance survives for the next purchase
+      try {
+        await serviceRpc("redeem_coupon", {
+          p_code: m.coupon,
+          p_applied_cents: parseInt(m.coupon_cents || "0", 10) || 0,
+        });
+      } catch (e) { console.error("coupon redeem failed:", e.message); }
     }
     // internal heads-up to the admin list (Todd/CJ) — one email per order,
     // failure-isolated like everything else post-payment
