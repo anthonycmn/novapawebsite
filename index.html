@@ -3561,129 +3561,193 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     </div>
    </div>
   </section>
-  <!-- ── GALLERY ──
-       To add photos: drop the file in the repo root (or img/), then copy one
-       <figure class="gal-i"> block below and update src, alt, and the caption.
-       Grid classes ga/gb/gc/gd/ge control tile size; extra tiles default to 2 cols. -->
+  <!-- ── GALLERY ──────────────────────────────────────────────────────────
+       ADD A PHOTO: 1) drop the image file in the repo root
+                    2) copy one <article class="gx-p"> block below
+                    3) change data-src, the <img> src/alt, and the two caption lines
+       Everything else (spotlight, auto-rotate, lightbox, keys, swipe) is automatic. -->
   <style>
-   .gal-sec{padding:clamp(60px,8vw,100px) clamp(20px,5vw,60px);background:linear-gradient(200deg,#08111F 0%,#0F1E36 55%,#0A1628 100%)}
-   .gal-wrap{max-width:1320px;margin:0 auto}
-   .gal-head{text-align:center;margin-bottom:46px}
-   .gal-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:190px;gap:16px}
-   .gal-i{position:relative;overflow:hidden;border-radius:16px;margin:0;cursor:none;
-     border:1px solid rgba(232,184,75,.18);background:#0A1628;
-     opacity:0;transform:translateY(28px) scale(.98);
-     transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1),
-                border-color .4s ease,box-shadow .4s ease}
-   .gal-i.in{opacity:1;transform:none}
-   .gal-i img{width:100%;height:100%;object-fit:cover;display:block;
-     transition:transform .9s cubic-bezier(.2,.7,.3,1),filter .5s ease;filter:saturate(.92)}
-   .gal-i::after{content:"";position:absolute;inset:0;pointer-events:none;
-     background:linear-gradient(to top,rgba(8,17,31,.88) 0%,rgba(8,17,31,.25) 42%,rgba(232,184,75,0) 70%);
-     opacity:.55;transition:opacity .45s ease}
-   .gal-i:hover{border-color:rgba(232,184,75,.62);box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 0 1px rgba(232,184,75,.25)}
-   .gal-i:hover img{transform:scale(1.09);filter:saturate(1.06)}
-   .gal-i:hover::after{opacity:.92}
-   .gal-cap{position:absolute;left:0;right:0;bottom:0;padding:20px 22px;z-index:2;
-     transform:translateY(10px);opacity:0;transition:transform .45s cubic-bezier(.2,.7,.3,1),opacity .45s ease}
-   .gal-i:hover .gal-cap{transform:none;opacity:1}
-   .gal-cap b{display:block;font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:#fff;letter-spacing:-.01em}
-   .gal-cap span{display:inline-block;margin-top:7px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:.28em;
-     text-transform:uppercase;color:var(--gold2)}
-   .gal-a{grid-column:span 4;grid-row:span 2}.gal-b{grid-column:span 2}.gal-c{grid-column:span 2}
-   .gal-d{grid-column:span 3}.gal-e{grid-column:span 3}
-   @media(max-width:900px){.gal-grid{grid-template-columns:repeat(2,1fr);grid-auto-rows:170px}
-     .gal-a{grid-column:span 2;grid-row:span 2}.gal-b,.gal-c,.gal-d,.gal-e{grid-column:span 1}
-     .gal-cap{opacity:1;transform:none}.gal-i::after{opacity:.9}}
+   .gx-sec{padding:clamp(60px,8vw,104px) clamp(16px,4vw,56px);
+     background:linear-gradient(200deg,#08111F 0%,#0F1E36 55%,#0A1628 100%);overflow:hidden}
+   .gx-wrap{max-width:1400px;margin:0 auto}
+   .gx-head{text-align:center;margin-bottom:44px}
+   .gx-strip{display:flex;gap:14px;height:min(560px,68vh)}
+   .gx-p{position:relative;flex:1;min-width:0;border-radius:20px;overflow:hidden;cursor:none;
+     border:1px solid rgba(232,184,75,.16);background:#0A1628;
+     transition:flex .78s cubic-bezier(.22,.85,.26,1),border-color .5s ease,box-shadow .5s ease;
+     opacity:0;transform:translateY(30px);animation:gxIn .8s cubic-bezier(.2,.7,.3,1) forwards}
+   @keyframes gxIn{to{opacity:1;transform:none}}
+   .gx-p:nth-child(1){animation-delay:.05s}.gx-p:nth-child(2){animation-delay:.15s}
+   .gx-p:nth-child(3){animation-delay:.25s}.gx-p:nth-child(4){animation-delay:.35s}
+   .gx-p:nth-child(5){animation-delay:.45s}.gx-p:nth-child(n+6){animation-delay:.55s}
+   .gx-strip:hover .gx-p{flex:.7}
+   .gx-p.act,.gx-strip .gx-p:hover{flex:3.6;border-color:rgba(232,184,75,.6);
+     box-shadow:0 26px 70px rgba(0,0,0,.55),0 0 0 1px rgba(232,184,75,.22)}
+   .gx-p img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+     transform:scale(1.14);filter:saturate(.85) brightness(.72);
+     transition:transform 1.1s cubic-bezier(.22,.85,.26,1),filter .7s ease}
+   .gx-p.act img,.gx-p:hover img{transform:scale(1);filter:saturate(1.04) brightness(1)}
+   .gx-p::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+     background:linear-gradient(to top,rgba(6,13,25,.94) 0%,rgba(6,13,25,.42) 40%,rgba(6,13,25,.05) 74%)}
+   /* cursor spotlight */
+   .gx-p::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+     transition:opacity .45s ease;
+     background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(232,184,75,.28),transparent 62%)}
+   .gx-p:hover::before,.gx-p.act::before{opacity:1}
+   .gx-num{position:absolute;top:18px;left:20px;z-index:3;font-family:'Cinzel',serif;font-size:11px;
+     letter-spacing:.24em;color:rgba(255,255,255,.55);transition:color .4s ease}
+   .gx-p.act .gx-num,.gx-p:hover .gx-num{color:var(--gold2)}
+   .gx-lab{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:22px 24px}
+   .gx-vert{position:absolute;bottom:24px;left:50%;transform:translateX(-50%) rotate(180deg);
+     writing-mode:vertical-rl;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.26em;
+     text-transform:uppercase;color:rgba(255,255,255,.82);white-space:nowrap;z-index:3;
+     transition:opacity .35s ease}
+   .gx-p.act .gx-vert,.gx-p:hover .gx-vert{opacity:0}
+   .gx-in{opacity:0;transform:translateY(14px);transition:opacity .5s ease .12s,transform .5s cubic-bezier(.2,.7,.3,1) .12s}
+   .gx-p.act .gx-in,.gx-p:hover .gx-in{opacity:1;transform:none}
+   .gx-in b{display:block;font-family:'Playfair Display',serif;font-size:clamp(20px,2vw,28px);
+     font-weight:800;color:#fff;letter-spacing:-.015em;line-height:1.15}
+   .gx-in i{display:block;margin-top:8px;font-family:'Cinzel',serif;font-style:normal;font-size:9px;
+     letter-spacing:.28em;text-transform:uppercase;color:var(--gold2)}
+   .gx-pill{display:inline-flex;align-items:center;gap:7px;margin-top:15px;padding:9px 17px;
+     border:1px solid rgba(232,184,75,.5);border-radius:100px;font-family:'Cinzel',serif;font-size:9px;
+     letter-spacing:.22em;text-transform:uppercase;color:var(--gold2);background:rgba(8,17,31,.5);
+     transition:background .35s ease,color .35s ease}
+   .gx-p:hover .gx-pill{background:var(--gold2);color:var(--navy)}
+   .gx-hint{text-align:center;margin-top:22px;font-family:'Cinzel',serif;font-size:9px;
+     letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+   @media(max-width:900px){
+     .gx-strip{height:auto;overflow-x:auto;scroll-snap-type:x mandatory;
+       -webkit-overflow-scrolling:touch;padding-bottom:12px}
+     .gx-strip::-webkit-scrollbar{display:none}
+     .gx-p,.gx-strip:hover .gx-p,.gx-p.act{flex:0 0 78vw;height:60vh;scroll-snap-align:center}
+     .gx-p img{transform:scale(1);filter:saturate(1) brightness(.85)}
+     .gx-vert{display:none}.gx-in{opacity:1;transform:none}}
    /* lightbox */
-   .gal-lb{position:fixed;inset:0;z-index:9990;background:rgba(5,10,20,.96);backdrop-filter:blur(14px);
-     display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .3s ease}
-   .gal-lb.on{display:flex;opacity:1}
-   .gal-lb figure{margin:0;max-width:min(1150px,92vw);text-align:center;
-     transform:scale(.96);transition:transform .35s cubic-bezier(.2,.7,.3,1)}
-   .gal-lb.on figure{transform:none}
-   .gal-lb img{max-width:100%;max-height:76vh;border-radius:14px;display:block;
-     box-shadow:0 30px 80px rgba(0,0,0,.7);border:1px solid rgba(232,184,75,.3)}
-   .gal-lb figcaption{margin-top:18px;font-family:'Playfair Display',serif;font-size:22px;color:#fff}
-   .gal-lb figcaption em{display:block;margin-top:6px;font-family:'Cinzel',serif;font-style:normal;
+   .gx-lb{position:fixed;inset:0;z-index:9990;background:rgba(4,9,18,.97);backdrop-filter:blur(16px);
+     display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .32s ease}
+   .gx-lb.on{display:flex;opacity:1}
+   .gx-lb figure{margin:0;max-width:min(1180px,92vw);text-align:center;transform:scale(.95);
+     transition:transform .4s cubic-bezier(.2,.8,.3,1)}
+   .gx-lb.on figure{transform:none}
+   .gx-lb .gx-fr{overflow:hidden;border-radius:16px;border:1px solid rgba(232,184,75,.32);
+     box-shadow:0 34px 90px rgba(0,0,0,.72)}
+   .gx-lb img{max-width:100%;max-height:74vh;display:block;animation:gxKB 14s ease-out infinite alternate}
+   @keyframes gxKB{from{transform:scale(1)}to{transform:scale(1.07)}}
+   .gx-lb figcaption{margin-top:20px;font-family:'Playfair Display',serif;font-size:23px;color:#fff}
+   .gx-lb figcaption em{display:block;margin-top:7px;font-family:'Cinzel',serif;font-style:normal;
      font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold2)}
-   .gal-nav{position:absolute;top:50%;transform:translateY(-50%);width:54px;height:54px;border-radius:50%;
-     border:1px solid rgba(232,184,75,.4);background:rgba(8,17,31,.7);color:var(--gold2);font-size:24px;
-     display:grid;place-items:center;cursor:none;transition:background .3s,border-color .3s,transform .3s}
-   .gal-nav:hover{background:var(--gold2);color:var(--navy);border-color:var(--gold2);transform:translateY(-50%) scale(1.08)}
-   .gal-prev{left:max(18px,3vw)}.gal-next{right:max(18px,3vw)}
-   .gal-x{position:absolute;top:24px;right:max(18px,3vw);width:46px;height:46px;border-radius:50%;
-     border:1px solid rgba(255,255,255,.22);background:rgba(8,17,31,.7);color:#fff;font-size:20px;
-     display:grid;place-items:center;cursor:none;transition:background .3s,transform .3s}
-   .gal-x:hover{background:rgba(232,184,75,.9);color:var(--navy);transform:rotate(90deg)}
-   .gal-count{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-family:'Cinzel',serif;
-     font-size:10px;letter-spacing:.3em;color:rgba(255,255,255,.55)}
-   @media(max-width:640px){.gal-nav{width:44px;height:44px;font-size:20px}.gal-lb figcaption{font-size:17px}}
+   .gx-nav{position:absolute;top:50%;transform:translateY(-50%);width:56px;height:56px;border-radius:50%;
+     border:1px solid rgba(232,184,75,.42);background:rgba(8,17,31,.72);color:var(--gold2);font-size:25px;
+     display:grid;place-items:center;cursor:none;transition:background .3s,color .3s,transform .3s}
+   .gx-nav:hover{background:var(--gold2);color:var(--navy);transform:translateY(-50%) scale(1.1)}
+   .gx-prev{left:max(16px,3vw)}.gx-next{right:max(16px,3vw)}
+   .gx-x{position:absolute;top:24px;right:max(16px,3vw);width:48px;height:48px;border-radius:50%;
+     border:1px solid rgba(255,255,255,.2);background:rgba(8,17,31,.72);color:#fff;font-size:20px;
+     display:grid;place-items:center;cursor:none;transition:background .3s,color .3s,transform .35s}
+   .gx-x:hover{background:var(--gold2);color:var(--navy);transform:rotate(90deg)}
+   .gx-dots{position:absolute;bottom:26px;left:0;right:0;display:flex;gap:9px;justify-content:center}
+   .gx-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.26);cursor:none;
+     transition:background .3s,transform .3s}
+   .gx-dot.on{background:var(--gold2);transform:scale(1.5)}
+   @media(max-width:640px){.gx-nav{width:44px;height:44px;font-size:21px}.gx-lb figcaption{font-size:17px}}
   </style>
-  <section class="gal-sec" id="gallery">
-   <div class="gal-wrap">
-    <div class="gal-head">
+  <section class="gx-sec" id="gallery">
+   <div class="gx-wrap">
+    <div class="gx-head">
      <div class="seceye"><span class="sectag">✦ Our Stage</span></div>
      <h2 class="sectitle">Moments That <em style="font-style:italic;color:var(--gold2)">Stay With Them</em></h2>
-     <p class="secdesc" style="margin:14px auto 0">Every summer leaves something behind. Here are a few of them.</p>
+     <p class="secdesc" style="margin:14px auto 0">Hover to explore. Click any photo to step inside it.</p>
     </div>
-    <div class="gal-grid" id="galGrid">
-     <figure class="gal-i gal-a"><img src="on-stage.jpg" alt="A young performer center stage under the lights" loading="lazy" decoding="async">
-      <figcaption class="gal-cap"><b>Center Stage</b><span>Opening Night</span></figcaption></figure>
-     <figure class="gal-i gal-b"><img src="showcase.jpg" alt="Campers performing together during the showcase" loading="lazy" decoding="async">
-      <figcaption class="gal-cap"><b>Showcase Night</b><span>The Big Finish</span></figcaption></figure>
-     <figure class="gal-i gal-c"><img src="camp-friends.jpg" alt="Camp friends laughing together backstage" loading="lazy" decoding="async">
-      <figcaption class="gal-cap"><b>Friends for Life</b><span>Backstage</span></figcaption></figure>
-     <figure class="gal-i gal-d"><img src="vocals.jpg" alt="A camper singing during a vocal rehearsal" loading="lazy" decoding="async">
-      <figcaption class="gal-cap"><b>Finding Their Voice</b><span>Vocal Rehearsal</span></figcaption></figure>
-     <figure class="gal-i gal-e"><img src="tech-build.jpg" alt="Campers building and painting the set" loading="lazy" decoding="async">
-      <figcaption class="gal-cap"><b>Building the World</b><span>Tech &amp; Design</span></figcaption></figure>
+    <div class="gx-strip" id="gxStrip">
+     <article class="gx-p act" data-src="on-stage.jpg">
+      <img src="on-stage.jpg" alt="A camper performing as Lumiere in Beauty and the Beast, arms raised with candlesticks" loading="lazy" decoding="async">
+      <span class="gx-num">01</span><span class="gx-vert">Beauty and the Beast</span>
+      <div class="gx-lab"><div class="gx-in"><b>Lumi&egrave;re Takes the Stage</b><i>Beauty and the Beast</i>
+       <span class="gx-pill">View &#8250;</span></div></div>
+     </article>
+     <article class="gx-p" data-src="showcase.jpg">
+      <img src="showcase.jpg" alt="A teen performer mid-number in Come From Away with the Gander backdrop behind" loading="lazy" decoding="async">
+      <span class="gx-num">02</span><span class="gx-vert">Come From Away</span>
+      <div class="gx-lab"><div class="gx-in"><b>Come From Away</b><i>Teen Conservatory</i>
+       <span class="gx-pill">View &#8250;</span></div></div>
+     </article>
+     <article class="gx-p" data-src="camp-friends.jpg">
+      <img src="camp-friends.jpg" alt="Three Broadway Bound campers in blue camp shirts laughing together" loading="lazy" decoding="async">
+      <span class="gx-num">03</span><span class="gx-vert">Camp Friends</span>
+      <div class="gx-lab"><div class="gx-in"><b>Best Friends by Friday</b><i>Broadway Bound Camp</i>
+       <span class="gx-pill">View &#8250;</span></div></div>
+     </article>
+     <article class="gx-p" data-src="vocals.jpg">
+      <img src="vocals.jpg" alt="A young camper singing during a vocal rehearsal" loading="lazy" decoding="async">
+      <span class="gx-num">04</span><span class="gx-vert">Full Voice</span>
+      <div class="gx-lab"><div class="gx-in"><b>Full Voice</b><i>Vocal Rehearsal</i>
+       <span class="gx-pill">View &#8250;</span></div></div>
+     </article>
+     <article class="gx-p" data-src="tech-build.jpg">
+      <img src="tech-build.jpg" alt="A camper using a nail gun to build set pieces alongside a mentor" loading="lazy" decoding="async">
+      <span class="gx-num">05</span><span class="gx-vert">Tech &amp; Build</span>
+      <div class="gx-lab"><div class="gx-in"><b>Built by Hand</b><i>Technical Theatre</i>
+       <span class="gx-pill">View &#8250;</span></div></div>
+     </article>
     </div>
+    <p class="gx-hint">Click a panel to open</p>
    </div>
   </section>
-  <div class="gal-lb" id="galLb" role="dialog" aria-modal="true" aria-label="Photo viewer">
-   <button class="gal-x" id="galX" aria-label="Close">&#10005;</button>
-   <button class="gal-nav gal-prev" id="galPrev" aria-label="Previous photo">&#8249;</button>
-   <figure><img id="galLbImg" src="" alt=""><figcaption id="galLbCap"></figcaption></figure>
-   <button class="gal-nav gal-next" id="galNext" aria-label="Next photo">&#8250;</button>
-   <div class="gal-count" id="galCount"></div>
+  <div class="gx-lb" id="gxLb" role="dialog" aria-modal="true" aria-label="Photo viewer">
+   <button class="gx-x" id="gxX" aria-label="Close">&#10005;</button>
+   <button class="gx-nav gx-prev" id="gxPrev" aria-label="Previous">&#8249;</button>
+   <figure><div class="gx-fr"><img id="gxImg" src="" alt=""></div><figcaption id="gxCap"></figcaption></figure>
+   <button class="gx-nav gx-next" id="gxNext" aria-label="Next">&#8250;</button>
+   <div class="gx-dots" id="gxDots"></div>
   </div>
   <script>
   (function(){
-    var grid=document.getElementById('galGrid');if(!grid)return;
-    var items=[].slice.call(grid.querySelectorAll('.gal-i'));
-    var lb=document.getElementById('galLb'),img=document.getElementById('galLbImg'),
-        cap=document.getElementById('galLbCap'),cnt=document.getElementById('galCount'),i=0;
-    // staggered scroll reveal
-    var io=new IntersectionObserver(function(es){es.forEach(function(e){
-      if(e.isIntersecting){var n=items.indexOf(e.target);
-        setTimeout(function(){e.target.classList.add('in')},n*110);io.unobserve(e.target);}})},{threshold:.15});
-    items.forEach(function(el){io.observe(el);});
-    function show(n){
-      i=(n+items.length)%items.length;
-      var f=items[i],im=f.querySelector('img'),c=f.querySelector('.gal-cap');
-      img.src=im.src;img.alt=im.alt;
-      cap.innerHTML=c.querySelector('b').textContent+'<em>'+c.querySelector('span').textContent+'</em>';
-      cnt.textContent=(i+1)+' / '+items.length;
+    var strip=document.getElementById('gxStrip'); if(!strip) return;
+    var ps=[].slice.call(strip.querySelectorAll('.gx-p'));
+    var lb=document.getElementById('gxLb'),im=document.getElementById('gxImg'),
+        cp=document.getElementById('gxCap'),dots=document.getElementById('gxDots'),cur=0,timer=null;
+    ps.forEach(function(p,n){
+      var d=document.createElement('span');d.className='gx-dot';d.addEventListener('click',function(){show(n);});
+      dots.appendChild(d);
+      p.addEventListener('mousemove',function(e){
+        var r=p.getBoundingClientRect();
+        p.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+        p.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+      });
+      p.addEventListener('click',function(){open(n);});
+    });
+    function setAct(n){ps.forEach(function(p,i){p.classList.toggle('act',i===n);});}
+    function auto(){timer=setInterval(function(){
+      var n=(ps.findIndex(function(p){return p.classList.contains('act');})+1)%ps.length;setAct(n);},3800);}
+    function stop(){clearInterval(timer);timer=null;}
+    if(window.matchMedia('(min-width:901px)').matches){
+      auto();
+      strip.addEventListener('mouseenter',stop);
+      strip.addEventListener('mouseleave',function(){setAct(0);if(!timer)auto();});
     }
-    function open(n){show(n);lb.classList.add('on');document.body.style.overflow='hidden';}
-    function close(){lb.classList.remove('on');document.body.style.overflow='';}
-    items.forEach(function(el,n){el.addEventListener('click',function(){open(n);});});
-    document.getElementById('galX').addEventListener('click',close);
-    document.getElementById('galPrev').addEventListener('click',function(e){e.stopPropagation();show(i-1);});
-    document.getElementById('galNext').addEventListener('click',function(e){e.stopPropagation();show(i+1);});
+    function show(n){
+      cur=(n+ps.length)%ps.length;var p=ps[cur],b=p.querySelector('.gx-in b'),i=p.querySelector('.gx-in i');
+      im.src=p.getAttribute('data-src');im.alt=p.querySelector('img').alt;
+      cp.innerHTML=b.textContent+'<em>'+i.textContent+'</em>';
+      [].forEach.call(dots.children,function(d,k){d.classList.toggle('on',k===cur);});
+    }
+    function open(n){show(n);lb.classList.add('on');document.body.style.overflow='hidden';stop();}
+    function close(){lb.classList.remove('on');document.body.style.overflow='';
+      if(window.matchMedia('(min-width:901px)').matches&&!timer)auto();}
+    document.getElementById('gxX').addEventListener('click',close);
+    document.getElementById('gxPrev').addEventListener('click',function(e){e.stopPropagation();show(cur-1);});
+    document.getElementById('gxNext').addEventListener('click',function(e){e.stopPropagation();show(cur+1);});
     lb.addEventListener('click',function(e){if(e.target===lb)close();});
     document.addEventListener('keydown',function(e){
       if(!lb.classList.contains('on'))return;
-      if(e.key==='Escape')close();
-      else if(e.key==='ArrowRight')show(i+1);
-      else if(e.key==='ArrowLeft')show(i-1);
+      if(e.key==='Escape')close();else if(e.key==='ArrowRight')show(cur+1);else if(e.key==='ArrowLeft')show(cur-1);
     });
     var x0=null;
     lb.addEventListener('touchstart',function(e){x0=e.changedTouches[0].clientX;},{passive:true});
     lb.addEventListener('touchend',function(e){
       if(x0===null)return;var d=e.changedTouches[0].clientX-x0;
-      if(Math.abs(d)>50)show(d<0?i+1:i-1);x0=null;},{passive:true});
+      if(Math.abs(d)>50)show(d<0?cur+1:cur-1);x0=null;},{passive:true});
   })();
   </script>
   <!-- ── PROGRAMS ── -->
