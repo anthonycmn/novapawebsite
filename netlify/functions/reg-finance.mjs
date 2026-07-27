@@ -41,6 +41,11 @@ export default async (req) => {
   const to = Math.floor(Date.UTC(year + 1, 0, 1) / 1000);
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  // The Cash Flow tab only needs the forward-looking schedule. Skipping the
+  // year's payment/refund/payout walk (10 paginated PI pages with expands plus
+  // a balanceTransactions call per payout) is the difference between a tab that
+  // opens instantly and one Todd waits on every time.
+  const forecastOnly = !!body.forecast_only;
 
   // --- our order data ---
   const [orders, items, activities] = await Promise.all([
@@ -54,7 +59,7 @@ export default async (req) => {
   // --- Stripe: payments with fees (paginated; volumes are small) ---
   const txns = [];
   let after;
-  for (let page = 0; page < 10; page++) {
+  for (let page = 0; !forecastOnly && page < 10; page++) {
     const res = await stripe.paymentIntents.list({
       limit: 100, created: { gte: from, lt: to },
       starting_after: after,
@@ -87,28 +92,30 @@ export default async (req) => {
 
   // --- refunds + disputes in the window ---
   const refunds = [];
-  const rf = await stripe.refunds.list({ limit: 100, created: { gte: from, lt: to } });
-  for (const r of rf.data) refunds.push({ id: r.id, charge: r.charge, amount: r.amount, created: r.created, reason: r.reason, status: r.status });
   const disputes = [];
-  const dp = await stripe.disputes.list({ limit: 100, created: { gte: from, lt: to } });
-  for (const d of dp.data) disputes.push({ id: d.id, charge: d.charge, amount: d.amount, created: d.created, reason: d.reason, status: d.status });
-
-  // --- payouts (bank deposits) + which charges each one contains ---
   const payouts = [];
-  const chargePayout = {};
-  const po = await stripe.payouts.list({ limit: 100, created: { gte: from, lt: to } });
-  for (const p of po.data) {
-    payouts.push({ id: p.id, amount: p.amount, arrival_date: p.arrival_date, status: p.status });
-    try {
-      const bts = await stripe.balanceTransactions.list({ payout: p.id, limit: 100 });
-      for (const bt of bts.data) {
-        if (bt.source && typeof bt.source === "string" && bt.source.startsWith("ch_")) {
-          chargePayout[bt.source] = p.arrival_date;
+  if (!forecastOnly) {
+    const rf = await stripe.refunds.list({ limit: 100, created: { gte: from, lt: to } });
+    for (const r of rf.data) refunds.push({ id: r.id, charge: r.charge, amount: r.amount, created: r.created, reason: r.reason, status: r.status });
+    const dp = await stripe.disputes.list({ limit: 100, created: { gte: from, lt: to } });
+    for (const d of dp.data) disputes.push({ id: d.id, charge: d.charge, amount: d.amount, created: d.created, reason: d.reason, status: d.status });
+
+    // --- payouts (bank deposits) + which charges each one contains ---
+    const chargePayout = {};
+    const po = await stripe.payouts.list({ limit: 100, created: { gte: from, lt: to } });
+    for (const p of po.data) {
+      payouts.push({ id: p.id, amount: p.amount, arrival_date: p.arrival_date, status: p.status });
+      try {
+        const bts = await stripe.balanceTransactions.list({ payout: p.id, limit: 100 });
+        for (const bt of bts.data) {
+          if (bt.source && typeof bt.source === "string" && bt.source.startsWith("ch_")) {
+            chargePayout[bt.source] = p.arrival_date;
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
+    for (const t of txns) if (t.charge && chargePayout[t.charge]) t.payout_date = chargePayout[t.charge];
   }
-  for (const t of txns) if (t.charge && chargePayout[t.charge]) t.payout_date = chargePayout[t.charge];
 
   // --- cash-flow forecast: every future auto-billing pull (Todd) ---
   // Classes ride subscriptions; camp installment plans ride subscription
@@ -127,6 +134,14 @@ export default async (req) => {
   const schedByRef = {};
   for (const o of orders) if (o.stripe_schedule) schedByRef[o.stripe_schedule] = o;
   const nowSec = Math.floor(Date.now() / 1000);
+  // Step a month without letting the day-of-month roll over: Date.UTC(y, m+1, 31)
+  // silently lands in the month after next. Every pull we create is on the 1st,
+  // but a legacy or hand-made schedule must not corrupt the whole series.
+  function addMonth(d) {
+    const y = d.getUTCFullYear(), m = d.getUTCMonth(), day = d.getUTCDate();
+    const last = new Date(Date.UTC(y, m + 2, 0)).getUTCDate();
+    return new Date(Date.UTC(y, m + 1, Math.min(day, last), 12));
+  }
 
   // class + released-schedule subscriptions
   try {
@@ -137,16 +152,22 @@ export default async (req) => {
       for (const it of s.items.data) monthly += (it.price.unit_amount || 0) * (it.quantity || 1);
       if (!monthly) continue;
       const o = schedByRef[s.id] || (s.schedule && schedByRef[s.schedule]);
-      // next pulls: monthly from the later of now / trial_end, until cancel_at
-      let t = Math.max(s.trial_end || 0, s.current_period_end || 0, nowSec);
+      // Next pull = the later of trial_end and the current period end. As of
+      // Stripe's 2025 basil API versions current_period_end lives on the
+      // subscription ITEM, not the subscription — reading s.current_period_end
+      // returned undefined, so any subscription past its trial fell through to
+      // "now" and forecast every future pull on today's day of the month
+      // instead of the 1st. That is the wrong-date Todd reported.
+      let periodEnd = 0;
+      for (const it of s.items.data) periodEnd = Math.max(periodEnd, it.current_period_end || 0);
+      const t = Math.max(s.trial_end || 0, periodEnd) || nowSec;
       const stop = s.cancel_at || (t + 366 * 86400);
-      const d0 = new Date(t * 1000);
-      let d = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth(), d0.getUTCDate() >= 2 ? d0.getUTCDate() : d0.getUTCDate(), 12));
+      let d = new Date(t * 1000);
       for (let i = 0; i < 14; i++) {
         const ts = Math.floor(d.getTime() / 1000);
         if (ts > stop) break;
         if (ts > nowSec) upcoming.push({ date: d.toISOString().slice(0, 10), amount: monthly, kind: "class/monthly", email: o ? o.email : null, ref: s.id });
-        d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), 12));
+        d = addMonth(d);
       }
     }
   } catch (e) { console.error("subs forecast:", e.message); }
@@ -168,7 +189,7 @@ export default async (req) => {
           const ts = Math.floor(d.getTime() / 1000);
           if (ts >= end) break;
           if (ts > nowSec) upcoming.push({ date: d.toISOString().slice(0, 10), amount: monthly, kind: "installment", email: o ? o.email : null, ref: sc.id });
-          d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), 12));
+          d = addMonth(d);
         }
       }
     }
