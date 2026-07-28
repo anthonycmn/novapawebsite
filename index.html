@@ -3603,8 +3603,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      .cc-co .cc-stage{padding:0 0 34px}
      /* figure height is tuned to land near the video frame height */
      .cc-co .cc-fig{flex:0 0 clamp(152px,12.8vw,205px)}
-     .cc-co .cc-stage{-webkit-mask-image:linear-gradient(90deg,#000 84%,transparent);
-       mask-image:linear-gradient(90deg,#000 84%,transparent)}
+     /* photos walk in and out of the column edges */
+     .cc-co .cc-stage{-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 84%,transparent);
+       mask-image:linear-gradient(90deg,transparent,#000 5%,#000 84%,transparent)}
      .cc-co .cc-ft{max-width:none;padding:0;margin:clamp(14px,1.7vw,22px) 0 0}
    }
    /* the stage */
@@ -3821,16 +3822,29 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    var stage=document.getElementById('ccStage'),line=document.getElementById('ccLine'),
        beam=document.getElementById('ccBeam');
    if(!stage||!line)return;
-   var figs=[].slice.call(line.querySelectorAll('.cc-fig'));
+   var items=[].slice.call(line.querySelectorAll('.cc-fig'));  // the real 23
+   var figs=items;                                             // everything on stage
    var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
    var fine=matchMedia('(pointer:fine)').matches;
    var R=330, rects=null, mx=-9999, my=-9999, raf=null, sweep=0, sweeping=!fine;
+   // the company is cloned once so the line can walk past forever
+   var loopW=0, drift=!reduce, speed=0.55, over=false, pos=0;
+   if(drift){
+     items.forEach(function(f){
+       var c=f.cloneNode(true);
+       c.setAttribute('aria-hidden','true'); c.tabIndex=-1;
+       line.appendChild(c);
+     });
+     figs=[].slice.call(line.querySelectorAll('.cc-fig'));
+   }
+   function measure(){
+     loopW=figs.length>items.length?(figs[items.length].offsetLeft-figs[0].offsetLeft):0;
+     if(pos>loopW&&loopW>0)pos=pos%loopW;
+   }
 
    function cache(){
-     var sr=stage.getBoundingClientRect();
      rects=figs.map(function(f){var r=f.getBoundingClientRect();
        return {cx:r.left+r.width/2, cy:r.top+r.height/2};});
-     return sr;
    }
    function paint(){
      raf=null;
@@ -3844,26 +3858,35 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      }
    }
    function queue(){ if(!raf) raf=requestAnimationFrame(paint); }
+   function placeBeam(){
+     var sr=stage.getBoundingClientRect();
+     beam.style.left=(mx-sr.left+stage.scrollLeft)+'px';
+     beam.style.top=(my-sr.top)+'px';
+   }
    if(!reduce){
      stage.addEventListener('pointermove',function(e){
        if(e.pointerType==='mouse'){
-         sweeping=false; stage.classList.add('lit');
+         sweeping=false; over=true; stage.classList.add('lit');
          mx=e.clientX; my=e.clientY;
-         var sr=stage.getBoundingClientRect();
-         beam.style.left=(e.clientX-sr.left+stage.scrollLeft)+'px';
-         beam.style.top=(e.clientY-sr.top)+'px';
-         queue();
+         placeBeam(); queue();
        }
      });
      stage.addEventListener('pointerleave',function(){
-       stage.classList.remove('lit');
+       stage.classList.remove('lit'); over=false;
        mx=-9999;my=-9999;queue();
        if(!fine) sweeping=true;
      });
      stage.addEventListener('scroll',function(){rects=null;queue();},{passive:true});
-     addEventListener('resize',function(){rects=null;queue();});
-     // touch / no-mouse: the light sweeps the company on its own
+     addEventListener('resize',function(){rects=null;measure();queue();});
+     measure();
+     // the line drifts on its own; the light sweeps too when there is no mouse
      (function auto(){
+       if(drift&&!down&&loopW>0){
+         pos+=over?speed*0.4:speed;
+         if(pos>=loopW) pos-=loopW;
+         stage.scrollLeft=pos;
+         if(over) placeBeam();
+       }
        if(sweeping){
          var sr=stage.getBoundingClientRect();
          sweep+=0.0055;
@@ -3871,8 +3894,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
          mx=sr.left+sr.width*(0.12+t*0.76);
          my=sr.top+sr.height*0.5;
          stage.classList.add('lit');
-         beam.style.left=(mx-sr.left+stage.scrollLeft)+'px';
-         beam.style.top=(my-sr.top)+'px';
+         placeBeam();
          rects=null; paint();
        }
        requestAnimationFrame(auto);
@@ -3883,14 +3905,14 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    stage.addEventListener('pointerdown',function(e){down=true;moved=0;sx=e.clientX;sl=stage.scrollLeft;});
    stage.addEventListener('pointermove',function(e){
      if(!down)return;var d=e.clientX-sx;moved=Math.abs(d);stage.scrollLeft=sl-d;});
-   function up(){down=false;}
+   function up(){down=false;pos=stage.scrollLeft;}
    stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);
 
    // downstage
    var dn=document.getElementById('ccDn'),img=document.getElementById('ccImg'),
        cap=document.getElementById('ccCap'),idx=0;
    function show(n){
-     idx=(n+figs.length)%figs.length;var f=figs[idx];
+     idx=(n+items.length)%items.length;var f=items[idx];
      img.src=f.querySelector('img').getAttribute('src');
      img.alt=f.querySelector('img').alt;
      cap.innerHTML='<b>'+f.querySelector('.cc-n1').innerHTML+'</b><i>'+f.querySelector('.cc-n2').textContent+'</i>';
@@ -3898,8 +3920,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    function open(n){show(n);dn.classList.add('on');document.body.style.overflow='hidden';}
    function close(){dn.classList.remove('on');document.body.style.overflow='';}
    figs.forEach(function(f,n){
-     f.addEventListener('click',function(){ if(moved>6){moved=0;return;} open(n); });
+     f.addEventListener('click',function(){ if(moved>6){moved=0;return;} open(n%items.length); });
    });
+   addEventListener('load',function(){measure();});
    document.getElementById('ccCl').addEventListener('click',close);
    document.getElementById('ccPv').addEventListener('click',function(e){e.stopPropagation();show(idx-1);});
    document.getElementById('ccNx').addEventListener('click',function(e){e.stopPropagation();show(idx+1);});
