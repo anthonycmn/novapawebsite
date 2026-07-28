@@ -3614,6 +3614,23 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
      mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
    .cc-stage::-webkit-scrollbar{display:none}
+   /* skip ahead: tap to jump a screenful, hold to run through fast */
+   .cc-sw{position:relative}
+   .cc-sk{position:absolute;top:50%;z-index:6;width:46px;height:46px;border-radius:50%;
+     border:1px solid rgba(232,184,75,.34);background:rgba(10,18,34,.74);color:var(--gold2);
+     font-size:21px;line-height:1;display:grid;place-items:center;cursor:none;padding:0;
+     backdrop-filter:blur(10px);transform:translateY(-50%);opacity:0;
+     transition:opacity .4s ease,background .35s ease,color .35s ease,transform .4s cubic-bezier(.2,.8,.25,1)}
+   .cc-sw:hover .cc-sk,.cc-sk:focus-visible{opacity:1}
+   .cc-sk:hover{background:var(--gold2);color:#08111F;transform:translateY(-50%) scale(1.08)}
+   .cc-sk-p{left:clamp(8px,1.2vw,16px)}
+   .cc-sk-n{right:clamp(8px,1.2vw,16px)}
+   /* on touch the arrows are always there, and hover must not stick after a tap */
+   @media(hover:none){
+     .cc-sk{opacity:.92;width:40px;height:40px;font-size:18px}
+     .cc-sk:hover{background:rgba(10,18,34,.74);color:var(--gold2);transform:translateY(-50%)}
+     .cc-sk:active{background:var(--gold2);color:#08111F}
+   }
    .cc-line{display:flex;gap:clamp(9px,1vw,16px);padding:0 max(6vw,26px);width:max-content;align-items:flex-end}
    /* the spotlight pool */
    .cc-beam{position:absolute;top:0;left:0;width:520px;height:520px;margin:-260px 0 0 -260px;
@@ -3655,6 +3672,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    .cc-hint{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.3em;text-transform:uppercase;
      color:rgba(255,255,255,.28);white-space:nowrap}
    .cc-rule{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(232,184,75,.28),transparent)}
+   @media(max-width:900px){.cc-hint-mid{display:none}}
    @media(max-width:760px){.cc-fig{flex:0 0 44vw}.cc-beam{width:360px;height:360px;margin:-180px 0 0 -180px}}
    @media(prefers-reduced-motion:reduce){.cc-fig{--lit:.82!important;transform:none}.cc-beam{display:none}}
    /* downstage */
@@ -3705,6 +3723,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <span class="cc-vtag">The Gallery</span>
       <h3 class="cc-vh">Backstage and <em>on stage</em></h3>
      </div>
+   <div class="cc-sw">
    <div class="cc-stage" id="ccStage">
     <div class="cc-beam" id="ccBeam"></div>
     <div class="cc-line" id="ccLine">
@@ -3802,9 +3821,14 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       </button>
     </div>
    </div>
+    <button class="cc-sk cc-sk-p" id="ccSkP" type="button" aria-label="Back through the photos">&#8249;</button>
+    <button class="cc-sk cc-sk-n" id="ccSkN" type="button" aria-label="Forward through the photos">&#8250;</button>
+   </div>
    <div class="cc-ft">
     <span class="cc-hint">Move the light</span>
     <span class="cc-rule"></span>
+    <span class="cc-hint cc-hint-mid">Hold an arrow to run ahead</span>
+    <span class="cc-rule cc-hint-mid"></span>
     <span class="cc-hint">Click to bring downstage</span>
    </div>
     </div>
@@ -3828,7 +3852,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    var fine=matchMedia('(pointer:fine)').matches;
    var R=330, rects=null, mx=-9999, my=-9999, raf=null, sweep=0, sweeping=!fine;
    // the company is cloned once so the line can walk past forever
-   var loopW=0, drift=!reduce, speed=0.55, over=false, pos=0;
+   var loopW=0, drift=!reduce, speed=0.55, over=false, pos=0, pending=0, held=0;
    if(drift){
      items.forEach(function(f){
        var c=f.cloneNode(true);
@@ -3876,14 +3900,25 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
        mx=-9999;my=-9999;queue();
        if(!fine) sweeping=true;
      });
-     stage.addEventListener('scroll',function(){rects=null;queue();},{passive:true});
+     // a trackpad swipe or wheel scroll wins over the drift instead of fighting it
+     stage.addEventListener('scroll',function(){
+       if(Math.abs(stage.scrollLeft-pos)>2) pos=stage.scrollLeft;
+       rects=null;queue();
+     },{passive:true});
      addEventListener('resize',function(){rects=null;measure();queue();});
      measure();
      // the line drifts on its own; the light sweeps too when there is no mouse
      (function auto(){
        if(drift&&!down&&loopW>0){
-         pos+=over?speed*0.4:speed;
-         if(pos>=loopW) pos-=loopW;
+         var d=over?speed*0.4:speed;
+         if(pending){                       // eased jump from a tap on the arrows
+           var s=pending*0.14;
+           if(Math.abs(s)<0.6) s=pending;
+           pending-=s; d+=s;
+         }
+         if(held) d+=held*8;                // held arrow: run through
+         pos+=d;
+         if(pos>=loopW) pos-=loopW; else if(pos<0) pos+=loopW;
          stage.scrollLeft=pos;
          if(over) placeBeam();
        }
@@ -3923,6 +3958,30 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      f.addEventListener('click',function(){ if(moved>6){moved=0;return;} open(n%items.length); });
    });
    addEventListener('load',function(){measure();});
+
+   // move through faster: tap an arrow to jump a screenful, hold it to run
+   function nudge(dir){
+     var by=dir*stage.clientWidth*0.82;
+     if(!drift||loopW<=0){stage.scrollBy({left:by,behavior:reduce?'auto':'smooth'});return;}
+     pending+=by;
+   }
+   function skip(btn,dir){
+     if(!btn)return;
+     var t=null,ran=false;
+     function end(){clearTimeout(t);held=0;}
+     btn.addEventListener('pointerdown',function(e){
+       e.preventDefault();ran=false;
+       t=setTimeout(function(){ran=true;held=dir;},280);
+     });
+     btn.addEventListener('pointerup',function(){var h=ran;end();if(!h)nudge(dir);});
+     btn.addEventListener('pointerleave',end);
+     btn.addEventListener('pointercancel',end);
+     btn.addEventListener('keydown',function(e){
+       if(e.key==='Enter'||e.key===' '){e.preventDefault();nudge(dir);}
+     });
+   }
+   skip(document.getElementById('ccSkP'),-1);
+   skip(document.getElementById('ccSkN'),1);
    document.getElementById('ccCl').addEventListener('click',close);
    document.getElementById('ccPv').addEventListener('click',function(e){e.stopPropagation();show(idx-1);});
    document.getElementById('ccNx').addEventListener('click',function(e){e.stopPropagation();show(idx+1);});
