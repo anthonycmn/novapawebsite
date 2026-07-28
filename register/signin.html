@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — NOVAPA Registration</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --navy0:#08111F; --navy1:#0F1E36; --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+    --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
+    --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45); --danger:#E8654B;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .card {
+    width:100%; max-width:440px; background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:34px 30px; text-align:center;
+  }
+  .brand {
+    font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.18em; font-size:12px;
+    color:var(--gold2); margin-bottom:20px;
+  }
+  h1 {
+    font-family:'Cormorant Garamond',serif; font-weight:700; font-size:30px; line-height:1.2;
+    color:#fff; margin-bottom:10px;
+  }
+  h1 em { font-style:italic; color:var(--gold3); }
+  p { color:var(--ink-dim); font-size:15px; line-height:1.6; }
+  p + p { margin-top:12px; }
+  button {
+    width:100%; margin-top:22px; padding:15px 20px; border:0; border-radius:12px;
+    background:linear-gradient(180deg, var(--gold2), var(--gold));
+    color:#1a1206; font-family:inherit; font-weight:700; font-size:16px; cursor:pointer;
+  }
+  button:disabled { opacity:0.6; cursor:default; }
+  button:focus-visible { outline:2px solid var(--gold3); outline-offset:3px; }
+  .tiny { font-size:13px; color:var(--ink-dim); margin-top:16px; }
+  .err {
+    display:none; margin-top:18px; padding:14px 16px; border-radius:10px; text-align:left;
+    border:1px solid rgba(232,101,75,0.45); background:rgba(232,101,75,0.10);
+    color:var(--ink); font-size:14.5px; line-height:1.6;
+  }
+  .err.on { display:block; }
+  .err b { color:#fff; }
+  a { color:var(--gold2); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">NOVAPA REGISTRATION</div>
+
+  <div id="working">
+    <h1>Signing you <em>in…</em></h1>
+    <p>One moment — taking you to your registration.</p>
+  </div>
+
+  <div id="ask" style="display:none">
+    <h1>Almost <em>in.</em></h1>
+    <p>Tap below to finish signing in and pick up where you left off.</p>
+    <button id="go">Sign in to NOVAPA</button>
+  </div>
+
+  <div class="err" id="err"></div>
+</div>
+
+<script>
+(function(){
+  var C = window.NOVAREG;
+  var sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  var q = new URLSearchParams(location.search);
+  var tokenHash = q.get('token_hash');
+  // Supabase mints magic links as type=magiclink and brand-new signups as
+  // type=signup. Verifying with the wrong type fails, so the template passes
+  // it through and we only fall back when it's missing.
+  var type = q.get('type') || 'magiclink';
+
+  // The old template handed Supabase a redirect_to carrying the parent's
+  // original query — their chosen show, their utm tags. Keep that working by
+  // letting the template pass it as `next`. Taken as a raw substring because
+  // the value has its own &-separated params, and only honoured when it points
+  // back at us, so this can never become an open redirect.
+  var next = (function(){
+    var m = location.search.match(/[?&]next=(.*)$/);
+    if (!m) return null;
+    var raw = m[1];
+    try { if (/%3A|%2F/i.test(raw)) raw = decodeURIComponent(raw); } catch(e){}
+    if (raw.indexOf('/') === 0 && raw.indexOf('//') !== 0) return raw;
+    try {
+      var u = new URL(raw);
+      if (u.origin === location.origin) return u.pathname + u.search + u.hash;
+    } catch(e){}
+    return null;
+  })();
+
+  function fail(html){
+    document.getElementById('ask').style.display = 'none';
+    document.getElementById('working').style.display = 'none';
+    var e = document.getElementById('err');
+    e.innerHTML = html;
+    e.classList.add('on');
+  }
+
+  // Where to land afterwards: whatever the link asked for, else the checkout
+  // they started, else the front of the flow.
+  function destination(){
+    if (next) { try { localStorage.removeItem('nv_reg_intent'); } catch(e){} return next; }
+    try {
+      var intent = JSON.parse(localStorage.getItem('nv_reg_intent') || 'null');
+      if (intent && intent.s && Date.now() - intent.t < 6 * 3600 * 1000) {
+        localStorage.removeItem('nv_reg_intent');
+        return '/register/' + intent.s;
+      }
+    } catch(e){}
+    return '/register/?go=1';
+  }
+
+  if (!tokenHash) {
+    fail('<b>This link is missing its sign-in code.</b><br>Head back to ' +
+         '<a href="/register/?go=1">the registration page</a> and request a new one.');
+    return;
+  }
+
+  // Fully automatic — nobody taps anything.
+  //
+  // What breaks the old links is that {{ .ConfirmationURL }} points at
+  // Supabase's /auth/v1/verify, which spends the token on a plain HTTP GET.
+  // A mail scanner fetching the URL is enough to burn it.
+  //
+  // Here the token is only spent by a JavaScript call that runs in the visitor's
+  // browser. A scanner that fetches the page gets HTML and nothing else — no
+  // script execution, no verify call, token untouched. The parent's browser
+  // runs it on load and goes straight through.
+  //
+  // We skip the automatic path only when the browser openly reports itself as
+  // automated, and fall back to the button then. Real phones and laptops never
+  // hit that branch, so mobile behaves exactly like desktop: land, sign in, go.
+  var fired = false;
+  var automated = false;
+  try {
+    automated = navigator.webdriver === true || !window.screen || window.screen.width === 0;
+  } catch (e) {}
+
+  function verify(){
+    if (fired) return;
+    fired = true;
+    document.getElementById('ask').style.display = 'none';
+    document.getElementById('working').style.display = 'block';
+
+    sb.auth.verifyOtp({ token_hash: tokenHash, type: type }).then(function(res){
+      if (res.error) {
+        var m = (res.error.message || '').toLowerCase();
+        if (m.indexOf('expired') !== -1 || m.indexOf('invalid') !== -1) {
+          fail('<b>That sign-in link has expired.</b><br>They\'re only good for a short time. ' +
+               '<a href="/register/?go=1">Request a new one</a> and it\'ll work.');
+        } else {
+          fail('<b>We couldn\'t sign you in.</b><br>' + (res.error.message || 'Please try again.') +
+               '<br><br><a href="/register/?go=1">Request a new link</a> or reply to the email we sent you ' +
+               'and we\'ll get you registered directly.');
+        }
+        return;
+      }
+      location.replace(destination());
+    }).catch(function(){
+      fail('<b>Something went wrong on our end.</b><br>' +
+           '<a href="/register/?go=1">Try again</a>, or just reply to our email and we\'ll register you directly.');
+    });
+  }
+
+  document.getElementById('go').addEventListener('click', verify);
+
+  if (automated) {
+    // Declared automation: leave the token alone and offer the manual path.
+    document.getElementById('working').style.display = 'none';
+    document.getElementById('ask').style.display = 'block';
+  } else {
+    // Let the "Signing you in…" frame paint first so there's no flash of an
+    // empty card, then go — no tap, no scroll, same on phone and desktop.
+    setTimeout(verify, 120);
+  }
+})();
+</script>
+
+</body>
+</html>
