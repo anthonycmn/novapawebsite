@@ -80,7 +80,28 @@
   var sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
   var q = new URLSearchParams(location.search);
   var tokenHash = q.get('token_hash');
-  var type = q.get('type') || 'email';
+  // Supabase mints magic links as type=magiclink and brand-new signups as
+  // type=signup. Verifying with the wrong type fails, so the template passes
+  // it through and we only fall back when it's missing.
+  var type = q.get('type') || 'magiclink';
+
+  // The old template handed Supabase a redirect_to carrying the parent's
+  // original query — their chosen show, their utm tags. Keep that working by
+  // letting the template pass it as `next`. Taken as a raw substring because
+  // the value has its own &-separated params, and only honoured when it points
+  // back at us, so this can never become an open redirect.
+  var next = (function(){
+    var m = location.search.match(/[?&]next=(.*)$/);
+    if (!m) return null;
+    var raw = m[1];
+    try { if (/%3A|%2F/i.test(raw)) raw = decodeURIComponent(raw); } catch(e){}
+    if (raw.indexOf('/') === 0 && raw.indexOf('//') !== 0) return raw;
+    try {
+      var u = new URL(raw);
+      if (u.origin === location.origin) return u.pathname + u.search + u.hash;
+    } catch(e){}
+    return null;
+  })();
 
   function fail(html){
     document.getElementById('ask').style.display = 'none';
@@ -90,8 +111,10 @@
     e.classList.add('on');
   }
 
-  // Where to land afterwards: the checkout they started, if we saved one.
+  // Where to land afterwards: whatever the link asked for, else the checkout
+  // they started, else the front of the flow.
   function destination(){
+    if (next) { try { localStorage.removeItem('nv_reg_intent'); } catch(e){} return next; }
     try {
       var intent = JSON.parse(localStorage.getItem('nv_reg_intent') || 'null');
       if (intent && intent.s && Date.now() - intent.t < 6 * 3600 * 1000) {
