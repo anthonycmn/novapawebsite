@@ -108,25 +108,29 @@
     return;
   }
 
-  // Verification deliberately does NOT run on page load — that is the whole
-  // point, since a mail scanner's fetch would spend the one-time token before
-  // the parent ever sees it.
+  // Fully automatic — nobody taps anything.
   //
-  // But we don't make anyone click, either. We wait for a sign a human is
-  // actually here: a mouse move, a touch, a scroll, a key. Real people produce
-  // one within a moment of the page appearing; a scanner that just fetches the
-  // URL produces none, so the token survives for the real click. In practice
-  // nobody sees the button — the page reads as "Signing you in…" and moves on.
+  // What breaks the old links is that {{ .ConfirmationURL }} points at
+  // Supabase's /auth/v1/verify, which spends the token on a plain HTTP GET.
+  // A mail scanner fetching the URL is enough to burn it.
   //
-  // If no signal arrives (a genuinely motionless visitor), the button appears
-  // as the manual fallback rather than leaving anyone stranded.
+  // Here the token is only spent by a JavaScript call that runs in the visitor's
+  // browser. A scanner that fetches the page gets HTML and nothing else — no
+  // script execution, no verify call, token untouched. The parent's browser
+  // runs it on load and goes straight through.
+  //
+  // We skip the automatic path only when the browser openly reports itself as
+  // automated, and fall back to the button then. Real phones and laptops never
+  // hit that branch, so mobile behaves exactly like desktop: land, sign in, go.
   var fired = false;
-  var HUMAN = ['pointermove','pointerdown','touchstart','keydown','wheel','scroll'];
+  var automated = false;
+  try {
+    automated = navigator.webdriver === true || !window.screen || window.screen.width === 0;
+  } catch (e) {}
 
   function verify(){
     if (fired) return;
     fired = true;
-    HUMAN.forEach(function(e){ window.removeEventListener(e, verify, true); });
     document.getElementById('ask').style.display = 'none';
     document.getElementById('working').style.display = 'block';
 
@@ -150,16 +154,17 @@
     });
   }
 
-  HUMAN.forEach(function(e){ window.addEventListener(e, verify, true); });
   document.getElementById('go').addEventListener('click', verify);
 
-  // Nothing from the visitor after a few seconds: show the manual button rather
-  // than leave them on a spinner forever.
-  setTimeout(function(){
-    if (fired) return;
+  if (automated) {
+    // Declared automation: leave the token alone and offer the manual path.
     document.getElementById('working').style.display = 'none';
     document.getElementById('ask').style.display = 'block';
-  }, 4000);
+  } else {
+    // Let the "Signing you in…" frame paint first so there's no flash of an
+    // empty card, then go — no tap, no scroll, same on phone and desktop.
+    setTimeout(verify, 120);
+  }
 })();
 </script>
 
