@@ -512,7 +512,9 @@
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
     }
   })();
-  var MG_ID = 990001; // Broadway Bound Teens | Mean Girls
+  var MG_ID = 990001; // Broadway Bound Teens | Mean Girls (performers)
+  var MG_IDS = [990001, 990002]; // + 990002 tech crew — same program, same flat-10% rule
+  function isMG(id){ return MG_IDS.indexOf(id) !== -1; }
   // Closing-weekend showtimes (CJ) — same pattern every camp, second Friday
   // and Saturday, split by age group.
   var SHOWTIMES = {
@@ -527,8 +529,9 @@
       date:'One evening a week \u00b7 Sep 2026 \u2013 Feb 2027 \u00b7 $695', re:/frozen/i, start:'2026-09-15' },
     { key:'mermaid', title:"Disney's The Little Mermaid JR.", img:'/register/img/mermaid.jpg',
       date:'One evening a week \u00b7 Feb \u2013 May 2027 \u00b7 $695', re:/mermaid/i, start:'2027-02-03' },
-    // Summer teen intensive \u2014 same activity-driven plumbing as the fall casts,
-    // one cast only, so no cast pills ever render.
+    // Summer teen intensive \u2014 same activity-driven plumbing as the fall casts.
+    // Two acts since Jul 28: performers (990001) and tech crew (990002), so the
+    // standard cast pills render.
     { key:'meangirls', title:'Mean Girls \u2014 Teens', img:'/register/img/meangirls.jpg',
       date:'Ages 13\u201318 \u00b7 June 14\u201324, 2027 \u00b7 $995', re:/mean girls/i,
       start:'2027-06-14', ages:'13\u201318' }
@@ -543,6 +546,10 @@
     return m ? { min:+m[1], max:+m[2] } : { min:5, max:17 };
   }
   function castLabel(a){
+    if (/tech/i.test(String(a.name||''))) {
+      var tr = castRange(a);
+      return 'Tech Crew (' + tr.min + '\u2013' + tr.max + ')';
+    }
     var nm = /teen/i.test(String(a.schedule_name||'') + ' ' + a.name) ? 'Teens'
       : /junior/i.test(String(a.schedule_name||'') + ' ' + a.name) ? 'Junior'
       : 'Kids';
@@ -555,6 +562,8 @@
     // default = the band whose range strictly contains the age; the one-year
     // grace band is offered as a pill but never auto-picked
     var fit = acts.filter(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
+    var perf = fit.filter(function(a){ return !/tech/i.test(a.name); });
+    if (perf.length) return perf[perf.length - 1].id;
     if (fit.length) return fit[fit.length - 1].id;
     var near = acts.filter(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= r.max; });
     return near.length ? near[0].id : null;
@@ -1308,7 +1317,7 @@
       // the licensed art file exists; the branded gradient shows until then
       // real show art carries the title, so no text overlay — the gradient is
       // only a fallback if the file is ever missing
-      var poster = a.id === MG_ID
+      var poster = isMG(a.id)
         ? '<div class="poster mg-poster" style="background-image:url(\'/register/img/meangirls.jpg\'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%)"></div>'
         : '';
       var inner = '<div class="card"' + (poster ? ' style="border:0;margin:0;border-radius:0"' : '') + '><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px">' +
@@ -1518,7 +1527,7 @@
         return u;
       }
       // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
-      if (it.activity_id === MG_ID) {
+      if (isMG(it.activity_id)) {
         if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { u = Math.round(u * 0.90); mg[i] = true; }
         return u;
       }
@@ -1585,7 +1594,7 @@
       if (kid) byKid[k] += priorCamps(kid);
     });
     items.forEach(function(it){
-      if (it.show || it.activity_id === MG_ID) return;
+      if (it.show || isMG(it.activity_id)) return;
       var kid = state.kids[it.ci];
       if (kid && (kid.already || []).length && !byKid[kidKey(it)]) byKid[kidKey(it)] = 0.5; // marks the kid as having a camp for the show bundle
     });
@@ -1597,12 +1606,12 @@
       var base = a.price_cents || 69500;
       // Mean Girls: flat 10% through Aug 1 — never stacks with the camp tier or
       // the show bundle, and never counts toward another item's bundle either
-      if (it.activity_id === MG_ID) {
+      if (isMG(it.activity_id)) {
         if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { mg[i] = true; return Math.round(base * 0.9); }
         return base;
       }
       var kid = kidKey(it);
-      var kidShowN = items.filter(function(x){ return !x.show && x.activity_id !== MG_ID && kidKey(x) === kid; }).length;
+      var kidShowN = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && kidKey(x) === kid; }).length;
       if (byKid[kid] || kidShowN >= 2) { bund[i] = true; return Math.round(base * 0.9); }
       return base;
     });
@@ -1663,7 +1672,7 @@
       var nm = (byIdAll[it.activity_id] || {}).name || '';
       if (/frozen/i.test(nm)) rows.push({ s:'2026-09-15', n:"Disney's Frozen" });
       else if (/mermaid/i.test(nm)) rows.push({ s:'2027-02-03', n:'The Little Mermaid JR.' });
-      else if (it.activity_id === MG_ID) rows.push({ s:'2027-06-14', n:'Mean Girls' });
+      else if (isMG(it.activity_id)) rows.push({ s:'2027-06-14', n:'Mean Girls' });
       // Teen Conservatory anchors on opening night, matching showStartFor()
       else if (/sweeney/i.test(nm)) rows.push({ s:'2026-10-23', n:'Sweeney Todd' });
       else if (/hadestown/i.test(nm)) rows.push({ s:'2027-03-05', n:'Hadestown' });

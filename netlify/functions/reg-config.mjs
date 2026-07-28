@@ -85,7 +85,10 @@ export function showStartFor(name) {
 // rule: flat 10% through Aug 1 (the private-registration window — everyone in
 // the gate is a returning family), full price once registration opens to the
 // public. It never joins the camp tier or the fall-show bundle.
+// 990001 = performers, 990002 = tech crew — same program, same rule.
+export const MEANGIRLS_IDS = [990001, 990002];
 export const MEANGIRLS_ID = 990001;
+const isMeanGirls = (it) => MEANGIRLS_IDS.includes(it.activity_id);
 
 // Teen Conservatory (Sweeney Todd, Hadestown). Unlisted — reachable only by a
 // direct ?activity= link sent to families who are already cast. Their discount
@@ -158,7 +161,7 @@ export function priceCart(cart, plan, opts = {}) {
   // Mean Girls and the Teen Conservatory shows are excluded: each carries its
   // own flat rule, which neither stacks nor counts toward the fall-show bundle
   // for a kid's other programs
-  for (const it of cart) if (!it.show && !isDayCampItem(it) && it.activity_id !== MEANGIRLS_ID && !isTeenCon(it)) {
+  for (const it of cart) if (!it.show && !isDayCampItem(it) && !isMeanGirls(it) && !isTeenCon(it)) {
     const k = kidKey(it);
     (showsByKid[k] = showsByKid[k] || []).push(it);
   }
@@ -195,7 +198,7 @@ export function priceCart(cart, plan, opts = {}) {
       return { ...it, unit, rate: 0 };
     }
     // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
-    if (it.activity_id === MEANGIRLS_ID) {
+    if (isMeanGirls(it)) {
       const rate = now <= new Date(PUBLIC_OPEN_AT) ? 0.10 : 0;
       return { ...it, unit: Math.round((it.price_cents || 0) * (1 - rate)), rate };
     }
