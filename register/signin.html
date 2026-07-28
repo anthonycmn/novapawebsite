@@ -53,6 +53,20 @@
   .err.on { display:block; }
   .err b { color:#fff; }
   a { color:var(--gold2); }
+  #codeBox { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); text-align:left; }
+  .codelead { font-size:13px; color:var(--ink-dim); line-height:1.6; margin-bottom:10px; }
+  .coderow { display:flex; gap:8px; }
+  .coderow input {
+    flex:1; min-width:0; padding:13px 14px; border-radius:10px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-family:inherit; font-size:19px;
+    letter-spacing:0.22em; text-align:center;
+  }
+  .coderow input:focus { outline:2px solid var(--gold2); outline-offset:1px; }
+  .coderow button.alt {
+    width:auto; margin-top:0; padding:13px 20px; font-size:15px; white-space:nowrap;
+  }
+  .codeerr { display:none; margin-top:9px; font-size:13px; color:var(--danger); }
+  .codeerr.on { display:block; }
 </style>
 </head>
 <body>
@@ -72,6 +86,18 @@
   </div>
 
   <div class="err" id="err"></div>
+
+  <!-- Belt and braces for anyone whose employer scans links hard enough to
+       spend them. A code can't be consumed by a scanner: there's nothing to
+       fetch. Always available, never in the way. -->
+  <div id="codeBox">
+    <div class="codelead">Trouble with the link? Enter the 6-digit code from the same email.</div>
+    <div class="coderow">
+      <input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      <button id="otpGo" class="alt">Sign in</button>
+    </div>
+    <div class="codeerr" id="otpErr"></div>
+  </div>
 </div>
 
 <script>
@@ -133,27 +159,30 @@
     return '/register/?go=1';
   }
 
+  var emailHint = q.get('email') || '';
+
   if (!tokenHash) {
     fail('<b>This link is missing its sign-in code.</b><br>Head back to ' +
          '<a href="/register/?go=1">the registration page</a> and request a new one.');
     return;
   }
 
-  // Fully automatic — nobody taps anything.
+  // Verifying on page load is NOT safe. Joyce Koons' mail scanner renders the
+  // page and runs its JavaScript — on 2026-07-28 it produced four sessions in
+  // fifteen minutes, one from a Microsoft Azure address on Windows 7 — so an
+  // automatic verify handed the token straight to the scanner and the parent
+  // got "expired" seconds later.
   //
-  // What breaks the old links is that {{ .ConfirmationURL }} points at
-  // Supabase's /auth/v1/verify, which spends the token on a plain HTTP GET.
-  // A mail scanner fetching the URL is enough to burn it.
+  // So we wait for a signal only a person produces: a pointer move, a touch, a
+  // scroll, a key. Real visitors emit one within a moment of the page appearing
+  // and never see a button; the screen reads "Signing you in…" and moves on. A
+  // scanner that renders but doesn't drive input emits none, and the token
+  // survives for the real click.
   //
-  // Here the token is only spent by a JavaScript call that runs in the visitor's
-  // browser. A scanner that fetches the page gets HTML and nothing else — no
-  // script execution, no verify call, token untouched. The parent's browser
-  // runs it on load and goes straight through.
-  //
-  // We skip the automatic path only when the browser openly reports itself as
-  // automated, and fall back to the button then. Real phones and laptops never
-  // hit that branch, so mobile behaves exactly like desktop: land, sign in, go.
+  // The typed 6-digit code below is the guaranteed path if even that is beaten:
+  // it is the same one-time token, but there is no URL for anything to fetch.
   var fired = false;
+  var HUMAN = ['pointermove','pointerdown','touchstart','keydown','wheel','scroll'];
   var automated = false;
   try {
     automated = navigator.webdriver === true || !window.screen || window.screen.width === 0;
@@ -185,17 +214,52 @@
     });
   }
 
-  document.getElementById('go').addEventListener('click', verify);
+  function armed(){
+    HUMAN.forEach(function(e){ window.removeEventListener(e, onHuman, true); });
+  }
+  function onHuman(){ armed(); verify(); }
 
-  if (automated) {
-    // Declared automation: leave the token alone and offer the manual path.
+  document.getElementById('go').addEventListener('click', function(){ armed(); verify(); });
+
+  if (!automated) HUMAN.forEach(function(e){ window.addEventListener(e, onHuman, true); });
+
+  // No sign of a person: show the button rather than sit on a spinner. The
+  // scanner reaches this state too, and a button is exactly what it won't press.
+  setTimeout(function(){
+    if (fired) return;
     document.getElementById('working').style.display = 'none';
     document.getElementById('ask').style.display = 'block';
-  } else {
-    // Let the "Signing you in…" frame paint first so there's no flash of an
-    // empty card, then go — no tap, no scroll, same on phone and desktop.
-    setTimeout(verify, 120);
+  }, automated ? 0 : 2500);
+
+  // ---- typed code: the path nothing can pre-consume ----
+  var otp = document.getElementById('otp');
+  var otpErr = document.getElementById('otpErr');
+  function codeFail(msg){ otpErr.textContent = msg; otpErr.classList.add('on'); }
+
+  function submitCode(){
+    var token = (otp.value || '').replace(/\D/g, '');
+    otpErr.classList.remove('on');
+    if (token.length !== 6) return codeFail('Enter the 6 digits from the email.');
+    var email = emailHint || (prompt('What email address did we send it to?') || '').trim();
+    if (!email) return codeFail('We need the email address the code was sent to.');
+    document.getElementById('otpGo').disabled = true;
+    sb.auth.verifyOtp({ email: email.toLowerCase(), token: token, type: 'email' }).then(function(res){
+      document.getElementById('otpGo').disabled = false;
+      if (res.error) {
+        emailHint = '';   // the address may have been the wrong guess — ask again
+        return codeFail(/expired|invalid/i.test(res.error.message || '')
+          ? 'That code has expired or does not match. Request a new one and try again.'
+          : (res.error.message || 'That did not work.'));
+      }
+      fired = true;
+      location.replace(destination());
+    }).catch(function(){
+      document.getElementById('otpGo').disabled = false;
+      codeFail('Something went wrong — try again, or reply to our email and we will register you directly.');
+    });
   }
+  document.getElementById('otpGo').addEventListener('click', submitCode);
+  otp.addEventListener('keydown', function(e){ if (e.key === 'Enter') submitCode(); });
 })();
 </script>
 
