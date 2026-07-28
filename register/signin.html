@@ -60,17 +60,15 @@
 <div class="card">
   <div class="brand">NOVAPA REGISTRATION</div>
 
-  <div id="ask">
+  <div id="working">
+    <h1>Signing you <em>in…</em></h1>
+    <p>One moment — taking you to your registration.</p>
+  </div>
+
+  <div id="ask" style="display:none">
     <h1>Almost <em>in.</em></h1>
     <p>Tap below to finish signing in and pick up where you left off.</p>
     <button id="go">Sign in to NOVAPA</button>
-    <p class="tiny">This step is here on purpose — some workplace email systems open links
-    automatically to scan them, which used to use up the sign-in link before you got to it.</p>
-  </div>
-
-  <div id="working" style="display:none">
-    <h1>Signing you <em>in…</em></h1>
-    <p>One moment.</p>
   </div>
 
   <div class="err" id="err"></div>
@@ -110,12 +108,25 @@
     return;
   }
 
-  // The verification deliberately does NOT run on page load. A link scanner
-  // fetches the page but never presses the button, so the one-time token
-  // survives until the actual parent clicks it.
-  document.getElementById('go').addEventListener('click', function(){
-    var btn = this;
-    btn.disabled = true;
+  // Verification deliberately does NOT run on page load — that is the whole
+  // point, since a mail scanner's fetch would spend the one-time token before
+  // the parent ever sees it.
+  //
+  // But we don't make anyone click, either. We wait for a sign a human is
+  // actually here: a mouse move, a touch, a scroll, a key. Real people produce
+  // one within a moment of the page appearing; a scanner that just fetches the
+  // URL produces none, so the token survives for the real click. In practice
+  // nobody sees the button — the page reads as "Signing you in…" and moves on.
+  //
+  // If no signal arrives (a genuinely motionless visitor), the button appears
+  // as the manual fallback rather than leaving anyone stranded.
+  var fired = false;
+  var HUMAN = ['pointermove','pointerdown','touchstart','keydown','wheel','scroll'];
+
+  function verify(){
+    if (fired) return;
+    fired = true;
+    HUMAN.forEach(function(e){ window.removeEventListener(e, verify, true); });
     document.getElementById('ask').style.display = 'none';
     document.getElementById('working').style.display = 'block';
 
@@ -137,7 +148,18 @@
       fail('<b>Something went wrong on our end.</b><br>' +
            '<a href="/register/?go=1">Try again</a>, or just reply to our email and we\'ll register you directly.');
     });
-  });
+  }
+
+  HUMAN.forEach(function(e){ window.addEventListener(e, verify, true); });
+  document.getElementById('go').addEventListener('click', verify);
+
+  // Nothing from the visitor after a few seconds: show the manual button rather
+  // than leave them on a spinner forever.
+  setTimeout(function(){
+    if (fired) return;
+    document.getElementById('working').style.display = 'none';
+    document.getElementById('ask').style.display = 'block';
+  }, 4000);
 })();
 </script>
 
