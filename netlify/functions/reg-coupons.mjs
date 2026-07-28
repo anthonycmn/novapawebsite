@@ -156,6 +156,37 @@ export default async (req) => {
     return Response.json({ ok: true, coupon: (rows || [])[0] || null });
   }
 
+  // Delete removes the row outright. Nothing references coupons — no foreign
+  // keys, and orders don't store the code — so this orphans nothing. But for a
+  // code that has been redeemed it also erases the only copy we hold of what it
+  // was worth and who it was for; Stripe keeps it in the payment metadata and
+  // we would not. So a used code needs an explicit confirm.
+  if (action === "delete") {
+    const code = String(body.code || "").trim();
+    if (!code) return Response.json({ error: "no_code" }, { status: 400 });
+
+    const rows = await db(`coupons?code=eq.${encodeURIComponent(code)}&select=*`);
+    const c = (rows || [])[0];
+    if (!c) return Response.json({ error: "That code no longer exists." }, { status: 404 });
+
+    const used = (c.uses || 0) > 0;
+    if (used && !body.confirm_used) {
+      const spent = c.balance_cents != null
+        ? ((c.amount_cents || 0) - c.balance_cents) : null;
+      return Response.json({
+        needs_confirm: true,
+        uses: c.uses,
+        spent_cents: spent,
+        message: `${code} has been redeemed ${c.uses} time${c.uses === 1 ? "" : "s"}` +
+          (spent ? ` for ${(spent / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}` : "") +
+          `. Deleting it removes that record from this dashboard — Stripe keeps it on the payment, but you won't see it here again. Turning it off instead keeps the history.`,
+      });
+    }
+
+    await db(`coupons?code=eq.${encodeURIComponent(code)}`, { method: "DELETE" });
+    return Response.json({ ok: true, deleted: code });
+  }
+
   return Response.json({ error: "unknown_action" }, { status: 400 });
 };
 

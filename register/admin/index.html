@@ -483,8 +483,10 @@
         '<td class="num">' + (c.uses || 0) + '</td>' +
         '<td>' + (c.expires_at ? String(c.expires_at).slice(0,10) : 'never') + '</td>' +
         '<td>' + state + '</td>' +
-        '<td><button class="tag" data-tog="' + esc(c.code) + '" data-on="' + (c.active ? '0' : '1') + '" ' +
-          'style="cursor:pointer;border:0;padding:4px 10px">' + (c.active ? 'turn off' : 'turn on') + '</button></td></tr>';
+        '<td style="white-space:nowrap"><button class="tag" data-tog="' + esc(c.code) + '" data-on="' + (c.active ? '0' : '1') + '" ' +
+          'style="cursor:pointer;border:0;padding:4px 10px">' + (c.active ? 'turn off' : 'turn on') + '</button> ' +
+          '<button class="tag bad" data-del="' + esc(c.code) + '" title="Delete this code permanently" ' +
+          'style="cursor:pointer;border:0;padding:4px 10px">delete</button></td></tr>';
     }).join('');
     $('tblCredits').innerHTML = rows
       ? '<tr><th>code</th><th>who / why</th><th class="num">worth</th><th class="num">left</th><th class="num">used</th><th>expires</th><th>status</th><th></th></tr>' + rows
@@ -494,6 +496,25 @@
         b.disabled = true;
         crApi({ action:'toggle', code: b.dataset.tog, active: b.dataset.on === '1' })
           .then(loadCredits).catch(function(){ b.disabled = false; });
+      });
+    });
+    $('tblCredits').querySelectorAll('button[data-del]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var code = b.dataset.del;
+        if (!confirm('Delete ' + code + ' permanently?')) return;
+        b.disabled = true;
+        crApi({ action:'delete', code: code }).then(function(d){
+          // the server refuses a redeemed code on the first pass and hands back
+          // what it was worth, so the second prompt is specific rather than scary
+          if (d && d.needs_confirm) {
+            b.disabled = false;
+            if (!confirm(d.message + '\n\nDelete it anyway?')) return;
+            b.disabled = true;
+            return crApi({ action:'delete', code: code, confirm_used: true }).then(loadCredits);
+          }
+          if (d && d.error) { alert(d.error); b.disabled = false; return; }
+          loadCredits();
+        }).catch(function(){ b.disabled = false; });
       });
     });
   }
