@@ -91,9 +91,9 @@
        spend them. A code can't be consumed by a scanner: there's nothing to
        fetch. Always available, never in the way. -->
   <div id="codeBox">
-    <div class="codelead">Trouble with the link? Enter the 6-digit code from the same email.</div>
+    <div class="codelead">Trouble with the link? Enter the code from the same email.</div>
     <div class="coderow">
-      <input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      <input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="code from your email">
       <button id="otpGo" class="alt">Sign in</button>
     </div>
     <div class="codeerr" id="otpErr"></div>
@@ -179,7 +179,7 @@
   // scanner that renders but doesn't drive input emits none, and the token
   // survives for the real click.
   //
-  // The typed 6-digit code below is the guaranteed path if even that is beaten:
+  // The typed code below is the guaranteed path if even that is beaten:
   // it is the same one-time token, but there is no URL for anything to fetch.
   var fired = false;
   var HUMAN = ['pointermove','pointerdown','touchstart','keydown','wheel','scroll'];
@@ -239,7 +239,9 @@
   function submitCode(){
     var token = (otp.value || '').replace(/\D/g, '');
     otpErr.classList.remove('on');
-    if (token.length !== 6) return codeFail('Enter the 6 digits from the email.');
+    // Supabase's OTP length is a project setting — this one issues 8 digits,
+    // not the 6 the docs default to. Accept the range rather than a magic number.
+    if (token.length < 6 || token.length > 12) return codeFail('Enter the code exactly as it appears in the email.');
     var email = emailHint || (prompt('What email address did we send it to?') || '').trim();
     if (!email) return codeFail('We need the email address the code was sent to.');
     document.getElementById('otpGo').disabled = true;
