@@ -588,6 +588,34 @@
   function isPublicOpen(){ return new Date() >= new Date(C.PUBLIC_OPEN_AT); }
 
   // ---------- boot: returning from magic link? ----------
+  // A spent or expired token comes back as #error=...&error_code=otp_expired.
+  // We used to ignore that and just render the gate, so a parent whose link had
+  // already been opened by their employer's email scanner saw the "are you a
+  // returning family?" question again with no explanation — one of them looped
+  // for a week before writing in. Say what happened instead.
+  var linkError = (function(){
+    var h = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+    var code = h.get('error_code') || h.get('error');
+    if (!code) return false;
+    var el = $('gateErr');
+    if (el) {
+      el.innerHTML = /expired|invalid|access_denied|otp/i.test(code)
+        ? "<b>That sign-in link had already been opened.</b> Some workplace email systems open links " +
+          "automatically to scan them, which uses them up before you get there. Enter your email below for " +
+          "a fresh link — or email <a href='mailto:jason@novapa.org' style='color:var(--gold3)'>jason@novapa.org</a> " +
+          "and we'll register you directly."
+        : "<b>That sign-in link didn't work.</b> Enter your email below for a new one.";
+      el.classList.add('on');
+    }
+    // land them ON the email step so the message is actually visible — gateErr
+    // lives there, not on the new/returning choice screen
+    go('st-remail');
+    var inp = $('emailInput'); if (inp) inp.focus();
+    try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
+    ev('reg_link_error', { code: code });
+    return true;
+  })();
+
   sb.auth.getSession().then(function(res){
     var session = res.data && res.data.session;
     if (session && session.user && session.user.email) {
@@ -608,7 +636,10 @@
     }
     // Bare landings (playbill QRs, typed URLs) see the summer landing page first.
     // Anything intentional carries a query (?go, ?activity, ?season) or magic-link hash.
-    if (!location.search && !location.hash) location.replace('/summer-2027');
+    // linkError guards the case above, where we just stripped the error hash off
+    // the URL — without it a failed sign-in would bounce to /summer-2027 and the
+    // explanation would never be seen.
+    if (!linkError && !location.search && !location.hash) location.replace('/summer-2027');
   });
 
 
