@@ -1739,9 +1739,9 @@
       if (kid) byKid[k].n += (kid.already || []).filter(function(s){ return SUMMER_SLUGS2.indexOf(s) !== -1; }).length;
     });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    function fullPrice(it){ return it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 0); }
     var savings = items.reduce(function(sum, it, i){
-      var full = it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 0);
-      return sum + Math.max(0, full - p.units[i]);
+      return sum + Math.max(0, fullPrice(it) - p.units[i]);
     }, 0);
     function actShowName(a){
       var nm = a.name || 'Show';
@@ -1754,7 +1754,10 @@
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
         : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
       var pct = it.show ? Math.round(discRate((byKid[kidKey(it)]||{}).n||0)*100) : 0;
-      return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + '</span><span>' + money(p.units[i]) + '</span></div>';
+      // List price here, not the discounted unit — the discount comes off on
+      // the "Launch-sale savings" row below. Showing the already-reduced price
+      // AND that row made the column read like the money was coming off twice.
+      return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + '</span><span>' + money(fullPrice(it)) + '</span></div>';
     }).join('');
     var allSummer = items.every(function(it){ return it.show; });
     $('summaryCard').innerHTML =
