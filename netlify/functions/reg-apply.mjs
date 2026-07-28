@@ -28,6 +28,9 @@ const POSITIONS = [
   "Front Desk / Administrative",
   "Marketing / Social Media",
   "Substitute / On-Call",
+  "Volunteer",
+  "Intern",
+  "Other",
 ];
 const AVAILABILITY = [
   "Weekday daytime",
