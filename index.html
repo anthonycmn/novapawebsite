@@ -3548,20 +3548,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <span class="ti"><span class="td"></span> 9 full productions a year</span>
    </div>
   </div>
-  <!-- ── VIDEO ── -->
-  <section class="video-sec" style="padding:clamp(60px,8vw,100px) clamp(20px,5vw,60px);background:linear-gradient(160deg,#0A1628 0%,#0F1E36 50%,#08111F 100%)">
-   <div style="max-width:1320px;margin:0 auto;text-align:center">
-    <div class="seceye reveal">
-     <span class="sectag">✦ Watch</span>
-    </div>
-    <h2 class="sectitle reveal rd1">See the Magic <em style="font-style:italic;color:var(--gold2)">on Our Stage</em></h2>
-    <p class="secdesc reveal rd2" style="margin:14px auto 0">A glimpse of what happens when young performers step into the spotlight with us.</p>
-    <div class="reveal rd2" style="max-width:960px;margin:50px auto 0;position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,0.45);border:1px solid rgba(232,184,75,0.35)">
-     <iframe src="https://www.youtube-nocookie.com/embed/Ks0GUog0mHo" title="Northern Virginia Performing Arts" loading="lazy" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe>
-    </div>
-   </div>
-  </section>
-  <!-- ── GALLERY · CURTAIN CALL ────────────────────────────────────────────
+  <!-- ── VIDEO + GALLERY · CURTAIN CALL ────────────────────────────────────
+       On desktop the promo video sits in the left column and the company
+       line runs down the right. Below 1080px they stack, video first.
        The company stands in a darkened line. The cursor is a spotlight:
        whatever it lands on lights up, and neighbours catch the edge of the
        pool. Click a figure to bring it downstage.
@@ -3587,6 +3576,37 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
      -webkit-background-clip:text;background-clip:text;color:transparent}
    .cc-sub{margin:16px auto 0;max-width:470px;font-size:15px;line-height:1.75;font-weight:300;
      color:rgba(255,255,255,.42)}
+   /* video sits beside the company on desktop, above it on smaller screens */
+   .cc-grid{position:relative;z-index:2;max-width:1320px;margin:0 auto;
+     display:grid;gap:clamp(30px,3.4vw,50px);align-items:center}
+   .cc-vid{min-width:0;padding:0 clamp(20px,5vw,56px)}
+   .cc-vtag{display:inline-flex;align-items:center;gap:9px;font-family:'Cinzel',serif;font-size:9.5px;
+     font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:var(--gold2)}
+   .cc-vtag::before{content:"";width:20px;height:1px;background:rgba(232,184,75,.5)}
+   .cc-vh{font-family:'Playfair Display',serif;font-size:clamp(20px,1.9vw,27px);font-weight:800;
+     line-height:1.18;letter-spacing:-.022em;color:#fff;margin:12px 0 17px}
+   .cc-vh em{font-style:italic;font-weight:400;color:var(--gold2)}
+   .cc-frame{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:14px;
+     box-shadow:0 26px 66px rgba(0,0,0,.58);border:1px solid rgba(232,184,75,.3)}
+   .cc-frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+   .cc-co{min-width:0}
+   /* the two column headers are the same height so the video frame and the
+      photo line start on the same horizontal */
+   .cc-cohd{display:none}
+   @media(max-width:1079px){.cc-vid{text-align:center}}
+   @media(min-width:1080px){
+     .cc-grid{grid-template-columns:minmax(0,.84fr) minmax(0,1.16fr);padding:0 clamp(20px,5vw,56px);
+       align-items:start}
+     .cc-vid{padding:0}
+     .cc-cohd{display:block}
+     .cc-co .cc-line{padding:0;align-items:flex-start}
+     .cc-co .cc-stage{padding:0 0 34px}
+     /* figure height is tuned to land near the video frame height */
+     .cc-co .cc-fig{flex:0 0 clamp(152px,12.8vw,205px)}
+     .cc-co .cc-stage{-webkit-mask-image:linear-gradient(90deg,#000 84%,transparent);
+       mask-image:linear-gradient(90deg,#000 84%,transparent)}
+     .cc-co .cc-ft{max-width:none;padding:0;margin:clamp(14px,1.7vw,22px) 0 0}
+   }
    /* the stage */
    .cc-stage{position:relative;z-index:2;padding:8px 0 26px;overflow-x:auto;overflow-y:hidden;
      scrollbar-width:none;-ms-overflow-style:none;cursor:none;
@@ -3669,8 +3689,21 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    <div class="cc-hd">
     <span class="cc-tag">Curtain Call</span>
     <h2 class="cc-h2">Meet the <em>company</em></h2>
-    <p class="cc-sub">Two weeks, one show, and a room full of people who were strangers on Monday. Move the light across them.</p>
+    <p class="cc-sub">Two weeks, one show, and a room full of people who were strangers on Monday. Watch them, then move the light across them.</p>
    </div>
+   <div class="cc-grid">
+    <div class="cc-vid">
+     <span class="cc-vtag">Watch</span>
+     <h3 class="cc-vh">See the magic <em>on our stage</em></h3>
+     <div class="cc-frame">
+      <iframe src="https://www.youtube-nocookie.com/embed/Ks0GUog0mHo" title="Northern Virginia Performing Arts" loading="lazy" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+     </div>
+    </div>
+    <div class="cc-co">
+     <div class="cc-cohd">
+      <span class="cc-vtag">The Gallery</span>
+      <h3 class="cc-vh">Backstage and <em>on stage</em></h3>
+     </div>
    <div class="cc-stage" id="ccStage">
     <div class="cc-beam" id="ccBeam"></div>
     <div class="cc-line" id="ccLine">
@@ -3772,6 +3805,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <span class="cc-hint">Move the light</span>
     <span class="cc-rule"></span>
     <span class="cc-hint">Click to bring downstage</span>
+   </div>
+    </div>
    </div>
   </section>
   <div class="cc-dn" id="ccDn" role="dialog" aria-modal="true" aria-label="Photo viewer">
