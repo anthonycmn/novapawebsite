@@ -81,6 +81,23 @@
     color:#1a1206; font-weight:700; font-size:15px; cursor:pointer; font-family:inherit; }
   #login .msg { margin-top:12px; color:var(--dim); font-size:13px; }
   .empty { color:var(--dim); padding:20px; text-align:center; }
+
+  /* credits */
+  .card-form { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:18px; display:flex; flex-direction:column; gap:14px; }
+  .cf-row { display:flex; gap:12px; flex-wrap:wrap; }
+  .cf-row label { display:flex; flex-direction:column; gap:5px; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.07em; color:var(--dim); font-weight:600; flex:1; min-width:170px; }
+  .cf-row .opt { text-transform:none; letter-spacing:0; font-weight:400; }
+  .cf-row input, .cf-row select { padding:10px 12px; border-radius:9px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.85); color:#fff; font-family:inherit; font-size:14px; text-transform:none; letter-spacing:0; }
+  .cf-row input:focus, .cf-row select:focus { outline:2px solid var(--gold); outline-offset:1px; }
+  .codebox { background:rgba(232,184,75,0.10); border:1px solid rgba(232,184,75,0.4); border-radius:10px; padding:16px 18px; }
+  .codebox .code { font-size:25px; font-weight:700; color:var(--gold); letter-spacing:0.06em; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .codebox .sub2 { color:var(--dim); font-size:13px; margin-top:6px; }
+  .codebox button { margin-top:12px; background:var(--gold); color:#1a1206; border:0; border-radius:8px;
+    padding:8px 16px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+  .warnbox { margin-top:12px; padding:12px 14px; border-radius:9px; font-size:13.5px; line-height:1.6;
+    border:1px solid rgba(232,101,75,0.45); background:rgba(232,101,75,0.10); color:var(--ink); }
 </style>
 <meta name="theme-color" content="#08111F">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -108,6 +125,7 @@
       <a data-s="calendar">Calendar</a>
       <a data-s="accounting">Accounting</a>
       <a data-s="cashflow">Cash Flow</a>
+      <a data-s="credits">Credits</a>
       <a data-s="marketing">Marketing</a>
       <a data-s="hiring">Hiring</a>
     </div>
@@ -197,6 +215,41 @@
       </div>
     </section>
 
+    <section class="sec" id="s-credits">
+      <h2>Give someone a credit</h2>
+      <div class="card-form">
+        <div class="cf-row">
+          <label>Who is it for?<input id="crName" placeholder="Erica Bazow"></label>
+          <label>Their email <span class="opt">(recommended)</span><input id="crEmail" type="email" placeholder="erica.bazow@gmail.com"></label>
+        </div>
+        <div class="cf-row">
+          <label>Type
+            <select id="crKind">
+              <option value="credit">Account credit ($)</option>
+              <option value="discount">Percentage off (%)</option>
+            </select>
+          </label>
+          <label id="crAmtWrap">Amount<input id="crAmt" type="number" step="0.01" min="0" placeholder="1233.75"></label>
+          <label id="crPctWrap" style="display:none">Percent off<input id="crPct" type="number" min="1" max="100" placeholder="15"></label>
+          <label>Expires<input id="crExp" type="date"></label>
+        </div>
+        <div class="cf-row">
+          <label style="flex:1">Note <span class="opt">(why — shows on the order)</span><input id="crNote" placeholder="Remaining balance from Lincoln's 2026 withdrawal"></label>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="tag" id="crMake" style="cursor:pointer;border:0;padding:10px 20px;font-size:14px">Create code</button>
+          <span class="sub" id="crStatus"></span>
+        </div>
+        <div id="crResult" style="display:none"></div>
+      </div>
+
+      <h2 style="margin-top:26px">Existing codes</h2>
+      <div class="wrap-scroll"><table id="tblCredits"></table></div>
+      <p class="sub" style="margin-top:10px">A <b>credit</b> is a balance: spend $90 of a $792 credit and $702 stays on the code for next time.
+      A <b>percentage</b> comes off one order and is then used up. Switching a code off stops it working immediately.
+      Codes aren't locked to an email address, so only send one to the family it's for.</p>
+    </section>
+
     <section class="sec" id="s-cashflow">
       <h2>Cash flow forecast</h2>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
@@ -266,6 +319,12 @@
       // the forecast is cheap and always wanted — fetch it the first time the
       // tab is opened rather than making Todd hunt for a Load button
       if (a.dataset.s === 'cashflow' && !CF) loadCashflow();
+      if (a.dataset.s === 'credits' && !CR) {
+        // default the expiry to the end of the current season, which is what
+        // Todd has picked every time so far
+        if (!$('crExp').value) $('crExp').value = '2027-07-31';
+        loadCredits();
+      }
     });
   });
 
@@ -385,6 +444,96 @@
       renderAccounting();
     }).catch(function(e){ $('accStatus').textContent = 'network error'; });
   });
+  // ---- Credits (Todd mints these himself) ----
+  var CR = null;
+  function crApi(payload){
+    return sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+    }).then(function(r){ return r.json(); });
+  }
+  function loadCredits(){
+    crApi({ action: 'list' }).then(function(d){
+      if (d.error) { $('crStatus').textContent = 'error: ' + d.error; return; }
+      CR = d.coupons || [];
+      renderCredits();
+    }).catch(function(){ $('crStatus').textContent = 'network error'; });
+  }
+  function renderCredits(){
+    var rows = (CR || []).map(function(c){
+      var isCredit = c.balance_cents !== null && c.balance_cents !== undefined;
+      var expired = c.expires_at && new Date(c.expires_at) < new Date();
+      var spent = isCredit && c.balance_cents === 0;
+      var dead = !c.active || expired || spent;
+      var worth = isCredit ? money0(c.amount_cents || 0) : (c.pct + '% off');
+      var left  = isCredit ? money0(c.balance_cents) : (c.max_uses ? (c.max_uses - (c.uses||0)) + ' use(s)' : 'unlimited');
+      var state = !c.active ? '<span class="tag">off</span>'
+                : expired  ? '<span class="tag bad">expired</span>'
+                : spent    ? '<span class="tag">used up</span>'
+                : '<span class="tag ok">active</span>';
+      return '<tr' + (dead ? ' style="opacity:.55"' : '') + '>' +
+        '<td><b style="font-family:ui-monospace,Menlo,monospace">' + esc(c.code) + '</b></td>' +
+        '<td>' + esc(c.note || '') + '</td>' +
+        '<td class="num">' + worth + '</td>' +
+        '<td class="num">' + left + '</td>' +
+        '<td class="num">' + (c.uses || 0) + '</td>' +
+        '<td>' + (c.expires_at ? String(c.expires_at).slice(0,10) : 'never') + '</td>' +
+        '<td>' + state + '</td>' +
+        '<td><button class="tag" data-tog="' + esc(c.code) + '" data-on="' + (c.active ? '0' : '1') + '" ' +
+          'style="cursor:pointer;border:0;padding:4px 10px">' + (c.active ? 'turn off' : 'turn on') + '</button></td></tr>';
+    }).join('');
+    $('tblCredits').innerHTML = rows
+      ? '<tr><th>code</th><th>who / why</th><th class="num">worth</th><th class="num">left</th><th class="num">used</th><th>expires</th><th>status</th><th></th></tr>' + rows
+      : '<tr><td class="empty">no codes yet</td></tr>';
+    $('tblCredits').querySelectorAll('button[data-tog]').forEach(function(b){
+      b.addEventListener('click', function(){
+        b.disabled = true;
+        crApi({ action:'toggle', code: b.dataset.tog, active: b.dataset.on === '1' })
+          .then(loadCredits).catch(function(){ b.disabled = false; });
+      });
+    });
+  }
+  $('crKind').addEventListener('change', function(){
+    var credit = this.value === 'credit';
+    $('crAmtWrap').style.display = credit ? '' : 'none';
+    $('crPctWrap').style.display = credit ? 'none' : '';
+  });
+  $('crMake').addEventListener('click', function(){
+    var kind = $('crKind').value;
+    $('crStatus').textContent = 'creating…';
+    $('crResult').style.display = 'none';
+    crApi({
+      action: 'create', kind: kind,
+      label: $('crName').value.trim(),
+      email: $('crEmail').value.trim(),
+      amount: $('crAmt').value,
+      pct: $('crPct').value,
+      expires: $('crExp').value,
+      note: $('crNote').value.trim()
+    }).then(function(d){
+      if (d.error) { $('crStatus').textContent = d.error; return; }
+      $('crStatus').textContent = '';
+      var c = d.coupon;
+      var worth = c.balance_cents != null ? money0(c.amount_cents) : (c.pct + '% off');
+      $('crResult').innerHTML =
+        '<div class="codebox"><div class="code" id="crCode">' + esc(c.code) + '</div>' +
+        '<div class="sub2">' + worth + (c.expires_at ? ' · expires ' + String(c.expires_at).slice(0,10) : '') +
+        ' · they enter this at checkout</div>' +
+        '<button id="crCopy">Copy code</button></div>' +
+        (d.warn ? '<div class="warnbox"><b>Before you send it:</b> ' + esc(d.warn) + '</div>' : '');
+      $('crResult').style.display = '';
+      $('crCopy').addEventListener('click', function(){
+        navigator.clipboard.writeText(c.code).then(function(){ $('crCopy').textContent = 'Copied'; });
+      });
+      ['crName','crEmail','crAmt','crPct','crNote'].forEach(function(id){ $(id).value = ''; });
+      loadCredits();
+    }).catch(function(){ $('crStatus').textContent = 'network error'; });
+  });
+
   // ---- Cash Flow (Todd) ----
   // Its own tab rather than a section of Accounting: this is a forward-looking
   // forecast, so it has no year, no program filter and no date basis. It asks
