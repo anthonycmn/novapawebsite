@@ -568,20 +568,27 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   </button>
 </nav>
 <!-- reg-banner-sitewide -->
-<a href="summer-2027.html" class="audition-banner" aria-label="Private registration for Summer 2027 now open &mdash; register now">
- <div class="audition-banner-inner">
-  <div class="audition-banner-icon" aria-hidden="true">
-   <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-   </svg>
-  </div>
-  <div class="audition-banner-text">
-   <strong>Summer 2027 registration is open</strong>
-   <span>Three Broadway Bound camps &middot; Save up to 20% through August 15</span>
-  </div>
-  <span class="audition-banner-cta">Register &rarr;</span>
- </div>
-</a>
+  <a href="summer-2027.html" class="audition-banner" aria-label="Private registration for Summer 2027 now open &mdash; register now">
+   <div class="audition-banner-inner">
+    <div class="audition-banner-icon" aria-hidden="true">
+     <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+     </svg>
+    </div>
+    <div class="audition-banner-text">
+     <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Private Registration Now Open</div>
+     <div class="audition-banner-title">Summer 2027 <span>Broadway Bound</span> Camps</div>
+     <div class="audition-banner-sub">Get up to 20% off.</div>
+    </div>
+    <div class="audition-banner-cta">
+     <span>Register Now</span>
+     <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
+     </svg>
+    </div>
+   </div>
+  </a>
 
 <!-- HERO -->
 <header class="dc-hero">
@@ -1828,6 +1835,16 @@ function checkEmpty() {
         d:"One song, one camper, one room paying attention. A day on picking material that suits your voice and performing it alone without shrinking." },
       "12-15": { t:"Solo Performance Lab",
         d:"Serious work on a single piece: text analysis, phrasing, and the physical choices that keep a solo from going flat. Coached and re-run until it lands." } }},
+
+    // Veterans Day is not on Todd's schedule but Fairfax and Prince William
+    // both close for it, so it belongs here.
+    "2026-11-11": { out:"fp", why:"Veterans Day", programs:{
+      "5-9":  { t:"Marching Orders",
+        d:"Big parade songs, drums, and a lot of stomping. Campers learn a routine, make something to wave, and march it for families at pickup." },
+      "9-12": { t:"Ensemble Bootcamp",
+        d:"Nobody is the lead today. A day on moving as a group, holding a harmony, and the unglamorous skills that make a chorus sound like one voice." },
+      "12-15": { t:"Cold Read Clinic",
+        d:"Sides handed out on the spot, the way a real callback works. Campers learn to scan a page fast, make a choice, and commit to it under pressure." } }},
 
     // ── Winter / spring 2027 ──
     "2027-01-18": { out:"lfp", why:"Martin Luther King Jr. Day", programs:{
