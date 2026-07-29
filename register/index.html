@@ -986,7 +986,13 @@
         var a = state.assign[show + '|' + i];
         if (a && a.on) n++;
       });
-      if (n) byKid.push({ name: k.name, n: n + (k.already || []).filter(function(s){ return ['httyd','charlie','trolls'].indexOf(s) !== -1; }).length });
+      // trio check mirrors localPricing: both fall shows (picked or prior)
+      // plus a camp lifts this kid's camps to 15% regardless of tier
+      var fallOn = 0;
+      FALL_SHOWS.forEach(function(fs){ if (fs.key !== 'meangirls' && fallCastOn(i, fs.key)) fallOn++; });
+      fallOn += (k.already || []).filter(function(s){ return s === 'frozen' || s === 'mermaid'; }).length;
+      if (n) byKid.push({ name: k.name, trio: fallOn >= 2,
+        n: n + (k.already || []).filter(function(s){ return ['httyd','charlie','trolls'].indexOf(s) !== -1; }).length });
     });
     var fallN = 0;
     state.kids.forEach(function(k, i){
@@ -1000,17 +1006,25 @@
       return;
     }
     if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
-    function label(n){ return n + ' show' + (n > 1 ? 's' : '') + ' selected, ' + Math.round(discRate(n) * 100) + '% off'; }
-    function nudge(n){
-      if (n === 1) return ' \u00b7 add a 2nd camp for ' + Math.round(discRate(2) * 100) + '% off both';
-      if (n === 2) return ' \u00b7 add the 3rd for ' + Math.round(discRate(3) * 100) + '% off everything';
+    function rateOf(e, n){ return e.trio ? Math.max(discRate(n), 0.15) : discRate(n); }
+    function label(e){ return e.n + ' show' + (e.n > 1 ? 's' : '') + ' selected, ' + Math.round(rateOf(e, e.n) * 100) + '% off'; }
+    function nudge(e){
+      // only dangle a number the next camp actually delivers — a trio kid is
+      // at 15% already, so their next real jump is the 3-camp 20%
+      var cur = rateOf(e, e.n);
+      if (e.n === 1) {
+        var at2 = rateOf(e, 2);
+        if (at2 > cur) return ' \u00b7 add a 2nd camp for ' + Math.round(at2 * 100) + '% off both';
+        return ' \u00b7 add camps for up to ' + Math.round(rateOf(e, 3) * 100) + '% off everything';
+      }
+      if (e.n === 2) return ' \u00b7 add the 3rd for ' + Math.round(rateOf(e, 3) * 100) + '% off everything';
       return '';
     }
-    if (byKid.length === 1) { t.textContent = label(byKid[0].n) + nudge(byKid[0].n); return; }
-    var uniform = byKid.every(function(e){ return e.n === byKid[0].n; });
+    if (byKid.length === 1) { t.textContent = label(byKid[0]) + nudge(byKid[0]); return; }
+    var uniform = byKid.every(function(e){ return e.n === byKid[0].n && e.trio === byKid[0].trio; });
     t.textContent = uniform
-      ? label(byKid[0].n) + ' each' + nudge(byKid[0].n)
-      : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(discRate(e.n) * 100) + '% off)'; }).join(' \u00b7 ');
+      ? label(byKid[0]) + ' each' + nudge(byKid[0])
+      : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(rateOf(e, e.n) * 100) + '% off)'; }).join(' \u00b7 ');
   }
   function renderShowKids(){
     $('sKidOpen').textContent = state.kids.length ? '+ Add another camper' : '+ Add a camper';
@@ -1609,6 +1623,8 @@
       var hasCamp = items.some(function(x){ return x.show && kidKey(x) === k; }) || (ko ? priorCamps(ko) > 0 : false);
       return (cartShows + priorShows >= 2) && hasCamp;
     }
+    var trioKids = {};
+    items.forEach(function(it){ var k = kidKey(it); if (!(k in trioKids)) trioKids[k] = trioKid(k); });
     var bund = [], mg = [], trio = [], pcts = [];
     var units = items.map(function(it, i){
       if (it.show) {
@@ -1649,11 +1665,11 @@
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = Math.round(net * 5 / 100);
-    return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+    return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
              today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / C.INSTALLMENTS) };
   }
 
@@ -1817,10 +1833,21 @@
     var box = $('upsellBox');
     var html = '';
     if (saleOn()) {
+      // A trio kid's camps are already at 15%, so "one show away from 15%" is
+      // promising what they have. Only surface a step that raises their rate.
+      function rateAt(k, n){
+        var r = discRate(n);
+        return (p.trioKids && p.trioKids[k]) ? Math.max(r, 0.15) : r;
+      }
       var hints = Object.keys(byKid).filter(function(k){ return byKid[k].n > 0 && byKid[k].n < 3; }).map(function(k){
-        var next = Math.round(discRate(byKid[k].n+1)*100);
-        return '<b>' + esc(byKid[k].name.split(' ')[0]) + '</b> is one show away from <b>' + next + '% off each camp</b>';
-      });
+        var cur = rateAt(k, byKid[k].n);
+        var one = rateAt(k, byKid[k].n + 1);
+        var first = esc(byKid[k].name.split(' ')[0]);
+        if (one > cur) return '<b>' + first + '</b> is one show away from <b>' + Math.round(one*100) + '% off each camp</b>';
+        var two = byKid[k].n + 2 <= 3 ? rateAt(k, byKid[k].n + 2) : one;
+        if (two > cur) return '<b>' + first + '</b> is two camps away from <b>' + Math.round(two*100) + '% off each camp</b>';
+        return null;
+      }).filter(Boolean);
       if (hints.length) {
         html += '<div>' + hints.join(' · ') + ' — <a href="#" id="upsellAdd">add a show →</a></div>';
       }
