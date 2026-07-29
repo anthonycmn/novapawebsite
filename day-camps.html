@@ -451,14 +451,18 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 .dc-date-why{font-size:12.5px;color:var(--text3);margin-top:4px}
 .dc-date-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-top:3px}
 
-.dc-slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,215px),1fr));
-  gap:1px;background:var(--border2)}
-.dc-slot{background:#fff;padding:18px 20px 20px;display:flex;flex-direction:column}
-.dc-slot-age{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;
-  color:var(--navy);margin-bottom:3px}
-.dc-slot-nm{font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:6px}
-.dc-slot-nm b{color:var(--navy);font-weight:600}
-.dc-slot-desc{font-size:12px;line-height:1.6;color:var(--text3);margin-bottom:12px}
+.dc-slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));
+  gap:14px;padding:16px}
+/* each age group is its own card in its own colour so the three never blur
+   together in a wall of text */
+.dc-slot{background:#fff;border:1px solid var(--border2);border-top:3px solid var(--band,var(--gold));
+  border-radius:11px;padding:16px 18px 18px;display:flex;flex-direction:column}
+.dc-slot-age{display:inline-block;align-self:flex-start;font-size:10.5px;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--band,var(--gold));
+  background:var(--band-bg,rgba(201,146,42,0.1));padding:4px 10px;border-radius:100px;margin-bottom:11px}
+.dc-slot-nm{font-size:14px;line-height:1.35;margin-bottom:7px}
+.dc-slot-nm b{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--navy);font-weight:700}
+.dc-slot-desc{font-size:12.5px;line-height:1.65;color:var(--text2);margin-bottom:14px}
 .dc-slot-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:13px}
 .dc-slot-tag{font-size:11px;font-weight:500;padding:3px 10px;border-radius:100px;
   background:rgba(11,20,36,0.07);color:var(--navy3)}
@@ -469,18 +473,18 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   color:#1a1205;font-weight:800;font-size:11.5px;letter-spacing:0.09em;text-transform:uppercase;
   text-decoration:none;box-shadow:0 3px 10px rgba(200,137,42,0.28);transition:box-shadow .16s ease}
 .dc-slot-go:hover{box-shadow:0 8px 22px rgba(200,137,42,0.5)}
-.dc-slot.none{background:#FBFAF7}
-.dc-slot.none .dc-slot-age{color:var(--text3)}
+.dc-slot.none{background:#FCFBF8}
 .dc-slot-none{margin-top:auto;font-size:12px;color:var(--text3);text-align:center;
   padding:10px 14px;border:1px dashed var(--border);border-radius:9px}
 
 /* credit pack + snow days */
-.dc-credits{margin-top:clamp(48px,6vw,72px)}
+.dc-credits{margin-bottom:clamp(48px,6vw,72px)}
 .dc-credits-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;align-items:start}
 .dc-pack{background:#fff;border:2px solid var(--gold);border-radius:16px;padding:26px 28px 24px;position:relative}
 .dc-pack-flag{position:absolute;top:-11px;left:28px;background:var(--gold);color:#1a1205;font-size:10px;
   font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:100px}
-.dc-pack-name{font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:700;color:var(--navy);margin:6px 0 8px}
+.dc-pack-name{font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:700;color:var(--navy);margin:6px 0 2px}
+.dc-pack-per{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
 .dc-pack-price{display:flex;align-items:baseline;gap:10px}
 .dc-pack-num{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:700;color:var(--navy);line-height:1}
 .dc-pack-was{font-size:16px;color:var(--text3);text-decoration:line-through}
@@ -618,49 +622,30 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     </div>
   </section>
 
-  <!-- SCHEDULE -->
-  <section id="schedule">
-    <div class="dc-sec-head">
-      <h2>Upcoming <em>day camps</em></h2>
-      <p class="dc-sec-sub">Every date the school divisions are closed and we are running a camp,
-        with the divisions that are out marked on each one. Anything showing a Register button is
-        open now; the rest go live as they are announced.</p>
-    </div>
-
-    <div class="dc-key">
-      <span class="dc-key-lbl">Loudoun &middot; Fairfax &middot; Prince William</span>
-      <span class="dc-chip dc-out">Schools closed</span>
-      <span class="dc-chip dc-in">Schools in session</span>
-      <span class="dc-chip dc-unk">Calendar not published yet</span>
-    </div>
-
-    <div id="dcList" class="dc-list">
-      <div class="dc-loading">Loading day camps&hellip;</div>
-    </div>
-  </section>
-
   <!-- CREDITS + SNOW DAYS -->
   <section class="dc-credits" id="credits">
     <div class="dc-credits-grid">
       <div class="dc-pack">
         <div class="dc-pack-flag">Best value</div>
         <div class="dc-pack-name">5 Day Camp Credits</div>
+        <div class="dc-pack-per">Per camper</div>
         <div class="dc-pack-price"><span class="dc-pack-num">$349</span><span class="dc-pack-was">$395</span></div>
         <div class="dc-pack-each">$69.80 a day, saving $46</div>
         <ul class="dc-pack-list">
           <li>Five one-day camps, any dates on the schedule</li>
-          <li>Use them across brothers and sisters, not just one camper</li>
+          <li>One camper per pack, so each child gets their own five days</li>
           <li>Good all school year, through June 2027</li>
           <li>Claim a date any time before it fills</li>
         </ul>
         <div class="dc-pack-bonus">
           <strong>Buy by Labor Day and we add two Snow Day Fun Days free.</strong>
-          Two extra days of camp, worth $158, for the mornings you find out at 6 AM
-          that school is closed.
+          Two extra days for that camper, worth $158, for the mornings you find out at
+          6 AM that school is closed.
         </div>
         <a class="dc-pack-btn" href="mailto:info@novapa.org?subject=Day%20Camp%20Credit%20Pack">Reserve a credit pack</a>
-        <p class="dc-pack-fine">Credits are non-refundable and do not expire before June 30, 2027.
-          Single days are $79 each if you would rather book one at a time.</p>
+        <p class="dc-pack-fine">Credits are per camper and are not shared between children.
+          Non-refundable, good through June 30, 2027. Single days are $79 each if you would
+          rather book one at a time, and siblings booked together still take 5% off.</p>
       </div>
 
       <div class="dc-snow">
@@ -682,6 +667,27 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         <p class="dc-snow-note">If the roads are bad enough that we cannot open safely, we stay
           closed too, and nobody is charged.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section id="schedule">
+    <div class="dc-sec-head">
+      <h2>Upcoming <em>day camps</em></h2>
+      <p class="dc-sec-sub">Every date the school divisions are closed and we are running a camp,
+        with the divisions that are out marked on each one. Anything showing a Register button is
+        open now; the rest go live as they are announced.</p>
+    </div>
+
+    <div class="dc-key">
+      <span class="dc-key-lbl">Loudoun &middot; Fairfax &middot; Prince William</span>
+      <span class="dc-chip dc-out">Schools closed</span>
+      <span class="dc-chip dc-in">Schools in session</span>
+      <span class="dc-chip dc-unk">Calendar not published yet</span>
+    </div>
+
+    <div id="dcList" class="dc-list">
+      <div class="dc-loading">Loading day camps&hellip;</div>
     </div>
   </section>
 
@@ -1768,24 +1774,32 @@ function checkEmpty() {
   var SCHOOL_CALENDAR = {
     // ── Fall 2026 ──
     "2026-09-21": { out:"lfp", why:"Yom Kippur", programs:{
+      "5-9":  { t:"Storybook Stage",
+        d:"The picture books they already love, up on their feet. Campers play every part, make the scenery out of what is in the room, and perform it before pickup." },
       "9-12": { t:"Heroes & Villains",
         d:"Every good story needs both. Campers build a hero and a villain, then put them in a scene together and find out who the audience roots for." },
       "12-15": { t:"NOVAPA Audition Boot Camp Elite",
         d:"A full day on the audition itself: cuts, slates, cold reads, and what the table is actually watching for. Everyone leaves with material they can walk into a real call with." } }},
 
     "2026-10-12": { out:"lfp", why:"Indigenous Peoples' Day / teacher workday", programs:{
+      "5-9":  { t:"Sing, Dance, Pretend",
+        d:"A taste of everything in one day. A song in the morning, a dance after lunch, and a story acted out at the end so families can see all three." },
       "9-12": { t:"Triple Threat Training Day",
         d:"Sing it, act it, dance it, all in one day. Campers rotate through all three and put the pieces together on one number by pickup." },
       "12-15": { t:"Musical Theatre Auditions 101",
         d:"How a musical theatre audition really runs, start to finish. Choosing a cut, working with an accompanist, and holding your nerve in the room." } }},
 
     "2026-10-29": { out:"l", why:"End-of-quarter workday", programs:{
+      "5-9":  { t:"Friendly Monsters",
+        d:"Not scary, just silly. Campers invent a monster, give it a voice and a walk, and put it in a song where it turns out to be nice after all." },
       "9-12": { t:"Monsters & Musicals",
         d:"The spooky corner of musical theatre, from Addams Family to Beetlejuice. Big characters, bigger choreography, and a costume piece they make themselves." },
       "12-15": { t:"Fall Theatre Intensive",
         d:"Day one of our four-day fall intensive. Scene work and technique that builds across the week toward the finale and mock auditions on November 3." } }},
 
     "2026-10-30": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Costume Parade Playhouse",
+        d:"Come in costume and stay in character all day. Campers build a story around whoever they showed up as and parade it for families at pickup." },
       "9-12": { t:"Haunted Broadway",
         d:"Ghost stories told the theatre way, with the songs and staging tricks that make an audience jump. Halloween costumes encouraged." },
       "12-15": { t:"Fall Theatre Intensive",
@@ -1800,12 +1814,16 @@ function checkEmpty() {
         d:"Day three. Running the piece, cleaning it, and taking notes the way a cast does the week before opening." } }},
 
     "2026-11-03": { out:"lfp", why:"Election Day / student holiday", programs:{
+      "5-9":  { t:"Speak Up, Stand Tall",
+        d:"A day about being heard. Campers practise big voices and brave faces, then each one gets the stage to themselves for something they care about." },
       "9-12": { t:"Campaign Trail: The Musical",
         d:"Everybody runs for something ridiculous and has to win the room over with a speech and a song. Persuasion, projection, and comic timing, disguised as an election." },
       "12-15": { t:"Fall Theatre Intensive Finale & Mock Auditions",
         d:"Day four. The intensive piece goes up in the morning, then a full mock audition in the afternoon with real feedback from our faculty." } }},
 
     "2026-11-09": { out:"l", why:"Diwali", programs:{
+      "5-9":  { t:"Big Voice, Little Stage",
+        d:"One song each, sung out loud in front of everybody. A gentle first solo, with the whole room clapping at the end of it." },
       "9-12": { t:"Solo Spotlight",
         d:"One song, one camper, one room paying attention. A day on picking material that suits your voice and performing it alone without shrinking." },
       "12-15": { t:"Solo Performance Lab",
@@ -1813,42 +1831,62 @@ function checkEmpty() {
 
     // ── Winter / spring 2027 ──
     "2027-01-18": { out:"lfp", why:"Martin Luther King Jr. Day", programs:{
+      "5-9":  { t:"Kindness Out Loud",
+        d:"Stories about standing up for a friend, acted out and sung. Campers make up their own ending where somebody does the right thing." },
       "9-12": { t:"Stories That Change the World",
         d:"Theatre that was written to move people. Campers work on monologues and songs from shows about courage and fairness, and talk about why they still land." },
       "12-15": { t:"Audition 101",
         d:"The fundamentals, taught properly: what to bring, how to slate, how to take a redirect, and how to leave a room having made an impression." } }},
 
     "2027-01-25": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Once Upon a Disney",
+        d:"Princesses, sidekicks, and the occasional villain. Campers learn a Disney number with the choreography and act out the scene that goes with it." },
       "9-12": { t:"Disney Day",
         d:"Songs and scenes from the Disney canon, staged for real. Campers work the big numbers and find the character underneath the famous voice." },
       "12-15": { t:"Disney Audition Workshop",
         d:"Built around what Disney and theme park auditions actually ask for: look, energy, vocal range, and the ability to hold a character all day." } }},
 
     "2027-02-05": { out:"lf", why:"Lunar New Year", programs:{
+      "5-9":  { t:"Animal Actors",
+        d:"Every camper picks a creature and becomes it, from the walk to the voice. The day ends with a jungle full of them telling one story together." },
       "9-12": { t:"Build a Character",
         d:"Start from nothing and end with somebody. Voice, walk, wants, and history, then a scene that proves the character holds up under pressure." },
       "12-15": { t:"Acting Intensive",
         d:"A full day inside the text. Objectives, obstacles, and honest listening, working scenes on their feet rather than talking about them." } }},
 
     "2027-02-15": { out:"lfp", why:"Presidents' Day", programs:{
+      "5-9":  { t:"Red, White & Broadway",
+        d:"Big parade songs and marching numbers with plenty of noise. Campers learn a routine, make a flag or a hat, and perform the whole thing at pickup." },
       "9-12": { t:"History Set to Music",
         d:"From Hamilton to Newsies, the shows that turned real events into something you can sing. Campers stage a number and learn the story behind it." },
       "12-15": { t:"Vocal Audition Lab",
         d:"Repertoire day. Finding songs that actually fit your voice and type, cutting them cleanly, and singing them under audition conditions." } }},
 
     "2027-03-08": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Silly Faces on Camera",
+        d:"An introduction to acting for a camera, played as a game. Campers film short scenes, watch themselves back, and learn how little it takes on screen." },
       "9-12": { t:"Lights, Camera, Act!",
         d:"Acting for a camera instead of a back row. Campers learn how small a performance can go on screen, and watch their own takes back." },
       "12-15": { t:"Camera & Self-Tape Boot Camp",
         d:"How to shoot a self-tape that does not get skipped: framing, lighting, reader, slate, and file naming. Everyone leaves with a finished tape." } }},
 
     "2027-03-09": { out:"l", why:"Eid al-Fitr", programs:{
+      "5-9":  { t:"Dance Party Playhouse",
+        d:"Music on, all day. Campers learn a short routine from a show they know and dance it full-out for families before they go home." },
       "9-12": { t:"Broadway Dance Party",
         d:"Choreography from shows they know, taught fast and danced hard. Campers pick up a full number and perform it full-out before pickup." },
       "12-15": { t:"Dance Call Survival",
         d:"The part of the audition that scares people most. Picking up combinations quickly, marking versus full-out, and staying visible in a crowded room." } }},
 
-    "2027-03-10": { out:"p", why:"Eid al-Fitr observed in Prince William" },
+    // Prince William observes Eid a day later than Loudoun, so this one runs
+    // for PWCS families while the other divisions are in school.
+    "2027-03-10": { out:"p", why:"Eid al-Fitr observed in Prince William", programs:{
+      "5-9":  { t:"Curtain Up Playhouse",
+        d:"A whole story built from scratch between drop-off and pickup. Campers make the characters, the noises, and the ending, then perform it." },
+      "9-12": { t:"Scene Study Sampler",
+        d:"Four short scenes in four different styles, from farce to fairy tale. Campers find out which one suits them and why." },
+      "12-15": { t:"Monologue Workshop",
+        d:"One speech, taken apart and rebuilt. Campers leave with a piece that is genuinely theirs and the habit of working text on their own." } }},
 
     // ── Spring break ──
     "2027-03-20": { out:"lfp", why:"Spring break", springBreak:true },
@@ -1862,14 +1900,20 @@ function checkEmpty() {
     "2027-03-28": { out:"lfp", why:"Spring break", springBreak:true },
 
     "2027-04-12": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Broadway Bound Juniors",
+        d:"A first taste of what summer camp feels like. A song, a scene, and a whole day of being in a company with other kids their age." },
       "9-12": { t:"Broadway Bound Prep",
-        d:"A head start on summer. Campers work the kind of material our two-week camps build on, and get a feel for how a full rehearsal day runs." } }}
+        d:"A head start on summer. Campers work the kind of material our two-week camps build on, and get a feel for how a full rehearsal day runs." },
+      "12-15": { t:"Summer Audition Prep",
+        d:"The last workshop before summer placements. Campers polish a song and a monologue and go into camp knowing exactly what they will sing." } }}
   };
 
   /* Spring break runs as one week-long camp rather than separate day camps,
      so every date in it carries the same entry. */
   var SPRING_BREAK = {
-    "9-12":  { t:"Spring Break Musical Theatre Camp",
+    "5-9":  { t:"Spring Break Story Camp",
+      d:"A week of one story, told properly. Campers sing it, act it, paint some of it, and perform it for families on the last day." },
+    "9-12": { t:"Spring Break Musical Theatre Camp",
       d:"A full week building one show, from first read to performance. Campers sing, act, dance, and help make the thing they end up in." },
     "12-15": { t:"Spring Break Musical Theatre Camp",
       d:"A full week on one show with the older company. Bigger roles, real rehearsal discipline, and a performance for families at the end of it." }
@@ -1882,9 +1926,9 @@ function checkEmpty() {
   /* Age groups, in the order they appear on a date. Each camp from the
      catalog is matched to the band its age range overlaps most. */
   var BANDS = [
-    { key:"5-9",   lo:5,  hi:9,  label:"Ages 5–9"   },
-    { key:"9-12",  lo:9,  hi:12, label:"Ages 9–12"  },
-    { key:"12-15", lo:12, hi:15, label:"Ages 12–15" }
+    { key:"5-9",   lo:5,  hi:9,  label:"Ages 5–9",   c:"#A02860", bg:"rgba(160,40,96,0.09)"  },
+    { key:"9-12",  lo:9,  hi:12, label:"Ages 9–12",  c:"#8A5C00", bg:"rgba(201,146,42,0.13)" },
+    { key:"12-15", lo:12, hi:15, label:"Ages 12–15", c:"#14703C", bg:"rgba(20,110,60,0.10)"  }
   ];
 
   var DIVISIONS = [ {k:"l",n:"LCPS"}, {k:"f",n:"FCPS"}, {k:"p",n:"PWCS"} ];
@@ -1981,10 +2025,11 @@ function checkEmpty() {
   }
 
   function slot(band, row, planned, known){
+    var v = band.c ? ' style="--band:' + band.c + ';--band-bg:' + band.bg + '"' : '';
     if (!row) {
       // planned but not in the catalog yet: name it, do not offer a booking
       if (planned) {
-        return '<div class="dc-slot none">' +
+        return '<div class="dc-slot none"' + v + '>' +
           '<div class="dc-slot-age">' + band.label + '</div>' +
           '<div class="dc-slot-nm"><b>' + esc(planned.t) + '</b></div>' +
           (planned.d ? '<div class="dc-slot-desc">' + esc(planned.d) + '</div>' : '') +
@@ -1992,7 +2037,7 @@ function checkEmpty() {
       }
       // "not offered" is only true once the date is actually in the catalog;
       // before that we know nothing about this group and say so
-      return '<div class="dc-slot none">' +
+      return '<div class="dc-slot none"' + v + '>' +
         '<div class="dc-slot-age">' + band.label + '</div>' +
         '<div class="dc-slot-nm">' +
           (known ? 'Not offered on this date.' : 'Line-up still being set.') + '</div>' +
@@ -2004,7 +2049,7 @@ function checkEmpty() {
     if (row.remaining != null && row.remaining > 0 && row.remaining < 10) {
       tags += '<span class="dc-slot-tag left">' + row.remaining + ' spots left</span>';
     }
-    return '<div class="dc-slot">' +
+    return '<div class="dc-slot"' + v + '>' +
       '<div class="dc-slot-age">' + band.label + '</div>' +
       '<div class="dc-slot-nm"><b>' + esc(row.name || "Day Camp") + '</b></div>' +
       (planned && planned.d ? '<div class="dc-slot-desc">' + esc(planned.d) + '</div>' : '') +
