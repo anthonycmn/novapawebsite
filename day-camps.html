@@ -456,7 +456,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 .dc-slot{background:#fff;padding:18px 20px 20px;display:flex;flex-direction:column}
 .dc-slot-age{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;
   color:var(--navy);margin-bottom:3px}
-.dc-slot-nm{font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:10px}
+.dc-slot-nm{font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:6px}
+.dc-slot-nm b{color:var(--navy);font-weight:600}
+.dc-slot-desc{font-size:12px;line-height:1.6;color:var(--text3);margin-bottom:12px}
 .dc-slot-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:13px}
 .dc-slot-tag{font-size:11px;font-weight:500;padding:3px 10px;border-radius:100px;
   background:rgba(11,20,36,0.07);color:var(--navy3)}
@@ -471,6 +473,45 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 .dc-slot.none .dc-slot-age{color:var(--text3)}
 .dc-slot-none{margin-top:auto;font-size:12px;color:var(--text3);text-align:center;
   padding:10px 14px;border:1px dashed var(--border);border-radius:9px}
+
+/* credit pack + snow days */
+.dc-credits{margin-top:clamp(48px,6vw,72px)}
+.dc-credits-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;align-items:start}
+.dc-pack{background:#fff;border:2px solid var(--gold);border-radius:16px;padding:26px 28px 24px;position:relative}
+.dc-pack-flag{position:absolute;top:-11px;left:28px;background:var(--gold);color:#1a1205;font-size:10px;
+  font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:100px}
+.dc-pack-name{font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:700;color:var(--navy);margin:6px 0 8px}
+.dc-pack-price{display:flex;align-items:baseline;gap:10px}
+.dc-pack-num{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:700;color:var(--navy);line-height:1}
+.dc-pack-was{font-size:16px;color:var(--text3);text-decoration:line-through}
+.dc-pack-each{font-size:12.5px;color:var(--text3);margin-top:5px}
+.dc-pack-list{list-style:none;margin:18px 0 0;padding:0}
+.dc-pack-list li{position:relative;padding-left:22px;font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:8px}
+.dc-pack-list li::before{content:'\2713';position:absolute;left:0;top:0;color:var(--gold);font-weight:700}
+.dc-pack-bonus{margin-top:18px;padding:14px 16px;background:var(--gold-pale);
+  border:1px dashed rgba(201,146,42,0.5);border-radius:11px;font-size:12.5px;line-height:1.6;color:#5C3D08}
+.dc-pack-bonus strong{display:block;color:#7A5010;margin-bottom:3px}
+.dc-pack-btn{display:flex;align-items:center;justify-content:center;margin-top:18px;padding:12px 18px;
+  border-radius:10px;background:linear-gradient(135deg,#C8892A,#E8B84B);color:#1a1205;font-weight:800;
+  font-size:12px;letter-spacing:0.09em;text-transform:uppercase;text-decoration:none;
+  box-shadow:0 3px 12px rgba(200,137,42,0.3)}
+.dc-pack-fine{margin-top:12px;font-size:11.5px;line-height:1.55;color:var(--text3)}
+.dc-snow{background:linear-gradient(160deg,var(--navy2) 0%,var(--navy) 70%);border-radius:16px;
+  padding:28px 30px 26px;color:#fff}
+.dc-snow-eyebrow{font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:10px}
+.dc-snow h3{font-family:'Cormorant Garamond',serif;font-size:clamp(23px,3vw,30px);font-weight:700;
+  color:#fff;margin-bottom:12px;line-height:1.15}
+.dc-snow p{font-size:13.5px;line-height:1.7;color:rgba(255,255,255,0.65)}
+.dc-snow-steps{margin:18px 0 0;padding:0;list-style:none;counter-reset:snow}
+.dc-snow-steps li{counter-increment:snow;position:relative;padding-left:32px;margin-bottom:13px;
+  font-size:13px;line-height:1.65;color:rgba(255,255,255,0.62)}
+.dc-snow-steps li::before{content:counter(snow);position:absolute;left:0;top:1px;width:21px;height:21px;
+  border-radius:50%;background:rgba(232,184,75,0.15);color:var(--gold2);font-size:11px;font-weight:700;
+  display:grid;place-items:center}
+.dc-snow-steps strong{color:#fff;font-weight:600}
+.dc-snow-note{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);
+  font-size:12.5px;color:rgba(255,255,255,0.45)}
 
 /* the day */
 .dc-day{margin-top:clamp(48px,6vw,72px);background:var(--navy);border-radius:16px;
@@ -550,7 +591,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     </p>
     <div class="dc-facts">
       <div class="dc-fact"><span class="dc-fact-n">3</span><span class="dc-fact-l">Age Groups</span></div>
-      <div class="dc-fact"><span class="dc-fact-n">1</span><span class="dc-fact-l">Full Day</span></div>
+      <div class="dc-fact"><span class="dc-fact-n">8:30&ndash;4:15</span><span class="dc-fact-l">Full Day</span></div>
       <div class="dc-fact"><span class="dc-fact-n">$79</span><span class="dc-fact-l">Per Camper</span></div>
     </div>
   </div>
@@ -581,8 +622,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   <section id="schedule">
     <div class="dc-sec-head">
       <h2>Upcoming <em>day camps</em></h2>
-      <p class="dc-sec-sub">Straight from our registration system, so what you see here is what is
-        actually open. Each date shows which school divisions are closed.</p>
+      <p class="dc-sec-sub">Every date the school divisions are closed and we are running a camp,
+        with the divisions that are out marked on each one. Anything showing a Register button is
+        open now; the rest go live as they are announced.</p>
     </div>
 
     <div class="dc-key">
@@ -597,14 +639,60 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     </div>
   </section>
 
+  <!-- CREDITS + SNOW DAYS -->
+  <section class="dc-credits" id="credits">
+    <div class="dc-credits-grid">
+      <div class="dc-pack">
+        <div class="dc-pack-flag">Best value</div>
+        <div class="dc-pack-name">5 Day Camp Credits</div>
+        <div class="dc-pack-price"><span class="dc-pack-num">$349</span><span class="dc-pack-was">$395</span></div>
+        <div class="dc-pack-each">$69.80 a day, saving $46</div>
+        <ul class="dc-pack-list">
+          <li>Five one-day camps, any dates on the schedule</li>
+          <li>Use them across brothers and sisters, not just one camper</li>
+          <li>Good all school year, through June 2027</li>
+          <li>Claim a date any time before it fills</li>
+        </ul>
+        <div class="dc-pack-bonus">
+          <strong>Buy by Labor Day and we add two Snow Day Fun Days free.</strong>
+          Two extra days of camp, worth $158, for the mornings you find out at 6 AM
+          that school is closed.
+        </div>
+        <a class="dc-pack-btn" href="mailto:info@novapa.org?subject=Day%20Camp%20Credit%20Pack">Reserve a credit pack</a>
+        <p class="dc-pack-fine">Credits are non-refundable and do not expire before June 30, 2027.
+          Single days are $79 each if you would rather book one at a time.</p>
+      </div>
+
+      <div class="dc-snow">
+        <div class="dc-snow-eyebrow">&#10052; Snow Day Fun Days</div>
+        <h3>School called it. We didn&rsquo;t.</h3>
+        <p>A snow day is only a good day if you are under twelve. When your division closes
+          for snow and our building is open and safe to get to, we run a Snow Day Fun Day so
+          you are not rearranging your work day at six in the morning.</p>
+        <ol class="dc-snow-steps">
+          <li><strong>We decide early.</strong> If we are running, it is posted on this page and
+            emailed to credit holders by 7:00 AM. No email means no camp.</li>
+          <li><strong>Same day, same hours.</strong> Drop-off 8:30 AM, pick-up 4:15 PM, packed lunch,
+            exactly like any other day camp.</li>
+          <li><strong>Claim your spot.</strong> Reply to the email or call us. Credit-pack families
+            come first, then single-day bookings while there is room.</li>
+          <li><strong>Nothing to lose.</strong> Free snow days that go unused simply expire at the
+            end of the school year. You are never charged for a day that does not happen.</li>
+        </ol>
+        <p class="dc-snow-note">If the roads are bad enough that we cannot open safely, we stay
+          closed too, and nobody is charged.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- THE DAY -->
   <section class="dc-day">
     <h3>What a day camp day looks like</h3>
     <div class="dc-day-grid">
-      <div class="dc-day-item"><span class="dc-day-t">Drop-off</span><p>Doors open at 9:00 AM at our Leesburg studio. No early paperwork, just walk them in.</p></div>
+      <div class="dc-day-item"><span class="dc-day-t">Drop-off</span><p>Doors open at 8:30 AM at our Leesburg studio. No early paperwork, just walk them in.</p></div>
       <div class="dc-day-item"><span class="dc-day-t">Morning</span><p>Warm-ups, then into the material. Every group works on a piece they will perform at the end of the day.</p></div>
       <div class="dc-day-item"><span class="dc-day-t">Lunch</span><p>Campers bring their own lunch and a water bottle. We eat together and the room stays loud.</p></div>
-      <div class="dc-day-item"><span class="dc-day-t">Afternoon</span><p>Choreography, scene work, and a run of the piece. Pick-up at 4:00 PM with a showing for families who can stay.</p></div>
+      <div class="dc-day-item"><span class="dc-day-t">Afternoon</span><p>Choreography, scene work, and a run of the piece. Pick-up at 4:15 PM with a showing for families who can stay.</p></div>
     </div>
     <p class="dc-day-note">Bring a packed lunch, a refillable water bottle, and clothes they can move in.
       Questions before you book? Email <a href="mailto:info@novapa.org">info@novapa.org</a>.</p>
@@ -1667,37 +1755,129 @@ function checkEmpty() {
 
      l = LCPS (Loudoun)   f = FCPS (Fairfax)   p = PWCS (Prince William)
 
-     Seeded from the published 2026-27 calendars for the dates all three
-     divisions agree on. CONFIRM AGAINST THE OFFICIAL CALENDAR BEFORE ADDING
-     A DATE — families plan childcare off this.
+     Taken from Todd's 2026-27 student-day schedule (Suggested Student Days,
+     Jul 27 2026), which is what our camp dates are built around. CONFIRM
+     AGAINST THE DIVISION CALENDAR BEFORE ADDING A DATE — families plan
+     childcare off this.
        LCPS: lcps.org/calendars   FCPS: fcps.edu/calendars   PWCS: pwcs.edu/calendars
-     ══════════════════════════════════════════════════════════════════════ */
+
+     `programs` names what is planned for each age group on that date. The
+     12-15 titles come from Todd's schedule; the 9-12 themed days are ours.
+     They are placeholders until the camp exists in the registration system:
+     a real catalog row always wins over one. ═════════════════════════════ */
   var SCHOOL_CALENDAR = {
     // ── Fall 2026 ──
-    "2026-09-07": { out:"lfp", why:"Labor Day" },
-    "2026-09-21": { out:"lfp", why:"Yom Kippur" },
-    "2026-11-11": { out:"fp",  why:"Veterans Day" },
-    "2026-11-25": { out:"lfp", why:"Thanksgiving break" },
-    "2026-11-26": { out:"lfp", why:"Thanksgiving" },
-    "2026-11-27": { out:"lfp", why:"Thanksgiving break" },
-    // ── Winter break 2026-27 ──
-    "2026-12-21": { out:"lfp", why:"Winter break" },
-    "2026-12-22": { out:"lfp", why:"Winter break" },
-    "2026-12-23": { out:"lfp", why:"Winter break" },
-    "2026-12-24": { out:"lfp", why:"Winter break" },
-    "2026-12-28": { out:"lfp", why:"Winter break" },
-    "2026-12-29": { out:"lfp", why:"Winter break" },
-    "2026-12-30": { out:"lfp", why:"Winter break" },
-    "2026-12-31": { out:"lfp", why:"Winter break" },
-    "2027-01-01": { out:"lfp", why:"New Year's Day" },
-    // ── Spring 2027 ──
-    "2027-01-18": { out:"lfp", why:"Martin Luther King Jr. Day" },
-    "2027-03-22": { out:"lfp", why:"Spring break" },
-    "2027-03-23": { out:"lfp", why:"Spring break" },
-    "2027-03-24": { out:"lfp", why:"Spring break" },
-    "2027-03-25": { out:"lfp", why:"Spring break" },
-    "2027-03-26": { out:"lfp", why:"Spring break" }
+    "2026-09-21": { out:"lfp", why:"Yom Kippur", programs:{
+      "9-12": { t:"Heroes & Villains",
+        d:"Every good story needs both. Campers build a hero and a villain, then put them in a scene together and find out who the audience roots for." },
+      "12-15": { t:"NOVAPA Audition Boot Camp Elite",
+        d:"A full day on the audition itself: cuts, slates, cold reads, and what the table is actually watching for. Everyone leaves with material they can walk into a real call with." } }},
+
+    "2026-10-12": { out:"lfp", why:"Indigenous Peoples' Day / teacher workday", programs:{
+      "9-12": { t:"Triple Threat Training Day",
+        d:"Sing it, act it, dance it, all in one day. Campers rotate through all three and put the pieces together on one number by pickup." },
+      "12-15": { t:"Musical Theatre Auditions 101",
+        d:"How a musical theatre audition really runs, start to finish. Choosing a cut, working with an accompanist, and holding your nerve in the room." } }},
+
+    "2026-10-29": { out:"l", why:"End-of-quarter workday", programs:{
+      "9-12": { t:"Monsters & Musicals",
+        d:"The spooky corner of musical theatre, from Addams Family to Beetlejuice. Big characters, bigger choreography, and a costume piece they make themselves." },
+      "12-15": { t:"Fall Theatre Intensive",
+        d:"Day one of our four-day fall intensive. Scene work and technique that builds across the week toward the finale and mock auditions on November 3." } }},
+
+    "2026-10-30": { out:"l", why:"Student holiday", programs:{
+      "9-12": { t:"Haunted Broadway",
+        d:"Ghost stories told the theatre way, with the songs and staging tricks that make an audience jump. Halloween costumes encouraged." },
+      "12-15": { t:"Fall Theatre Intensive",
+        d:"Day two. Character work goes deeper and campers start shaping the piece they will perform at the finale." } }},
+
+    "2026-11-02": { out:"lp", why:"Student holiday / conferences", programs:{
+      "5-9":  { t:"Fairy Tales Out Loud",
+        d:"The stories they already know, acted out and sung. Campers play every part, build the world with what is in the room, and perform it before pickup." },
+      "9-12": { t:"Improv Olympics",
+        d:"A whole day of theatre games with nothing scripted. Campers learn to say yes to an idea, build a scene on the spot, and make each other look good." },
+      "12-15": { t:"Fall Theatre Intensive",
+        d:"Day three. Running the piece, cleaning it, and taking notes the way a cast does the week before opening." } }},
+
+    "2026-11-03": { out:"lfp", why:"Election Day / student holiday", programs:{
+      "9-12": { t:"Campaign Trail: The Musical",
+        d:"Everybody runs for something ridiculous and has to win the room over with a speech and a song. Persuasion, projection, and comic timing, disguised as an election." },
+      "12-15": { t:"Fall Theatre Intensive Finale & Mock Auditions",
+        d:"Day four. The intensive piece goes up in the morning, then a full mock audition in the afternoon with real feedback from our faculty." } }},
+
+    "2026-11-09": { out:"l", why:"Diwali", programs:{
+      "9-12": { t:"Solo Spotlight",
+        d:"One song, one camper, one room paying attention. A day on picking material that suits your voice and performing it alone without shrinking." },
+      "12-15": { t:"Solo Performance Lab",
+        d:"Serious work on a single piece: text analysis, phrasing, and the physical choices that keep a solo from going flat. Coached and re-run until it lands." } }},
+
+    // ── Winter / spring 2027 ──
+    "2027-01-18": { out:"lfp", why:"Martin Luther King Jr. Day", programs:{
+      "9-12": { t:"Stories That Change the World",
+        d:"Theatre that was written to move people. Campers work on monologues and songs from shows about courage and fairness, and talk about why they still land." },
+      "12-15": { t:"Audition 101",
+        d:"The fundamentals, taught properly: what to bring, how to slate, how to take a redirect, and how to leave a room having made an impression." } }},
+
+    "2027-01-25": { out:"l", why:"Student holiday", programs:{
+      "9-12": { t:"Disney Day",
+        d:"Songs and scenes from the Disney canon, staged for real. Campers work the big numbers and find the character underneath the famous voice." },
+      "12-15": { t:"Disney Audition Workshop",
+        d:"Built around what Disney and theme park auditions actually ask for: look, energy, vocal range, and the ability to hold a character all day." } }},
+
+    "2027-02-05": { out:"lf", why:"Lunar New Year", programs:{
+      "9-12": { t:"Build a Character",
+        d:"Start from nothing and end with somebody. Voice, walk, wants, and history, then a scene that proves the character holds up under pressure." },
+      "12-15": { t:"Acting Intensive",
+        d:"A full day inside the text. Objectives, obstacles, and honest listening, working scenes on their feet rather than talking about them." } }},
+
+    "2027-02-15": { out:"lfp", why:"Presidents' Day", programs:{
+      "9-12": { t:"History Set to Music",
+        d:"From Hamilton to Newsies, the shows that turned real events into something you can sing. Campers stage a number and learn the story behind it." },
+      "12-15": { t:"Vocal Audition Lab",
+        d:"Repertoire day. Finding songs that actually fit your voice and type, cutting them cleanly, and singing them under audition conditions." } }},
+
+    "2027-03-08": { out:"l", why:"Student holiday", programs:{
+      "9-12": { t:"Lights, Camera, Act!",
+        d:"Acting for a camera instead of a back row. Campers learn how small a performance can go on screen, and watch their own takes back." },
+      "12-15": { t:"Camera & Self-Tape Boot Camp",
+        d:"How to shoot a self-tape that does not get skipped: framing, lighting, reader, slate, and file naming. Everyone leaves with a finished tape." } }},
+
+    "2027-03-09": { out:"l", why:"Eid al-Fitr", programs:{
+      "9-12": { t:"Broadway Dance Party",
+        d:"Choreography from shows they know, taught fast and danced hard. Campers pick up a full number and perform it full-out before pickup." },
+      "12-15": { t:"Dance Call Survival",
+        d:"The part of the audition that scares people most. Picking up combinations quickly, marking versus full-out, and staying visible in a crowded room." } }},
+
+    "2027-03-10": { out:"p", why:"Eid al-Fitr observed in Prince William" },
+
+    // ── Spring break ──
+    "2027-03-20": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-21": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-22": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-23": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-24": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-25": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-26": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-27": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-28": { out:"lfp", why:"Spring break", springBreak:true },
+
+    "2027-04-12": { out:"l", why:"Student holiday", programs:{
+      "9-12": { t:"Broadway Bound Prep",
+        d:"A head start on summer. Campers work the kind of material our two-week camps build on, and get a feel for how a full rehearsal day runs." } }}
   };
+
+  /* Spring break runs as one week-long camp rather than separate day camps,
+     so every date in it carries the same entry. */
+  var SPRING_BREAK = {
+    "9-12":  { t:"Spring Break Musical Theatre Camp",
+      d:"A full week building one show, from first read to performance. Campers sing, act, dance, and help make the thing they end up in." },
+    "12-15": { t:"Spring Break Musical Theatre Camp",
+      d:"A full week on one show with the older company. Bigger roles, real rehearsal discipline, and a performance for families at the end of it." }
+  };
+  Object.keys(SCHOOL_CALENDAR).forEach(function(d){
+    if (SCHOOL_CALENDAR[d].springBreak) SCHOOL_CALENDAR[d].programs = SPRING_BREAK;
+  });
+
 
   /* Age groups, in the order they appear on a date. Each camp from the
      catalog is matched to the band its age range overlaps most. */
@@ -1800,12 +1980,24 @@ function checkEmpty() {
     return "$" + (cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2));
   }
 
-  function slot(band, row){
+  function slot(band, row, planned, known){
     if (!row) {
+      // planned but not in the catalog yet: name it, do not offer a booking
+      if (planned) {
+        return '<div class="dc-slot none">' +
+          '<div class="dc-slot-age">' + band.label + '</div>' +
+          '<div class="dc-slot-nm"><b>' + esc(planned.t) + '</b></div>' +
+          (planned.d ? '<div class="dc-slot-desc">' + esc(planned.d) + '</div>' : '') +
+          '<div class="dc-slot-none">Registration opens soon</div></div>';
+      }
+      // "not offered" is only true once the date is actually in the catalog;
+      // before that we know nothing about this group and say so
       return '<div class="dc-slot none">' +
         '<div class="dc-slot-age">' + band.label + '</div>' +
-        '<div class="dc-slot-nm">Not offered on this date.</div>' +
-        '<div class="dc-slot-none">No camp this day</div></div>';
+        '<div class="dc-slot-nm">' +
+          (known ? 'Not offered on this date.' : 'Line-up still being set.') + '</div>' +
+        '<div class="dc-slot-none">' +
+          (known ? 'No camp this day' : 'Announced soon') + '</div></div>';
     }
     var full = row.remaining != null && row.remaining <= 0;
     var tags = '<span class="dc-slot-tag price">' + esc(money(row.price_cents)) + '</span>';
@@ -1814,7 +2006,8 @@ function checkEmpty() {
     }
     return '<div class="dc-slot">' +
       '<div class="dc-slot-age">' + band.label + '</div>' +
-      '<div class="dc-slot-nm">' + esc(row.name || "Day Camp") + '</div>' +
+      '<div class="dc-slot-nm"><b>' + esc(row.name || "Day Camp") + '</b></div>' +
+      (planned && planned.d ? '<div class="dc-slot-desc">' + esc(planned.d) + '</div>' : '') +
       '<div class="dc-slot-meta">' + tags + '</div>' +
       (full
         ? '<div class="dc-slot-none">Full</div>'
@@ -1827,12 +2020,7 @@ function checkEmpty() {
     var camps = rows.filter(function(r){
       return r.category === "camp" && (r.price_cents || 0) <= DAY_CAMP_MAX_CENTS && r.bookable;
     });
-    if (!camps.length) {
-      listEl.innerHTML = '<div class="dc-empty">No day camps are open right now. ' +
-        'New dates go up as each school year’s calendar is released — ' +
-        'email <a href="mailto:info@novapa.org">info@novapa.org</a> to hear first.</div>';
-      return;
-    }
+    // an empty catalog is not an empty page: the announced dates still stand
     // group by date; anything undated still gets shown rather than dropped
     var byDate = {}, undated = [];
     camps.forEach(function(r){
@@ -1841,14 +2029,40 @@ function checkEmpty() {
       else undated.push(r);
     });
     var today = new Date().toISOString().slice(0, 10);
-    var dates = Object.keys(byDate).filter(function(d){ return d >= today; }).sort();
+    // show every upcoming date we know about: booked in the catalog, or on
+    // the closure calendar with a program already planned for it
+    var seen = {};
+    Object.keys(byDate).forEach(function(d){ seen[d] = 1; });
+    Object.keys(SCHOOL_CALENDAR).forEach(function(d){
+      if (SCHOOL_CALENDAR[d].programs) seen[d] = 1;
+    });
+    var dates = Object.keys(seen).filter(function(d){ return d >= today; }).sort();
+
+    // Spring break is one week-long camp, not nine day camps. Collapse the
+    // run into a single block unless a date in it is separately bookable.
+    var sb = dates.filter(function(d){
+      return (SCHOOL_CALENDAR[d] || {}).springBreak && !byDate[d];
+    });
+    if (sb.length > 1) {
+      dates = dates.filter(function(d){ return sb.indexOf(d) === -1; });
+      dates.push(sb[0]);
+      dates.sort();
+    } else {
+      sb = [];
+    }
 
     var html = dates.map(function(d){
-      var f = fmtDate(d), rec = SCHOOL_CALENDAR[d];
-      var here = byDate[d];
+      var f = fmtDate(d), rec = SCHOOL_CALENDAR[d] || {};
+      var here = byDate[d] || [];
+      if (sb.length && d === sb[0]) {
+        var last = fmtDate(sb[sb.length - 1]);
+        f = { dow: sb.length + " days", full: f.full.replace(/,.*/, "") + " – " + last.full };
+      }
+      var known = here.length > 0;   // is this date in the catalog at all?
+      var plan = rec.programs || {};
       var slots = BANDS.map(function(b){
         var match = here.filter(function(r){ var bb = bandFor(r); return bb && bb.key === b.key; })[0];
-        return slot(b, match);
+        return slot(b, match, plan[b.key] || null, known);
       }).join("");
       // a camp whose age range matches no band still deserves a place
       var extra = here.filter(function(r){ return !bandFor(r); })
@@ -1879,7 +2093,9 @@ function checkEmpty() {
         }).join("") + '</div></div>';
     }
 
-    listEl.innerHTML = html || '<div class="dc-empty">No upcoming day camps are open right now.</div>';
+    listEl.innerHTML = html || '<div class="dc-empty">No upcoming day camps are on the schedule ' +
+      'right now. New dates go up as each school year’s calendar is released — email ' +
+      '<a href="mailto:info@novapa.org">info@novapa.org</a> to hear first.</div>';
   }
 
   if (!C.SUPABASE_URL) {
