@@ -29,7 +29,7 @@
 //    /policies#tuition-insurance: refund 100% at 90-76 days before start,
 //    75% at 75-51d, 50% at 50-31d, 0% within 30d; premium non-refundable.
 //  - All sales final — no refunds (insurance is the exception path).
-//  - Day camps ($70 one-day events, price <= DAY_CAMP_MAX_CENTS): pay-in-full
+//  - Day camps ($79 one-day events, price <= DAY_CAMP_MAX_CENTS): pay-in-full
 //    only (charged fully today even inside a deposit-plan cart), no bundle or
 //    tier discounts, no insurance; sibling 5% applies immediately (non-BB).
 //  - Coupon codes (coupons table): percent off the discounted subtotal —
@@ -56,7 +56,7 @@ export const CLASS_SEASON_END_UTC = Date.UTC(2027, 6, 1, 4, 0, 0) / 1000;   // J
 export const SIBLING_PCT = 5;
 export const INSURANCE_PCT = 10;
 export const PLAN_FEE_PCT = 5;   // surcharge for choosing a payment plan
-// Items at or under this price are "day camps" ($70 one-day events):
+// Items at or under this price are "day camps" ($79 one-day events):
 // pay-in-full only, no bundle/tier discounts, no insurance, sibling 5% now.
 export const DAY_CAMP_MAX_CENTS = 20000;
 

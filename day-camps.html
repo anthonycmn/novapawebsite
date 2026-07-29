@@ -6,7 +6,8 @@
     <!-- End cookieyes banner -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Class Schedule 2026–2027 | Northern Virginia Performing Arts</title>
+<title>Day Camps | Northern Virginia Performing Arts</title>
+<meta name="description" content="One-day theatre camps in Leesburg on LCPS, FCPS, and PWCS school holidays and teacher workdays. Ages 5-9, 9-12, and 12-15.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -382,6 +383,169 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 <body class="has-u-nav">
 
 
+<style>
+/* ── DAY CAMPS ─────────────────────────────────────────────────────────────
+   The schedule is rendered from the live registration catalog, so nothing on
+   this page needs editing when a camp is added or sells out. The one thing
+   that IS maintained by hand is SCHOOL_CALENDAR further down the page: the
+   list of dates each division is closed. Add a school year there and the
+   badges keep working. ------------------------------------------------- */
+.dc-hero{background:linear-gradient(150deg,var(--navy) 0%,var(--navy2) 55%,#14243f 100%);
+  padding:clamp(56px,8vw,96px) clamp(20px,5vw,64px) clamp(48px,6vw,76px);color:#fff;position:relative;overflow:hidden}
+.dc-hero::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(60% 80% at 78% 0%,rgba(232,184,75,0.14),transparent 62%)}
+.dc-hero-inner{max-width:1100px;margin:0 auto;position:relative}
+.dc-eyebrow{font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:14px}
+.dc-hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(38px,7vw,68px);font-weight:700;
+  line-height:1.03;letter-spacing:-0.02em;margin-bottom:18px}
+.dc-hero h1 em{font-style:italic;color:var(--gold2)}
+.dc-lede{font-size:clamp(14.5px,1.6vw,17px);line-height:1.75;color:rgba(255,255,255,0.68);max-width:620px}
+.dc-facts{display:flex;gap:clamp(24px,4vw,52px);margin-top:34px;flex-wrap:wrap}
+.dc-fact-n{display:block;font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:700;
+  color:var(--gold2);line-height:1}
+.dc-fact-l{display:block;font-size:11px;letter-spacing:0.13em;text-transform:uppercase;
+  color:rgba(255,255,255,0.45);margin-top:5px}
+
+.dc-wrap{max-width:1100px;margin:0 auto;padding:clamp(44px,6vw,72px) clamp(20px,5vw,48px) 80px}
+
+/* age bands */
+.dc-bands{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));
+  gap:16px;margin-bottom:clamp(48px,6vw,72px)}
+.dc-band-card{background:#fff;border:1px solid var(--border2);border-radius:14px;
+  padding:22px 24px 20px;position:relative;overflow:hidden}
+.dc-band-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--band)}
+.dc-band-age{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;
+  color:var(--navy);margin-bottom:8px}
+.dc-band-card p{font-size:13px;line-height:1.65;color:var(--text2)}
+
+.dc-sec-head{margin-bottom:20px}
+.dc-sec-head h2{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,40px);
+  font-weight:700;color:var(--navy);line-height:1.12}
+.dc-sec-head h2 em{font-style:italic;color:var(--gold)}
+.dc-sec-sub{font-size:14px;line-height:1.7;color:var(--text2);max-width:640px;margin-top:8px}
+
+/* division chips */
+.dc-key{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:22px;
+  padding:12px 16px;background:#fff;border:1px solid var(--border2);border-radius:12px}
+.dc-key-lbl{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--text3);margin-right:4px}
+.dc-chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+  padding:4px 11px;border-radius:100px;letter-spacing:0.02em;white-space:nowrap}
+.dc-chip::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+.dc-out{background:rgba(20,110,60,0.10);color:#14703C}
+.dc-in{background:rgba(11,20,36,0.06);color:var(--text3)}
+.dc-unk{background:rgba(201,146,42,0.12);color:#8A5C00}
+
+/* one block per camp date */
+.dc-list{display:flex;flex-direction:column;gap:20px}
+.dc-loading,.dc-empty{background:#fff;border:1px solid var(--border2);border-radius:14px;
+  padding:34px 28px;text-align:center;color:var(--text3);font-size:14px}
+.dc-date{background:#fff;border:1px solid var(--border2);border-radius:16px;overflow:hidden}
+.dc-date-head{padding:20px 24px 16px;border-bottom:1px solid var(--border2);
+  display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap}
+.dc-date-when{flex:1;min-width:200px}
+.dc-date-day{font-size:11.5px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:4px}
+.dc-date-full{font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:700;color:var(--navy);line-height:1.15}
+.dc-date-why{font-size:12.5px;color:var(--text3);margin-top:4px}
+.dc-date-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-top:3px}
+
+.dc-slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));
+  gap:14px;padding:16px}
+/* each age group is its own card in its own colour so the three never blur
+   together in a wall of text */
+.dc-slot{background:#fff;border:1px solid var(--border2);border-top:3px solid var(--band,var(--gold));
+  border-radius:11px;padding:16px 18px 18px;display:flex;flex-direction:column}
+.dc-slot-age{display:inline-block;align-self:flex-start;font-size:10.5px;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--band,var(--gold));
+  background:var(--band-bg,rgba(201,146,42,0.1));padding:4px 10px;border-radius:100px;margin-bottom:11px}
+.dc-slot-nm{font-size:14px;line-height:1.35;margin-bottom:7px}
+.dc-slot-nm b{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--navy);font-weight:700}
+.dc-slot-desc{font-size:12.5px;line-height:1.65;color:var(--text2);margin-bottom:14px}
+.dc-slot-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:13px}
+.dc-slot-tag{font-size:11px;font-weight:500;padding:3px 10px;border-radius:100px;
+  background:rgba(11,20,36,0.07);color:var(--navy3)}
+.dc-slot-tag.price{background:var(--gold-pale);color:#7A5010}
+.dc-slot-tag.left{background:rgba(160,40,30,0.08);color:#A02820;font-weight:700}
+.dc-slot-go{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:10px 14px;border-radius:9px;background:linear-gradient(135deg,#C8892A,#E8B84B);
+  color:#1a1205;font-weight:800;font-size:11.5px;letter-spacing:0.09em;text-transform:uppercase;
+  text-decoration:none;box-shadow:0 3px 10px rgba(200,137,42,0.28);transition:box-shadow .16s ease}
+.dc-slot-go:hover{box-shadow:0 8px 22px rgba(200,137,42,0.5)}
+.dc-slot.none{background:#FCFBF8}
+.dc-slot-none{margin-top:auto;font-size:12px;color:var(--text3);text-align:center;
+  padding:10px 14px;border:1px dashed var(--border);border-radius:9px}
+
+/* credit pack + snow days */
+.dc-credits{margin-bottom:clamp(48px,6vw,72px)}
+.dc-credits-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;align-items:start}
+.dc-pack{background:#fff;border:2px solid var(--gold);border-radius:16px;padding:26px 28px 24px;position:relative}
+.dc-pack-flag{position:absolute;top:-11px;left:28px;background:var(--gold);color:#1a1205;font-size:10px;
+  font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:100px}
+.dc-pack-name{font-family:'Cormorant Garamond',serif;font-size:25px;font-weight:700;color:var(--navy);margin:6px 0 2px}
+.dc-pack-per{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.dc-pack-price{display:flex;align-items:baseline;gap:10px}
+.dc-pack-num{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:700;color:var(--navy);line-height:1}
+.dc-pack-was{font-size:16px;color:var(--text3);text-decoration:line-through}
+.dc-pack-each{font-size:12.5px;color:var(--text3);margin-top:5px}
+.dc-pack-list{list-style:none;margin:18px 0 0;padding:0}
+.dc-pack-list li{position:relative;padding-left:22px;font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:8px}
+.dc-pack-list li::before{content:'\2713';position:absolute;left:0;top:0;color:var(--gold);font-weight:700}
+.dc-pack-bonus{margin-top:18px;padding:14px 16px;background:var(--gold-pale);
+  border:1px dashed rgba(201,146,42,0.5);border-radius:11px;font-size:12.5px;line-height:1.6;color:#5C3D08}
+.dc-pack-bonus strong{display:block;color:#7A5010;margin-bottom:3px}
+.dc-pack-btn{display:flex;align-items:center;justify-content:center;margin-top:18px;padding:12px 18px;
+  border-radius:10px;background:linear-gradient(135deg,#C8892A,#E8B84B);color:#1a1205;font-weight:800;
+  font-size:12px;letter-spacing:0.09em;text-transform:uppercase;text-decoration:none;
+  box-shadow:0 3px 12px rgba(200,137,42,0.3)}
+.dc-pack-fine{margin-top:12px;font-size:11.5px;line-height:1.55;color:var(--text3)}
+.dc-snow{background:linear-gradient(160deg,var(--navy2) 0%,var(--navy) 70%);border-radius:16px;
+  padding:28px 30px 26px;color:#fff}
+.dc-snow-eyebrow{font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:10px}
+.dc-snow h3{font-family:'Cormorant Garamond',serif;font-size:clamp(23px,3vw,30px);font-weight:700;
+  color:#fff;margin-bottom:12px;line-height:1.15}
+.dc-snow p{font-size:13.5px;line-height:1.7;color:rgba(255,255,255,0.65)}
+.dc-snow-steps{margin:18px 0 0;padding:0;list-style:none;counter-reset:snow}
+.dc-snow-steps li{counter-increment:snow;position:relative;padding-left:32px;margin-bottom:13px;
+  font-size:13px;line-height:1.65;color:rgba(255,255,255,0.62)}
+.dc-snow-steps li::before{content:counter(snow);position:absolute;left:0;top:1px;width:21px;height:21px;
+  border-radius:50%;background:rgba(232,184,75,0.15);color:var(--gold2);font-size:11px;font-weight:700;
+  display:grid;place-items:center}
+.dc-snow-steps strong{color:#fff;font-weight:600}
+.dc-snow-note{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);
+  font-size:12.5px;color:rgba(255,255,255,0.45)}
+
+/* the day */
+.dc-day{margin-top:clamp(48px,6vw,72px);background:var(--navy);border-radius:16px;
+  padding:clamp(30px,4vw,44px) clamp(24px,4vw,48px);color:#fff}
+.dc-day h3{font-family:'Cormorant Garamond',serif;font-size:clamp(24px,3.2vw,32px);
+  font-weight:700;color:#fff;margin-bottom:22px}
+.dc-day-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,215px),1fr));gap:26px}
+.dc-day-t{display:block;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:7px}
+.dc-day-item p{font-size:13px;line-height:1.68;color:rgba(255,255,255,0.6)}
+.dc-day-note{margin-top:26px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.09);
+  font-size:13px;color:rgba(255,255,255,0.5);line-height:1.65}
+.dc-day-note a{color:var(--gold2);text-decoration:none}
+.dc-day-note a:hover{text-decoration:underline}
+
+.dc-cta{margin-top:clamp(40px,5vw,60px);text-align:center;padding:clamp(30px,4vw,44px) 24px;
+  background:var(--gold-pale);border:1px solid rgba(201,146,42,0.28);border-radius:16px}
+.dc-cta h3{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,3vw,29px);
+  font-weight:700;color:var(--navy);margin-bottom:8px}
+.dc-cta p{font-size:14px;color:var(--text2);margin-bottom:20px}
+.dc-cta-btn{display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,#C8892A,#E8B84B);color:#08111F;font-size:12px;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;padding:12px 28px;border-radius:100px;
+  text-decoration:none;box-shadow:0 4px 16px rgba(232,184,75,0.28)}
+@media(max-width:640px){
+  .dc-date-head{gap:12px}
+  .dc-facts{gap:22px}
+}
+</style>
+
 <!-- TOP BAR -->
 <nav class="u-nav">
   <a class="u-nav-logo" href="index.html">
@@ -390,10 +554,10 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   </a>
   <div class="u-nav-links">
     <a href="index.html">Home</a>
-    <a class="u-active" href="classes.html">Classes</a>
+    <a href="classes.html">Classes</a>
     <a href="broadway-bound.html">Broadway Bound</a>
     <a href="summer-2027.html">Summer Camps</a>
-    <a href="day-camps.html">Day Camps</a>
+    <a class="u-active" href="day-camps.html">Day Camps</a>
     <a href="coaching.html">Coaching</a>
     <a href="https://novapa.booktix.com" target="_blank" rel="noopener">Tickets</a>
     <a class="u-nav-cta" href="summer-2027.html" target="_blank" rel="noopener">Register &rarr;</a>
@@ -403,7 +567,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <svg class="ico-close" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
   </button>
 </nav>
-  <!-- reg-banner-sitewide -->
+<!-- reg-banner-sitewide -->
   <a href="summer-2027.html" class="audition-banner" aria-label="Private registration for Summer 2027 now open &mdash; register now">
    <div class="audition-banner-inner">
     <div class="audition-banner-icon" aria-hidden="true">
@@ -427,296 +591,135 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   </a>
 
 <!-- HERO -->
-<section class="hero">
-  <div class="hero-pattern"></div>
-  <div class="hero-content">
-    <div class="hero-eyebrow">2026–2027 Season</div>
-    <h1>Classes for Every<br><em>Stage of the Journey</em></h1>
-    <p class="hero-sub">From Tiny Tots to Teen Conservatory — dance, theatre, voice, and production training across five days a week, September through June.</p>
-    <div class="hero-badges">
-      <span class="badge"><span class="badge-dot" style="background:#A02860"></span>Dance</span>
-      <span class="badge"><span class="badge-dot" style="background:#A02820"></span>Theatre &amp; Acting</span>
-      <span class="badge"><span class="badge-dot" style="background:#14703C"></span>Voice</span>
-      <span class="badge"><span class="badge-dot" style="background:#8A5C00"></span>Musical Theatre</span>
-      <span class="badge"><span class="badge-dot" style="background:#0F6482"></span>Film &amp; TV</span>
-      <span class="badge"><span class="badge-dot" style="background:#5B3785"></span>Teen Conservatory / DE</span>
+<header class="dc-hero">
+  <div class="dc-hero-inner">
+    <div class="dc-eyebrow">One-Day Camps</div>
+    <h1>School&rsquo;s out.<br><em>We&rsquo;re open.</em></h1>
+    <p class="dc-lede">
+      When Loudoun, Fairfax, or Prince William closes for a holiday or a teacher workday,
+      we run a full day of theatre in Leesburg. Drop off in the morning, pick up a kid who
+      spent the day singing, dancing, and building something with a room full of friends.
+    </p>
+    <div class="dc-facts">
+      <div class="dc-fact"><span class="dc-fact-n">3</span><span class="dc-fact-l">Age Groups</span></div>
+      <div class="dc-fact"><span class="dc-fact-n">8:30&ndash;4:15</span><span class="dc-fact-l">Full Day</span></div>
+      <div class="dc-fact"><span class="dc-fact-n">$79</span><span class="dc-fact-l">Per Camper</span></div>
     </div>
-    <a class="hero-scroll-btn" href="#classlist">Browse Weekly Classes <span aria-hidden="true">&#8595;</span></a>
   </div>
-</section>
+</header>
 
-  <!-- Broadway Bound productions cross-link -->
-  <section class="sl-promo" style="background:linear-gradient(135deg,#08111F 0%,#0F1E36 55%,#08111F 100%);color:#fff;padding:54px 6vw 58px">
-    <div style="max-width:760px;margin:0 auto;text-align:center">
-      <div style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#E8B84B;margin-bottom:10px">Broadway Bound Productions</div>
-      <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,40px);font-weight:800;margin:0 0 10px;color:#fff">Want the Full Production Experience?</h2>
-      <p style="max-width:600px;margin:0 auto 24px;color:rgba(255,255,255,0.62);font-size:14.5px;line-height:1.7">Beyond weekly classes, our Broadway Bound companies stage full musicals all year &mdash; Disney&rsquo;s Frozen this fall, The Little Mermaid in spring, and three summer camp productions.</p>
-      <a href="broadway-bound.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#C8892A,#E8B84B);color:#08111F;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:13px 28px;border-radius:100px;text-decoration:none">
-        Explore Broadway Bound
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
+<div class="dc-wrap">
+
+  <!-- AGE BANDS -->
+  <section class="dc-bands" aria-label="Age groups">
+    <div class="dc-band-card" style="--band:#A02860">
+      <div class="dc-band-age">Ages 5&ndash;9</div>
+      <p>Our youngest company. Songs, stories, games, and choreography pitched so that a five year old
+        can keep up and a nine year old is still challenged.</p>
+    </div>
+    <div class="dc-band-card" style="--band:#8A5C00">
+      <div class="dc-band-age">Ages 9&ndash;12</div>
+      <p>Real scene work and real choreography. This group goes deeper into character and technique,
+        and finishes the day with something worth showing off at pickup.</p>
+    </div>
+    <div class="dc-band-card" style="--band:#14703C">
+      <div class="dc-band-age">Ages 12&ndash;15</div>
+      <p>For students who already know their way around a stage. Audition material, ensemble work,
+        and the kind of feedback that carries into their next show.</p>
     </div>
   </section>
-<!-- FILTER BAR -->
-<div class="filter-sticky" id="classlist">
-  <!-- Row 1: Days + Age Groups + Special tabs | Search pinned right -->
-  <div class="filter-bar-top">
-    <div class="filter-scroll">
-      <button class="ftab on" data-filter="all" onclick="filterDay(this,'all')">All Classes</button>
-      <div class="filter-divider"></div>
-      <button class="ftab" data-filter="mon" onclick="filterDay(this,'mon')">Monday</button>
-      <button class="ftab" data-filter="tue" onclick="filterDay(this,'tue')">Tuesday</button>
-      <button class="ftab" data-filter="wed" onclick="filterDay(this,'wed')">Wednesday</button>
-      <button class="ftab" data-filter="thu" onclick="filterDay(this,'thu')">Thursday</button>
-      <button class="ftab" data-filter="sat" onclick="filterDay(this,'sat')">Saturday</button>
-      
-      <div class="filter-divider"></div>
-      <button class="ftab" data-filter="ages8" onclick="filterDay(this,'ages8')">Ages 5–8</button>
-      <button class="ftab" data-filter="ages12" onclick="filterDay(this,'ages12')">Ages 9–12</button>
-      <button class="ftab" data-filter="ages17" onclick="filterDay(this,'ages17')">Ages 13–17</button>
-      <button class="ftab" data-filter="adult" onclick="filterDay(this,'adult')">Adults (18+)</button>
-      <div class="filter-divider"></div>
-      <button class="ftab" data-filter="summer" onclick="filterDay(this,'summer')" style="color:var(--gold)">☀ Summer '27</button>
-      <button class="ftab" data-filter="pricing" onclick="filterDay(this,'pricing')" style="color:var(--gold)">💲 Pricing</button>
-    </div>
-    <div class="filter-search-fixed">
-      <div class="search-wrap">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7080A0" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="searchInput" placeholder="Search classes…" oninput="searchCards()">
+
+  <!-- CREDITS + SNOW DAYS -->
+  <section class="dc-credits" id="credits">
+    <div class="dc-credits-grid">
+      <div class="dc-pack">
+        <div class="dc-pack-flag">Best value</div>
+        <div class="dc-pack-name">5 Day Camp Credits</div>
+        <div class="dc-pack-per">Per camper</div>
+        <div class="dc-pack-price"><span class="dc-pack-num">$349</span><span class="dc-pack-was">$395</span></div>
+        <div class="dc-pack-each">$69.80 a day, saving $46</div>
+        <ul class="dc-pack-list">
+          <li>Five one-day camps, any dates on the schedule</li>
+          <li>One camper per pack, so each child gets their own five days</li>
+          <li>Good all school year, through June 2027</li>
+          <li>Claim a date any time before it fills</li>
+        </ul>
+        <div class="dc-pack-bonus">
+          <strong>Buy by Labor Day and we add two Snow Day Fun Days free.</strong>
+          Two extra days for that camper, worth $158, for the mornings you find out at
+          6 AM that school is closed.
+        </div>
+        <a class="dc-pack-btn" href="mailto:info@novapa.org?subject=Day%20Camp%20Credit%20Pack">Reserve a credit pack</a>
+        <p class="dc-pack-fine">Credits are per camper and are not shared between children.
+          Non-refundable, good through June 30, 2027. Single days are $79 each if you would
+          rather book one at a time, and siblings booked together still take 5% off.</p>
+      </div>
+
+      <div class="dc-snow">
+        <div class="dc-snow-eyebrow">&#10052; Snow Day Fun Days</div>
+        <h3>School called it. We didn&rsquo;t.</h3>
+        <p>A snow day is only a good day if you are under twelve. When your division closes
+          for snow and our building is open and safe to get to, we run a Snow Day Fun Day so
+          you are not rearranging your work day at six in the morning.</p>
+        <ol class="dc-snow-steps">
+          <li><strong>We decide early.</strong> If we are running, it is posted on this page and
+            emailed to credit holders by 7:00 AM. No email means no camp.</li>
+          <li><strong>Same day, same hours.</strong> Drop-off 8:30 AM, pick-up 4:15 PM, packed lunch,
+            exactly like any other day camp.</li>
+          <li><strong>Claim your spot.</strong> Reply to the email or call us. Credit-pack families
+            come first, then single-day bookings while there is room.</li>
+          <li><strong>Nothing to lose.</strong> Free snow days that go unused simply expire at the
+            end of the school year. You are never charged for a day that does not happen.</li>
+        </ol>
+        <p class="dc-snow-note">If the roads are bad enough that we cannot open safely, we stay
+          closed too, and nobody is charged.</p>
       </div>
     </div>
-  </div>
-  <!-- Row 2: Discipline filters -->
-  <div class="filter-bar-bottom">
-    <div class="filter-scroll">
-      <span class="disc-label">Discipline:</span>
-      <button class="ftab ftab-disc" data-filter-disc="dance" onclick="filterDisc(this,'dance')">💃 Dance</button>
-      <button class="ftab ftab-disc" data-filter-disc="theatre" onclick="filterDisc(this,'theatre')">🎭 Theatre &amp; Acting</button>
-      <button class="ftab ftab-disc" data-filter-disc="voice" onclick="filterDisc(this,'voice')">🎵 Voice</button>
-      <button class="ftab ftab-disc" data-filter-disc="musicaltheatre" onclick="filterDisc(this,'musicaltheatre')">🎪 Musical Theatre</button>
-      <button class="ftab ftab-disc" data-filter-disc="filmtv" onclick="filterDisc(this,'filmtv')">🎬 Film &amp; TV</button>
-      <button class="ftab ftab-disc" data-filter-disc="conservatory" onclick="filterDisc(this,'conservatory')">🌟 Teen Conservatory</button>
-      <button class="ftab ftab-disc" data-filter-disc="production" onclick="filterDisc(this,'production')">⭐ Productions</button>
-    </div>
-  </div>
-</div>
+  </section>
 
-<!-- MAIN CONTENT -->
-<main class="main-wrap">
-
-  <div id="age-notice" class="age-notice">
-    Showing classes that include this age group across the full weekly schedule. Some classes span multiple age ranges — check the age tag on each card for the full range.
-  </div>
-
-  <div class="reg-hint" style="max-width:760px;margin:0 auto 24px;text-align:center;font-weight:800;font-size:15px;color:#8A5C00;background:linear-gradient(135deg,#FCF4E1,#FBEFD2);border:1.5px dashed #C8892A;border-radius:13px;padding:13px 20px">&#128073; Click any class to register &mdash; it takes you straight to sign-up.</div>
-
-  <!-- MONDAY -->
-  <div class="day-block" data-day="mon" id="day-mon">
-    <div class="day-hdr"><div class="day-name">Monday</div><div class="day-meta">5 weekly classes</div></div>
-    <div class="slot-group"><div class="slot-label">Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="mon" data-disc="dance" data-ages="ages8" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1960872" target="_blank" rel="noopener" aria-label="Register for Ballet ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Ballet &ndash; Ages 5&ndash;8</div><div class="c-desc">First positions, first pli&eacute;s, and a lot of imagination. Dancers pick up the vocabulary of ballet through story and play, and build the posture and coordination that every other style of dance rests on.</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="theatre" data-ages="ages8" style="--card-color:#A02820"><a class="c-cardlink" href="/register/?activity=1960867" target="_blank" rel="noopener" aria-label="Register for Acting ages 5 to 8"></a><div class="c-time">6:00 PM</div><div class="c-name">Acting &ndash; Ages 5&ndash;8</div><div class="c-desc">Games, stories, and pretending taken seriously. Young actors learn to speak up, listen to a scene partner, and stay in character while the whole room is watching.</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1960881" target="_blank" rel="noopener" aria-label="Register for Ballet I ages 9 to 11"></a><div class="c-time">6:00 PM</div><div class="c-name">Ballet I &ndash; Ages 9&ndash;11</div><div class="c-desc">A real barre, real French terms, and steady technical progress. Dancers work on alignment, turnout, and control, with center work that builds toward longer combinations.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;11</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1960882" target="_blank" rel="noopener" aria-label="Register for Ballet II ages 9 to 11"></a><div class="c-time">7:00 PM</div><div class="c-name">Ballet II &ndash; Ages 9&ndash;11</div><div class="c-desc">For dancers with a season or two of ballet already behind them. Longer barre work, more demanding combinations in center, and turns and jumps taught properly from the ground up.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;11</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="mon" data-disc="voice" data-ages="ages17" style="--card-color:#14703C"><a class="c-cardlink" href="/register/?activity=1960898" target="_blank" rel="noopener" aria-label="Register for Triple Threat Training ages 13 to 17"></a><div class="c-time">7:00 PM</div><div class="c-name">Triple Threat Training &ndash; Ages 13&ndash;17</div><div class="c-desc">Singing, acting, and dancing worked on together, the way an audition actually asks for them. Teens build a book of material and learn to carry a song while moving and staying in character.</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc voice">Voice</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-  </div>
-
-  <!-- TUESDAY -->
-  <div class="day-block" data-day="tue" id="day-tue">
-    <div class="day-hdr"><div class="day-name">Tuesday</div><div class="day-meta">4 weekly classes</div></div>
-    <div class="slot-group"><div class="slot-label">Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages8" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1960924" target="_blank" rel="noopener" aria-label="Register for Musical Theatre ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Musical Theatre &ndash; Ages 5&ndash;8</div><div class="c-desc">Songs from the shows they already love, with the choreography and characters to match. Little performers learn to sing out, find their spot on stage, and finish a number together.</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages17" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1960925" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Dance ages 13 to 17"></a><div class="c-time">7:00 PM</div><div class="c-name">Musical Theatre Dance &ndash; Ages 13&ndash;17</div><div class="c-desc">Choreography drawn from real shows, from the classic Broadway styles to what is running right now. Dancers learn to pick up combinations quickly, clean them, and perform the story instead of just the steps.</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="tue" data-disc="musicaltheatre" data-ages="ages17" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1960927" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Acting ages 13 to 17"></a><div class="c-time">8:00 PM</div><div class="c-name">Musical Theatre Acting &ndash; Ages 13&ndash;17</div><div class="c-desc">The acting work that sits underneath the singing. Teens dig into scenes and song text, figure out what their character wants, and learn to make a lyric land as honestly as a spoken line.</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Adults</div><div class="cards-grid">
-      <div class="card" data-day="tue" data-disc="theatre" data-ages="adult" style="--card-color:#A02820"><a class="c-cardlink" href="/register/?activity=1962568" target="_blank" rel="noopener" aria-label="Register for Adult Acting Class"></a><div class="c-time">7:30 PM</div><div class="c-name">Adult Acting Class</div><div class="c-desc">For adults who always meant to try it and for those coming back after years away. Scene work, monologues, and technique, in a room where nobody is auditioning for anything.</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-  </div>
-
-  <!-- WEDNESDAY -->
-  <div class="day-block" data-day="wed" id="day-wed">
-    <div class="day-hdr"><div class="day-name">Wednesday</div><div class="day-meta">6 weekly classes</div></div>
-    <div class="slot-group"><div class="slot-label">Daytime &mdash; Homeschool</div><div class="cards-grid">
-      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="ages12 ages17" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1962566" target="_blank" rel="noopener" aria-label="Register for Homeschool Musical Theatre Class"></a><div class="c-time">1:00 PM</div><div class="c-name">Homeschool Musical Theatre &ndash; Ages 9&ndash;13</div><div class="c-desc">A daytime class built around the homeschool week. Singing, acting, and choreography come together, and the performance skills carry straight over into presentations, recitations, and speaking in front of a group.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;13</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="wed" data-disc="theatre" data-ages="ages12 ages17" style="--card-color:#A02820"><a class="c-cardlink" href="/register/?activity=1962567" target="_blank" rel="noopener" aria-label="Register for Homeschool Theatre Class"></a><div class="c-time">2:00 PM</div><div class="c-name">Homeschool Theatre &ndash; Ages 9&ndash;13</div><div class="c-desc">Straight acting in the middle of the day, no singing required. Students work on scenes, character, and movement on stage, and finish the term far more comfortable in front of people.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;13</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="wed" data-disc="theatre" data-ages="ages12" style="--card-color:#A02820"><a class="c-cardlink" href="/register/?activity=1960936" target="_blank" rel="noopener" aria-label="Register for Acting ages 9 to 12"></a><div class="c-time">5:15 PM</div><div class="c-name">Acting &ndash; Ages 9&ndash;12</div><div class="c-desc">Scene work, character study, and the craft behind a believable performance. Actors learn to break down a script, make specific choices, and hold their own opposite a partner.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="wed" data-disc="voice" data-ages="ages17" style="--card-color:#14703C"><a class="c-cardlink" href="/register/?activity=1960946" target="_blank" rel="noopener" aria-label="Register for Triple Threat Training ages 13 to 17"></a><div class="c-time">6:00 PM</div><div class="c-name">Triple Threat Training &ndash; Ages 13&ndash;17</div><div class="c-desc">Singing, acting, and dancing worked on together, the way an audition actually asks for them. Teens build a book of material and learn to carry a song while moving and staying in character.</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc voice">Voice</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1960939" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Dance ages 9 to 12"></a><div class="c-time">6:15 PM</div><div class="c-name">Musical Theatre Dance &ndash; Ages 9&ndash;12</div><div class="c-desc">Choreography taken from real shows and taught at a pace that builds. Dancers work on picking up combinations, cleaning them, and performing with the energy a number needs.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="wed" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1960945" target="_blank" rel="noopener" aria-label="Register for Musical Theatre Acting ages 9 to 12"></a><div class="c-time">7:15 PM</div><div class="c-name">Musical Theatre Acting &ndash; Ages 9&ndash;12</div><div class="c-desc">Where a song stops being a song and becomes a scene. Students learn to find the story inside a lyric and to act it as honestly as they would a line of dialogue.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-  </div>
-
-  <!-- THURSDAY -->
-  <div class="day-block" data-day="thu" id="day-thu">
-    <div class="day-hdr"><div class="day-name">Thursday</div><div class="day-meta">5 weekly classes</div></div>
-    <div class="slot-group"><div class="slot-label">Weekly Classes</div><div class="cards-grid">
-      <div class="card" data-day="thu" data-disc="dance" data-ages="ages8" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1960957" target="_blank" rel="noopener" aria-label="Register for Hip-Hop ages 5 to 8"></a><div class="c-time">5:00 PM</div><div class="c-name">Hip-Hop &ndash; Ages 5&ndash;8</div><div class="c-desc">Big music, big energy, and choreography made for small dancers. Rhythm, isolations, and confidence, taught with material that keeps everybody moving.</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="thu" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1960958" target="_blank" rel="noopener" aria-label="Register for Hip-Hop ages 9 to 12"></a><div class="c-time">6:00 PM</div><div class="c-name">Hip-Hop &ndash; Ages 9&ndash;12</div><div class="c-desc">Sharper choreography and more of it. Dancers work on musicality, groove, and clean execution, and get comfortable dancing full-out in front of the room.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="thu" data-disc="theatre" data-ages="ages12" style="--card-color:#A02820"><a class="c-cardlink" href="/register/?activity=1960959" target="_blank" rel="noopener" aria-label="Register for Improv ages 9 to 12"></a><div class="c-time">6:30 PM</div><div class="c-name">Improv &ndash; Ages 9&ndash;12</div><div class="c-desc">Nothing is scripted and nobody is wrong. Students learn to say yes to an idea, build a scene with a partner, and think on their feet, which turns out to help well beyond the stage.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="thu" data-disc="theatre" data-ages="ages17" style="--card-color:#A02820"><a class="c-cardlink" href="/register/?activity=1960961" target="_blank" rel="noopener" aria-label="Register for Improv ages 13 to 17"></a><div class="c-time">7:30 PM</div><div class="c-name">Improv &ndash; Ages 13&ndash;17</div><div class="c-desc">Faster games, sharper scene work, and real comic timing. Teens learn to trust an instinct, support a partner, and stay present when there is no script to fall back on.</div><div class="c-tags"><span class="tag t-ages">Ages 13&ndash;17</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-    <div class="slot-group"><div class="slot-label">Evening &mdash; Adults</div><div class="cards-grid">
-      <div class="card" data-day="thu" data-disc="dance" data-ages="adult" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1962569" target="_blank" rel="noopener" aria-label="Register for Adult Dance Class"></a><div class="c-time">7:30 PM</div><div class="c-name">Adult Dance Class</div><div class="c-desc">An hour of choreography for grown-ups, with no experience assumed. Warm up, learn a combination, and dance it full-out alongside a room of people doing exactly the same thing.</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-  </div>
-
-  <!-- SATURDAY -->
-  <div class="day-block" data-day="sat" id="day-sat">
-    <div class="day-hdr"><div class="day-name">Saturday</div><div class="day-meta">3 weekly classes</div></div>
-    <div class="slot-group"><div class="slot-label">Morning &amp; Midday</div><div class="cards-grid">
-      <div class="card" data-day="sat" data-disc="musicaltheatre" data-ages="adult" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1962572" target="_blank" rel="noopener" aria-label="Register for Adult Musical Theatre Class"></a><div class="c-time">9:00 AM</div><div class="c-name">Adult Musical Theatre Class</div><div class="c-desc">Saturday mornings for adults who love musicals. Songs, scene work, and choreography, taught for the pleasure of it rather than for any casting call.</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="sat" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1962563" target="_blank" rel="noopener" aria-label="Register for K-Pop Dance Class ages 9 to 12"></a><div class="c-time">11:00 AM</div><div class="c-name">K-Pop Dance Class &ndash; Ages 9&ndash;12</div><div class="c-desc">Choreography straight from the groups students already follow. Dancers learn full routines, work on precision and formation changes, and perform them together.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-      <div class="card" data-day="sat" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1962562" target="_blank" rel="noopener" aria-label="Register for Acting and Musical Theatre ages 9 to 12"></a><div class="c-time">12:00 PM</div><div class="c-name">Acting &amp; Musical Theatre &ndash; Ages 9&ndash;12</div><div class="c-desc">Both halves of the craft in one Saturday class. Students work a scene, then work a song, and learn how the acting they do in one carries into the other.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
-    </div></div>
-  </div>
-  <!-- BROADWAY BOUND SUMMER 2027 -->
-  <div class="day-block" data-day="summer" id="day-summer">
-
-    <div class="day-hdr">
-      <div class="day-name" style="font-size:28px">Broadway Bound Summer 2027</div>
-      <div class="day-meta">3 productions &middot; Ages 5&ndash;15 &middot; Full days 8:30 AM &ndash; 4 PM</div>
+  <!-- SCHEDULE -->
+  <section id="schedule">
+    <div class="dc-sec-head">
+      <h2>Upcoming <em>day camps</em></h2>
+      <p class="dc-sec-sub">Every date the school divisions are closed and we are running a camp,
+        with the divisions that are out marked on each one. Anything showing a Register button is
+        open now; the rest go live as they are announced.</p>
     </div>
 
-    <div style="background:linear-gradient(135deg,var(--navy2) 0%,#1E2A40 100%);border-radius:16px;padding:44px 40px;text-align:center">
-      <div style="font-size:10.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold2);margin-bottom:10px">NoVAPA Summer Programs</div>
-      <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(26px,3.5vw,36px);font-weight:700;color:#fff;line-height:1.15;margin:0 0 12px">Interested in a Full Summer on Stage?</h2>
-      <p style="font-size:14px;color:rgba(255,255,255,0.6);line-height:1.7;max-width:560px;margin:0 auto 24px"><em>How to Train Your Dragon Jr.</em>, <em>Charlie and the Chocolate Factory Jr.</em>, and <em>Trolls Jr.</em> &mdash; three two-week Broadway Bound camps, each ending in a fully staged performance. All dates, pricing, and multi-camp discounts are on the Summer 2027 page.</p>
-      <a href="summer-2027.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#C8892A,#E8B84B);color:#08111F;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:13px 28px;border-radius:100px;text-decoration:none">
-        See Summer 2027 &amp; Register
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
-    </div>
-  </div>
-
-  <!-- PRICING SECTION -->
-  <div class="day-block" data-day="pricing" id="day-pricing">
-
-    <div class="day-hdr">
-      <div class="day-name">Tuition &amp; Pricing</div>
-      <div class="day-meta">2026–2027 Season · All prices effective Year 1</div>
+    <div class="dc-key">
+      <span class="dc-key-lbl">Loudoun &middot; Fairfax &middot; Prince William</span>
+      <span class="dc-chip dc-out">Schools closed</span>
+      <span class="dc-chip dc-in">Schools in session</span>
+      <span class="dc-chip dc-unk">Calendar not published yet</span>
     </div>
 
-    <div class="pricing-intro">
-      <div class="pricing-intro-eyebrow">Transparent, Simple Pricing</div>
-      <h2>Invest in the <em>Art of Performance</em></h2>
-      <p>Simple monthly class memberships and à la carte show pricing, with flexible installment plans and tuition insurance available — designed to fit every family and every budget. No hidden fees.</p>
+    <div id="dcList" class="dc-list">
+      <div class="dc-loading">Loading day camps&hellip;</div>
     </div>
+  </section>
 
-    <!-- Monthly Class Memberships -->
-    <div class="pricing-section-label">Monthly Class Memberships <span style="font-size:11px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text3)">· per child · excludes productions</span></div>
-    <div class="pricing-grid">
-      <div class="price-card">
-        <div class="price-card-label">Class Membership</div>
-        <div class="price-card-name">1 Class</div>
-        <div class="price-card-desc">Any one weekly class from the schedule.</div>
-        <div class="price-amount">$90 <span class="price-unit">/ mo</span></div>
-      </div>
-      <div class="price-card">
-        <div class="price-card-label">Class Membership</div>
-        <div class="price-card-name">2 Classes</div>
-        <div class="price-card-desc">Any two weekly classes from the schedule.</div>
-        <div class="price-amount">$159 <span class="price-unit">/ mo</span></div>
-      </div>
-      <div class="price-card featured">
-        <div class="price-card-label">Most Popular</div>
-        <div class="price-card-name">3 Classes</div>
-        <div class="price-card-desc">Any three weekly classes from the schedule.</div>
-        <div class="price-amount">$199 <span class="price-unit">/ mo</span></div>
-      </div>
+  <!-- THE DAY -->
+  <section class="dc-day">
+    <h3>What a day camp day looks like</h3>
+    <div class="dc-day-grid">
+      <div class="dc-day-item"><span class="dc-day-t">Drop-off</span><p>Doors open at 8:30 AM at our Leesburg studio. No early paperwork, just walk them in.</p></div>
+      <div class="dc-day-item"><span class="dc-day-t">Morning</span><p>Warm-ups, then into the material. Every group works on a piece they will perform at the end of the day.</p></div>
+      <div class="dc-day-item"><span class="dc-day-t">Lunch</span><p>Campers bring their own lunch and a water bottle. We eat together and the room stays loud.</p></div>
+      <div class="dc-day-item"><span class="dc-day-t">Afternoon</span><p>Choreography, scene work, and a run of the piece. Pick-up at 4:15 PM with a showing for families who can stay.</p></div>
     </div>
+    <p class="dc-day-note">Bring a packed lunch, a refillable water bottle, and clothes they can move in.
+      Questions before you book? Email <a href="mailto:info@novapa.org">info@novapa.org</a>.</p>
+  </section>
 
-    <!-- Individual Show Fees -->
-    <div class="pricing-section-label">À la Carte Show Fees <span style="font-size:11px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text3)">· per show · per child</span></div>
-    <div class="pricing-grid">
-      <div class="price-card">
-        <div class="price-card-label">Broadway Bound Production</div>
-        <div class="price-card-name">Broadway Bound Show — Single</div>
-        <div class="price-card-desc">Enroll in one Broadway Bound production (Frozen Kids/Jr/Teen or Little Mermaid Jr./Teen).</div>
-        <div class="price-amount">$695 <span class="price-unit">/ show</span></div>
-      </div>
-      <div class="price-card">
-        <div class="price-card-label">Teen Conservatory · Ages 13–18</div>
-        <div class="price-card-name">Teen Conservatory Show — Single</div>
-        <div class="price-card-desc">Enroll in one Teen Conservatory production — Sweeney Todd (October) or Hadestown: School Edition (March).</div>
-        <div class="price-amount">$849 <span class="price-unit">/ show</span></div>
-        <div class="price-note">Two conservatory shows per season.</div>
-      </div>
-      <div class="price-card">
-        <div class="price-card-label">Summer Camp Show</div>
-        <div class="price-card-name">Broadway Bound Summer Camp Show</div>
-        <div class="price-card-desc">Full Broadway Bound production camp (How to Train Your Dragon, Charlie &amp; the Chocolate Factory, or Trolls Jr.).</div>
-        <div class="price-amount">$995 <span class="price-unit">/ show</span></div>
-      </div>
-      <div class="price-card">
-        <div class="price-card-label">Summer Camp · Ongoing All Summer</div>
-        <div class="price-card-name">One-Week Summer Camps</div>
-        <div class="price-card-desc">Stand-alone one-week camp sessions offered throughout the summer — not tied to a specific production.</div>
-        <div class="price-amount">$425 <span class="price-unit">/ week</span></div>
-        <div class="price-note">Multiple sessions run all summer long. Enroll in one week or many!</div>
-      </div>
-    </div>
-
-    <!-- Flexible Payment Options -->
-    <div class="pricing-section-label">Flexible Payment Options</div>
-    <div class="pricing-grid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr))">
-      <div class="price-card featured">
-        <div class="price-card-label">Pay Your Way</div>
-        <div class="price-card-name">Installment Plans</div>
-        <div class="price-card-desc">Prefer to spread payments out? Choose an installment plan right at checkout and split your tuition or show fee into smaller monthly payments.</div>
-        <div class="price-amount">No Penalty <span class="price-unit">· no added fees</span></div>
-        <div class="price-note">Installments are simply an option you can select during checkout.</div>
-      </div>
-      <div class="price-card">
-        <div class="price-card-label">Peace of Mind</div>
-        <div class="price-card-name">Tuition Insurance</div>
-        <div class="price-card-desc">Protect your enrollment against the unexpected. Tuition insurance is available to safeguard your investment for the season.</div>
-        <div class="price-amount">$95 <span class="price-unit">/ season</span></div>
-        <div class="price-note">Optional — add it to your enrollment at checkout to protect your tuition.</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- EMPTY STATE -->
-  <div id="empty-state" class="empty-state" style="display:none">
-    <h3>No classes found</h3>
-    <p>Try a different filter or clear the search.</p>
-  </div>
-
-  <!-- INFO NOTES -->
-  <div class="notes-box">
-    <div class="note-item">
-      <h4>Age-Based End Times</h4>
-      <p>Ages 5–8 classes end by 7 PM weekdays. Ages 9–12 by 8 PM. Ages 13–15 by 8:30 PM. Ages 16–18 / DE program up to 10 PM.</p>
-    </div>
-    <div class="note-item">
-      <h4>Production Schedule</h4>
-      <p>Broadway Bound Kids &amp; Teens rehearse Wednesdays. Broadway Bound Jr. rehearses Tuesdays. All three companies have non-overlapping slots.</p>
-    </div>
-    <div class="note-item">
-      <h4>Season Dates</h4>
-      <p>Classes run September 14, 2026 through June 11, 2027. Breaks include Thanksgiving Break (Nov 22–29), Winter Break (Dec 20–Jan 3), and Spring Break (Mar 22–26).</p>
-    </div>
-  </div>
-
-</main>
-
-<!-- STUDENT SAFETY & STAFF TRAINING -->
-<div style="background:linear-gradient(135deg,#0B1424 0%,#13233E 50%,#0B1424 100%);border-top:1px solid rgba(232,184,75,0.18);border-bottom:1px solid rgba(232,184,75,0.18)">
-  <div style="max-width:760px;margin:0 auto;padding:46px 48px;text-align:center">
-    <div style="font-size:10.5px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold2);margin-bottom:14px">Safety &middot; Training &middot; Accountability</div>
-    <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(30px,4vw,42px);font-weight:700;color:#fff;line-height:1.1;margin:0 0 10px">Student Safety &amp; Staff Training</h2>
-    <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold2);margin-bottom:20px">Create &middot; Belong &middot; Inspire</div>
-    <p style="font-size:14.5px;color:rgba(232,238,247,0.72);line-height:1.75;max-width:620px;margin:0 auto 28px">At NoVAPA, the safety, well-being, and dignity of every student is our highest priority. We understand that parents place tremendous trust in us when they enroll their children in our programs. We take that responsibility seriously, and we have established safety standards designed to create a secure, supportive, and positive learning environment for all participants.</p>
-    <a href="safety.html" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#C8892A,#E8B84B);color:#08111F;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:11px 26px;border-radius:100px;text-decoration:none;box-shadow:0 4px 16px rgba(232,184,75,0.25)">
-      View Our Safety &amp; Staff Training Page
+  <!-- CTA -->
+  <div class="dc-cta">
+    <h3>Looking for a full week instead?</h3>
+    <p>Our Broadway Bound summer camps run two weeks and finish with a fully staged show.</p>
+    <a class="dc-cta-btn" href="summer-2027.html">See Summer Camps
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
     </a>
   </div>
+
 </div>
 
 <!-- FOOTER -->
@@ -1750,6 +1753,432 @@ function checkEmpty() {
 })();
 </script>
 
+
+<script src="/register/config.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ══ SCHOOL CALENDAR — THE ONE THING ON THIS PAGE THAT IS EDITED BY HAND ══
+     Every date a division is closed to students. Keys are ISO dates. Values
+     list the divisions that are OUT that day; any division not listed is
+     treated as in session. A date that is not in this table at all shows
+     "check your division" instead of guessing, so a missing entry is never
+     a wrong entry.
+
+     l = LCPS (Loudoun)   f = FCPS (Fairfax)   p = PWCS (Prince William)
+
+     Taken from Todd's 2026-27 student-day schedule (Suggested Student Days,
+     Jul 27 2026), which is what our camp dates are built around. CONFIRM
+     AGAINST THE DIVISION CALENDAR BEFORE ADDING A DATE — families plan
+     childcare off this.
+       LCPS: lcps.org/calendars   FCPS: fcps.edu/calendars   PWCS: pwcs.edu/calendars
+
+     `programs` names what is planned for each age group on that date. The
+     12-15 titles come from Todd's schedule; the 9-12 themed days are ours.
+     They are placeholders until the camp exists in the registration system:
+     a real catalog row always wins over one. ═════════════════════════════ */
+  var SCHOOL_CALENDAR = {
+    // ── Fall 2026 ──
+    "2026-09-21": { out:"lfp", why:"Yom Kippur", programs:{
+      "5-9":  { t:"Storybook Stage",
+        d:"The picture books they already love, up on their feet. Campers play every part, make the scenery out of what is in the room, and perform it before pickup." },
+      "9-12": { t:"Heroes & Villains",
+        d:"Every good story needs both. Campers build a hero and a villain, then put them in a scene together and find out who the audience roots for." },
+      "12-15": { t:"NOVAPA Audition Boot Camp Elite",
+        d:"A full day on the audition itself: cuts, slates, cold reads, and what the table is actually watching for. Everyone leaves with material they can walk into a real call with." } }},
+
+    "2026-10-12": { out:"lfp", why:"Indigenous Peoples' Day / teacher workday", programs:{
+      "5-9":  { t:"Sing, Dance, Pretend",
+        d:"A taste of everything in one day. A song in the morning, a dance after lunch, and a story acted out at the end so families can see all three." },
+      "9-12": { t:"Triple Threat Training Day",
+        d:"Sing it, act it, dance it, all in one day. Campers rotate through all three and put the pieces together on one number by pickup." },
+      "12-15": { t:"Musical Theatre Auditions 101",
+        d:"How a musical theatre audition really runs, start to finish. Choosing a cut, working with an accompanist, and holding your nerve in the room." } }},
+
+    "2026-10-29": { out:"l", why:"End-of-quarter workday", programs:{
+      "5-9":  { t:"Friendly Monsters",
+        d:"Not scary, just silly. Campers invent a monster, give it a voice and a walk, and put it in a song where it turns out to be nice after all." },
+      "9-12": { t:"Monsters & Musicals",
+        d:"The spooky corner of musical theatre, from Addams Family to Beetlejuice. Big characters, bigger choreography, and a costume piece they make themselves." },
+      "12-15": { t:"Fall Theatre Intensive",
+        d:"Day one of our four-day fall intensive. Scene work and technique that builds across the week toward the finale and mock auditions on November 3." } }},
+
+    "2026-10-30": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Costume Parade Playhouse",
+        d:"Come in costume and stay in character all day. Campers build a story around whoever they showed up as and parade it for families at pickup." },
+      "9-12": { t:"Haunted Broadway",
+        d:"Ghost stories told the theatre way, with the songs and staging tricks that make an audience jump. Halloween costumes encouraged." },
+      "12-15": { t:"Fall Theatre Intensive",
+        d:"Day two. Character work goes deeper and campers start shaping the piece they will perform at the finale." } }},
+
+    "2026-11-02": { out:"lp", why:"Student holiday / conferences", programs:{
+      "5-9":  { t:"Fairy Tales Out Loud",
+        d:"The stories they already know, acted out and sung. Campers play every part, build the world with what is in the room, and perform it before pickup." },
+      "9-12": { t:"Improv Olympics",
+        d:"A whole day of theatre games with nothing scripted. Campers learn to say yes to an idea, build a scene on the spot, and make each other look good." },
+      "12-15": { t:"Fall Theatre Intensive",
+        d:"Day three. Running the piece, cleaning it, and taking notes the way a cast does the week before opening." } }},
+
+    "2026-11-03": { out:"lfp", why:"Election Day / student holiday", programs:{
+      "5-9":  { t:"Speak Up, Stand Tall",
+        d:"A day about being heard. Campers practise big voices and brave faces, then each one gets the stage to themselves for something they care about." },
+      "9-12": { t:"Campaign Trail: The Musical",
+        d:"Everybody runs for something ridiculous and has to win the room over with a speech and a song. Persuasion, projection, and comic timing, disguised as an election." },
+      "12-15": { t:"Fall Theatre Intensive Finale & Mock Auditions",
+        d:"Day four. The intensive piece goes up in the morning, then a full mock audition in the afternoon with real feedback from our faculty." } }},
+
+    "2026-11-09": { out:"l", why:"Diwali", programs:{
+      "5-9":  { t:"Big Voice, Little Stage",
+        d:"One song each, sung out loud in front of everybody. A gentle first solo, with the whole room clapping at the end of it." },
+      "9-12": { t:"Solo Spotlight",
+        d:"One song, one camper, one room paying attention. A day on picking material that suits your voice and performing it alone without shrinking." },
+      "12-15": { t:"Solo Performance Lab",
+        d:"Serious work on a single piece: text analysis, phrasing, and the physical choices that keep a solo from going flat. Coached and re-run until it lands." } }},
+
+    // Veterans Day is not on Todd's schedule but Fairfax and Prince William
+    // both close for it, so it belongs here.
+    "2026-11-11": { out:"fp", why:"Veterans Day", programs:{
+      "5-9":  { t:"Marching Orders",
+        d:"Big parade songs, drums, and a lot of stomping. Campers learn a routine, make something to wave, and march it for families at pickup." },
+      "9-12": { t:"Ensemble Bootcamp",
+        d:"Nobody is the lead today. A day on moving as a group, holding a harmony, and the unglamorous skills that make a chorus sound like one voice." },
+      "12-15": { t:"Cold Read Clinic",
+        d:"Sides handed out on the spot, the way a real callback works. Campers learn to scan a page fast, make a choice, and commit to it under pressure." } }},
+
+    // ── Winter / spring 2027 ──
+    "2027-01-18": { out:"lfp", why:"Martin Luther King Jr. Day", programs:{
+      "5-9":  { t:"Kindness Out Loud",
+        d:"Stories about standing up for a friend, acted out and sung. Campers make up their own ending where somebody does the right thing." },
+      "9-12": { t:"Stories That Change the World",
+        d:"Theatre that was written to move people. Campers work on monologues and songs from shows about courage and fairness, and talk about why they still land." },
+      "12-15": { t:"Audition 101",
+        d:"The fundamentals, taught properly: what to bring, how to slate, how to take a redirect, and how to leave a room having made an impression." } }},
+
+    "2027-01-25": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Once Upon a Disney",
+        d:"Princesses, sidekicks, and the occasional villain. Campers learn a Disney number with the choreography and act out the scene that goes with it." },
+      "9-12": { t:"Disney Day",
+        d:"Songs and scenes from the Disney canon, staged for real. Campers work the big numbers and find the character underneath the famous voice." },
+      "12-15": { t:"Disney Audition Workshop",
+        d:"Built around what Disney and theme park auditions actually ask for: look, energy, vocal range, and the ability to hold a character all day." } }},
+
+    "2027-02-05": { out:"lf", why:"Lunar New Year", programs:{
+      "5-9":  { t:"Animal Actors",
+        d:"Every camper picks a creature and becomes it, from the walk to the voice. The day ends with a jungle full of them telling one story together." },
+      "9-12": { t:"Build a Character",
+        d:"Start from nothing and end with somebody. Voice, walk, wants, and history, then a scene that proves the character holds up under pressure." },
+      "12-15": { t:"Acting Intensive",
+        d:"A full day inside the text. Objectives, obstacles, and honest listening, working scenes on their feet rather than talking about them." } }},
+
+    "2027-02-15": { out:"lfp", why:"Presidents' Day", programs:{
+      "5-9":  { t:"Red, White & Broadway",
+        d:"Big parade songs and marching numbers with plenty of noise. Campers learn a routine, make a flag or a hat, and perform the whole thing at pickup." },
+      "9-12": { t:"History Set to Music",
+        d:"From Hamilton to Newsies, the shows that turned real events into something you can sing. Campers stage a number and learn the story behind it." },
+      "12-15": { t:"Vocal Audition Lab",
+        d:"Repertoire day. Finding songs that actually fit your voice and type, cutting them cleanly, and singing them under audition conditions." } }},
+
+    "2027-03-08": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Silly Faces on Camera",
+        d:"An introduction to acting for a camera, played as a game. Campers film short scenes, watch themselves back, and learn how little it takes on screen." },
+      "9-12": { t:"Lights, Camera, Act!",
+        d:"Acting for a camera instead of a back row. Campers learn how small a performance can go on screen, and watch their own takes back." },
+      "12-15": { t:"Camera & Self-Tape Boot Camp",
+        d:"How to shoot a self-tape that does not get skipped: framing, lighting, reader, slate, and file naming. Everyone leaves with a finished tape." } }},
+
+    "2027-03-09": { out:"l", why:"Eid al-Fitr", programs:{
+      "5-9":  { t:"Dance Party Playhouse",
+        d:"Music on, all day. Campers learn a short routine from a show they know and dance it full-out for families before they go home." },
+      "9-12": { t:"Broadway Dance Party",
+        d:"Choreography from shows they know, taught fast and danced hard. Campers pick up a full number and perform it full-out before pickup." },
+      "12-15": { t:"Dance Call Survival",
+        d:"The part of the audition that scares people most. Picking up combinations quickly, marking versus full-out, and staying visible in a crowded room." } }},
+
+    // Prince William observes Eid a day later than Loudoun, so this one runs
+    // for PWCS families while the other divisions are in school.
+    "2027-03-10": { out:"p", why:"Eid al-Fitr observed in Prince William", programs:{
+      "5-9":  { t:"Curtain Up Playhouse",
+        d:"A whole story built from scratch between drop-off and pickup. Campers make the characters, the noises, and the ending, then perform it." },
+      "9-12": { t:"Scene Study Sampler",
+        d:"Four short scenes in four different styles, from farce to fairy tale. Campers find out which one suits them and why." },
+      "12-15": { t:"Monologue Workshop",
+        d:"One speech, taken apart and rebuilt. Campers leave with a piece that is genuinely theirs and the habit of working text on their own." } }},
+
+    // ── Spring break ──
+    "2027-03-20": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-21": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-22": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-23": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-24": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-25": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-26": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-27": { out:"lfp", why:"Spring break", springBreak:true },
+    "2027-03-28": { out:"lfp", why:"Spring break", springBreak:true },
+
+    "2027-04-12": { out:"l", why:"Student holiday", programs:{
+      "5-9":  { t:"Broadway Bound Juniors",
+        d:"A first taste of what summer camp feels like. A song, a scene, and a whole day of being in a company with other kids their age." },
+      "9-12": { t:"Broadway Bound Prep",
+        d:"A head start on summer. Campers work the kind of material our two-week camps build on, and get a feel for how a full rehearsal day runs." },
+      "12-15": { t:"Summer Audition Prep",
+        d:"The last workshop before summer placements. Campers polish a song and a monologue and go into camp knowing exactly what they will sing." } }}
+  };
+
+  /* Spring break runs as one week-long camp rather than separate day camps,
+     so every date in it carries the same entry. */
+  var SPRING_BREAK = {
+    "5-9":  { t:"Spring Break Story Camp",
+      d:"A week of one story, told properly. Campers sing it, act it, paint some of it, and perform it for families on the last day." },
+    "9-12": { t:"Spring Break Musical Theatre Camp",
+      d:"A full week building one show, from first read to performance. Campers sing, act, dance, and help make the thing they end up in." },
+    "12-15": { t:"Spring Break Musical Theatre Camp",
+      d:"A full week on one show with the older company. Bigger roles, real rehearsal discipline, and a performance for families at the end of it." }
+  };
+  Object.keys(SCHOOL_CALENDAR).forEach(function(d){
+    if (SCHOOL_CALENDAR[d].springBreak) SCHOOL_CALENDAR[d].programs = SPRING_BREAK;
+  });
+
+
+  /* Age groups, in the order they appear on a date. Each camp from the
+     catalog is matched to the band its age range overlaps most. */
+  var BANDS = [
+    { key:"5-9",   lo:5,  hi:9,  label:"Ages 5–9",   c:"#A02860", bg:"rgba(160,40,96,0.09)"  },
+    { key:"9-12",  lo:9,  hi:12, label:"Ages 9–12",  c:"#8A5C00", bg:"rgba(201,146,42,0.13)" },
+    { key:"12-15", lo:12, hi:15, label:"Ages 12–15", c:"#14703C", bg:"rgba(20,110,60,0.10)"  }
+  ];
+
+  var DIVISIONS = [ {k:"l",n:"LCPS"}, {k:"f",n:"FCPS"}, {k:"p",n:"PWCS"} ];
+  var DAY_CAMP_MAX_CENTS = 20000;   // mirrors reg-config.mjs
+  var C = window.NOVAREG || {};
+  var listEl = document.getElementById("dcList");
+
+  function esc(s){ var d=document.createElement("div"); d.textContent = s==null?"":String(s); return d.innerHTML; }
+
+  /* ── date parsing ──────────────────────────────────────────────────────
+     The catalog does not promise a machine-readable date, so try the
+     structured fields first and fall back to reading one out of the text. */
+  var MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  function iso(y,m,d){
+    return y + "-" + ("0"+(m+1)).slice(-2) + "-" + ("0"+d).slice(-2);
+  }
+  function parseDate(row){
+    var direct = row.start_date || row.starts_at || row.start || row.date;
+    if (direct) {
+      var s = String(direct).slice(0,10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    }
+    var text = [row.schedule_name, row.name, (row.pricing||[])[0]].filter(Boolean).join(" ");
+    var m = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[1] + "-" + m[2] + "-" + m[3];
+    // scan every word-then-number pair, not just the first: a label like
+    // "Fall 2026 | Nov 3, 2026" leads with something that is not a month
+    var rx = /\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})?/g;
+    while ((m = rx.exec(text)) !== null) {
+      var mo = MONTHS[m[1].slice(0,3).toLowerCase()];
+      if (mo == null) continue;
+      var day = +m[2];
+      if (day < 1 || day > 31) continue;
+      return iso(m[3] ? +m[3] : guessYear(mo), mo, day);
+    }
+    var rx2 = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/g;
+    while ((m = rx2.exec(text)) !== null) {
+      var mo2 = +m[1] - 1, d2 = +m[2];
+      if (mo2 < 0 || mo2 > 11 || d2 < 1 || d2 > 31) continue;
+      var y2 = m[3] ? (m[3].length === 2 ? 2000 + (+m[3]) : +m[3]) : guessYear(mo2);
+      return iso(y2, mo2, d2);
+    }
+    return null;
+  }
+  // A month with no year belongs to the school year we are standing in.
+  function guessYear(mo){
+    var now = new Date(), y = now.getFullYear();
+    return mo < now.getMonth() ? y + 1 : y;
+  }
+
+  function ages(row){
+    var t = (row.age_range || "") + " " + (row.name || "");
+    var m = t.match(/(\d{1,2})\s*(?:-|–|to)\s*(\d{1,2})/);
+    if (m) return { lo:+m[1], hi:+m[2] };
+    m = t.match(/(\d{1,2})\s*\+/);
+    if (m) return { lo:+m[1], hi:+m[1] + 3 };
+    return null;
+  }
+  function bandFor(row){
+    var a = ages(row);
+    if (!a) return null;
+    var best = null, bestOverlap = 0;
+    BANDS.forEach(function(b){
+      var ov = Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo);
+      if (ov > bestOverlap) { bestOverlap = ov; best = b; }
+    });
+    return best;
+  }
+
+  function fmtDate(isoStr){
+    var p = isoStr.split("-");
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    var mo = ["January","February","March","April","May","June","July",
+              "August","September","October","November","December"];
+    return { dow: days[d.getDay()], full: mo[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear() };
+  }
+
+  function chips(isoStr){
+    var rec = SCHOOL_CALENDAR[isoStr];
+    if (!rec) {
+      return '<span class="dc-chip dc-unk">Check your division’s calendar</span>';
+    }
+    return DIVISIONS.map(function(dv){
+      var out = rec.out.indexOf(dv.k) !== -1;
+      return '<span class="dc-chip ' + (out ? "dc-out" : "dc-in") + '">' +
+        dv.n + (out ? " out" : " in session") + '</span>';
+    }).join("");
+  }
+
+  function money(cents){
+    if (cents == null) return "";
+    return "$" + (cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2));
+  }
+
+  function slot(band, row, planned, known){
+    var v = band.c ? ' style="--band:' + band.c + ';--band-bg:' + band.bg + '"' : '';
+    if (!row) {
+      // planned but not in the catalog yet: name it, do not offer a booking
+      if (planned) {
+        return '<div class="dc-slot none"' + v + '>' +
+          '<div class="dc-slot-age">' + band.label + '</div>' +
+          '<div class="dc-slot-nm"><b>' + esc(planned.t) + '</b></div>' +
+          (planned.d ? '<div class="dc-slot-desc">' + esc(planned.d) + '</div>' : '') +
+          '<div class="dc-slot-none">Registration opens soon</div></div>';
+      }
+      // "not offered" is only true once the date is actually in the catalog;
+      // before that we know nothing about this group and say so
+      return '<div class="dc-slot none"' + v + '>' +
+        '<div class="dc-slot-age">' + band.label + '</div>' +
+        '<div class="dc-slot-nm">' +
+          (known ? 'Not offered on this date.' : 'Line-up still being set.') + '</div>' +
+        '<div class="dc-slot-none">' +
+          (known ? 'No camp this day' : 'Announced soon') + '</div></div>';
+    }
+    var full = row.remaining != null && row.remaining <= 0;
+    var tags = '<span class="dc-slot-tag price">' + esc(money(row.price_cents)) + '</span>';
+    if (row.remaining != null && row.remaining > 0 && row.remaining < 10) {
+      tags += '<span class="dc-slot-tag left">' + row.remaining + ' spots left</span>';
+    }
+    return '<div class="dc-slot"' + v + '>' +
+      '<div class="dc-slot-age">' + band.label + '</div>' +
+      '<div class="dc-slot-nm"><b>' + esc(row.name || "Day Camp") + '</b></div>' +
+      (planned && planned.d ? '<div class="dc-slot-desc">' + esc(planned.d) + '</div>' : '') +
+      '<div class="dc-slot-meta">' + tags + '</div>' +
+      (full
+        ? '<div class="dc-slot-none">Full</div>'
+        : '<a class="dc-slot-go" href="/register/?activity=' + esc(row.id) +
+          '">Register <span aria-hidden="true">&rarr;</span></a>') +
+      '</div>';
+  }
+
+  function render(rows){
+    var camps = rows.filter(function(r){
+      return r.category === "camp" && (r.price_cents || 0) <= DAY_CAMP_MAX_CENTS && r.bookable;
+    });
+    // an empty catalog is not an empty page: the announced dates still stand
+    // group by date; anything undated still gets shown rather than dropped
+    var byDate = {}, undated = [];
+    camps.forEach(function(r){
+      var d = parseDate(r);
+      if (d) (byDate[d] = byDate[d] || []).push(r);
+      else undated.push(r);
+    });
+    var today = new Date().toISOString().slice(0, 10);
+    // show every upcoming date we know about: booked in the catalog, or on
+    // the closure calendar with a program already planned for it
+    var seen = {};
+    Object.keys(byDate).forEach(function(d){ seen[d] = 1; });
+    Object.keys(SCHOOL_CALENDAR).forEach(function(d){
+      if (SCHOOL_CALENDAR[d].programs) seen[d] = 1;
+    });
+    var dates = Object.keys(seen).filter(function(d){ return d >= today; }).sort();
+
+    // Spring break is one week-long camp, not nine day camps. Collapse the
+    // run into a single block unless a date in it is separately bookable.
+    var sb = dates.filter(function(d){
+      return (SCHOOL_CALENDAR[d] || {}).springBreak && !byDate[d];
+    });
+    if (sb.length > 1) {
+      dates = dates.filter(function(d){ return sb.indexOf(d) === -1; });
+      dates.push(sb[0]);
+      dates.sort();
+    } else {
+      sb = [];
+    }
+
+    var html = dates.map(function(d){
+      var f = fmtDate(d), rec = SCHOOL_CALENDAR[d] || {};
+      var here = byDate[d] || [];
+      if (sb.length && d === sb[0]) {
+        var last = fmtDate(sb[sb.length - 1]);
+        f = { dow: sb.length + " days", full: f.full.replace(/,.*/, "") + " – " + last.full };
+      }
+      var known = here.length > 0;   // is this date in the catalog at all?
+      var plan = rec.programs || {};
+      var slots = BANDS.map(function(b){
+        var match = here.filter(function(r){ var bb = bandFor(r); return bb && bb.key === b.key; })[0];
+        return slot(b, match, plan[b.key] || null, known);
+      }).join("");
+      // a camp whose age range matches no band still deserves a place
+      var extra = here.filter(function(r){ return !bandFor(r); })
+        .map(function(r){ return slot({ label: r.age_range || "All ages" }, r); }).join("");
+      return '<div class="dc-date">' +
+        '<div class="dc-date-head">' +
+          '<div class="dc-date-when">' +
+            '<div class="dc-date-day">' + f.dow + '</div>' +
+            '<div class="dc-date-full">' + f.full + '</div>' +
+            (rec && rec.why ? '<div class="dc-date-why">' + esc(rec.why) + '</div>' : '') +
+          '</div>' +
+          '<div class="dc-date-chips">' + chips(d) + '</div>' +
+        '</div>' +
+        '<div class="dc-slots">' + slots + extra + '</div>' +
+      '</div>';
+    }).join("");
+
+    if (undated.length) {
+      html += '<div class="dc-date">' +
+        '<div class="dc-date-head"><div class="dc-date-when">' +
+        '<div class="dc-date-day">Also open</div>' +
+        '<div class="dc-date-full">More day camps</div>' +
+        '<div class="dc-date-why">Dates are listed on each camp at checkout.</div>' +
+        '</div></div><div class="dc-slots">' +
+        undated.map(function(r){
+          var b = bandFor(r);
+          return slot(b || { label: r.age_range || "All ages" }, r);
+        }).join("") + '</div></div>';
+    }
+
+    listEl.innerHTML = html || '<div class="dc-empty">No upcoming day camps are on the schedule ' +
+      'right now. New dates go up as each school year’s calendar is released — email ' +
+      '<a href="mailto:info@novapa.org">info@novapa.org</a> to hear first.</div>';
+  }
+
+  if (!C.SUPABASE_URL) {
+    listEl.innerHTML = '<div class="dc-empty">Day camp dates are loading from our registration ' +
+      'system. If this does not fill in, email <a href="mailto:info@novapa.org">info@novapa.org</a>.</div>';
+    return;
+  }
+  fetch(C.SUPABASE_URL + "/rest/v1/rpc/catalog_list", {
+    method: "POST",
+    headers: { apikey: C.SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: "{}"
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(rows){ render(Array.isArray(rows) ? rows : []); })
+  .catch(function(){
+    listEl.innerHTML = '<div class="dc-empty">We could not load the day camp schedule just now. ' +
+      'Try again in a moment, or see everything open at ' +
+      '<a href="/register/catalog.html">our program catalog</a>.</div>';
+  });
+})();
+</script>
 
 </body>
 </html>
