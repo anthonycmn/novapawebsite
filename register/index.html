@@ -1705,6 +1705,9 @@
         // falls outside every tier and the offer never appears for it.
         else if (/sweeney/i.test(n)) starts.push('2026-08-17');
         else if (/hadestown/i.test(n)) starts.push('2026-11-16');
+        // Mean Girls was missing here, so an MG-only cart never showed the
+        // insurance offer at all — found when a parent asked about refunds.
+        else if (/mean girls/i.test(n)) starts.push('2027-06-14');
       }
     });
     starts.sort();
