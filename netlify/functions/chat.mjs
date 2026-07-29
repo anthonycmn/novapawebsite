@@ -26,7 +26,7 @@ About: Northern Virginia's performing arts conservatory. Dance, theatre, voice, 
 
 Registration (2026–27 season): Opened June 1, 2026. One family registration covers all children in the household, at no charge. Sibling discount: 5% off per additional child. Classes begin September 14, 2026; season runs through June 11, 2027. New for 2026–27: subscription-based, more affordable programming. Register: https://www.northernvirginiaperformingarts.org/novapa_registration
 
-Location: Current studio at the National Conference Center, 18980 Upper Belmont Place, Leesburg, VA 20176. Coming soon: a new 10,000 sq ft Creative Arts Center in the heart of Ashburn, planned to open by Labor Day Weekend 2026. Directions: https://maps.google.com?q=18980+Upper+Belmont+Place+Leesburg+VA+20176
+Location: Current studio at the National Conference Center, 18495 Conference Center Drive, Plaza C, Leesburg, VA 20175. Coming soon: a new 10,000 sq ft Creative Arts Center in the heart of Ashburn, planned to open by Labor Day Weekend 2026. Directions: https://maps.google.com?q=18495+Conference+Center+Drive+Plaza+C+Leesburg+VA+20175
 
 Classes: Weekly classes Monday–Saturday, September–June. Disciplines: Dance — Ballet, Tap, Jazz (ages 2+); Theatre — Acting, Scene Study (ages 5+); Voice — Vocal Technique, Triple Threat (ages 8+); Musical Theatre — Song & Dance (ages 5+); Film & TV — On-Camera Acting (ages 11+). By age: Tiny Tots (2–5) Parent & Me, Pre-Ballet, Mini Movers; Ages 5–8 Ballet, Acting, MT, Dance; Ages 9–12 Ballet I & II, Acting, Voice, MT; Ages 13–17 Conservatory Track, Voice & Triple Threat, Film & TV; Adults 18+ Acting Fundamentals, Dance, MT, Spring Cabaret. Schedule: https://www.northernvirginiaperformingarts.org/classes — Adult programs: https://www.northernvirginiaperformingarts.org/classes?filter=adults-tab
 
@@ -51,7 +51,7 @@ Key dates: Registration opened June 1, 2026 · Teen Conservatory auditions June 
 
 Policies (registration, attendance, refunds, makeup classes, conduct): https://www.northernvirginiaperformingarts.org/policies
 
-Contact: info@novapa.org · (571) 571-2120 · 18980 Upper Belmont Place, Leesburg VA 20176 · Free 15-min consultation: https://calendly.com/novapa/free-consultation-15-minutes · We typically respond within one business day.`;
+Contact: info@novapa.org · (571) 571-2120 · 18495 Conference Center Drive, Plaza C, Leesburg VA 20175 · Free 15-min consultation: https://calendly.com/novapa/free-consultation-15-minutes · We typically respond within one business day.`;
 
 // Allow only the tags the widget expects; strip everything else.
 function sanitizeHtml(html) {
