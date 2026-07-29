@@ -8,6 +8,10 @@
 //    summer camps only, through the launch sale (EARLYBIRD_END).
 //  - Frozen + Little Mermaid: 10% off both when one kid bundles both;
 //    10% off either when bundled with a summer camp (camps keep their tier).
+//  - Trio (CJ, Jul 29): BOTH year-round shows + at least one summer camp for
+//    the same kid = 15% off all of them (camps take the better of this or
+//    their tier). Prior registrations count toward qualifying, but only cart
+//    items are priced — nothing repriced retroactively.
 //  - Sibling 5%: non-BB items (classes) immediately; BB camps/shows only
 //    after the launch sale ends. Never stacks with tier/bundle discounts.
 //  - Payment plans cost 5% more than paying in full (PLAN_FEE_PCT): the fee
@@ -169,11 +173,21 @@ export function priceCart(cart, plan, opts = {}) {
   const kidOrder = [...new Set(cart.map(kidKey))];
   const firstKid = kidOrder[0];
 
+  // Trio rule (CJ, Jul 29): both year-round shows plus at least one summer
+  // camp for the same kid lifts everything in the cart to 15% — the shows go
+  // 10 -> 15, and camps take the better of the trio floor or their tier.
+  // Prior registrations qualify a kid, but only cart items get the price.
+  const trioKid = (k) =>
+    ((showsByKid[k] || []).length + (priorShowsByKid[k] || 0) >= 2) &&
+    kidsWithSummer.has(k);
+
   const priced = cart.map((it) => {
     if (it.show) {
-      const rate = perKidRate(campsByKid[kidKey(it)], now);
+      const kid = kidKey(it);
+      let rate = perKidRate(campsByKid[kid], now);
+      if (trioKid(kid)) rate = Math.max(rate, 0.15);
       let unit = Math.round(PRICE_CENTS * (1 - rate));
-      if (rate === 0 && siblingActive(true, now) && kidKey(it) !== firstKid) {
+      if (rate === 0 && siblingActive(true, now) && kid !== firstKid) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
       }
       return { ...it, unit, rate };
@@ -208,7 +222,7 @@ export function priceCart(cart, plan, opts = {}) {
     const bundled = kidShows.length >= 2 || kidsWithSummer.has(kid) || (priorShowsByKid[kid] || 0) > 0;
     let unit = it.price_cents;
     let rate = 0;
-    if (bundled) { rate = 0.10; unit = Math.round(unit * 0.9); }
+    if (bundled) { rate = trioKid(kid) ? 0.15 : 0.10; unit = Math.round(unit * (1 - rate)); }
     else if (siblingActive(true, now) && kid !== firstKid) {
       unit = Math.round(unit * (1 - SIBLING_PCT / 100));
     }

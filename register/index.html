@@ -1599,9 +1599,24 @@
       if (kid && (kid.already || []).length && !byKid[kidKey(it)]) byKid[kidKey(it)] = 0.5; // marks the kid as having a camp for the show bundle
     });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
-    var bund = [], mg = [];
+    // Trio rule (CJ, Jul 29): both year-round shows + a summer camp for the
+    // same kid = 15% on all of them. Mirrors trioKid() in reg-config.mjs.
+    function kidObjFor(k){ var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1; return state.kids[ci]; }
+    function trioKid(k){
+      var ko = kidObjFor(k);
+      var cartShows = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && kidKey(x) === k; }).length;
+      var priorShows = ko ? (ko.already || []).filter(function(t){ return t === 'frozen' || t === 'mermaid'; }).length : 0;
+      var hasCamp = items.some(function(x){ return x.show && kidKey(x) === k; }) || (ko ? priorCamps(ko) > 0 : false);
+      return (cartShows + priorShows >= 2) && hasCamp;
+    }
+    var bund = [], mg = [], trio = [], pcts = [];
     var units = items.map(function(it, i){
-      if (it.show) return Math.round(C.PRICE * 100 * (1 - discRate(byKid[kidKey(it)])));
+      if (it.show) {
+        var cr = discRate(byKid[kidKey(it)]);
+        if (trioKid(kidKey(it))) cr = Math.max(cr, 0.15);
+        pcts[i] = Math.round(cr * 100);
+        return Math.round(C.PRICE * 100 * (1 - cr));
+      }
       var a = byIdAll[it.activity_id] || {};
       var base = a.price_cents || 69500;
       // Mean Girls: flat 10% through Aug 1 — never stacks with the camp tier or
@@ -1612,7 +1627,11 @@
       }
       var kid = kidKey(it);
       var kidShowN = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && kidKey(x) === kid; }).length;
-      if (byKid[kid] || kidShowN >= 2) { bund[i] = true; return Math.round(base * 0.9); }
+      if (byKid[kid] || kidShowN >= 2) {
+        var br = trioKid(kid) ? 0.15 : 0.10;
+        bund[i] = true; trio[i] = (br === 0.15);
+        return Math.round(base * (1 - br));
+      }
       return base;
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
@@ -1630,11 +1649,11 @@
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = Math.round(net * 5 / 100);
-    return { n:n, items:items, units:units, bund:bund, mg:mg, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+    return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
              today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / C.INSTALLMENTS) };
   }
 
@@ -1764,8 +1783,8 @@
     var rows = items.map(function(it, i){
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
-        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
-      var pct = it.show ? Math.round(discRate((byKid[kidKey(it)]||{}).n||0)*100) : 0;
+        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(' + (p.trio && p.trio[i] ? '15' : '10') + '% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
+      var pct = it.show ? ((p.pcts && p.pcts[i]) || 0) : 0;
       // List price here, not the discounted unit — the discount comes off on
       // the "Launch-sale savings" row below. Showing the already-reduced price
       // AND that row made the column read like the money was coming off twice.
