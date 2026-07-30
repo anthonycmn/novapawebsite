@@ -392,7 +392,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 /* free first class */
 .pb-offer{background:linear-gradient(150deg,var(--navy2) 0%,var(--navy) 70%);border-radius:16px;
   padding:clamp(26px,4vw,40px) clamp(24px,4vw,42px);color:#fff;display:grid;
-  grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
+  grid-template-columns:minmax(0,1fr);gap:24px;align-items:center}
+/* the second track only exists when there is a button to put in it */
+.pb-offer:has(.pb-offer-btn){grid-template-columns:minmax(0,1fr) auto}
 .pb-offer-tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:0.14em;
   text-transform:uppercase;color:#1a1205;background:var(--gold2);padding:4px 12px;
   border-radius:100px;margin-bottom:12px}
@@ -803,9 +805,13 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
           commitment, and nobody will chase you afterwards. Theatre is not for every kid, and the
           honest way to find out is to stand in the room.</p>
       </div>
+      <!-- CTA parked until we decide how booking a free class should work.
+           Uncomment to bring it back; the panel returns to two columns on its
+           own because .pb-offer:has(.pb-offer-btn) restores the second track.
       <a class="pb-offer-btn" href="mailto:info@novapa.org?subject=Free%20first%20class%20-%20opening%20week">Save a spot
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
+      -->
     </div>
   </section>
   <section class="pb" id="faq">
