@@ -72,6 +72,20 @@ async function sendMail({ to, subject, html, refs }) {
 // Reads the shared inbox over IMAP (same Gmail app password as SMTP) and stops
 // every active sequence whose lead appears as a sender. Failure-isolated: an
 // IMAP hiccup skips the check for this run, never the sends.
+// Gmail treats dots in the local part as decoration and +suffixes as tags:
+// haemy.lee@gmail.com and haemylee@gmail.com are ONE mailbox. The reply-stop
+// used to compare raw strings, so a parent who registered without the dot and
+// replied with it kept receiving the sequence — that happened to a family in
+// an active billing dispute before this was caught. Normalize both sides.
+function normEmail(e) {
+  let [local, domain] = String(e || "").toLowerCase().trim().split("@");
+  if (!domain) return String(e || "").toLowerCase().trim();
+  local = local.split("+")[0];
+  if (domain === "googlemail.com") domain = "gmail.com";
+  if (domain === "gmail.com") local = local.replace(/\./g, "");
+  return local + "@" + domain;
+}
+
 async function stopRepliers(states) {
   const active = states.filter((s) => s.status === "active");
   if (!active.length) return 0;
@@ -88,7 +102,7 @@ async function stopRepliers(states) {
     try {
       const since = new Date(Date.now() - 5 * 24 * 3600 * 1000);
       for await (const msg of client.fetch({ since }, { envelope: true })) {
-        for (const a of msg.envelope?.from || []) senders.add(String(a.address || "").toLowerCase());
+        for (const a of msg.envelope?.from || []) senders.add(normEmail(a.address));
       }
     } finally { lock.release(); }
     await client.logout();
@@ -98,7 +112,7 @@ async function stopRepliers(states) {
   }
   let stopped = 0;
   for (const s of active) {
-    if (!senders.has(String(s.email).toLowerCase())) continue;
+    if (!senders.has(normEmail(s.email))) continue;
     const rows = await svc(
       `retarget_state?email=eq.${encodeURIComponent(s.email)}&status=eq.active`,
       { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "stopped" }) }
