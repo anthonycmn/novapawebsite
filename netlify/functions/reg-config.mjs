@@ -8,10 +8,13 @@
 //    summer camps only, through the launch sale (EARLYBIRD_END).
 //  - Frozen + Little Mermaid: 10% off both when one kid bundles both;
 //    10% off either when bundled with a summer camp (camps keep their tier).
-//  - Trio (CJ, Jul 29): BOTH year-round shows + at least one summer camp for
-//    the same kid = 15% off all of them (camps take the better of this or
-//    their tier). Prior registrations count toward qualifying, but only cart
-//    items are priced — nothing repriced retroactively.
+//  - Show+camp combo (CJ, Jul 30 — supersedes the Jul 29 trio): a summer camp
+//    plus ONE of Frozen / Little Mermaid for the same kid = 15% off ALL of
+//    that kid's items; a camp plus BOTH fall shows = 20% off all of them.
+//    Camps take the better of the combo or their tier; two fall shows with no
+//    camp stay at the 10% bundle. Prior registrations count toward
+//    qualifying, but only cart items are priced — nothing reprices
+//    retroactively.
 //  - Sibling 5%: non-BB items (classes) immediately; BB camps/shows only
 //    after the launch sale ends. Never stacks with tier/bundle discounts.
 //  - Payment plans cost 5% more than paying in full (PLAN_FEE_PCT): the fee
@@ -51,16 +54,19 @@ export const PAY_FULL_CUTOFF_DAYS = 14;      // all payments >= 2 weeks before s
 export const LAST_INSTALLMENT_UTC = Date.UTC(2027, 4, 1, 4, 0, 0);
 
 // One-time account adjustments approved by Todd/CJ. The code is entered like a
-// coupon but locked to one family's email; it replaces every program discount
-// with a flat pct off LIST price, and can waive the 5% plan fee and stretch
-// the schedule to a fixed month count (past the May-1 / pre-start limits —
-// that's the point of the concession). A matching coupons row must exist and
-// stay active (max_uses caps redemption); its pct is display-only.
+// coupon but locked to one family's email; any combination of: pctOffList
+// (replaces every program discount with a flat pct off LIST price),
+// waivePlanFee (kills the 5%), months (stretches the schedule to a fixed
+// count, past the May-1 / pre-start limits — that's the point of the
+// concession). A matching coupons row must exist and stay active (max_uses
+// caps redemption); its pct is display-only.
 export const SPECIAL_PLANS = {
   "SOK20": {
     email: "isabel.castillejo13@gmail.com",
-    pctOffList: 20, waivePlanFee: true, months: 10,
-    // Mrs. Sok — Frozen + Little Mermaid + summer camp, approved Jul 30 2026
+    waivePlanFee: true, months: 10,
+    // Mrs. Sok, approved Jul 30 2026. Her 20% comes from the global
+    // show+camp combo now — this code only waives the plan fee and
+    // stretches her schedule to 10 months.
   },
 };
 
@@ -204,19 +210,20 @@ export function priceCart(cart, plan, opts = {}) {
   const kidOrder = [...new Set(cart.map(kidKey))];
   const firstKid = kidOrder[0];
 
-  // Trio rule (CJ, Jul 29): both year-round shows plus at least one summer
-  // camp for the same kid lifts everything in the cart to 15% — the shows go
-  // 10 -> 15, and camps take the better of the trio floor or their tier.
-  // Prior registrations qualify a kid, but only cart items get the price.
-  const trioKid = (k) =>
-    ((showsByKid[k] || []).length + (priorShowsByKid[k] || 0) >= 2) &&
-    kidsWithSummer.has(k);
+  // Show+camp combo (CJ, Jul 30): one fall show on top of a summer camp puts
+  // the kid at 15%, both fall shows at 20% — on every one of that kid's
+  // items. Camps take the better of the combo or their tier. Prior
+  // registrations qualify a kid, but only cart items get the price.
+  const comboRate = (k) => {
+    if (!kidsWithSummer.has(k)) return 0;
+    const shows = (showsByKid[k] || []).length + (priorShowsByKid[k] || 0);
+    return shows >= 2 ? 0.20 : shows >= 1 ? 0.15 : 0;
+  };
 
   const priced = cart.map((it) => {
     if (it.show) {
       const kid = kidKey(it);
-      let rate = perKidRate(campsByKid[kid], now);
-      if (trioKid(kid)) rate = Math.max(rate, 0.15);
+      let rate = Math.max(perKidRate(campsByKid[kid], now), comboRate(kid));
       let unit = Math.round(PRICE_CENTS * (1 - rate));
       if (rate === 0 && siblingActive(true, now) && kid !== firstKid) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
@@ -253,13 +260,13 @@ export function priceCart(cart, plan, opts = {}) {
       const rate = now <= new Date(PUBLIC_OPEN_AT) ? 0.10 : 0;
       return { ...it, unit: Math.round((it.price_cents || 0) * (1 - rate)), rate };
     }
-    // BB show item (frozen/mermaid)
+    // BB show item (frozen/mermaid): combo rate with a camp (15/20), else the
+    // plain two-show bundle at 10%
     const kid = kidKey(it);
-    const kidShows = showsByKid[kid] || [];
-    const bundled = kidShows.length >= 2 || kidsWithSummer.has(kid) || (priorShowsByKid[kid] || 0) > 0;
+    const showTotal = (showsByKid[kid] || []).length + (priorShowsByKid[kid] || 0);
     let unit = it.price_cents;
-    let rate = 0;
-    if (bundled) { rate = trioKid(kid) ? 0.15 : 0.10; unit = Math.round(unit * (1 - rate)); }
+    const rate = comboRate(kid) || (showTotal >= 2 ? 0.10 : 0);
+    if (rate) unit = Math.round(unit * (1 - rate));
     else if (siblingActive(true, now) && kid !== firstKid) {
       unit = Math.round(unit * (1 - SIBLING_PCT / 100));
     }

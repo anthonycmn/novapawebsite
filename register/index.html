@@ -518,9 +518,10 @@
   var TI_IDS = [1805731]; // Dear Evan Hansen teen intensive — flat price, no bundles
   function isTI(id){ return TI_IDS.indexOf(id) !== -1; }
   // One-off account adjustments entered as coupon codes — mirrors
-  // SPECIAL_PLANS in reg-config.mjs (flat pct off list replacing all other
-  // discounts; server enforces the email lock)
-  var SPECIALS = { 'SOK20': { pct: 20, months: 10, nofee: true } };
+  // SPECIAL_PLANS in reg-config.mjs (pct = flat off list replacing all other
+  // discounts, nofee = no 5% plan fee, months = stretched schedule; server
+  // enforces the email lock)
+  var SPECIALS = { 'SOK20': { months: 10, nofee: true } };
   // Closing-weekend showtimes (CJ) — same pattern every camp, second Friday
   // and Saturday, split by age group.
   var SHOWTIMES = {
@@ -992,12 +993,12 @@
         var a = state.assign[show + '|' + i];
         if (a && a.on) n++;
       });
-      // trio check mirrors localPricing: both fall shows (picked or prior)
-      // plus a camp lifts this kid's camps to 15% regardless of tier
+      // combo check mirrors localPricing: one fall show (picked or prior) on
+      // top of a camp lifts this kid to 15%, both fall shows to 20%
       var fallOn = 0;
       FALL_SHOWS.forEach(function(fs){ if (fs.key !== 'meangirls' && fallCastOn(i, fs.key)) fallOn++; });
       fallOn += (k.already || []).filter(function(s){ return s === 'frozen' || s === 'mermaid'; }).length;
-      if (n) byKid.push({ name: k.name, trio: fallOn >= 2,
+      if (n) byKid.push({ name: k.name, fall: fallOn,
         n: n + (k.already || []).filter(function(s){ return ['httyd','charlie','trolls'].indexOf(s) !== -1; }).length });
     });
     var fallN = 0;
@@ -1007,27 +1008,25 @@
     });
     if (!byKid.length) {
       t.textContent = fallN
-        ? '$695 per show \u00b7 one performer in both shows saves 10% on each.'
+        ? '$695 per show \u00b7 add a summer camp and save 15% on everything (both shows + a camp = 20%).'
         : 'Check a camper into a show to see your price.';
       return;
     }
     if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
-    function rateOf(e, n){ return e.trio ? Math.max(discRate(n), 0.15) : discRate(n); }
+    function rateOf(e, n){ return Math.max(discRate(n), e.fall >= 2 ? 0.20 : e.fall >= 1 ? 0.15 : 0); }
     function label(e){ return e.n + ' show' + (e.n > 1 ? 's' : '') + ' selected, ' + Math.round(rateOf(e, e.n) * 100) + '% off'; }
     function nudge(e){
-      // only dangle a number the next camp actually delivers — a trio kid is
-      // at 15% already, so their next real jump is the 3-camp 20%
+      // only dangle a number the next add actually delivers — the fall-show
+      // step usually beats the camp step, so it goes first
       var cur = rateOf(e, e.n);
-      if (e.n === 1) {
-        var at2 = rateOf(e, 2);
-        if (at2 > cur) return ' \u00b7 add a 2nd camp for ' + Math.round(at2 * 100) + '% off both';
-        return ' \u00b7 add camps for up to ' + Math.round(rateOf(e, 3) * 100) + '% off everything';
-      }
-      if (e.n === 2) return ' \u00b7 add the 3rd for ' + Math.round(rateOf(e, 3) * 100) + '% off everything';
+      if (cur >= 0.20) return '';
+      if (e.fall === 1) return ' \u00b7 add the 2nd fall show for 20% off everything';
+      if (e.n === 1) return ' \u00b7 add a fall show or 2nd camp for 15% off everything';
+      if (e.n === 2) return ' \u00b7 add the 3rd camp for 20% off everything';
       return '';
     }
     if (byKid.length === 1) { t.textContent = label(byKid[0]) + nudge(byKid[0]); return; }
-    var uniform = byKid.every(function(e){ return e.n === byKid[0].n && e.trio === byKid[0].trio; });
+    var uniform = byKid.every(function(e){ return e.n === byKid[0].n && e.fall === byKid[0].fall; });
     t.textContent = uniform
       ? label(byKid[0]) + ' each' + nudge(byKid[0])
       : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(rateOf(e, e.n) * 100) + '% off)'; }).join(' \u00b7 ');
@@ -1178,11 +1177,17 @@
           return a && a.on;
         });
         var eff = mine.length + (k.already || []).filter(function(s){ return Object.keys(SHOW_NAMES).indexOf(s) !== -1; }).length;
-        if (mine.length >= 1 && eff < 3) {
+        // combo floor: a kid with fall shows already sits at 15/20% — never
+        // dangle a rate the next camp doesn't actually deliver
+        var fallCt = 0;
+        FALL_SHOWS.forEach(function(fs){ if (fs.key !== 'meangirls' && fallCastOn(i, fs.key)) fallCt++; });
+        fallCt += (k.already || []).filter(function(s){ return s === 'frozen' || s === 'mermaid'; }).length;
+        var floor = fallCt >= 2 ? 0.20 : fallCt >= 1 ? 0.15 : 0;
+        if (mine.length >= 1 && eff < 3 && Math.max(discRate(eff + 1), floor) > Math.max(discRate(eff), floor)) {
           var missing = Object.keys(SHOW_NAMES).filter(function(s){
             return mine.indexOf(s) === -1 && (k.already || []).indexOf(s) === -1;
           });
-          if (missing.length) best = { kid: i, n: eff, show: missing[missing.length - 1] };
+          if (missing.length) best = { kid: i, n: eff, floor: floor, show: missing[missing.length - 1] };
         }
       });
     }
@@ -1191,7 +1196,7 @@
       if (toastSig.dismissed[sig]) { t.classList.remove('on'); return; }
       if (toastSig.shown === sig && t.classList.contains('on')) return;
       toastSig.shown = sig;
-      var pct = Math.round(discRate(best.n + 1) * 100);
+      var pct = Math.round(Math.max(discRate(best.n + 1), best.floor || 0) * 100);
       var nm = { httyd: 'Dragon', charlie: 'Charlie', trolls: 'Trolls' }[best.show];
       $('toastMsg').innerHTML = 'In town <b>' + SHOW_DATES[best.show] + '</b>? Save <b>' + pct + '%</b> by bundling ' + nm + ' camp!';
       t.dataset.mode = ''; t.dataset.show = best.show; t.dataset.kid = best.kid; t.dataset.sig = sig;
@@ -1218,10 +1223,16 @@
         if (toastSig.dismissed[fsig]) { t.classList.remove('on'); return; }
         if (toastSig.shown === fsig && t.classList.contains('on')) return;
         toastSig.shown = fsig;
-        $('toastMsg').innerHTML = 'Add <b>' + fbest.show.title + '</b> and save <b>10%</b> on both shows!';
+        // with a camp in the mix the 2nd fall show completes the 20% combo;
+        // shows alone it's the plain 10% bundle
+        var kb = state.kids[fbest.kid] || {};
+        var campN2 = Object.keys(SHOW_NAMES).filter(function(sh){ var a = state.assign[sh + '|' + fbest.kid]; return a && a.on; }).length +
+          (kb.already || []).filter(function(s){ return Object.keys(SHOW_NAMES).indexOf(s) !== -1; }).length;
+        var fpct = campN2 ? 20 : 10;
+        $('toastMsg').innerHTML = 'Add <b>' + fbest.show.title + '</b> and save <b>' + fpct + '%</b> on ' + (campN2 ? 'everything' : 'both shows') + '!';
         t.dataset.mode = 'fall'; t.dataset.show = fbest.show.key; t.dataset.kid = fbest.kid; t.dataset.sig = fsig;
         t.classList.add('on');
-        ev('reg_upsell_toast', { show: fbest.show.key, pct: 10 });
+        ev('reg_upsell_toast', { show: fbest.show.key, pct: fpct });
         return;
       }
     }
@@ -1613,29 +1624,30 @@
       var kid = state.kids[ci];
       if (kid) byKid[k] += priorCamps(kid);
     });
-    items.forEach(function(it){
-      if (it.show || isMG(it.activity_id)) return;
-      var kid = state.kids[it.ci];
-      if (kid && (kid.already || []).length && !byKid[kidKey(it)]) byKid[kidKey(it)] = 0.5; // marks the kid as having a camp for the show bundle
-    });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
-    // Trio rule (CJ, Jul 29): both year-round shows + a summer camp for the
-    // same kid = 15% on all of them. Mirrors trioKid() in reg-config.mjs.
+    // Show+camp combo (CJ, Jul 30): a camp + one of Frozen/Mermaid for the
+    // same kid = 15% on all their items, camp + both = 20%. Mirrors
+    // comboRate() in reg-config.mjs.
     function kidObjFor(k){ var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1; return state.kids[ci]; }
-    function trioKid(k){
+    function fallShowsOf(k){
       var ko = kidObjFor(k);
-      var cartShows = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === k; }).length;
-      var priorShows = ko ? (ko.already || []).filter(function(t){ return t === 'frozen' || t === 'mermaid'; }).length : 0;
-      var hasCamp = items.some(function(x){ return x.show && kidKey(x) === k; }) || (ko ? priorCamps(ko) > 0 : false);
-      return (cartShows + priorShows >= 2) && hasCamp;
+      var cartN = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === k; }).length;
+      var priorN = ko ? (ko.already || []).filter(function(t){ return t === 'frozen' || t === 'mermaid'; }).length : 0;
+      return cartN + priorN;
     }
-    var trioKids = {};
-    items.forEach(function(it){ var k = kidKey(it); if (!(k in trioKids)) trioKids[k] = trioKid(k); });
+    function comboRateK(k){
+      var ko = kidObjFor(k);
+      var hasCamp = items.some(function(x){ return x.show && kidKey(x) === k; }) || (ko ? priorCamps(ko) > 0 : false);
+      if (!hasCamp) return 0;
+      var n = fallShowsOf(k);
+      return n >= 2 ? 0.20 : n >= 1 ? 0.15 : 0;
+    }
+    var comboKids = {};
+    items.forEach(function(it){ var k = kidKey(it); if (!(k in comboKids)) comboKids[k] = comboRateK(k); });
     var bund = [], mg = [], trio = [], pcts = [];
     var units = items.map(function(it, i){
       if (it.show) {
-        var cr = discRate(byKid[kidKey(it)]);
-        if (trioKid(kidKey(it))) cr = Math.max(cr, 0.15);
+        var cr = Math.max(discRate(byKid[kidKey(it)]), comboRateK(kidKey(it)));
         pcts[i] = Math.round(cr * 100);
         return Math.round(C.PRICE * 100 * (1 - cr));
       }
@@ -1649,17 +1661,18 @@
       }
       if (isTI(it.activity_id)) return base; // DEH: flat, never bundles
       var kid = kidKey(it);
-      var kidShowN = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === kid; }).length;
-      if (byKid[kid] || kidShowN >= 2) {
-        var br = trioKid(kid) ? 0.15 : 0.10;
-        bund[i] = true; trio[i] = (br === 0.15);
+      var br = comboRateK(kid) || (fallShowsOf(kid) >= 2 ? 0.10 : 0);
+      if (br) {
+        bund[i] = true; pcts[i] = Math.round(br * 100);
         return Math.round(base * (1 - br));
       }
       return base;
     });
-    // special code: flat pct off list on everything, replacing the math above
+    // special code with a pct: flat off list on everything, replacing the
+    // math above (a special without one keeps normal pricing — it only
+    // carries plan concessions)
     var sp = state.coupon && state.coupon.special;
-    if (sp) units = items.map(function(it, i){
+    if (sp && sp.pct) units = items.map(function(it, i){
       var list = it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 69500);
       bund[i] = false; mg[i] = false; trio[i] = false; pcts[i] = sp.pct;
       return Math.round(list * (1 - sp.pct / 100));
@@ -1679,11 +1692,11 @@
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = (sp && sp.nofee) ? 0 : Math.round(net * 5 / 100);
-    return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+    return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
              today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / ((sp && sp.months) || C.INSTALLMENTS)) };
   }
 
@@ -1813,8 +1826,8 @@
     var rows = items.map(function(it, i){
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
-        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(' + (p.trio && p.trio[i] ? '15' : '10') + '% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
-      var pct = (p.pcts && p.pcts[i]) || 0; // set on shows normally; on everything under a special code
+        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(' + ((p.pcts && p.pcts[i]) || 10) + '% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
+      var pct = (p.bund && p.bund[i]) ? 0 : ((p.pcts && p.pcts[i]) || 0); // bundle badge already carries the pct
       // List price here, not the discounted unit — the discount comes off on
       // the "Launch-sale savings" row below. Showing the already-reduced price
       // AND that row made the column read like the money was coming off twice.
@@ -1849,19 +1862,26 @@
     if (state.coupon && state.coupon.special) { box.style.display = 'none'; return; }
     var html = '';
     if (saleOn()) {
-      // A trio kid's camps are already at 15%, so "one show away from 15%" is
-      // promising what they have. Only surface a step that raises their rate.
-      function rateAt(k, n){
-        var r = discRate(n);
-        return (p.trioKids && p.trioKids[k]) ? Math.max(r, 0.15) : r;
+      // Show+camp combo (CJ, Jul 30): a camp + one fall show = 15% on
+      // everything, camp + both = 20%. The strongest next step is usually a
+      // show, so dangle that first; fall back to the camp tiers. Only ever
+      // surface a step that raises the kid's current rate.
+      function fallsOf(k){
+        var cartN = p.items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === k; }).length;
+        var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1;
+        var ko = state.kids[ci];
+        return cartN + (ko ? (ko.already || []).filter(function(t){ return t === 'frozen' || t === 'mermaid'; }).length : 0);
       }
-      var hints = Object.keys(byKid).filter(function(k){ return byKid[k].n > 0 && byKid[k].n < 3; }).map(function(k){
-        var cur = rateAt(k, byKid[k].n);
-        var one = rateAt(k, byKid[k].n + 1);
+      function comboAt(f){ return f >= 2 ? 0.20 : f >= 1 ? 0.15 : 0; }
+      var hints = Object.keys(byKid).filter(function(k){ return byKid[k].n > 0; }).map(function(k){
+        var f = fallsOf(k);
+        var cur = Math.max(discRate(byKid[k].n), comboAt(f));
+        if (cur >= 0.20) return null;
         var first = esc(byKid[k].name.split(' ')[0]);
-        if (one > cur) return '<b>' + first + '</b> is one show away from <b>' + Math.round(one*100) + '% off each camp</b>';
-        var two = byKid[k].n + 2 <= 3 ? rateAt(k, byKid[k].n + 2) : one;
-        if (two > cur) return '<b>' + first + '</b> is two camps away from <b>' + Math.round(two*100) + '% off each camp</b>';
+        var oneShow = Math.max(discRate(byKid[k].n), comboAt(f + 1));
+        if (oneShow > cur) return '<b>' + first + '</b> is one fall show away from <b>' + Math.round(oneShow*100) + '% off everything</b>' + (f === 0 ? ' (both shows = 20%)' : '');
+        var oneCamp = byKid[k].n < 3 ? Math.max(discRate(byKid[k].n + 1), comboAt(f)) : cur;
+        if (oneCamp > cur) return '<b>' + first + '</b> is one camp away from <b>' + Math.round(oneCamp*100) + '% off each camp</b>';
         return null;
       }).filter(Boolean);
       if (hints.length) {
@@ -1906,7 +1926,11 @@
         : { code: res.data.code, pct: res.data.pct || 0, amount_cents: res.data.amount_cents || 0 };
       msg.style.color = 'var(--ok)';
       msg.textContent = sp
-        ? res.data.code + ' applied \u2014 ' + sp.pct + '% off your whole order' + (sp.nofee ? ', payment plan fee waived.' : '.')
+        ? res.data.code + ' applied \u2014 ' + [
+            sp.pct ? sp.pct + '% off your whole order' : '',
+            sp.nofee ? 'payment plan fee waived' : '',
+            sp.months ? sp.months + ' monthly payments' : '',
+          ].filter(Boolean).join(', ') + '.'
         : res.data.code + ' applied \u2014 ' + (res.data.pct ? res.data.pct + '% off.' : money(res.data.amount_cents) + ' off.');
       ev('reg_coupon_applied', { code: res.data.code });
       resetPayUI(); renderPay(); schedulePay();
