@@ -131,7 +131,7 @@ export default async (req) => {
     `<body style="font-family:Georgia,serif;max-width:660px;margin:40px auto;color:#111;font-size:14px;line-height:1.5">` +
     `<h2 style="margin-bottom:2px">DEPENDENT CARE / FSA RECEIPT INFORMATION</h2>` +
     row("Dependent Care Provider", "CJ Creative LLC dba Northern Virginia Performing Arts") +
-    row("Provider Address", "18665 Conference Center Drive, Leesburg, VA 20176") +
+    row("Provider Address", "18495 Conference Center Drive, Plaza C, Leesburg, VA 20175") +
     row("Website", `<a href="https://www.northernvirginiaperformingarts.org" style="color:#996f1f">www.northernvirginiaperformingarts.org</a>`) +
     row("Email", `<a href="mailto:info@novapa.org" style="color:#996f1f">info@novapa.org</a>`) +
     row("Phone", "(571) 571-2120") +
