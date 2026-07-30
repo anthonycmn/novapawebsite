@@ -433,7 +433,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 .fac-safe h3{font-family:'Cormorant Garamond',serif;font-size:clamp(21px,2.8vw,27px);font-weight:700;
   color:#fff;margin-bottom:10px;line-height:1.2}
 .fac-safe p{font-size:13.5px;line-height:1.7;color:rgba(255,255,255,0.62);max-width:640px}
-.fac-safe a{color:var(--gold2)}
+/* scoped to body copy: an unscoped `.fac-safe a` outranked .fac-safe-btn and
+   painted the button's label the same gold as the button */
+.fac-safe p a{color:var(--gold2)}
 .fac-safe-btn{display:inline-flex;align-items:center;gap:8px;margin-top:18px;
   background:linear-gradient(135deg,#C8892A,#E8B84B);color:#08111F;font-size:12px;font-weight:700;
   letter-spacing:0.1em;text-transform:uppercase;padding:11px 26px;border-radius:100px;
@@ -499,17 +501,17 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
           <span class="fac-cred">MA, Drama Therapy &middot; NYU</span>
           <span class="fac-cred">100+ productions</span>
         </div>
-        <p>Tony has spent more than two decades directing and producing, with over one hundred
-          productions behind him and three nonprofit arts organizations he built from nothing,
-          including the one he now leads as CEO.</p>
-        <p>He holds an MFA in Theatre Education and a master&rsquo;s in Drama Therapy from NYU,
-          along with training in school violence prevention and bullying. That second degree is
-          not decoration. It shapes how our rooms are run, how a nervous nine year old is spoken
-          to on a first day, and why our staff are trained in more than blocking and vocal warm-ups.</p>
-        <p>His directing work has put young people on stage inside genuinely difficult material,
-          from the aftermath of Sandy Hook in <em>26 Pebbles</em> to war and loss in <em>The Trench</em>
-          and <em>War Letters</em>. He believes a rehearsal room can change a young person, and he has
-          built his career on watching it happen.</p>
+        <p>Tony has been directing and producing for over twenty years. He has more than a hundred
+          productions behind him, and he has built three nonprofit arts organizations from nothing.
+          This is the third, and he runs it as CEO.</p>
+        <p>He holds an MFA in Theatre Education and a master&rsquo;s in Drama Therapy from NYU, along
+          with training in school violence prevention and bullying. Both degrees show up in how our
+          rooms are run. Our staff learn how to talk to a nervous nine year old on a first day, and
+          they learn that before they learn blocking.</p>
+        <p>His own directing takes young people into hard material. He staged <em>26 Pebbles</em>
+          about the aftermath of Sandy Hook, and <em>The Trench</em> and <em>War Letters</em> about
+          war and loss. He has watched a room of teenagers change because of a scene they built
+          themselves. That is why he keeps doing this.</p>
         <p class="fac-quote">&ldquo;If you&rsquo;re going to doubt something, doubt your limits.&rdquo;</p>
       </div>
     </article>
@@ -526,11 +528,11 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 
   <div class="fac-safe">
     <div class="fac-safe-eyebrow">&#9679; Every adult in our building</div>
-    <h3>Screened, trained, and never alone with your child</h3>
+    <h3>Screened and trained before their first day</h3>
     <p>Every staff member completes a background check and mandatory training on working with
-      minors before their first day. Our Director of Health and Safety is a licensed clinical
-      social worker. The full detail is on our
-      <a href="safety.html">safety and staff training page</a>.</p>
+      minors before they set foot in a room. Students are supervised at all times during program
+      activities, and our Director of Health and Safety is a licensed clinical social worker.
+      The full detail is on our <a href="safety.html">safety and staff training page</a>.</p>
     <a class="fac-safe-btn" href="safety.html">Read our safety practices
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
     </a>
