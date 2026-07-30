@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pricing | Northern Virginia Performing Arts</title>
-  <meta name="description" content="Simple, transparent pricing for NoVAPA weekly classes, productions, and summer camps — register for everything in one place.">
+  
   <link rel="stylesheet" href="reg-banner.css">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
   <style>
@@ -49,6 +49,78 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
 <style>html{background:#08111F}</style>
+
+<link rel="canonical" href="https://www.northernvirginiaperformingarts.org/pricing">
+<meta name="description" content="What our classes, camps, and productions cost, plus payment plans, sibling discounts, tuition assistance, and tuition insurance. Northern Virginia Performing Arts, Leesburg VA.">
+<style>
+/* ── SHARED PARENT BLOCKS (FAQ, testimonials, offer, payments) ─────────── */
+.pb{max-width:1080px;margin:0 auto;padding:clamp(40px,5vw,64px) clamp(20px,5vw,48px)}
+.pb-h{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,3.6vw,38px);font-weight:700;
+  color:var(--navy);line-height:1.12;margin-bottom:8px}
+.pb-h em{font-style:italic;color:var(--gold)}
+.pb-sub{font-size:14px;line-height:1.7;color:var(--text2);max-width:640px;margin-bottom:24px}
+
+/* free first class */
+.pb-offer{background:linear-gradient(150deg,var(--navy2) 0%,var(--navy) 70%);border-radius:16px;
+  padding:clamp(26px,4vw,40px) clamp(24px,4vw,42px);color:#fff;display:grid;
+  grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
+.pb-offer-tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:0.14em;
+  text-transform:uppercase;color:#1a1205;background:var(--gold2);padding:4px 12px;
+  border-radius:100px;margin-bottom:12px}
+.pb-offer h3{font-family:'Cormorant Garamond',serif;font-size:clamp(23px,3vw,31px);font-weight:700;
+  color:#fff;line-height:1.15;margin-bottom:10px}
+.pb-offer h3 em{font-style:italic;color:var(--gold2)}
+.pb-offer p{font-size:13.5px;line-height:1.72;color:rgba(255,255,255,0.68);max-width:620px}
+.pb-offer-btn{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  background:linear-gradient(135deg,#C8892A,#E8B84B);color:#08111F;font-size:12px;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;padding:13px 28px;border-radius:100px;
+  text-decoration:none;box-shadow:0 4px 16px rgba(232,184,75,0.28)}
+@media(max-width:760px){.pb-offer{grid-template-columns:1fr}}
+
+/* faq */
+.pb-faq{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+.pb-q{background:#fff;border:1px solid var(--border2);border-radius:13px;padding:18px 22px 19px}
+.pb-q h4{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--navy);
+  line-height:1.25;margin-bottom:8px}
+.pb-q p{font-size:13.5px;line-height:1.72;color:var(--text2)}
+.pb-q p + p{margin-top:9px}
+.pb-q a{color:#7A5010;font-weight:600}
+.pb-ask{margin-top:18px;font-size:13.5px;color:var(--text3);line-height:1.7}
+.pb-ask a{color:#7A5010;font-weight:600}
+
+/* testimonials */
+.pb-quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.pb-quote{background:#fff;border:1px solid var(--border2);border-radius:13px;padding:22px 24px 20px;
+  position:relative;display:flex;flex-direction:column}
+.pb-quote::before{content:'\201C';position:absolute;top:6px;right:18px;font-family:'Cormorant Garamond',serif;
+  font-size:64px;line-height:1;color:rgba(201,146,42,0.16)}
+.pb-quote p{font-size:14px;line-height:1.76;color:var(--text);position:relative;margin-bottom:14px}
+.pb-who{margin-top:auto;font-size:11.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--gold)}
+
+/* payment schedule */
+.pb-pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.pb-step{background:#fff;border:1px solid var(--border2);border-radius:13px;padding:20px 22px;
+  border-top:3px solid var(--gold)}
+.pb-step-n{font-size:10.5px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px}
+.pb-step h4{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;color:var(--navy);
+  margin-bottom:7px;line-height:1.25}
+.pb-step p{font-size:13px;line-height:1.7;color:var(--text2)}
+.pb-fine{margin-top:16px;font-size:12.5px;line-height:1.7;color:var(--text3)}
+.pb-fine a{color:#7A5010;font-weight:600}
+
+/* account */
+.pb-acct{background:var(--gold-pale);border:1px solid rgba(201,146,42,0.3);border-radius:14px;
+  padding:24px 28px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center}
+.pb-acct h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--navy);
+  margin-bottom:7px}
+.pb-acct p{font-size:13.5px;line-height:1.7;color:var(--text2);max-width:640px}
+.pb-acct-btn{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  background:var(--navy);color:#fff;font-size:12px;font-weight:700;letter-spacing:0.09em;
+  text-transform:uppercase;padding:12px 26px;border-radius:100px;text-decoration:none}
+@media(max-width:720px){.pb-acct{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
   <nav class="p-nav">
@@ -177,7 +249,44 @@
   </div>
   <p class="p-note">Sibling discount available &middot; Installment plans and tuition insurance offered at checkout. Every program above registers through our secure HiSawyer portal.</p>
 
-  <footer>
+    <section class="pb" id="payment-schedule">
+    <h2 class="pb-h">Camps and shows: <em>what you pay, and when</em></h2>
+    <p class="pb-sub">The whole billing schedule, so nothing at checkout is a surprise.</p>
+    <div class="pb-pay">
+      <div class="pb-step"><div class="pb-step-n">Today</div><h4>A deposit holds the spot</h4><p>$180 per camp or show reserves your child&rsquo;s place. If you would rather pay in full today, you can, and it costs less.</p></div>
+      <div class="pb-step"><div class="pb-step-n">Monthly</div><h4>Installments on the 1st</h4><p>The balance is split across monthly payments pulled automatically on the 1st, up to eight of them, ending before your program begins.</p></div>
+      <div class="pb-step"><div class="pb-step-n">The plan fee</div><h4>5% to spread it out</h4><p>Choosing a plan adds 5% to the balance being financed. It is shown at checkout before you pay. Paying in full never pays it.</p></div>
+      <div class="pb-step"><div class="pb-step-n">The last pull</div><h4>Everything lands early</h4><p>The final installment is taken at least two weeks before your program starts, and no later than May 1, 2027 for summer camps.</p></div>
+    </div>
+    <p class="pb-fine">Second and additional children take 5% off. Tuition assistance is available and confidential; email <a href="mailto:info@novapa.org">info@novapa.org</a> and our CFO sends you the application. Optional tuition insurance is described in our <a href="policies.html#tuition-insurance">policies</a>.</p>
+  </section>
+  <section class="pb" id="payment-schedule">
+    <h2 class="pb-h">Weekly classes: <em>what you pay, and when</em></h2>
+    <p class="pb-sub">Monthly tuition that stops itself at the end of the season.</p>
+    <div class="pb-pay">
+      <div class="pb-step"><div class="pb-step-n">At checkout</div><h4>Your first month</h4><p>One month of tuition, $90 per class. No registration fee and no deposit.</p></div>
+      <div class="pb-step"><div class="pb-step-n">October 1</div><h4>Billing begins</h4><p>The next automatic pull is October 1, then the 1st of every month after that.</p></div>
+      <div class="pb-step"><div class="pb-step-n">Through June 1</div><h4>The season runs out</h4><p>The last pull is June 1, 2027. The subscription cancels itself on July 1. You do not have to remember to stop it.</p></div>
+      <div class="pb-step"><div class="pb-step-n">To stop earlier</div><h4>Thirty days notice</h4><p>Email us thirty days ahead and billing stops. No penalty, no fee, no conversation required.</p></div>
+    </div>
+    <p class="pb-fine">Second and additional children take 5% off. Tuition assistance is available and confidential; email <a href="mailto:info@novapa.org">info@novapa.org</a> and our CFO sends you the application. Optional tuition insurance is described in our <a href="policies.html#tuition-insurance">policies</a>.</p>
+  </section>
+  <section class="pb" id="your-account">
+    <div class="pb-acct">
+      <div>
+        <h3>Everything you need is in your account</h3>
+        <p>Sign in to the registration system with your email and we send you a link. No password to
+          remember. Inside you will find what you are enrolled in, what you have paid, what is due
+          and when, your receipts, and your dependent-care documentation for FSA claims. It is the
+          fastest way to get an answer at ten at night.</p>
+      </div>
+      <a class="pb-acct-btn" href="/register/">Sign in
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+<footer>
     Northern Virginia Performing Arts &middot; Leesburg, VA &middot;
     <a href="mailto:info@novapa.org">info@novapa.org</a> &middot;
     <a href="tel:5715712120">(571) 571-2120</a>
