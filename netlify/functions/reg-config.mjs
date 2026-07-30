@@ -104,6 +104,12 @@ const isMeanGirls = (it) => MEANGIRLS_IDS.includes(it.activity_id);
 export const TEEN_CONSERVATORY_IDS = [1960809, 1960811];
 const isTeenCon = (it) => TEEN_CONSERVATORY_IDS.includes(it.activity_id);
 
+// Dear Evan Hansen teen intensive (Aug 2026): flat list price, sold by direct
+// link days before it starts. It never bundles with anything and never feeds
+// the fall-show bundle or the trio.
+export const TEEN_INTENSIVE_IDS = [1805731];
+const isTeenIntensive = (it) => TEEN_INTENSIVE_IDS.includes(it.activity_id);
+
 export function perKidRate(nCampsForKid, now = new Date()) {
   if (now > new Date(EARLYBIRD_END)) return 0;
   if (nCampsForKid >= 3) return 0.20;
@@ -165,7 +171,7 @@ export function priceCart(cart, plan, opts = {}) {
   // Mean Girls and the Teen Conservatory shows are excluded: each carries its
   // own flat rule, which neither stacks nor counts toward the fall-show bundle
   // for a kid's other programs
-  for (const it of cart) if (!it.show && !isDayCampItem(it) && !isMeanGirls(it) && !isTeenCon(it)) {
+  for (const it of cart) if (!it.show && !isDayCampItem(it) && !isMeanGirls(it) && !isTeenCon(it) && !isTeenIntensive(it)) {
     const k = kidKey(it);
     (showsByKid[k] = showsByKid[k] || []).push(it);
   }
@@ -199,6 +205,12 @@ export function priceCart(cart, plan, opts = {}) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
       }
       return { ...it, unit, rate: 0, daycamp: true };
+    }
+    // Teen intensive (DEH): flat list, ordinary 5% for a second child
+    if (isTeenIntensive(it)) {
+      const unit = kidKey(it) === firstKid ? (it.price_cents || 0)
+        : Math.round((it.price_cents || 0) * (1 - SIBLING_PCT / 100));
+      return { ...it, unit, rate: 0 };
     }
     // Teen Conservatory: 10% each when one performer does both shows — the
     // exact offer on the Teen Conservatory page — otherwise list, with the

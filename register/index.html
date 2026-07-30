@@ -515,6 +515,8 @@
   var MG_ID = 990001; // Broadway Bound Teens | Mean Girls (performers)
   var MG_IDS = [990001, 990002]; // + 990002 tech crew — same program, same flat-10% rule
   function isMG(id){ return MG_IDS.indexOf(id) !== -1; }
+  var TI_IDS = [1805731]; // Dear Evan Hansen teen intensive — flat price, no bundles
+  function isTI(id){ return TI_IDS.indexOf(id) !== -1; }
   // Closing-weekend showtimes (CJ) — same pattern every camp, second Friday
   // and Saturday, split by age group.
   var SHOWTIMES = {
@@ -1523,7 +1525,7 @@
     var bbCount = {};
     items.forEach(function(it){
       var a = byId[it.activity_id] || {};
-      if (a.category !== 'class' && (a.price_cents || 0) > 20000) {
+      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isTI(it.activity_id)) {
         var k = kidKey(it);
         bbCount[k] = (bbCount[k] || 0) + 1;
       }
@@ -1618,7 +1620,7 @@
     function kidObjFor(k){ var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1; return state.kids[ci]; }
     function trioKid(k){
       var ko = kidObjFor(k);
-      var cartShows = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && kidKey(x) === k; }).length;
+      var cartShows = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === k; }).length;
       var priorShows = ko ? (ko.already || []).filter(function(t){ return t === 'frozen' || t === 'mermaid'; }).length : 0;
       var hasCamp = items.some(function(x){ return x.show && kidKey(x) === k; }) || (ko ? priorCamps(ko) > 0 : false);
       return (cartShows + priorShows >= 2) && hasCamp;
@@ -1641,8 +1643,9 @@
         if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { mg[i] = true; return Math.round(base * 0.9); }
         return base;
       }
+      if (isTI(it.activity_id)) return base; // DEH: flat, never bundles
       var kid = kidKey(it);
-      var kidShowN = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && kidKey(x) === kid; }).length;
+      var kidShowN = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === kid; }).length;
       if (byKid[kid] || kidShowN >= 2) {
         var br = trioKid(kid) ? 0.15 : 0.10;
         bund[i] = true; trio[i] = (br === 0.15);
