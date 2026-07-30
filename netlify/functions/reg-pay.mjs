@@ -14,6 +14,7 @@ import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  SPECIAL_PLANS,
 } from "./reg-config.mjs";
 
 // first day of care per summer camp — the date the IRS under-13 test runs on
@@ -76,12 +77,18 @@ export default async (req) => {
 
   // coupon: validated server-side; invalid codes are a hard error so the
   // client never silently charges full price after showing a discount
-  let couponPct = 0, couponFixedCents = 0;
+  let couponPct = 0, couponFixedCents = 0, special = null;
   if (couponCode) {
     const c = await anonRpc("check_coupon", { p_code: couponCode });
     if (!c || (!c.pct && !c.amount_cents)) return Response.json({ error: "bad_coupon" }, { status: 400 });
     couponPct = c.pct || 0;
     couponFixedCents = c.amount_cents || 0;
+    // account-locked one-off adjustments (Todd/CJ approvals) — the coupons row
+    // gates existence/uses, the SPECIAL_PLANS entry carries the actual terms
+    special = SPECIAL_PLANS[couponCode.toUpperCase()] || null;
+    if (special && special.email.toLowerCase() !== email) {
+      return Response.json({ error: "bad_coupon" }, { status: 400 });
+    }
   }
 
   const items = hold.items;
@@ -177,7 +184,7 @@ export default async (req) => {
         start: showStartFor(byId[it.activity_id].name),
       })),
     ];
-    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid });
+    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid, special });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
     }

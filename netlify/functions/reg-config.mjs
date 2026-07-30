@@ -50,6 +50,20 @@ export const PAY_FULL_CUTOFF_DAYS = 14;      // all payments >= 2 weeks before s
 // Hard ceiling on the final installment date — May 1 2027 (summer money lands early).
 export const LAST_INSTALLMENT_UTC = Date.UTC(2027, 4, 1, 4, 0, 0);
 
+// One-time account adjustments approved by Todd/CJ. The code is entered like a
+// coupon but locked to one family's email; it replaces every program discount
+// with a flat pct off LIST price, and can waive the 5% plan fee and stretch
+// the schedule to a fixed month count (past the May-1 / pre-start limits —
+// that's the point of the concession). A matching coupons row must exist and
+// stay active (max_uses caps redemption); its pct is display-only.
+export const SPECIAL_PLANS = {
+  "SOK20": {
+    email: "isabel.castillejo13@gmail.com",
+    pctOffList: 20, waivePlanFee: true, months: 10,
+    // Mrs. Sok — Frozen + Little Mermaid + summer camp, approved Jul 30 2026
+  },
+};
+
 export const CLASS_PRICE_CENTS = 9000;
 export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;  // Oct 1 2026
 export const CLASS_SEASON_END_UTC = Date.UTC(2027, 6, 1, 4, 0, 0) / 1000;   // Jul 1 2027 (last pull Jun 1)
@@ -126,13 +140,21 @@ export function siblingActive(isBB, now = new Date()) {
 // Monthly installment timestamps: on the 1st, starting the later of
 // Sep 1 2026 / the 1st of next month, ending on the last 1st that is
 // >= 14 days before startISO. Max MAX_INSTALLMENTS. [] => pay in full only.
-export function installmentDates(startISO, now = new Date()) {
+export function installmentDates(startISO, now = new Date(), forceMonths = 0) {
+  const dates = [];
+  let d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 4, 0, 0));
+  // forceMonths (SPECIAL_PLANS): exactly N monthly firsts, no cutoffs
+  if (forceMonths > 0) {
+    while (dates.length < forceMonths) {
+      dates.push(Math.floor(d.getTime() / 1000));
+      d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 4, 0, 0));
+    }
+    return dates;
+  }
   if (!startISO) return [];
   const start = new Date(startISO + "T00:00:00-04:00");
   const lastOk = new Date(Math.min(
     start.getTime() - PAY_FULL_CUTOFF_DAYS * 86400000, LAST_INSTALLMENT_UTC));
-  const dates = [];
-  let d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 4, 0, 0));
   while (d <= lastOk && dates.length < MAX_INSTALLMENTS) {
     dates.push(Math.floor(d.getTime() / 1000));
     d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 4, 0, 0));
@@ -150,8 +172,11 @@ export const kidKey = (it) => (it && it.ci != null ? "i" + it.ci : (it && it.cam
 export function priceCart(cart, plan, opts = {}) {
   const now = opts.now || new Date();
   const insurance = !!opts.insurance;
-  const couponPct = Math.min(100, Math.max(0, opts.couponPct || 0));
-  const couponFixed = Math.max(0, opts.couponFixedCents || 0);
+  // SPECIAL_PLANS adjustment: replaces coupon math entirely (the code is the
+  // vehicle; its numbers live in the special, not the coupons row)
+  const special = opts.special || null;
+  const couponPct = special ? 0 : Math.min(100, Math.max(0, opts.couponPct || 0));
+  const couponFixed = special ? 0 : Math.max(0, opts.couponFixedCents || 0);
   // Prior registrations (Sawyer/Regpack/web) count toward discounts (CJ):
   // prior SUMMER CAMPS advance the per-kid camp tier (1 on file + 1 in cart = 15%,
   // + 2 in cart = 20% each); prior SHOWS qualify the 10% show bundle only.
@@ -239,6 +264,13 @@ export function priceCart(cart, plan, opts = {}) {
       unit = Math.round(unit * (1 - SIBLING_PCT / 100));
     }
     return { ...it, unit, rate };
+  }).map((it) => {
+    // special: flat pct off LIST on every camp/show, REPLACING the
+    // tier/bundle/trio/sibling math above — never stacking on it
+    if (!special || !special.pctOffList || it.daycamp) return it;
+    const list = it.show ? PRICE_CENTS : (it.price_cents || 0);
+    const rate = special.pctOffList / 100;
+    return { ...it, unit: Math.round(list * (1 - rate)), rate };
   });
 
   const grossSubtotal = priced.reduce((s, it) => s + it.unit, 0);
@@ -259,7 +291,7 @@ export function priceCart(cart, plan, opts = {}) {
   // earliest start in cart governs the installment window
   const starts = cart.map((it) => it.show ? CAMP_START[it.show] : (it.start || showStartFor(it.name || "")))
     .filter(Boolean).sort();
-  const schedule = installmentDates(starts[0], now);
+  const schedule = installmentDates(starts[0], now, (special && special.months) || 0);
   const payFullOnly = schedule.length === 0;
 
   if (plan === "full" || payFullOnly) {
@@ -287,7 +319,8 @@ export function priceCart(cart, plan, opts = {}) {
     };
   }
   // choosing the plan costs 5% of the (discounted) balance, financed with it
-  const planFeeCents = Math.round(subtotal * PLAN_FEE_PCT / 100);
+  const planFeeCents = (special && special.waivePlanFee)
+    ? 0 : Math.round(subtotal * PLAN_FEE_PCT / 100);
   const todayCents = depositCents + insuranceCents;
   const installmentCents = Math.max(0, Math.ceil((remainder + planFeeCents) / schedule.length));
   return {

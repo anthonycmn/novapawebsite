@@ -517,6 +517,10 @@
   function isMG(id){ return MG_IDS.indexOf(id) !== -1; }
   var TI_IDS = [1805731]; // Dear Evan Hansen teen intensive — flat price, no bundles
   function isTI(id){ return TI_IDS.indexOf(id) !== -1; }
+  // One-off account adjustments entered as coupon codes — mirrors
+  // SPECIAL_PLANS in reg-config.mjs (flat pct off list replacing all other
+  // discounts; server enforces the email lock)
+  var SPECIALS = { 'SOK20': { pct: 20, months: 10, nofee: true } };
   // Closing-weekend showtimes (CJ) — same pattern every camp, second Friday
   // and Saturday, split by age group.
   var SHOWTIMES = {
@@ -1653,6 +1657,13 @@
       }
       return base;
     });
+    // special code: flat pct off list on everything, replacing the math above
+    var sp = state.coupon && state.coupon.special;
+    if (sp) units = items.map(function(it, i){
+      var list = it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 69500);
+      bund[i] = false; mg[i] = false; trio[i] = false; pcts[i] = sp.pct;
+      return Math.round(list * (1 - sp.pct / 100));
+    });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var coupon = !state.coupon ? 0
       : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
@@ -1671,9 +1682,9 @@
     if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
     if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
-    var planFee = Math.round(net * 5 / 100);
+    var planFee = (sp && sp.nofee) ? 0 : Math.round(net * 5 / 100);
     return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, trioKids:trioKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
-             today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / C.INSTALLMENTS) };
+             today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / ((sp && sp.months) || C.INSTALLMENTS)) };
   }
 
   var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };
@@ -1803,7 +1814,7 @@
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
         : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(' + (p.trio && p.trio[i] ? '15' : '10') + '% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
-      var pct = it.show ? ((p.pcts && p.pcts[i]) || 0) : 0;
+      var pct = (p.pcts && p.pcts[i]) || 0; // set on shows normally; on everything under a special code
       // List price here, not the discounted unit — the discount comes off on
       // the "Launch-sale savings" row below. Showing the already-reduced price
       // AND that row made the column read like the money was coming off twice.
@@ -1834,6 +1845,8 @@
 
   function renderUpsells(p, byKid, byIdAll){
     var box = $('upsellBox');
+    // a special-code order already beats every advertised rate — no dangling
+    if (state.coupon && state.coupon.special) { box.style.display = 'none'; return; }
     var html = '';
     if (saleOn()) {
       // A trio kid's camps are already at 15%, so "one show away from 15%" is
@@ -1887,9 +1900,14 @@
         msg.style.color = 'var(--danger)'; msg.textContent = "That code isn't valid.";
         resetPayUI(); renderPay(); schedulePay(); return;
       }
-      state.coupon = { code: res.data.code, pct: res.data.pct || 0, amount_cents: res.data.amount_cents || 0 };
+      var sp = SPECIALS[code.toUpperCase()];
+      state.coupon = sp
+        ? { code: res.data.code, pct: 0, amount_cents: 0, special: sp }
+        : { code: res.data.code, pct: res.data.pct || 0, amount_cents: res.data.amount_cents || 0 };
       msg.style.color = 'var(--ok)';
-      msg.textContent = res.data.code + ' applied \u2014 ' + (res.data.pct ? res.data.pct + '% off.' : money(res.data.amount_cents) + ' off.');
+      msg.textContent = sp
+        ? res.data.code + ' applied \u2014 ' + sp.pct + '% off your whole order' + (sp.nofee ? ', payment plan fee waived.' : '.')
+        : res.data.code + ' applied \u2014 ' + (res.data.pct ? res.data.pct + '% off.' : money(res.data.amount_cents) + ' off.');
       ev('reg_coupon_applied', { code: res.data.code });
       resetPayUI(); renderPay(); schedulePay();
     });
