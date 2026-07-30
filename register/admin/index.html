@@ -142,6 +142,8 @@
       <div class="stats" id="stPeople"></div>
       <h2>Summer 2027</h2>
       <div class="stats" id="stSummer"></div>
+      <h2>Mean Girls</h2>
+      <div class="stats" id="stMG"></div>
     </section>
 
     <section class="sec" id="s-orders">
@@ -157,6 +159,8 @@
     <section class="sec" id="s-inventory">
       <h2>Summer 2027</h2>
       <div class="wrap-scroll"><table id="tblSummer"></table></div>
+      <h2>Mean Girls</h2>
+      <div class="wrap-scroll"><table id="tblMG"></table></div>
       <h2>All Programs</h2>
       <div class="wrap-scroll"><table id="tblActs"></table></div>
     </section>
@@ -1065,7 +1069,53 @@
         '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div>';
     }
 
+    // Everything outside the summer grid counts the same way: capacity minus
+    // what each source has sold. Shared so the tables below cannot drift apart.
+    function countOf(a){
+      var cap = a.capacity;
+      var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
+      var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
+      var taken = sawyer + (a.regpack||0) + (a.sold||0);
+      var parts = [];
+      if (sawyer) parts.push(sawyer + ' sawyer');
+      if (a.regpack) parts.push(a.regpack + ' regpack');
+      if (a.sold) parts.push(a.sold + ' web');
+      return { cap: cap, taken: taken,
+               left: (cap != null) ? Math.max(0, cap - taken) : null, parts: parts };
+    }
+
+
     var acts = (inv.activities || []);
+
+    // Broadway Bound Teens summer intensive: 990001 performers, 990002 tech.
+    // Same ids reg-config.mjs prices against.
+    var MEANGIRLS_IDS = [990001, 990002];
+    var mg = acts.filter(function(a){ return MEANGIRLS_IDS.indexOf(a.id) !== -1; });
+    var mgTaken = 0, mgCap = 0;
+    mg.forEach(function(a){ var c = countOf(a); mgTaken += c.taken; if (c.cap != null) mgCap += c.cap; });
+    $('stMG').innerHTML = mg.length
+      ? stat(mgTaken + (mgCap ? ' / ' + mgCap : ''), 'registered', 'gold') +
+        mg.map(function(a){
+          var c = countOf(a);
+          return stat(c.taken, /tech/i.test(a.name || '') ? 'tech crew' : 'performers');
+        }).join('') +
+        (mgCap ? stat(Math.max(0, mgCap - mgTaken), 'spots left') : '')
+      : '<div class="sub">Mean Girls is not in the catalog yet.</div>';
+    $('tblMG').innerHTML = mg.length
+      ? '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th>' +
+        '<th style="min-width:130px">spots</th><th class="num">registered</th><th></th></tr>' +
+        mg.map(function(a){
+          var c = countOf(a);
+          return '<tr><td>' + esc(a.name) + '</td>' +
+            '<td class="sub">' + esc(a.schedule || '') + '</td>' +
+            '<td class="sub">' + esc(a.age || '') + '</td>' +
+            '<td class="num">' + usd(a.price_cents) + '</td>' +
+            '<td>' + (c.cap != null ? bar(c.left, c.cap, c.taken) : '<span class="sub">—</span>') + '</td>' +
+            '<td class="num">' + (c.taken || '0') +
+              (c.parts.length ? '<div class="sub">' + c.parts.join(' · ') + '</div>' : '') + '</td>' +
+            '<td>' + (a.bb_gated ? '<span class="tag gold">returning-only til Aug 1</span>' : '') + '</td></tr>';
+        }).join('')
+      : '<tr><td class="empty">no Mean Girls activities found</td></tr>';
     function summerInvRow(a){
       // Summer 2027 listings mirror the live inventory grid (which already
       // includes sawyer + regpack + web) — the activity rows themselves go
@@ -1092,14 +1142,8 @@
           parts.push('live grid');
         } else {
           // non-summer: left = cap − sawyer − regpack − web
-          cap = a.capacity;
-          var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
-          var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
-          taken = sawyer + (a.regpack||0) + (a.sold||0);
-          left = (cap != null) ? Math.max(0, cap - taken) : null;
-          if (sawyer) parts.push(sawyer + ' sawyer');
-          if (a.regpack) parts.push(a.regpack + ' regpack');
-          if (a.sold) parts.push(a.sold + ' web');
+          var c = countOf(a);
+          cap = c.cap; taken = c.taken; left = c.left; parts = c.parts;
         }
         return '<tr><td>' + esc(a.name) + '</td>' +
           '<td class="sub">' + esc(a.schedule || '') + '</td>' +
