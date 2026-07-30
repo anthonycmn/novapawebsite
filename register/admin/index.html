@@ -140,10 +140,9 @@
       <div class="stats" id="stOut"></div>
       <h2>People</h2>
       <div class="stats" id="stPeople"></div>
-      <h2>Summer 2027</h2>
+      <h2>Summer Camps</h2>
       <div class="stats" id="stSummer"></div>
-      <h2>Mean Girls</h2>
-      <div class="stats" id="stMG"></div>
+      <div class="stats" id="stMG" style="margin-top:10px"></div>
     </section>
 
     <section class="sec" id="s-orders">
@@ -157,12 +156,10 @@
     </section>
 
     <section class="sec" id="s-inventory">
-      <h2>Summer 2027</h2>
+      <h2>Summer Camps</h2>
       <div class="wrap-scroll"><table id="tblSummer"></table></div>
-      <h2>Mean Girls</h2>
-      <div class="wrap-scroll"><table id="tblMG"></table></div>
-      <h2>All Programs</h2>
-      <div class="wrap-scroll"><table id="tblActs"></table></div>
+      <div class="wrap-scroll" style="margin-top:12px"><table id="tblMG"></table></div>
+      <div id="invGroups"></div>
     </section>
 
     <section class="sec" id="s-campers">
@@ -1090,7 +1087,9 @@
     // Broadway Bound Teens summer intensive: 990001 performers, 990002 tech.
     // Same ids reg-config.mjs prices against.
     var MEANGIRLS_IDS = [990001, 990002];
-    var mg = acts.filter(function(a){ return MEANGIRLS_IDS.indexOf(a.id) !== -1; });
+    var DAY_CAMP_MAX_CENTS = 20000;   // mirrors reg-config.mjs
+    function isMG(a){ return MEANGIRLS_IDS.indexOf(a.id) !== -1; }
+    var mg = acts.filter(isMG);
     var mgTaken = 0, mgCap = 0;
     mg.forEach(function(a){ var c = countOf(a); mgTaken += c.taken; if (c.cap != null) mgCap += c.cap; });
     $('stMG').innerHTML = mg.length
@@ -1130,29 +1129,73 @@
       }
       return band ? by[show + '|' + band] : null;
     }
-    $('tblActs').innerHTML =
-      '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th><th style="min-width:130px">spots</th><th class="num">enrolled</th><th></th></tr>' +
-      acts.map(function(a){
-        var cap, taken, left, parts = [];
-        var invRow = summerInvRow(a);
-        if (invRow) {
-          cap = invRow.cap;
-          taken = (invRow.booked || 0) + (invRow.held || 0);
-          left = Math.max(0, cap - taken);
-          parts.push('live grid');
-        } else {
-          // non-summer: left = cap − sawyer − regpack − web
-          var c = countOf(a);
-          cap = c.cap; taken = c.taken; left = c.left; parts = c.parts;
-        }
-        return '<tr><td>' + esc(a.name) + '</td>' +
-          '<td class="sub">' + esc(a.schedule || '') + '</td>' +
-          '<td class="sub">' + esc(a.age || '') + '</td>' +
-          '<td class="num">' + usd(a.price_cents) + (a.category==='class'?'<span class="sub">/mo</span>':'') + '</td>' +
-          '<td>' + (cap != null ? bar(left, cap, taken) : '<span class="sub">—</span>') + '</td>' +
-          '<td class="num">' + (taken || '0') + (parts.length ? '<div class="sub">' + parts.join(' · ') + '</div>' : '') + '</td>' +
-          '<td>' + (a.bb_gated ? '<span class="tag gold">returning-only til Aug 1</span>' : '') + '</td></tr>';
-      }).join('');
+
+    // ── one row renderer, used by every grouped table below ──
+    function row(a){
+      var cap, taken, left, parts = [];
+      var invRow = summerInvRow(a);
+      if (invRow) {
+        cap = invRow.cap;
+        taken = (invRow.booked || 0) + (invRow.held || 0);
+        left = Math.max(0, cap - taken);
+        parts.push('live grid');
+      } else {
+        var c = countOf(a);
+        cap = c.cap; taken = c.taken; left = c.left; parts = c.parts;
+      }
+      return '<tr><td>' + esc(a.name) + '</td>' +
+        '<td class="sub">' + esc(a.schedule || '') + '</td>' +
+        '<td class="sub">' + esc(a.age || '') + '</td>' +
+        '<td class="num">' + usd(a.price_cents) + (a.category==='class'?'<span class="sub">/mo</span>':'') + '</td>' +
+        '<td>' + (cap != null ? bar(left, cap, taken) : '<span class="sub">—</span>') + '</td>' +
+        '<td class="num">' + (taken || '0') + (parts.length ? '<div class="sub">' + parts.join(' · ') + '</div>' : '') + '</td>' +
+        '<td>' + (a.bb_gated ? '<span class="tag gold">returning-only til Aug 1</span>' : '') + '</td></tr>';
+    }
+    function table(list, countLabel){
+      return '<div class="wrap-scroll"><table>' +
+        '<tr><th>program</th><th>schedule</th><th>ages</th><th class="num">price</th>' +
+        '<th style="min-width:130px">spots</th><th class="num">' + (countLabel || 'enrolled') + '</th><th></th></tr>' +
+        list.map(row).join('') + '</table></div>';
+    }
+    // chronological beats alphabetical: "9/14 - 6/1" sorts on its start date,
+    // and anything without a parseable schedule falls back to its name.
+    // Ordered by the school year, so September leads and August trails —
+    // a plain month sort would put a March show ahead of an October one.
+    function startKey(a){
+      var m = (a.schedule || '').match(/^(\d{1,2})\/(\d{1,2})/);
+      if (!m) return 99999;
+      var mo = +m[1];
+      return (mo >= 9 ? mo - 8 : mo + 4) * 100 + (+m[2]);
+    }
+    function ordered(list){
+      return list.slice().sort(function(x, y){
+        var d = startKey(x) - startKey(y);
+        return d || String(x.name||'').localeCompare(String(y.name||''));
+      });
+    }
+
+    // Sections in the order Tony reads them. Each program lands in the first
+    // section that claims it, and whatever nothing claims still gets shown at
+    // the bottom rather than disappearing.
+    var GROUPS = [
+      { h: 'Fall Programs',   is: function(a){ return /frozen/i.test(a.name || ''); } },
+      { h: 'Classes',         is: function(a){ return a.category === 'class'; } },
+      { h: 'Day Camps',       is: function(a){ return a.category === 'camp' && (a.price_cents || 0) <= DAY_CAMP_MAX_CENTS; } },
+      { h: 'Spring Programs', is: function(a){ return /mermaid/i.test(a.name || ''); } }
+    ];
+    var claimed = {};
+    acts.forEach(function(a){ if (isMG(a) || summerInvRow(a)) claimed[a.id] = 1; });
+
+    var groupHtml = '';
+    GROUPS.forEach(function(g){
+      var list = acts.filter(function(a){ return !claimed[a.id] && g.is(a); });
+      list.forEach(function(a){ claimed[a.id] = 1; });
+      if (list.length) groupHtml += '<h2>' + g.h + '</h2>' + table(ordered(list));
+    });
+    var rest = acts.filter(function(a){ return !claimed[a.id]; });
+    if (rest.length) groupHtml += '<h2>Other Programs</h2>' + table(ordered(rest));
+    $('invGroups').innerHTML = groupHtml ||
+      '<h2>Other Programs</h2><div class="sub">nothing else in the catalog</div>';
   }
 
   // ---- calendar ----
