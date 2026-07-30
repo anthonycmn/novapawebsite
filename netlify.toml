@@ -39,3 +39,17 @@
   to = "/summer-2027.html"
   status = 301
   force = true
+
+# Shrek Jr. closed in July 2026 and its page is gone. Old links, shared
+# posts, and search results go to the current season rather than a 404.
+[[redirects]]
+  from = "/shrek"
+  to = "/index.html#shows"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/shrek.html"
+  to = "/index.html#shows"
+  status = 301
+  force = true
