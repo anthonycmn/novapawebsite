@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <script src="/posthog.js" defer></script>
 <script src="/register/config.js"></script>
+<script src="/register/coaching.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root {
@@ -209,6 +210,39 @@
   #toast .tbtn { flex-shrink:0; border:0; border-radius:10px; padding:9px 14px; font-weight:700; cursor:pointer;
     background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206; font-family:inherit; font-size:13.5px; }
   #toast .tx { flex-shrink:0; background:none; border:none; color:var(--ink-dim); font-size:18px; cursor:pointer; padding:2px 4px; }
+
+  /* ── Coaching ─────────────────────────────────────────────────────────
+     College audition coaching moved off the Regpack embed and into this
+     flow on Jul 31 2026. The link sits in the top bar so it is reachable
+     from any step, and each service hands off to the ordinary catalog
+     checkout at /register/?activity=<id>. */
+  #coachLink { margin-left:auto; flex-shrink:0; background:none; border:1px solid rgba(232,184,75,0.4);
+    border-radius:999px; padding:6px 15px; color:var(--gold2); font-family:inherit; font-size:13px;
+    font-weight:700; letter-spacing:0.04em; cursor:pointer; }
+  #coachLink:hover { background:rgba(232,184,75,0.12); border-color:var(--gold2); }
+  #st-coaching { max-width:960px; }
+  .coach-grp { margin-top:34px; }
+  .coach-grp > h2 { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold3);
+    letter-spacing:0.01em; margin-bottom:4px; }
+  .coach-grp > .cg-blurb { font-size:14px; color:var(--ink-dim); line-height:1.5; margin-bottom:16px; }
+  .coach-cards { display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); }
+  .coach-card { display:flex; flex-direction:column; gap:7px; text-align:left;
+    background:rgba(22,43,82,0.45); border:1px solid rgba(255,255,255,0.14); border-radius:14px; padding:18px 18px 16px; }
+  .coach-card .cc-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .coach-card .cc-nm { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:700; color:#fff; line-height:1.2; }
+  .coach-card .cc-pr { font-weight:700; color:var(--gold2); font-size:19px; white-space:nowrap; }
+  .coach-card .cc-note { font-size:12.5px; color:var(--gold3); }
+  .coach-card .cc-desc { font-size:13.5px; color:var(--ink-dim); line-height:1.55; }
+  .coach-card ul { list-style:none; display:flex; flex-direction:column; gap:4px; margin:2px 0 0; padding:0; }
+  .coach-card li { font-size:12.5px; color:var(--ink-dim); padding-left:15px; position:relative; line-height:1.45; }
+  .coach-card li::before { content:'·'; position:absolute; left:4px; color:var(--gold2); font-weight:700; }
+  .coach-card .cc-go { margin-top:auto; padding-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .coach-card .cc-btn { display:inline-block; border-radius:10px; padding:10px 18px; font-weight:700; font-size:13.5px;
+    text-decoration:none; background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206; }
+  .coach-card .cc-more { font-size:12.5px; color:var(--gold3); text-decoration:none; border-bottom:1px solid rgba(247,217,143,0.35); }
+  .coach-note { background:rgba(232,184,75,0.08); border:1px dashed rgba(232,184,75,0.45); border-radius:12px;
+    padding:13px 16px; font-size:13.5px; color:var(--gold3); line-height:1.55; margin-top:18px; }
+  .coach-note a { color:var(--gold2); }
 </style>
 <meta name="theme-color" content="#08111F">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -220,6 +254,7 @@
 <div class="top">
   <div id="holdChip"><span class="dot"></span><span>Reserved for <span id="holdTime">30:00</span></span></div>
   <span id="topNote" style="display:none"></span>
+  <button id="coachLink" type="button">Coaching</button>
 </div>
 <button id="closeX" aria-label="Close registration">&times;</button>
 
@@ -319,7 +354,7 @@
         <div class="poster" style="background-image:url('/register/img/httyd.jpg')"></div>
         <div class="bd">
           <div class="t">How to Train Your Dragon JR.</div>
-          <div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:00 · $995<br><span style="color:var(--gold3)">Performances Jul 16–17</span></div>
+          <div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Jul 16–17</span></div>
           <div class="kids" data-show="httyd"></div>
         </div>
       </div>
@@ -327,7 +362,7 @@
         <div class="poster" style="background-image:url('/register/img/charlie.jpg')"></div>
         <div class="bd">
           <div class="t">Charlie and the Chocolate Factory JR.</div>
-          <div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:00 · $995<br><span style="color:var(--gold3)">Performances Jul 30–31</span></div>
+          <div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Jul 30–31</span></div>
           <div class="kids" data-show="charlie"></div>
         </div>
       </div>
@@ -335,7 +370,7 @@
         <div class="poster" style="background-image:url('/register/img/trolls.jpg')"></div>
         <div class="bd">
           <div class="t">Trolls The Musical JR.</div>
-          <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:00 · $995<br><span style="color:var(--gold3)">Performances Aug 13–14</span></div>
+          <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Aug 13–14</span></div>
           <div class="kids" data-show="trolls"></div>
         </div>
       </div>
@@ -386,6 +421,20 @@
     <div class="err" id="catErr"></div>
     <button class="btn" id="catNext">Continue →</button>
     <p class="tiny">Nothing is charged yet.</p>
+  </section>
+
+  <!-- STEP: coaching menu. Browse only — every service hands off to the
+       ordinary catalog checkout at /register/?activity=<id>. -->
+  <section class="step" id="st-coaching">
+    <button class="back" id="coachBack">&larr; Back</button>
+    <div class="eyebrow">College Audition Coaching</div>
+    <h1>Coaching <em>services.</em></h1>
+    <p class="sub">One-on-one support for college auditions, pre-screens, and the professional side of the work. Paid in full at checkout.</p>
+    <div class="coach-note">
+      Not sure where to start? The <a href="https://calendly.com/novapa/free-consultation-15-minutes" target="_blank" rel="noopener">free 15-minute consultation</a>
+      is the fastest way to find the right path. Questions about any service: <a href="mailto:info@novapa.org">info@novapa.org</a>.
+    </div>
+    <div id="coachGroups"></div>
   </section>
 
   <!-- STEP: pay -->
@@ -525,8 +574,12 @@
   function isMG(id){ return MG_IDS.indexOf(id) !== -1; }
   var TI_IDS = [1805731]; // Dear Evan Hansen teen intensive — flat price, no bundles
   function isTI(id){ return TI_IDS.indexOf(id) !== -1; }
-  var TC_IDS = [1960809, 1960811]; // Sweeney/Hadestown — their own 10%-pair rule, outside the tiers
+  var TC_IDS = [1960809, 1960811]; // Sweeney/Hadestown — teen mainstage shows
   function isTC(id){ return TC_IDS.indexOf(id) !== -1; }
+  // College audition coaching lives in a reserved id block (db/coaching-activities.sql).
+  // Flat priced: no sibling, bundle, or tier discount, no insurance, paid in
+  // full. Mirrors isCoachingId() in reg-config.mjs — the server is the truth.
+  function isCoach(id){ return id >= 970000 && id <= 979999; }
   // One-off account adjustments entered as coupon codes — mirrors
   // SPECIAL_PLANS in reg-config.mjs (pct = flat off list replacing all other
   // discounts, nofee = no 5% plan fee, months = stretched schedule; server
@@ -1456,6 +1509,9 @@
   function catBirthdaysReady(){
     var need = false;
     state.catItems.forEach(function(a){
+      // coaching has no age band to check against and is often bought by an
+      // adult artist, so it never blocks on a birthday
+      if (a.category === 'coaching') return;
       state.kids.forEach(function(k, i){
         if (!k.sel) return;
         var sel = state.assign['act' + a.id + '|' + i];
@@ -1485,6 +1541,10 @@
     var html = state.catItems.map(function(a){
       var priceLine = a.category === 'class'
         ? ((a.pricing||[])[0] || '$90/month') + ' per camper · first month due today'
+        : a.category === 'coaching'
+        // coaching is bought for one student and paid in full — "per camper"
+        // reads wrong to a family booking a college audition package
+        ? ((a.pricing||[])[0] || money(a.price_cents || 0)) + ' per student · paid in full today'
         : ((a.pricing||[])[0] || '') + ' per camper';
       var rows = state.kids.map(function(k, ki){
         if (!k.sel) return '';
@@ -1492,7 +1552,8 @@
         if (!(key in state.assign)) state.assign[key] = { on: selCount === 1, band: null };
         var sel = state.assign[key];
         var warn = sel.on ? ageWarn(a, k) : '';
-        var bdayRow = sel.on
+        var bdayRow = (sel.on && a.category === 'coaching') ? ''
+          : sel.on
           ? '<div class="bday-row"><label class="bday-lbl">Birthday' + (k.bday ? '' : ' <span class="req">(needed)</span>') + '</label>' +
             '<input type="date" class="bdayInput" data-i="' + ki + '" value="' + esc(k.bday || '') + '" max="' + today + '"></div>' +
             (warn ? '<div class="agewarn">' + warn + '</div>' : '')
@@ -1722,7 +1783,9 @@
     var bbCount = {};
     items.forEach(function(it){
       var a = byId[it.activity_id] || {};
-      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isTI(it.activity_id) && !isTC(it.activity_id)) {
+      // teen intensives and teen mainstage shows count toward the tier now
+      // (CJ, Jul 31); coaching never does
+      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isCoach(it.activity_id)) {
         var k = kidKey(it);
         bbCount[k] = (bbCount[k] || 0) + 1;
       }
@@ -1731,19 +1794,16 @@
       var a = byId[it.activity_id] || {};
       if (a.category === 'class') return 0; // bundle-priced per kid below
       var u = a.price_cents || 0;
+      // coaching before the day-camp test: several services cost under $200
+      // and none of them take a sibling discount
+      if (isCoach(it.activity_id)) return u;
       if (u <= 20000) { // day camp: sibling 5% for 2nd+ child, no insurance
         if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
         return u;
       }
-      // Teen Conservatory (Sweeney/Hadestown): 10% each when one teen does
-      // both — its own page's offer, outside the unified tiers
-      if (isTC(it.activity_id)) {
-        var pair = items.filter(function(x){ return isTC(x.activity_id) && kidKey(x) === kidKey(it); }).length >= 2;
-        if (pair) { u = Math.round(u * 0.90); bund[i] = true; }
-        else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
-        return u;
-      }
-      // Unified show tiers (CJ, Jul 31): 1/2/3+ shows = 10/15/20 per registrant
+      // Unified show tiers (CJ, Jul 31): 1/2/3+ programs = 10/15/20 per
+      // registrant. The teen mainstage shows and the DEH intensive are in it
+      // now too; only day camps, classes, and coaching sit outside.
       var r = discRate(bbCount[kidKey(it)] || 0);
       if (r) { u = Math.round(u * (1 - r)); bund[i] = true; }
       else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
@@ -1767,6 +1827,7 @@
     var baseSubtotal = items.reduce(function(sum, it){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
+      if (isCoach(it.activity_id)) return sum;                                 // coaching is not insurable either
       return sum + (a.price_cents || 0);
     }, 0);
     var insPctOff2 = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
@@ -1814,13 +1875,13 @@
     // same — summer camps, Frozen/Mermaid casts, Mean Girls — 1/2/3+ shows =
     // 10/15/20% per registrant through Aug 15. Mirrors countByKid +
     // perKidRate() in reg-config.mjs. DEH and day camps never count.
-    var COUNT_SLUGS = ['httyd','charlie','trolls','frozen','mermaid'];
+    var COUNT_SLUGS = ['httyd','charlie','trolls','frozen','mermaid','meangirls','sweeney','hadestown','deh'];
     function countOf(k){
       var ko = kidObjFor(k);
       var cartN = items.filter(function(x){
         if (kidKey(x) !== k) return false;
         if (x.show) return true;
-        return !!x.activity_id && !isTI(x.activity_id) && !isDayId(x.activity_id);
+        return !!x.activity_id && !isDayId(x.activity_id) && !isCoach(x.activity_id);
       }).length;
       var prior = ko ? (ko.already || []).filter(function(t){ return COUNT_SLUGS.indexOf(t) !== -1; }).length : 0;
       return cartN + prior;
@@ -1842,8 +1903,8 @@
       var base = a.price_cents || 69500;
       // day camps: flat, sibling 5% for a 2nd+ child, never in the tiers
       if (isDayId(it.activity_id)) return k !== firstK ? Math.round(base * 0.95) : base;
-      if (isTI(it.activity_id)) return base; // DEH: flat, never bundles
-      // every other BB show (Frozen/Mermaid casts, Mean Girls): unified tier
+      // every Broadway Bound program — Frozen/Mermaid casts, Mean Girls, the
+      // DEH intensive, and the teen mainstage shows — takes the unified tier
       var br = discRate(countOf(k));
       if (br) {
         bund[i] = true; pcts[i] = Math.round(br * 100);
@@ -1871,6 +1932,7 @@
       var a2 = byIdAll[it.activity_id] || {};
       var pc = a2.price_cents || 0;
       if (a2.category === 'class' || pc <= 20000) return s;
+      if (isCoach(it.activity_id)) return s;   // coaching is not insurable
       return s + pc;
     }, 0);
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
@@ -2458,7 +2520,7 @@
       '<body style="font-family:Georgia,serif;max-width:660px;margin:40px auto;color:#111;font-size:14px;line-height:1.5">' +
       '<h2 style="margin-bottom:2px">DEPENDENT CARE / FSA RECEIPT INFORMATION</h2>' +
       row('Dependent Care Provider', 'CJ Creative LLC dba Northern Virginia Performing Arts') +
-      row('Provider Address', '18495 Conference Center Drive, Plaza C, Leesburg, VA 20175') +
+      row('Provider Address', '18945 Conference Center Drive, Plaza C, Leesburg VA 20175') +
       row('Website', 'www.northernvirginiaperformingarts.org') +
       row('Email', 'info@novapa.org') +
       row('Phone', '(571) 571-2120') +
@@ -2676,8 +2738,86 @@
   $('leaveBtn').addEventListener('click', function(){ ev('reg_left_via_x'); location.href = exitHref(); });
 
   document.querySelectorAll('.back').forEach(function(b){
-    b.addEventListener('click', function(){ go(b.dataset.back); if (b.dataset.back==='st-shows') renderShowKids(); });
+    // #coachBack wears .back for the styling but decides its own destination
+    b.addEventListener('click', function(){
+      if (!b.dataset.back) return;
+      go(b.dataset.back); if (b.dataset.back==='st-shows') renderShowKids();
+    });
   });
+
+  // ---------- step: coaching ----------
+  // College audition coaching, sold here since the Regpack embed was removed
+  // on Jul 31 2026. This step only browses: picking a service sends the family
+  // to /register/?activity=<id>, which is the same catalog checkout classes and
+  // day camps already use.
+  //
+  // Display copy comes from /register/coaching.js. Whether a service can
+  // actually be bought comes from the live catalog, so a service whose
+  // activities row has not been created yet offers an email instead of a link
+  // that would dead-end at "unknown activity".
+  (function(){
+    var CO = window.NOVACOACHING;
+    if (!CO) return;
+    var coachReturn = 'st-gate', live = null;
+
+    function bookHref(it){
+      // live === null means the catalog has not answered yet; assume bookable
+      // rather than flashing a mailto and then swapping it for a button
+      if (live && !live[it.id]) {
+        return 'mailto:info@novapa.org?subject=' +
+          encodeURIComponent('Booking: ' + it.name) +
+          '&body=' + encodeURIComponent("I'd like to book " + it.name + ' (' + money(it.price) + ').');
+      }
+      return '/register/?activity=' + it.id;
+    }
+    function bookLabel(it){
+      return (live && !live[it.id]) ? 'Email to book' : 'Register &rarr;';
+    }
+    function renderCoaching(){
+      $('coachGroups').innerHTML = CO.groups.map(function(g){
+        return '<div class="coach-grp"><h2>' + esc(g.title) + '</h2>' +
+          '<div class="cg-blurb">' + esc(g.blurb) + '</div>' +
+          '<div class="coach-cards">' + g.items.map(function(it){
+            return '<div class="coach-card">' +
+              '<div class="cc-top"><span class="cc-nm">' + esc(it.name) + '</span>' +
+              '<span class="cc-pr">' + money(it.price) + '</span></div>' +
+              '<div class="cc-note">' + esc(it.note) + '</div>' +
+              '<div class="cc-desc">' + esc(it.desc) + '</div>' +
+              '<ul>' + (it.feats || []).map(function(f){ return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' +
+              '<div class="cc-go"><a class="cc-btn" href="' + esc(bookHref(it)) + '" data-coach="' + it.id + '">' +
+              bookLabel(it) + '</a>' +
+              (it.more ? '<a class="cc-more" href="' + esc(it.more) + '">Full details</a>' : '') +
+              '</div></div>';
+          }).join('') + '</div></div>';
+      }).join('');
+    }
+    function openCoaching(){
+      if (!document.querySelector('#st-coaching.on')) {
+        var cur = document.querySelector('.step.on');
+        if (cur && cur.id !== 'st-coaching') coachReturn = cur.id;
+      }
+      renderCoaching();
+      go('st-coaching');
+      ev('reg_coaching_viewed');
+    }
+    $('coachLink').addEventListener('click', openCoaching);
+    $('coachBack').addEventListener('click', function(){ go(coachReturn); });
+    $('coachGroups').addEventListener('click', function(e){
+      var a = e.target.closest('[data-coach]');
+      if (a) ev('reg_coaching_service_clicked', { activity_id: +a.dataset.coach });
+    });
+
+    // which coaching services are actually sellable right now
+    sb.rpc('catalog_list', { p_ids: CO.ids }).then(function(res){
+      var m = {};
+      (res.data || []).forEach(function(a){ if (a.bookable) m[a.id] = true; });
+      live = m;
+      if (document.querySelector('#st-coaching.on')) renderCoaching();
+    }).catch(function(){ /* catalog unreachable: leave every service linked */ });
+
+    // /register/?coaching and /register/#coaching open straight to the menu
+    if (/[?&]coaching\b/.test(location.search) || location.hash === '#coaching') openCoaching();
+  })();
 })();
 </script>
 </body>

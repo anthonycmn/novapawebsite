@@ -14,7 +14,7 @@ seasonal window. Nothing here has been submitted yet.
 | Field | Value |
 |---|---|
 | Organization | Northern Virginia Performing Arts (NoVAPA) |
-| Address | 18495 Conference Center Drive, Plaza C, Leesburg, VA 20175 |
+| Address | 18945 Conference Center Drive, Plaza C, Leesburg VA 20175 |
 | Phone | (571) 571-2120 |
 | Email | info@novapa.org |
 | Website | https://www.northernvirginiaperformingarts.org |
@@ -78,8 +78,8 @@ need-based tuition assistance are available.
 - **Visit Loudoun** — things to do listings for the venue
 - **Macaroni KID** Leesburg/Ashburn — camp fairs and guides
 - **Northern Virginia Mag Best Of** — reader nomination window each spring
-- **Sawyer** and **ActivityHero** marketplaces — already a Sawyer seller;
-  confirm the public profile is current
+- **ActivityHero** marketplace — worth a listing that points back at
+  our own registration system
 
 ---
 
@@ -91,7 +91,7 @@ laughing), `on-stage.jpg` (Lumière, Beauty and the Beast).
 
 ## Before submitting, check
 
-- [ ] Address reads 18495 Conference Center Drive, Plaza C, Leesburg VA 20175
+- [ ] Address reads 18945 Conference Center Drive, Plaza C, Leesburg VA 20175
 - [ ] Summer dates are the 2027 dates, not 2026
 - [ ] Prices are current ($995 camp, $90/mo class, $79 day camp)
 - [ ] Link goes to a live page, not a redirected one

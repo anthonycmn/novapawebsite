@@ -68,8 +68,15 @@ Working doc for the staging → production launch. Owner: Jason (site/DB), CJ (S
 
 ## Regpack (CJ)
 - [ ] Disable the 3 Summer 2027 products (still actively selling as of Jul 15 order).
-- [ ] Audition form link on teen_conservatory_auditions.html still points at Regpack —
-      page is now unlinked from the site, but give auditions a new home before killing Regpack.
+- [x] Every Regpack and Sawyer embed is off the website (Jul 31). What is left below is
+      admin cleanup in their dashboards, not anything a visitor can still reach.
+- [x] Audition form link on teen_conservatory_auditions.html no longer points at Regpack
+      (Jul 31) — the page now asks families to email info@novapa.org for a slot. A real
+      audition form still needs a home in our own system.
+- [ ] Coaching moved off the Regpack embed (Jul 31): /coaching-registration.html is deleted
+      and redirected to /register/?coaching. **Run `db/coaching-activities.sql` in the
+      Supabase SQL editor** — until those 24 rows exist, the Coaching menu offers an email
+      instead of a checkout link.
 
 ## Stripe / email
 - [ ] CJ creates NOVAPA live Stripe account; Jason pastes live keys into Netlify env.

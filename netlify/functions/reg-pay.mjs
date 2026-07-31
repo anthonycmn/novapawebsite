@@ -14,7 +14,7 @@ import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
-  SPECIAL_PLANS,
+  SPECIAL_PLANS, isCoachingId,
 } from "./reg-config.mjs";
 
 // first day of care per summer camp — the date the IRS under-13 test runs on
@@ -418,6 +418,7 @@ export default async (req) => {
       fsa_eligible: (
         summerItems.some((it) => fsaUnder13(bdayByKid[kidKey(it)], CAMP_STARTS[it.show])) ||
         showItems.some((it) => (byId[it.activity_id].price_cents || 0) <= DAY_CAMP_MAX_CENTS &&
+          !isCoachingId(it.activity_id) &&
           fsaUnder13(bdayByKid[kidKey(it)], null))
       ) ? "1" : "0",
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
