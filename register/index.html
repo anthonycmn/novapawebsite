@@ -1268,11 +1268,21 @@
     state.classSel = Object.keys(selIds);
     host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 2 classes $159/mo \u00b7 3 classes $199/mo per camper \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
       cls.map(function(a){
+        // age gate (Jason, Jul 31): the card advertises an age range, so the
+        // checkboxes honor it — age at the Sep 14 class start, one year of
+        // grace below the floor like everywhere else. "Adults" ranges don't
+        // parse as kid bands, so they gate at 18+.
+        var isAdult = /adult/i.test(String(a.age_range || ''));
+        var cr2 = castRange(a);
         var kidRows = state.kids.map(function(k, i){
           if (!k.sel) return '';
           var key = 'cls' + a.id + '|' + i;
           var on = state.assign[key] && state.assign[key].on;
-          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span></label></div>';
+          var age = ageOn(k.bday, '2026-09-14');
+          var ok = age == null || (isAdult ? age >= 18 : (age >= cr2.min - 1 && age <= cr2.max));
+          if (!ok && on) { delete state.assign[key]; on = false; }
+          var badge = ok ? '' : ' <span class="badge-done" style="opacity:.65">for ' + (isAdult ? 'adults 18+' : 'ages ' + cr2.min + '\u2013' + cr2.max) + '</span>';
+          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + (ok ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' + badge + '</label></div>';
         }).join('');
         return '<div class="showb" data-cat="class">' +
           '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
