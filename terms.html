@@ -541,7 +541,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 <h2 id="payments"><span class="h2-num">04</span>Payments, Pricing, and Billing</h2>
 
 <h3>4.1 Pricing and Payment Processor</h3>
-<p>All prices are listed in U.S. dollars and are subject to change. Payments are processed by companies such as RegPack, HiSawyer, Square, Google Play, and Stripe, Inc. Your payment is governed by the processor&rsquo;s terms and privacy policy in addition to ours. We never store full credit-card numbers on our servers.</p>
+<p>All prices are listed in U.S. dollars and are subject to change. Payments are taken through our own registration system and processed by Stripe, Inc. Your payment is governed by the processor&rsquo;s terms and privacy policy in addition to ours. We never store full credit-card numbers on our servers.</p>
 
 <h3>4.2 Tuition and Class Fees</h3>
 <p>Tuition for classes, lessons, camps, and workshops is due according to the schedule disclosed at registration (e.g., monthly, by session, or paid in full). Late payments may incur a late fee. Accounts more than 14 days past due may result in suspension of the student&rsquo;s participation until the balance is paid.</p>
@@ -573,7 +573,16 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 <p>Parents and guardians are responsible for timely pickup and drop-off of students. Late-pickup fees may apply as posted at the studio.</p>
 
 <h2 id="photo"><span class="h2-num">06</span>Photo and Media Release</h2>
-<p>Performing arts instruction inherently involves photography and video. By registering, you acknowledge that photographs, video, or audio of students may be captured during classes, rehearsals, and performances. Use of those materials is governed by the <strong>Photo and Media Release</strong> signed at registration. You may revoke consent in writing at any time, with effect prospective only.</p>
+<p>Performing arts instruction inherently involves photography and video. By registering, you acknowledge that photographs, video, or audio of students may be captured during classes, rehearsals, and performances. <strong>You may revoke consent in writing at any time, with effect prospective only.</strong> The full text of the release you agree to at registration is reproduced below so that nothing in this agreement is incorporated by reference to a document you cannot read.</p>
+<div class="release-box">
+  <p class="release-title">Photo and Media Release</p>
+  <p>I grant Northern Virginia Performing Arts (NoVAPA) permission to photograph, film, and record my child during classes, rehearsals, camps, and performances, and to use those photographs, recordings, and their likeness in promotional materials, on our website and social media, in programs and playbills, and in internal documentation and training.</p>
+  <p>I understand that no compensation is owed to me or my child for this use, that NoVAPA owns the resulting materials, and that my child&rsquo;s full name, address, and contact details will not be published alongside their image.</p>
+  <p>I understand this permission is optional. I may decline it by emailing <a href="mailto:info@novapa.org">info@novapa.org</a> before or after registering, and my child may take part in every program on exactly the same terms.</p>
+  <p>I understand that I may revoke this permission in writing at any time by emailing <a href="mailto:info@novapa.org">info@novapa.org</a>. Revocation takes effect going forward. It does not require NoVAPA to recall printed materials or remove content already published, though we will honour reasonable requests to do so where it is practical.</p>
+  <p class="release-sign">Agreed at registration by the parent or legal guardian, together with these Terms and Conditions.</p>
+</div>
+<p>Declining the release does not affect enrolment, pricing, casting, or participation in any way. If you decline, we exclude your child from published photography and video and note it on their record.</p>
 
 <h2 id="release"><span class="h2-num">07</span>Assumption of Risk; Release and Waiver</h2>
 <p>You understand that participation in dance, theater, music, voice, and other performing arts activities involves inherent risk of physical injury, including but not limited to strains, sprains, fractures, falls, and repetitive-motion injuries. By participating, you and the student knowingly and voluntarily assume all such risks.</p>
@@ -1122,6 +1131,15 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       max-height: 640px;
     }
   }
+
+.release-box{background:var(--gold-pale,#FBF3E3);border:1px solid rgba(201,146,42,0.35);
+  border-radius:12px;padding:22px 26px;margin:16px 0}
+.release-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;
+  color:var(--navy,#0B1424);margin-bottom:10px}
+.release-box p{margin-bottom:11px}
+.release-box p:last-child{margin-bottom:0}
+.release-sign{font-style:italic;color:var(--text3,#7080A0);border-top:1px solid rgba(201,146,42,0.3);
+  padding-top:11px;margin-top:14px}
 </style>
 
 <div id="nv-bot">
@@ -1212,7 +1230,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     // === Teen Conservatory ===
     teenConservatory: {
       keywords: ['teen conservatory', 'conservatory', 'teen', 'audition', 'auditions', 'teen audition', 'tryout', 'try out', 'audition based', 'dual enrollment', 'de program'],
-      response: `<strong>Broadway Bound Teen 🌟</strong><br><br>Our audition-based teen track (formerly Teen Conservatory) is the next step for Broadway Bound graduates, ages 13\u201318. This season's casts are already set \u2014 cast members register through their HiSawyer account.<br><br>Teens who want to perform this season: check out <strong>Frozen Teens</strong> and <strong>The Little Mermaid Teens</strong>!<br><br>👉 <a href="/register/?go=1">Register for teen shows \u2192</a>`
+      response: `<strong>Broadway Bound Teen 🌟</strong><br><br>Our audition-based teen track (formerly Teen Conservatory) is the next step for Broadway Bound graduates, ages 13\u201318. This season's casts are already set \u2014 cast members register through their NoVAPA account.<br><br>Teens who want to perform this season: check out <strong>Frozen Teens</strong> and <strong>The Little Mermaid Teens</strong>!<br><br>👉 <a href="/register/?go=1">Register for teen shows \u2192</a>`
     },
 
     // === College Audition Coaching ===
