@@ -255,9 +255,10 @@ export function priceCart(cart, plan, opts = {}) {
         : Math.round(it.price_cents * (1 - SIBLING_PCT / 100));
       return { ...it, unit, rate: 0 };
     }
-    // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
+    // Broadway Bound Teens (Mean Girls): flat 10%, no stacking. Quietly
+    // extended Aug 1 -> Aug 15 to match the launch sale (Jason, Jul 30)
     if (isMeanGirls(it)) {
-      const rate = now <= new Date(PUBLIC_OPEN_AT) ? 0.10 : 0;
+      const rate = now <= new Date(EARLYBIRD_END) ? 0.10 : 0;
       return { ...it, unit: Math.round((it.price_cents || 0) * (1 - rate)), rate };
     }
     // BB show item (frozen/mermaid): combo rate with a camp (15/20), else the

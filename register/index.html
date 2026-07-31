@@ -502,6 +502,10 @@
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
+    // referral link (?ref=CODE): remember it for this browser; sent with
+    // payment so the webhook can credit both families
+    var rm = location.search.match(/[?&]ref=([A-Za-z0-9]+)/);
+    if (rm) { try { localStorage.setItem('nova_ref', rm[1].toUpperCase()); } catch(e){} }
     var sm = location.search.match(/[?&]season=(fall|all)/);
     state.seasonFilter = sm ? (sm[1] === 'fall' ? 'year' : 'all') : 'summer';
     state.fallMode = false;
@@ -1557,9 +1561,9 @@
         if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
         return u;
       }
-      // Broadway Bound Teens (Mean Girls): flat 10% through Aug 1, no stacking
+      // Broadway Bound Teens (Mean Girls): flat 10% through the launch sale (Aug 15), no stacking
       if (isMG(it.activity_id)) {
-        if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { u = Math.round(u * 0.90); mg[i] = true; }
+        if (new Date() <= new Date(C.EARLYBIRD_END)) { u = Math.round(u * 0.90); mg[i] = true; }
         return u;
       }
       // BB show: 10% when one kid does both shows, else sibling 5% for 2nd+ child
@@ -1593,7 +1597,7 @@
       }
       return '<div class="sumrow"><span>' + esc(it.camper) + ' — ' + esc(nm) +
         (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') +
-        (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '') +
+        (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 15)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
@@ -1653,10 +1657,10 @@
       }
       var a = byIdAll[it.activity_id] || {};
       var base = a.price_cents || 69500;
-      // Mean Girls: flat 10% through Aug 1 — never stacks with the camp tier or
+      // Mean Girls: flat 10% through Aug 15 — never stacks with the camp tier or
       // the show bundle, and never counts toward another item's bundle either
       if (isMG(it.activity_id)) {
-        if (new Date() <= new Date(C.PUBLIC_OPEN_AT)) { mg[i] = true; return Math.round(base * 0.9); }
+        if (new Date() <= new Date(C.EARLYBIRD_END)) { mg[i] = true; return Math.round(base * 0.9); }
         return base;
       }
       if (isTI(it.activity_id)) return base; // DEH: flat, never bundles
@@ -1826,7 +1830,7 @@
     var rows = items.map(function(it, i){
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
-        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(' + ((p.pcts && p.pcts[i]) || 10) + '% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 1)</span>' : '');
+        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(' + ((p.pcts && p.pcts[i]) || 10) + '% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 15)</span>' : '');
       var pct = (p.bund && p.bund[i]) ? 0 : ((p.pcts && p.pcts[i]) || 0); // bundle badge already carries the pct
       // List price here, not the discounted unit — the discount comes off on
       // the "Launch-sale savings" row below. Showing the already-reduced price
@@ -2005,6 +2009,7 @@
     return true;
   }
 
+  function refCode(){ try { return localStorage.getItem('nova_ref') || undefined; } catch(e){ return undefined; } }
   var paySeq = 0; // bumps on every reset/request; stale reg-pay responses are dropped
   function resetPayUI(){ state.freeOrder = false;
     paySeq++;
@@ -2035,7 +2040,7 @@
       return fetch('/api/reg-pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined })
+        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, ref: refCode() })
       });
     }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
     .then(function(res){
@@ -2178,7 +2183,7 @@
         return fetch('/api/reg-pay', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: pnv, insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, confirm_free: true })
+          body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: pnv, insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, confirm_free: true, ref: refCode() })
         });
       }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
       .then(function(res){

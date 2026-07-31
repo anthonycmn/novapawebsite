@@ -354,6 +354,25 @@
 </section>
 
 <script>
+// After Aug 1 2026 10:00 ET this page flips itself from private to public copy
+// and the countdown retargets to the Aug 15 sale end. No deploy needed.
+(function(){
+  if (Date.now() < new Date('2026-08-01T10:00:00-04:00').getTime()) return;
+  var h1 = document.querySelector('.sc-h1');
+  if (h1) h1.innerHTML = 'Summer 2027 registration <em>open to everyone.</em>';
+  var cd = document.getElementById('scCount');
+  if (cd) cd.dataset.deadline = '2026-08-15T23:59:59-04:00';
+  var promo = document.querySelector('.sc-promo');
+  if (promo) promo.textContent = 'Launch sale \u2014 up to 20% off \u2014 ends August 15.';
+  document.querySelectorAll('.sc-a').forEach(function(el){
+    el.innerHTML = el.innerHTML
+      .replace('Open now for returning NOVAPA families. New families: public registration opens <strong>August 1 at 10 AM</strong> \u2014 join the waitlist when you register for early access.',
+               'Open to everyone. The launch sale \u2014 up to 20% off \u2014 runs through <strong>August 15</strong>.')
+      .replace('Right now during private registration:', 'Through August 15:');
+  });
+})();
+</script>
+<script>
 (function() {
   var deadline = new Date(document.getElementById('scCount').dataset.deadline).getTime();
   function tiles(el, str) {

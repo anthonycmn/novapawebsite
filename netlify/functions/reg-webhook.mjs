@@ -188,6 +188,22 @@ export default async (req) => {
         });
       } catch (e) { console.error("coupon redeem failed:", e.message); }
     }
+    if (m.ref_code && m.ref_referrer && m.email) {
+      // referral reward: both families earn 2 any-show tickets. The unique
+      // constraint on referred_email makes retries and repeat orders no-ops.
+      try {
+        const rk = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        await fetch(`${SUPABASE_URL}/rest/v1/referral_rewards?on_conflict=referred_email`, {
+          method: "POST",
+          headers: { apikey: rk, Authorization: `Bearer ${rk}`,
+                     "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates" },
+          body: JSON.stringify({
+            ref_code: m.ref_code, referrer_email: m.ref_referrer,
+            referred_email: (m.email || "").toLowerCase(),
+          }),
+        });
+      } catch (e) { console.error("referral reward failed:", e.message); }
+    }
     // internal heads-up to the admin list (Todd/CJ) — one email per order,
     // failure-isolated like everything else post-payment
     try {

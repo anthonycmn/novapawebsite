@@ -126,6 +126,7 @@
       <a data-s="accounting">Accounting</a>
       <a data-s="cashflow">Cash Flow</a>
       <a data-s="credits">Credits</a>
+      <a data-s="referrals">Referrals</a>
       <a data-s="marketing">Marketing</a>
       <a data-s="hiring">Hiring</a>
     </div>
@@ -251,6 +252,14 @@
       Codes aren't locked to an email address, so only send one to the family it's for.</p>
     </section>
 
+    <section class="sec" id="s-referrals">
+      <h2>Referrals — 2 free tickets each side</h2>
+      <p class="sub">A row appears when a brand-new family completes a paid registration through another
+      family's share link. Both families are owed <b>2 tickets to any show</b> — mark each side redeemed
+      when the tickets are claimed at the box office.</p>
+      <div class="wrap-scroll"><table id="tblRefs"></table></div>
+    </section>
+
     <section class="sec" id="s-cashflow">
       <h2>Cash flow forecast</h2>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
@@ -320,6 +329,7 @@
       // the forecast is cheap and always wanted — fetch it the first time the
       // tab is opened rather than making Todd hunt for a Load button
       if (a.dataset.s === 'cashflow' && !CF) loadCashflow();
+      if (a.dataset.s === 'referrals') loadRefs();
       if (a.dataset.s === 'credits' && !CR) {
         // default the expiry to the end of the current season, which is what
         // Todd has picked every time so far
@@ -445,6 +455,37 @@
       renderAccounting();
     }).catch(function(e){ $('accStatus').textContent = 'network error'; });
   });
+  // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
+  function loadRefs(){
+    sb.rpc('admin_referrals').then(function(res){
+      var rows = res.data || [];
+      var html = '<tr><th>Earned</th><th>Referring family</th><th>New family</th><th>Code</th><th>Tickets</th></tr>';
+      if (!rows.length) html += '<tr><td colspan="5" style="color:var(--dim)">No referrals yet.</td></tr>';
+      rows.forEach(function(r){
+        function side(label, email, name, at, key){
+          return '<div style="margin:2px 0">' + label + ' ' + esc(name || email) +
+            (at ? ' <span style="color:var(--ok)">&#10003; redeemed</span>'
+                : ' <button data-red="' + r.id + '|' + key + '">2 tickets — mark redeemed</button>') + '</div>';
+        }
+        html += '<tr><td>' + String(r.created_at).slice(0,10) + '</td>' +
+          '<td>' + esc(r.referrer_name || '') + '<div class="sub">' + esc(r.referrer_email) + '</div></td>' +
+          '<td>' + esc(r.referred_name || '') + '<div class="sub">' + esc(r.referred_email) + '</div></td>' +
+          '<td>' + esc(r.code) + '</td>' +
+          '<td>' + side('Referrer:', r.referrer_email, r.referrer_name, r.referrer_redeemed_at, 'referrer') +
+                   side('New family:', r.referred_email, r.referred_name, r.referred_redeemed_at, 'referred') + '</td></tr>';
+      });
+      $('tblRefs').innerHTML = html;
+      $('tblRefs').querySelectorAll('button[data-red]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var p = b.dataset.red.split('|');
+          b.disabled = true;
+          sb.rpc('admin_referral_redeem', { p_id: p[0], p_side: p[1] })
+            .then(loadRefs).catch(function(){ b.disabled = false; });
+        });
+      });
+    });
+  }
+
   // ---- Credits (Todd mints these himself) ----
   var CR = null;
   function crApi(payload){

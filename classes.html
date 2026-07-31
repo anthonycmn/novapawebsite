@@ -1751,5 +1751,17 @@ function checkEmpty() {
 </script>
 
 
+<script>
+// After Aug 1 2026 10:00 ET the "Private Registration" banner flips itself to
+// public copy — no deploy needed the morning registration opens.
+(function(){
+  if (Date.now() < new Date('2026-08-01T10:00:00-04:00').getTime()) return;
+  document.querySelectorAll('.audition-banner').forEach(function(a){
+    a.setAttribute('aria-label', 'Summer 2027 registration now open to everyone \u2014 register now');
+    var e = a.querySelector('.audition-banner-eyebrow');
+    if (e) e.innerHTML = '<span class="ab-pulse"></span>Registration Now Open';
+  });
+})();
+</script>
 </body>
 </html>

@@ -280,6 +280,29 @@ export default async (req) => {
     return Response.json({ error: "coupon_too_small" }, { status: 400 });
   }
 
+  // Referral (Jason, Jul 30): ?ref=CODE from a family's share link. A reward
+  // is earned only when the payer is a NEW family (no prior paid order) and
+  // not the referrer themselves. Never blocks payment — a bad ref is
+  // silently dropped, the webhook writes the reward on payment success.
+  const refCodeRaw = String((body || {}).ref || "").trim().toUpperCase().slice(0, 20);
+  let refMeta = {};
+  if (refCodeRaw && /^[A-Z0-9]+$/.test(refCodeRaw)) {
+    try {
+      const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const hdrs = { apikey: svcKey, Authorization: `Bearer ${svcKey}` };
+      const fr = await fetch(`${SUPABASE_URL}/rest/v1/families?ref_code=eq.${encodeURIComponent(refCodeRaw)}&select=email`, { headers: hdrs });
+      const rows = await fr.json();
+      const referrer = (rows && rows[0] && rows[0].email || "").toLowerCase();
+      if (referrer && referrer !== email) {
+        const or = await fetch(`${SUPABASE_URL}/rest/v1/orders?email=ilike.${encodeURIComponent(email)}&status=in.(paid,confirmed,complete,succeeded)&select=id&limit=1`, { headers: hdrs });
+        const prior = await or.json();
+        if (Array.isArray(prior) && prior.length === 0) {
+          refMeta = { ref_code: refCodeRaw, ref_referrer: referrer };
+        }
+      }
+    } catch (e) { console.error("referral check failed:", e.message); }
+  }
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const customer = await stripe.customers.create({
     email, name: parent_name || undefined,
@@ -324,6 +347,7 @@ export default async (req) => {
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
+      ...refMeta,
     },
   });
 
