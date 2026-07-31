@@ -367,6 +367,10 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 <style>
 .card:has(.c-cardlink){ position:relative; cursor:pointer; transition:transform .16s ease, box-shadow .16s ease; }
 .card:has(.c-cardlink):hover{ transform:translateY(-4px); box-shadow:0 14px 32px rgba(0,0,0,.14); }
+/* announced but not yet bookable: same footprint as the Register button */
+.c-soon{ margin-top:auto; display:flex; align-items:center; justify-content:center; gap:7px;
+  padding:10px 14px; border-radius:9px; border:1px dashed var(--border); color:var(--text3);
+  font-weight:600; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; }
 .c-register{ margin-top:auto; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border-radius:9px; background:linear-gradient(135deg,#C8892A,#E8B84B); color:#1a1205; font-weight:800; font-size:12px; letter-spacing:.09em; text-transform:uppercase; box-shadow:0 3px 10px rgba(200,137,42,.28); }
 .c-register span{ display:inline-block; transition:transform .16s ease; }
 .card:has(.c-cardlink):hover .c-register{ box-shadow:0 8px 22px rgba(200,137,42,.5); }
@@ -641,9 +645,17 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 
   <!-- SATURDAY -->
   <div class="day-block" data-day="sat" id="day-sat">
-    <div class="day-hdr"><div class="day-name">Saturday</div><div class="day-meta">3 weekly classes</div></div>
+    <div class="day-hdr"><div class="day-name">Saturday</div><div class="day-meta">5 weekly classes</div></div>
     <div class="slot-group"><div class="slot-label">Morning &amp; Midday</div><div class="cards-grid">
       <div class="card" data-day="sat" data-disc="musicaltheatre" data-ages="adult" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1962572" target="_blank" rel="noopener" aria-label="Register for Adult Musical Theatre Class"></a><div class="c-time">9:00 AM</div><div class="c-name">Adult Musical Theatre Class</div><div class="c-desc">Saturday mornings for adults who love musicals. Songs, scene work, and choreography, taught for the pleasure of it rather than for any casting call.</div><div class="c-tags"><span class="tag t-ages">Ages 18+</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
+      <!-- These two are announced but not yet in the registration catalog.
+           Once the activities exist in Supabase, add to each card:
+             <a class="c-cardlink" href="/register/?activity=ID" target="_blank"
+                rel="noopener" aria-label="Register for ..."></a>
+           and swap <div class="c-soon">...</div> for
+             <div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div> -->
+      <div class="card" data-day="sat" data-disc="theatre" data-ages="ages8" style="--card-color:#A02820"><div class="c-time">10:00 AM</div><div class="c-name">Acting &ndash; Ages 5&ndash;8</div><div class="c-desc">A Saturday morning of make-believe taken seriously. Little actors play characters, tell stories on their feet, and get used to speaking up in front of the room.</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc theatre">Theatre</span></div><div class="c-soon">Registration opens soon</div></div>
+      <div class="card" data-day="sat" data-disc="musicaltheatre" data-ages="ages8" style="--card-color:#8A5C00"><div class="c-time">11:00 AM</div><div class="c-name">Musical Theatre &ndash; Ages 5&ndash;8</div><div class="c-desc">Songs from the shows they already love, with the choreography and the characters to match. Young performers sing out, learn where to stand, and finish a number together.</div><div class="c-tags"><span class="tag t-ages">Ages 5&ndash;8</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-soon">Registration opens soon</div></div>
       <div class="card" data-day="sat" data-disc="dance" data-ages="ages12" style="--card-color:#A02860"><a class="c-cardlink" href="/register/?activity=1962563" target="_blank" rel="noopener" aria-label="Register for K-Pop Dance Class ages 9 to 12"></a><div class="c-time">11:00 AM</div><div class="c-name">K-Pop Dance Class &ndash; Ages 9&ndash;12</div><div class="c-desc">Choreography straight from the groups students already follow. Dancers learn full routines, work on precision and formation changes, and perform them together.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc dance">Dance</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
       <div class="card" data-day="sat" data-disc="musicaltheatre" data-ages="ages12" style="--card-color:#8A5C00"><a class="c-cardlink" href="/register/?activity=1962562" target="_blank" rel="noopener" aria-label="Register for Acting and Musical Theatre ages 9 to 12"></a><div class="c-time">12:00 PM</div><div class="c-name">Acting &amp; Musical Theatre &ndash; Ages 9&ndash;12</div><div class="c-desc">Both halves of the craft in one Saturday class. Students work a scene, then work a song, and learn how the acting they do in one carries into the other.</div><div class="c-tags"><span class="tag t-ages">Ages 9&ndash;12</span><span class="tag t-studio">$90/mo</span><span class="tag t-disc musicaltheatre">Musical Theatre</span></div><div class="c-register">Register Now <span aria-hidden="true">&rarr;</span></div></div>
     </div></div>
