@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DEH Staff Schedule</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#08111F">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DEH Staff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
+    --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+    --ink:rgba(255,255,255,0.90); --dim:rgba(255,255,255,0.60); --dim2:rgba(255,255,255,0.42);
+    --line:rgba(255,255,255,0.13); --card:rgba(22,43,82,0.42);
+    --stage:#E8B84B; --music:#B48CE8; --costume:#E8788C; --tech:#4FC3D9; --study:#8FCF9A; --co:#9FB2D6; --perf:#FF9B4A;
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{background:var(--navy0)}
+  body{font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1100px 620px at 72% -12%, #1b3563 0%, var(--navy1) 46%, var(--navy0) 100%);
+    background-attachment:fixed; min-height:100vh; font-size:16px; line-height:1.45;
+    padding-bottom:calc(72px + var(--safe-b))}
+
+  /* ── gate ─────────────────────────────────────────────────────────── */
+  #gate{display:none;min-height:100vh;place-items:center;padding:40px 22px}
+  #gate.show{display:grid}
+  .gate-box{width:100%;max-width:340px;text-align:center}
+  .gate-box h1{font-family:'Cormorant Garamond',serif;font-size:30px;color:#fff;margin-bottom:6px}
+  .gate-box p{color:var(--dim);font-size:14px;margin-bottom:22px}
+  .gate-box input{width:100%;padding:15px 18px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.6);color:#fff;font:inherit;font-size:17px;text-align:center;margin-bottom:12px}
+  .gate-box button{width:100%;padding:15px;border:0;border-radius:12px;font:inherit;font-weight:700;font-size:16px;
+    background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206;cursor:pointer}
+  #gateErr{color:#FF9B9B;font-size:13.5px;min-height:20px;margin-top:10px}
+
+  /* ── header ───────────────────────────────────────────────────────── */
+  header{position:sticky;top:0;z-index:40;padding:14px 16px 12px;
+    background:rgba(8,17,31,0.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold2);font-weight:700}
+  header h1{font-family:'Cormorant Garamond',serif;font-size:23px;color:#fff;line-height:1.15;margin:2px 0 10px}
+  .showbar{display:flex;align-items:center;gap:11px}
+  .bar{flex:1;height:9px;border-radius:99px;background:rgba(255,255,255,0.11);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;
+    background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .3s ease}
+  #showPct{font-weight:700;color:var(--gold2);font-size:15px;min-width:44px;text-align:right}
+  .showsub{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--dim2);margin-top:6px}
+
+  /* name + sync */
+  .mebar{display:flex;align-items:center;gap:9px;margin-top:11px}
+  .mebar label{font-size:12px;color:var(--dim);white-space:nowrap}
+  .mebar input{flex:1;min-width:0;padding:9px 13px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.6);color:#fff;font:inherit;font-size:15px}
+  #syncNote{font-size:11.5px;color:var(--dim2);margin-top:6px;min-height:16px}
+
+  /* ── day chips ────────────────────────────────────────────────────── */
+  #dayChips{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch}
+  #dayChips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;
+    padding:9px 15px;border-radius:13px;border:1px solid var(--line);background:rgba(22,43,82,0.4);
+    color:var(--dim);font:inherit;cursor:pointer}
+  .chip-d{font-size:13.5px;font-weight:700;white-space:nowrap}
+  .chip-p{font-size:11px;color:var(--dim2)}
+  .chip.sel{background:var(--gold2);border-color:var(--gold2);color:#1a1206}
+  .chip.sel .chip-p{color:rgba(26,18,6,0.7)}
+  .chip.full{border-color:rgba(143,207,154,0.6)}
+  .chip.full .chip-p{color:var(--study)}
+  .chip.sel.full .chip-p{color:rgba(26,18,6,0.7)}
+
+  /* ── views ────────────────────────────────────────────────────────── */
+  .view{display:none;padding:4px 14px 24px}
+  .view.on{display:block}
+
+  .dayhead{padding:12px 2px 10px}
+  .dayhead-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .dayhead h2{font-family:'Cormorant Garamond',serif;font-size:25px;color:#fff;display:flex;align-items:baseline;gap:9px}
+  .daycode{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.13em;color:var(--dim2);font-weight:700}
+  .daypct{font-size:14px;font-weight:700;color:var(--gold2)}
+
+  .cov{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
+  .cov summary{padding:12px 15px;font-size:14px;font-weight:700;color:var(--gold3);cursor:pointer;list-style:none}
+  .cov summary::-webkit-details-marker{display:none}
+  .cov summary::after{content:'▾';float:right;color:var(--dim2)}
+  .cov[open] summary::after{content:'▴'}
+  .whos{display:flex;flex-direction:column;gap:5px;padding:0 15px 12px}
+  .who{font-size:13.5px;color:var(--dim)}
+  .who b{color:#fff;font-weight:700;margin-right:6px}
+  .who.out{color:#FFB4B4}
+  .gap{margin:0 12px 12px;padding:11px 13px;border-radius:10px;font-size:13px;line-height:1.5;
+    background:rgba(232,184,75,0.09);border:1px dashed rgba(232,184,75,0.45);color:var(--gold3)}
+  .gap b{display:block;color:var(--gold2);margin-bottom:3px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase}
+
+  /* ── blocks ───────────────────────────────────────────────────────── */
+  .rest{display:flex;justify-content:center;gap:10px;padding:9px;margin:8px 0;
+    font-size:12.5px;color:var(--dim2);letter-spacing:0.04em}
+  .blk{display:flex;gap:12px;padding:13px 14px;margin-bottom:9px;border-radius:14px;
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--co)}
+  .blk.stage{border-left-color:var(--stage)} .blk.music{border-left-color:var(--music)}
+  .blk.costume{border-left-color:var(--costume)} .blk.tech{border-left-color:var(--tech)}
+  .blk.study{border-left-color:var(--study)} .blk.perf{border-left-color:var(--perf)}
+  .blk.done{background:rgba(143,207,154,0.07);border-color:rgba(143,207,154,0.3)}
+  .blk.done .act{color:var(--dim);text-decoration:line-through;text-decoration-color:rgba(255,255,255,0.3)}
+  .blk-bd{flex:1;min-width:0}
+  .tick{flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:2px solid rgba(255,255,255,0.25);
+    background:none;color:#1a1206;font-size:18px;font-weight:700;line-height:1;cursor:pointer;
+    display:grid;place-items:center;margin-top:1px}
+  .blk.done .tick{background:var(--study);border-color:var(--study)}
+  .blk-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px}
+  .time{font-size:15px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  .tag{font-size:9.5px;letter-spacing:0.09em;text-transform:uppercase;font-weight:700;
+    padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.09);color:var(--dim)}
+  .blk.stage .tag{background:rgba(232,184,75,0.16);color:var(--stage)}
+  .blk.music .tag{background:rgba(180,140,232,0.16);color:var(--music)}
+  .blk.costume .tag{background:rgba(232,120,140,0.16);color:var(--costume)}
+  .blk.tech .tag{background:rgba(79,195,217,0.16);color:var(--tech)}
+  .blk.study .tag{background:rgba(143,207,154,0.16);color:var(--study)}
+  .blk.perf .tag{background:rgba(255,155,74,0.18);color:var(--perf)}
+  .act{font-size:15px;line-height:1.42;color:var(--ink)}
+  /* details stay collapsed until the card is tapped — the phone view is the
+     time, the track, and what is happening, nothing else */
+  .meta{display:none;flex-direction:column;gap:5px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+  .blk.open .meta{display:flex}
+  .m{display:flex;gap:9px;font-size:13px;line-height:1.4}
+  .mk{flex:0 0 82px;color:var(--dim2);font-size:11px;letter-spacing:0.07em;text-transform:uppercase;
+    font-weight:700;padding-top:2px}
+  .mv{flex:1;color:var(--dim)}
+  .stamp{margin-top:8px;font-size:12px;color:var(--study)}
+  .stamp b{color:#fff}
+
+  /* ── reference views ──────────────────────────────────────────────── */
+  .view h3{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold3);margin:20px 0 8px}
+  .sc,.flag{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px;margin-bottom:10px}
+  .sc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+  .sc-h b{font-size:16px;color:#fff}
+  .sc-when{font-size:11.5px;color:var(--gold2);font-weight:700;white-space:nowrap}
+  .sc-song{font-size:13.5px;color:var(--music);margin-bottom:7px;font-style:italic}
+  .sc-l{display:flex;gap:9px;font-size:13px;line-height:1.45;margin-top:4px;color:var(--dim)}
+  .sc-l span:first-child{flex:0 0 60px;color:var(--dim2);font-size:11px;letter-spacing:0.07em;
+    text-transform:uppercase;font-weight:700;padding-top:2px}
+  .sc-l.tech{color:var(--gold3)} .sc-l.need{color:var(--perf)}
+  .kv{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .kv-k{flex:0 0 120px;font-weight:700;color:#fff}
+  .kv-v{flex:1;color:var(--dim);line-height:1.5}
+  .flag-h{font-size:14px;line-height:1.45;color:var(--ink);margin-bottom:6px}
+  .flag-t{display:inline-block;font-size:9.5px;letter-spacing:0.1em;font-weight:700;padding:3px 8px;
+    border-radius:99px;background:rgba(255,155,74,0.16);color:var(--perf);margin-right:8px;vertical-align:1px}
+
+  /* ── bottom nav ───────────────────────────────────────────────────── */
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;
+    padding:8px 6px calc(8px + var(--safe-b));
+    background:rgba(8,17,31,0.96);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+  .navbtn{flex:1;padding:8px 4px;border:0;background:none;font:inherit;font-size:11.5px;font-weight:700;
+    color:var(--dim2);cursor:pointer;border-radius:10px;letter-spacing:0.03em}
+  .navbtn.sel{color:var(--gold2);background:rgba(232,184,75,0.1)}
+
+  @media (min-width:720px){
+    body{padding-bottom:calc(76px + var(--safe-b))}
+    .view{max-width:760px;margin:0 auto}
+    header{padding:18px 22px 14px}
+    header h1{font-size:27px}
+    #dayChips{max-width:760px;margin:0 auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- Passcode is a curtain, not a lock: it keeps this page from being read by
+     anyone who stumbles on the URL. Nothing sensitive lives here. -->
+<div id="gate" class="show">
+  <div class="gate-box">
+    <h1>Dear Evan Hansen</h1>
+    <p>Staff schedule. Enter the company word.</p>
+    <input id="gateWord" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="company word" aria-label="Company word">
+    <button id="gateGo" type="button">Open</button>
+    <div id="gateErr" role="alert"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+
+  <header>
+    <div class="eyebrow">Aug 3 &ndash; 14, 2026 &middot; Staff Only</div>
+    <h1>Dear Evan Hansen</h1>
+    <div class="showbar">
+      <div class="bar"><i id="showFill" style="width:0%"></i></div>
+      <span id="showPct">0%</span>
+    </div>
+    <div class="showsub"><span id="showCount"></span><span id="showDays"></span></div>
+    <div class="mebar">
+      <label for="meName">You are</label>
+      <input id="meName" type="text" autocomplete="name" placeholder="your name" aria-label="Your name">
+    </div>
+    <div id="syncNote"></div>
+  </header>
+
+  <div id="dayChips"></div>
+
+  <section class="view on" id="v-day"><div id="day"></div></section>
+  <section class="view" id="v-scenes"><h3>Scene &amp; song breakdown</h3><div id="refScenes"></div></section>
+  <section class="view" id="v-crews"><div id="refCrews"></div></section>
+  <section class="view" id="v-flags"><h3>Open questions</h3><div id="refFlags"></div></section>
+
+  <nav>
+    <button class="navbtn sel" data-v="day" type="button">Schedule</button>
+    <button class="navbtn" data-v="scenes" type="button">Scenes</button>
+    <button class="navbtn" data-v="crews" type="button">Crews</button>
+    <button class="navbtn" data-v="flags" type="button">Flags</button>
+  </nav>
+
+</div>
+
+<script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/deh/data.js"></script>
+<script src="/deh/app.js"></script>
+</body>
+</html>

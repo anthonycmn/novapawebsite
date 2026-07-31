@@ -123,13 +123,31 @@ const isMeanGirls = (it) => MEANGIRLS_IDS.includes(it.activity_id);
 // families were already invoiced $895 for, and doing one of them must not
 // confer the fall-show bundle on Frozen or Mermaid.
 export const TEEN_CONSERVATORY_IDS = [1960809, 1960811];
+// eslint-disable-next-line no-unused-vars -- kept for the id list's documentation value
 const isTeenCon = (it) => TEEN_CONSERVATORY_IDS.includes(it.activity_id);
 
 // Dear Evan Hansen teen intensive (Aug 2026): flat list price, sold by direct
 // link days before it starts. It never bundles with anything and never feeds
 // the fall-show bundle or the trio.
 export const TEEN_INTENSIVE_IDS = [1805731];
+// eslint-disable-next-line no-unused-vars -- kept for the id list's documentation value
 const isTeenIntensive = (it) => TEEN_INTENSIVE_IDS.includes(it.activity_id);
+
+// College audition coaching (Jul 31 2026). Sold through our own registration
+// system now that the Regpack embed is gone. Ids live in a reserved block so
+// the rule is a range check rather than a list that has to be kept in step
+// with db/coaching-activities.sql every time CJ adds a service.
+//
+// Coaching is flat priced and deliberately joins none of the program math: no
+// sibling, tier, bundle, or combo discount, no tuition insurance, and it is
+// charged in full at checkout even when it rides along in a cart that has a
+// camp on a payment plan. It is a service bought by a family, not a seat in a
+// program, so there is nothing for those rules to be fair about.
+export const COACHING_ID_MIN = 970000;
+export const COACHING_ID_MAX = 979999;
+export const isCoachingId = (id) =>
+  Number.isFinite(id) && id >= COACHING_ID_MIN && id <= COACHING_ID_MAX;
+const isCoaching = (it) => isCoachingId(it.activity_id);
 
 export function perKidRate(nCampsForKid, now = new Date()) {
   if (now > new Date(EARLYBIRD_END)) return 0;
@@ -202,9 +220,16 @@ export function priceCart(cart, plan, opts = {}) {
   // get the price — nothing reprices retroactively.
   const priorCampsByKid = opts.priorCampsByKid || {};
   const priorShowsByKid = opts.priorShowsByKid || {};
-  const isDayCampItem = (it) => !it.show && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
+  // Coaching before the day-camp test: several services cost less than a day
+  // camp, and without this a $120 acting session would inherit the day-camp
+  // sibling 5%.
+  const isDayCampItem = (it) =>
+    !it.show && !isCoaching(it) && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
+  // Every Broadway Bound program counts, including the teen intensives and the
+  // teen mainstage shows (CJ, Jul 31 — this supersedes the flat rules those
+  // two carried through July). Day camps, classes, and coaching stay outside.
   const isCounted = (it) =>
-    it.show || (!isDayCampItem(it) && !isTeenCon(it) && !isTeenIntensive(it));
+    it.show || (!isDayCampItem(it) && !isCoaching(it));
   const countByKid = {};
   for (const it of cart) if (isCounted(it)) {
     const k = kidKey(it);
@@ -227,6 +252,12 @@ export function priceCart(cart, plan, opts = {}) {
       }
       return { ...it, unit, rate };
     }
+    // coaching: list price, full stop. `daycamp: true` is what carries the
+    // "charged in full today, never insurable, never on installments" part —
+    // same handling, different reason.
+    if (isCoaching(it)) {
+      return { ...it, unit: it.price_cents || 0, rate: 0, daycamp: true, coaching: true };
+    }
     // day camp: no bundle/tier, sibling 5% for 2nd+ child (non-BB — runs now)
     if (isDayCampItem(it)) {
       let unit = it.price_cents;
@@ -235,25 +266,11 @@ export function priceCart(cart, plan, opts = {}) {
       }
       return { ...it, unit, rate: 0, daycamp: true };
     }
-    // Teen intensive (DEH): flat list, ordinary 5% for a second child
-    if (isTeenIntensive(it)) {
-      const unit = kidKey(it) === firstKid ? (it.price_cents || 0)
-        : Math.round((it.price_cents || 0) * (1 - SIBLING_PCT / 100));
-      return { ...it, unit, rate: 0 };
-    }
-    // Teen Conservatory: 10% each when one performer does both shows — the
-    // exact offer on the Teen Conservatory page — otherwise list, with the
-    // ordinary 5% for a second child. Nothing in the summer cart reaches it.
-    if (isTeenCon(it)) {
-      const kid = kidKey(it);
-      const both = cart.filter((x) => isTeenCon(x) && kidKey(x) === kid).length >= 2;
-      if (both) return { ...it, unit: Math.round((it.price_cents || 0) * 0.9), rate: 0.10 };
-      const unit = kid === firstKid ? it.price_cents
-        : Math.round(it.price_cents * (1 - SIBLING_PCT / 100));
-      return { ...it, unit, rate: 0 };
-    }
-    // Any other Broadway Bound show item (Frozen/Mermaid casts, Mean Girls):
-    // the unified per-registrant tier, else sibling 5% once the sale ends
+    // Every other Broadway Bound program — Frozen and Mermaid casts, Mean
+    // Girls, the Dear Evan Hansen intensive, and the teen mainstage shows —
+    // takes the same per-registrant tier. The flat rules those last two
+    // carried through July are gone (CJ, Jul 31); a teen doing two mainstage
+    // shows now gets 15% rather than the old 10%.
     const kid = kidKey(it);
     const rate = perKidRate(countByKid[kid], now);
     let unit = Math.round((it.price_cents || 0) * (1 - rate));
