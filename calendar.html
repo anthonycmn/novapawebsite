@@ -17,7 +17,7 @@
   --cream:#FDFAF3;--white:#fff;--text:#0B1424;--text2:#3A4668;--text3:#7080A0;
   --border:rgba(11,20,36,0.10);--border2:rgba(11,20,36,0.06);
   --c-class:#2563EB;--c-summer:#D97706;--c-community:#16A34A;
-  --c-conservatory:#7C3AED;--c-stagelighter:#0891B2;--c-tech:#6B7280;
+  --c-conservatory:#7C3AED;--c-bbound:#0891B2;--c-tech:#6B7280;
   --c-break:#9CA3AF;--c-recital:#DB2777;
 }
 html{scroll-behavior:smooth}
@@ -57,7 +57,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);fo
 .leg-class{color:#1E3A8A;background:#EFF6FF}.leg-class .leg-dot{background:var(--c-class)}
 .leg-community{color:#14532D;background:#F0FDF4}.leg-community .leg-dot{background:var(--c-community)}
 .leg-conservatory{color:#4C1D95;background:#F5F3FF}.leg-conservatory .leg-dot{background:var(--c-conservatory)}
-.leg-stagelighter{color:#164E63;background:#ECFEFF}.leg-stagelighter .leg-dot{background:var(--c-stagelighter)}
+.leg-bbound{color:#164E63;background:#ECFEFF}.leg-bbound .leg-dot{background:var(--c-bbound)}
 .leg-tech{color:#374151;background:#F9FAFB}.leg-tech .leg-dot{background:var(--c-tech)}
 .leg-break{color:#4B5563;background:#F3F4F6}.leg-break .leg-dot{background:var(--c-break)}
 .leg-recital{color:#831843;background:#FDF2F8}.leg-recital .leg-dot{background:var(--c-recital)}
@@ -118,7 +118,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);fo
 .ec-summer{background:#FEF3C7;color:#92400E}
 .ec-community{background:#DCFCE7;color:#14532D}
 .ec-conservatory{background:#EDE9FE;color:#4C1D95}
-.ec-stagelighter{background:#CFFAFE;color:#164E63}
+.ec-bbound{background:#CFFAFE;color:#164E63}
 .ec-tech{background:#F3F4F6;color:#374151}
 .ec-break{background:#F9FAFB;color:#4B5563;font-style:italic}
 .ec-recital{background:#FCE7F3;color:#831843}
@@ -243,9 +243,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <a href="index.html">Home</a>
     <a href="classes.html">Classes</a>
     <a href="broadway-bound.html">Broadway Bound</a>
+    <a href="teen-conservatory.html">Teen Conservatory</a>
     <a href="summer-2027.html">Summer Camps</a>
     <a href="day-camps.html">Day Camps</a>
-    <a href="faculty.html">Faculty</a>
     <a href="coaching.html">Coaching</a>
     <a href="https://novapa.booktix.com" target="_blank" rel="noopener">Tickets</a>
     <a class="u-nav-cta" href="summer-2027.html" target="_blank" rel="noopener">Register &rarr;</a>
@@ -302,7 +302,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <span class="leg-item leg-class active" data-cat="class" onclick="toggleCat(this)"><span class="leg-dot"></span>Classes</span>
     <span class="leg-item leg-community active" data-cat="community" onclick="toggleCat(this)"><span class="leg-dot"></span>Community Show</span>
     <span class="leg-item leg-conservatory active" data-cat="conservatory" onclick="toggleCat(this)"><span class="leg-dot"></span>Conservatory</span>
-    <span class="leg-item leg-stagelighter active" data-cat="stagelighter" onclick="toggleCat(this)"><span class="leg-dot"></span>Broadway Bound</span>
+    <span class="leg-item leg-bbound active" data-cat="bbound" onclick="toggleCat(this)"><span class="leg-dot"></span>Broadway Bound</span>
     <span class="leg-item leg-tech active" data-cat="tech" onclick="toggleCat(this)"><span class="leg-dot"></span>Tech Week</span>
     <span class="leg-item leg-break active" data-cat="break" onclick="toggleCat(this)"><span class="leg-dot"></span>Break</span>
     <span class="leg-item leg-recital active" data-cat="recital" onclick="toggleCat(this)"><span class="leg-dot"></span>Recital/Gala</span>
@@ -475,12 +475,12 @@ const RAW_EVENTS = [
 ...[1,2,3].map(d=>[2027,0,d,'Winter Break','break','']),
 // Tech Frozen Kids Jan 18-21
 [2027,0,18,'Tech – Frozen Kids','tech','Broadway Bound Kids'],[2027,0,19,'Tech – Frozen Kids','tech',''],[2027,0,20,'Tech – Frozen Kids','tech',''],[2027,0,21,'Tech – Frozen Kids','tech',''],
-[2027,0,22,'Frozen Kids','stagelighter','Broadway Bound Kids'],[2027,0,23,'Frozen Kids','stagelighter',''],[2027,0,24,'Frozen Kids','stagelighter',''],
+[2027,0,22,'Frozen Kids','bbound','Broadway Bound Kids'],[2027,0,23,'Frozen Kids','bbound',''],[2027,0,24,'Frozen Kids','bbound',''],
 [2027,0,25,'Tech – Frozen Jr.','tech','Broadway Bound Jr.'],[2027,0,26,'Tech – Frozen Jr.','tech',''],[2027,0,27,'Tech – Frozen Jr.','tech',''],[2027,0,28,'Tech – Frozen Jr.','tech',''],
-[2027,0,29,'Frozen Jr.','stagelighter','Broadway Bound Jr.'],[2027,0,30,'Frozen Jr.','stagelighter',''],[2027,0,31,'Frozen Jr.','stagelighter',''],
+[2027,0,29,'Frozen Jr.','bbound','Broadway Bound Jr.'],[2027,0,30,'Frozen Jr.','bbound',''],[2027,0,31,'Frozen Jr.','bbound',''],
 [2027,1,1,'Tech – Frozen Jr.','tech','Broadway Bound Teen'],[2027,1,2,'Tech – Frozen Jr.','tech',''],[2027,1,3,'Tech – Frozen Jr.','tech',''],[2027,1,4,'Tech – Frozen Jr.','tech',''],
-[2027,1,5,'Frozen Jr.','stagelighter',''],[2027,1,6,'Frozen Jr.','stagelighter',''],
-[2027,1,12,'Frozen Jr.','stagelighter',''],[2027,1,13,'Frozen Jr.','stagelighter',''],
+[2027,1,5,'Frozen Jr.','bbound',''],[2027,1,6,'Frozen Jr.','bbound',''],
+[2027,1,12,'Frozen Jr.','bbound',''],[2027,1,13,'Frozen Jr.','bbound',''],
 // Tech Teen Conservatory Spring Title Mar 1-4
 [2027,2,1,'Tech – Teen Conservatory Spring Title Coming Soon','tech','Conservatory'],[2027,2,2,'Tech – Teen Conservatory Spring Title Coming Soon','tech',''],[2027,2,3,'Tech – Teen Conservatory Spring Title Coming Soon','tech',''],[2027,2,4,'Tech – Teen Conservatory Spring Title Coming Soon','tech',''],
 [2027,2,5,'Teen Conservatory Spring Title Coming Soon','conservatory',''],[2027,2,6,'Teen Conservatory Spring Title Coming Soon','conservatory',''],[2027,2,7,'Teen Conservatory Spring Title Coming Soon','conservatory',''],
@@ -490,12 +490,12 @@ const RAW_EVENTS = [
 ...[22,23,24,25,26].map(d=>[2027,2,d,'Spring Break','break','']),
 // Tech LM Kids May 10-13
 [2027,4,10,'Tech – LM Kids','tech','Broadway Bound Kids'],[2027,4,11,'Tech – LM Kids','tech',''],[2027,4,12,'Tech – LM Kids','tech',''],[2027,4,13,'Tech – LM Kids','tech',''],
-[2027,4,14,'Little Mermaid Jr.','stagelighter',''],[2027,4,15,'Little Mermaid Jr.','stagelighter',''],[2027,4,16,'Little Mermaid Jr.','stagelighter',''],
+[2027,4,14,'Little Mermaid Jr.','bbound',''],[2027,4,15,'Little Mermaid Jr.','bbound',''],[2027,4,16,'Little Mermaid Jr.','bbound',''],
 [2027,4,17,'Tech – LM Jr.','tech',''],[2027,4,18,'Tech – LM Jr.','tech',''],[2027,4,19,'Tech – LM Jr.','tech',''],
-[2027,4,20,'Little Mermaid Jr.','stagelighter',''],[2027,4,21,'Little Mermaid Jr.','stagelighter',''],[2027,4,22,'Little Mermaid Jr.','stagelighter',''],
+[2027,4,20,'Little Mermaid Jr.','bbound',''],[2027,4,21,'Little Mermaid Jr.','bbound',''],[2027,4,22,'Little Mermaid Jr.','bbound',''],
 [2027,4,24,'Tech – LM Jr.','tech',''],[2027,4,25,'Tech – LM Jr.','tech',''],[2027,4,26,'Tech – LM Jr.','tech',''],
-[2027,4,27,'Little Mermaid Jr.','stagelighter',''],[2027,4,28,'Little Mermaid Jr.','stagelighter',''],[2027,4,29,'Little Mermaid Jr.','stagelighter',''],
-[2027,5,3,'Little Mermaid Jr.','stagelighter',''],[2027,5,4,'Little Mermaid Jr.','stagelighter',''],[2027,5,5,'Little Mermaid Jr.','stagelighter',''],
+[2027,4,27,'Little Mermaid Jr.','bbound',''],[2027,4,28,'Little Mermaid Jr.','bbound',''],[2027,4,29,'Little Mermaid Jr.','bbound',''],
+[2027,5,3,'Little Mermaid Jr.','bbound',''],[2027,5,4,'Little Mermaid Jr.','bbound',''],[2027,5,5,'Little Mermaid Jr.','bbound',''],
 [2027,5,7,'Tech – Year-End Recital','tech',''],[2027,5,8,'Tech – Year-End Recital','tech',''],[2027,5,9,'Tech – Year-End Recital','tech',''],[2027,5,10,'Tech – Year-End Recital','tech',''],
 [2027,5,11,'Year-End Recital','recital','Year-End Recital'],
 [2027,5,14,'Tech – End-of-Year Gala','tech',''],[2027,5,15,'Tech – End-of-Year Gala','tech',''],[2027,5,16,'Tech – End-of-Year Gala','tech',''],[2027,5,17,'Tech – End-of-Year Gala','tech',''],
@@ -540,9 +540,9 @@ const MONTHS=[
 ];
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW_SHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const CAT_CLASS={'class':'ec-class','summer':'ec-summer','community':'ec-community','conservatory':'ec-conservatory','stagelighter':'ec-stagelighter','tech':'ec-tech','break':'ec-break','recital':'ec-recital'};
+const CAT_CLASS={'class':'ec-class','summer':'ec-summer','community':'ec-community','conservatory':'ec-conservatory','bbound':'ec-bbound','tech':'ec-tech','break':'ec-break','recital':'ec-recital'};
 const today=new Date();
-let activeCats=new Set(['class','summer','community','conservatory','stagelighter','tech','break','recital']);
+let activeCats=new Set(['class','summer','community','conservatory','bbound','tech','break','recital']);
 
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 

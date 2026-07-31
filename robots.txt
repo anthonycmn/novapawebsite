@@ -8,4 +8,7 @@ Disallow: /register/admin/
 Disallow: /press-submit.html
 Disallow: /deh/
 
+# Faculty page is written but parked until it is fully built out (CJ).
+Disallow: /faculty.html
+
 Sitemap: https://www.northernvirginiaperformingarts.org/sitemap.xml
