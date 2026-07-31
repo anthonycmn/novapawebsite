@@ -36,6 +36,76 @@ export default async (req) => {
   }
   let body = {};
   try { body = await req.json(); } catch {}
+
+  // action: replace_schedule — reshape an order's FUTURE installments without
+  // touching money already collected (Amy Ngo, Jul 31: fall show paid off by
+  // its start, summer spread out). Cancels the order's current subscription
+  // schedule and creates one new schedule per group of {ts, cents} phases on
+  // the same customer + saved card. Validates before mutating; returns
+  // everything it did. Admin-gated like the rest of this endpoint.
+  if (body.action === "replace_schedule") {
+    const { order_id, schedules } = body;
+    if (!order_id || !Array.isArray(schedules) || !schedules.length ||
+        !schedules.every((g) => Array.isArray(g.phases) && g.phases.length &&
+          g.phases.every((p) => p.ts > Date.now() / 1000 && p.cents > 0))) {
+      return Response.json({ error: "bad_request" }, { status: 400 });
+    }
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const orders = await svcGet(`orders?id=eq.${order_id}&select=id,email,stripe_schedule,stripe_customer,stripe_payment_intent`);
+    if (!orders.length) return Response.json({ error: "order_not_found" }, { status: 404 });
+    const o = orders[0];
+    if (!o.stripe_schedule) return Response.json({ error: "no_schedule" }, { status: 400 });
+
+    const oldSched = await stripe.subscriptionSchedules.retrieve(o.stripe_schedule);
+    if (oldSched.status === "canceled" || oldSched.status === "released") {
+      return Response.json({ error: "schedule_already_" + oldSched.status }, { status: 409 });
+    }
+    // the saved card: prefer the schedule's own default, fall back to the PI's
+    let pm = oldSched.default_settings?.default_payment_method || null;
+    if (!pm && o.stripe_payment_intent) {
+      const pi = await stripe.paymentIntents.retrieve(o.stripe_payment_intent);
+      pm = typeof pi.payment_method === "string" ? pi.payment_method : pi.payment_method?.id;
+    }
+    const customer = oldSched.customer;
+    if (!customer || !pm) return Response.json({ error: "no_payment_method" }, { status: 400 });
+
+    await stripe.subscriptionSchedules.cancel(o.stripe_schedule);
+
+    const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments"; // same product the webhook bills installments on
+    try { await stripe.products.retrieve(INSTALLMENT_PRODUCT_ID); }
+    catch { await stripe.products.create({ id: INSTALLMENT_PRODUCT_ID, name: "NOVAPA Summer 2027 — Installments" }); }
+
+    const created = [];
+    for (const g of schedules) {
+      // consecutive monthly 1-iteration phases land on successive 1sts —
+      // same shape the webhook creates, just with per-month amounts
+      const sched = await stripe.subscriptionSchedules.create({
+        customer,
+        start_date: g.phases[0].ts,
+        end_behavior: "cancel",
+        default_settings: { default_payment_method: pm, collection_method: "charge_automatically" },
+        phases: g.phases.map((p) => ({
+          items: [{ quantity: 1, price_data: {
+            currency: "usd", product: INSTALLMENT_PRODUCT_ID,
+            recurring: { interval: "month" }, unit_amount: p.cents,
+          } }],
+          iterations: 1,
+          proration_behavior: "none",
+        })),
+        metadata: { order_id, label: g.label || "", split: "replace_schedule" },
+      });
+      created.push({ label: g.label || "", id: sched.id, phases: g.phases });
+    }
+
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${order_id}`, {
+      method: "PATCH",
+      headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ stripe_schedule: created.map((c) => c.id).join(",") }),
+    });
+    return Response.json({ ok: true, canceled: o.stripe_schedule, created });
+  }
+
   const year = parseInt(body.year, 10) || new Date().getUTCFullYear();
   const from = Math.floor(Date.UTC(year, 0, 1) / 1000);
   const to = Math.floor(Date.UTC(year + 1, 0, 1) / 1000);
