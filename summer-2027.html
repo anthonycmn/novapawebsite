@@ -450,8 +450,17 @@
     el.innerHTML = str.split('').map(function(d) { return '<span class="sc-tile">' + d + '</span>'; }).join('');
   }
   function pad(n, w) { n = String(Math.max(0, n)); while (n.length < w) n = '0' + n; return n; }
+  var timer = null;
   function tick() {
     var ms = deadline - Date.now();
+    // Past the deadline the clock used to sit at 00:00:00:00 forever, which
+    // reads as a broken page rather than a finished sale. Take it down.
+    if (ms <= 0) {
+      var box = document.getElementById('scCount');
+      if (box) box.style.display = 'none';
+      if (timer) clearInterval(timer);
+      return;
+    }
     var s = Math.max(0, Math.floor(ms / 1000));
     tiles(document.getElementById('scDays'), pad(Math.floor(s / 86400), 2));
     tiles(document.getElementById('scHrs'),  pad(Math.floor(s % 86400 / 3600), 2));
@@ -459,7 +468,7 @@
     tiles(document.getElementById('scSecs'), pad(s % 60, 2));
   }
   tick();
-  setInterval(tick, 1000);
+  timer = setInterval(tick, 1000);
 
   function ph(ev, props) {
     try { if (window.posthog && window.posthog.capture) window.posthog.capture(ev, props); } catch (e) {}
