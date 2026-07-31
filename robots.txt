@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Retired and staff-only pages. These are also noindexed in their own markup;
+# blocking them here keeps them out of results while the redirects settle.
+Disallow: /camp-info-2026-archive.html
+Disallow: /register/admin/
+Disallow: /press-submit.html
+
+Sitemap: https://www.northernvirginiaperformingarts.org/sitemap.xml

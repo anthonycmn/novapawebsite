@@ -417,7 +417,7 @@
       </label>
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:10px;cursor:pointer">
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
-        <span>I agree to NOVAPA's <a href="/policies" target="_blank" rel="noopener">policies</a> — <b>all sales are final (no refunds)</b>.</span>
+        <span>I agree to NOVAPA's <a href="/terms" target="_blank" rel="noopener">terms</a>, <a href="/policies" target="_blank" rel="noopener">policies</a>, and <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a> &mdash; <b>all sales are final (no refunds)</b>.</span>
       </label>
       <button class="btn" id="payStart" style="display:none">Continue to Payment</button>
       <div id="expressWrap" style="display:none">
@@ -2116,7 +2116,7 @@
   function policyBlocked(){
     if ($('policyOk').checked) return false;
     var errEl = $('payErr');
-    errEl.textContent = 'Please agree to NOVAPA\'s policies to continue.';
+    errEl.textContent = 'Please agree to NOVAPA\'s terms, policies, and Photo and Media Release to continue.';
     errEl.classList.add('on');
     return true;
   }

@@ -124,6 +124,7 @@
       <a data-s="campers">Campers</a>
       <a data-s="calendar">Calendar</a>
       <a data-s="accounting">Accounting</a>
+      <a data-s="insurance">Insurance</a>
       <a data-s="cashflow">Cash Flow</a>
       <a data-s="credits">Credits</a>
       <a data-s="referrals">Referrals</a>
@@ -161,6 +162,23 @@
       <div class="wrap-scroll"><table id="tblSummer"></table></div>
       <div class="wrap-scroll" style="margin-top:12px"><table id="tblMG"></table></div>
       <div id="invGroups"></div>
+    </section>
+
+    <section class="sec" id="s-insurance">
+      <h2>Tuition Insurance</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <select id="insYear" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px"></select>
+        <button class="tag" id="insLoad" style="cursor:pointer;border:0;padding:8px 16px">Load</button>
+        <span class="sub" id="insStatus"></span>
+      </div>
+      <div id="insBody" style="display:none">
+        <div class="stats" id="stIns" style="margin-bottom:16px"></div>
+        <h2>Who bought it</h2>
+        <div class="wrap-scroll"><table id="tblIns"></table></div>
+        <h2>Who was offered it and passed</h2>
+        <p class="sub" style="margin:-6px 0 10px">Orders that contained an insurable program and went without. Day camps and classes are not eligible, so they are left out of both counts.</p>
+        <div class="wrap-scroll"><table id="tblInsNo"></table></div>
+      </div>
     </section>
 
     <section class="sec" id="s-campers">
@@ -433,16 +451,20 @@
     return '2026-09-14'; // classes/day camps: season start
   }
   function money0(c){ return usd2(c); }
-  $('accLoad').addEventListener('click', function(){
-    $('accStatus').textContent = 'loading\u2026';
-    sb.auth.getSession().then(function(res){
+  // one fetch, shared by Accounting and Insurance so the two never disagree
+  function fetchFinance(year){
+    return sb.auth.getSession().then(function(res){
       var token = res.data && res.data.session && res.data.session.access_token;
       return fetch('/api/reg-finance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ year: +$('accYear').value })
+        body: JSON.stringify({ year: +year })
       });
-    }).then(function(r){ return r.json(); }).then(function(d){
+    }).then(function(r){ return r.json(); });
+  }
+  $('accLoad').addEventListener('click', function(){
+    $('accStatus').textContent = 'loading\u2026';
+    fetchFinance($('accYear').value).then(function(d){
       if (d.error) { $('accStatus').textContent = 'error: ' + d.error; return; }
       ACC = d;
       $('accStatus').textContent = d.transactions.length + ' payments, ' + d.orders.length + ' orders';
@@ -485,6 +507,97 @@
       });
     });
   }
+
+  // ---------- tuition insurance ----------
+  // Premiums live in the Stripe transaction metadata as insurance_cents, joined
+  // to an order by payment intent. Only camps and shows can carry insurance, so
+  // the attach rate is measured against orders that actually had the option.
+  var INS = null;
+  (function(){
+    var y = new Date().getFullYear();
+    for (var i = y; i >= 2026; i--) $('insYear').insertAdjacentHTML('beforeend', '<option>' + i + '</option>');
+  })();
+  function insEligible(items, byId){
+    // a day camp or a class is never insurable; anything else is
+    return items.some(function(it){
+      if (it.show) return true;
+      var a = byId[it.activity_id] || {};
+      if (a.category === 'class') return false;
+      var cents = it.unit_cents || it.price_cents || a.price_cents || 0;
+      return cents > 20000;
+    });
+  }
+  function insRows(d){
+    var byId = {}; (d.activities || []).forEach(function(a){ byId[a.id] = a; });
+    var txByPi = {}; (d.transactions || []).forEach(function(t){ txByPi[t.pi] = t; });
+    return (d.orders || []).map(function(o){
+      var items = d.items_by_order[o.id] || [];
+      if (!items.length) return null;
+      var t = txByPi[o.stripe_payment_intent] || {};
+      var m = t.metadata || {};
+      var progs = {}; items.forEach(function(it){ progs[accProgOf(it, byId)] = 1; });
+      return {
+        o: o, cents: +m.insurance_cents || 0,
+        eligible: insEligible(items, byId),
+        progs: Object.keys(progs).sort(),
+        campers: [].concat.apply([], items.map(function(it){ return it.camper_name ? [it.camper_name] : []; }))
+      };
+    }).filter(Boolean);
+  }
+  function renderInsurance(){
+    var rows = insRows(INS);
+    var bought = rows.filter(function(r){ return r.cents > 0; });
+    var eligible = rows.filter(function(r){ return r.eligible; });
+    var passed = eligible.filter(function(r){ return r.cents <= 0; });
+    var revenue = bought.reduce(function(s, r){ return s + r.cents; }, 0);
+    var families = {}; bought.forEach(function(r){ if (r.o.email) families[r.o.email.toLowerCase()] = 1; });
+    var rate = eligible.length ? Math.round(bought.length / eligible.length * 100) : 0;
+    var avg = bought.length ? Math.round(revenue / bought.length) : 0;
+
+    $('stIns').innerHTML =
+      stat(usd(revenue), 'premiums collected', 'ok') +
+      stat(bought.length, 'orders insured', 'gold') +
+      stat(rate + '%', 'of eligible orders', rate >= 20 ? 'ok' : '') +
+      stat(Object.keys(families).length, 'families') +
+      stat(usd(avg), 'average premium') +
+      stat(eligible.length, 'orders eligible') +
+      stat(passed.length, 'passed on it', passed.length ? 'bad' : '');
+
+    function table(list, el, empty){
+      $(el).innerHTML = list.length
+        ? '<tr><th>date</th><th>family</th><th>campers</th><th>programs</th>' +
+          '<th class="num">order total</th><th class="num">premium</th></tr>' +
+          list.sort(function(a, b){ return String(b.o.created_at).localeCompare(String(a.o.created_at)); })
+            .map(function(r){
+              return '<tr><td>' + dt(r.o.created_at) + '</td>' +
+                '<td>' + esc(r.o.parent_name || '') +
+                  '<div class="sub">' + esc(r.o.email || '') + '</div></td>' +
+                '<td class="sub">' + esc(r.campers.join(', ')) + '</td>' +
+                '<td class="sub">' + esc(r.progs.join(', ')) + '</td>' +
+                '<td class="num">' + usd(r.o.total_cents) + '</td>' +
+                '<td class="num">' + (r.cents ? usd(r.cents) : '<span class="sub">none</span>') + '</td></tr>';
+            }).join('')
+        : '<tr><td class="empty">' + empty + '</td></tr>';
+    }
+    table(bought, 'tblIns', 'nobody bought tuition insurance this year');
+    table(passed, 'tblInsNo', 'every eligible order took insurance');
+    $('insBody').style.display = '';
+  }
+  // The nav handler lives in an outer scope that cannot see INS, so the
+  // open-the-tab-and-load behaviour is wired from in here instead.
+  (function(){
+    var tab = document.querySelector('#nav a[data-s=insurance]');
+    if (tab) tab.addEventListener('click', function(){ if (!INS) $('insLoad').click(); });
+  })();
+  $('insLoad').addEventListener('click', function(){
+    $('insStatus').textContent = 'loading…';
+    fetchFinance($('insYear').value).then(function(d){
+      if (d.error) { $('insStatus').textContent = 'error: ' + d.error; return; }
+      INS = d;
+      $('insStatus').textContent = (d.orders || []).length + ' orders scanned';
+      renderInsurance();
+    }).catch(function(){ $('insStatus').textContent = 'network error'; });
+  });
 
   // ---- Credits (Todd mints these himself) ----
   var CR = null;
