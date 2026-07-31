@@ -59,6 +59,24 @@ export default async (req) => {
     link: `https://www.northernvirginiaperformingarts.org/register/?ref=${f.ref_code}`,
   }));
 
+  // { test_to: "addr" } — one real send to that address using that family's
+  // own code (falls back to the NOVAPA4747 house code); never stamps anyone
+  if (body.test_to) {
+    const tf = fams.filter((f) => (f.email || "").toLowerCase() === String(body.test_to).toLowerCase())[0];
+    const first = (tf?.parent_name || "").trim().split(" ")[0] || "Jason";
+    const link = `https://www.northernvirginiaperformingarts.org/register/?ref=${tf?.ref_code || "NOVAPA4747"}`;
+    const { default: nodemailer } = await import("nodemailer");
+    const t = nodemailer.createTransport({
+      host: "smtp.gmail.com", port: 465, secure: true,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    });
+    await t.sendMail({
+      from: `Jason from Broadway Bound <${process.env.SMTP_USER}>`,
+      to: String(body.test_to), subject: SUBJECT, text: BODY(first, link),
+    });
+    return Response.json({ ok: true, test: true, to: body.test_to, link });
+  }
+
   if (!body.send) return Response.json({ dry_run: true, count: list.length, recipients: list });
 
   const { default: nodemailer } = await import("nodemailer");
