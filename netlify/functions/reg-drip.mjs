@@ -90,6 +90,11 @@ async function stopRepliers(states) {
   const active = states.filter((s) => s.status === "active");
   if (!active.length) return 0;
   const senders = new Set();
+  // every Message-ID any inbound mail replies to or threads with — catches a
+  // parent replying from a DIFFERENT address than the one we drip (Kelsey
+  // Alford, Jul 30: drip to alfordsofva@, reply from kelseyrose.alford@ —
+  // sender matching missed it and step 3 still sent)
+  const referenced = new Set();
   try {
     const { ImapFlow } = await import("imapflow");
     const client = new ImapFlow({
@@ -101,8 +106,11 @@ async function stopRepliers(states) {
     const lock = await client.getMailboxLock("INBOX");
     try {
       const since = new Date(Date.now() - 5 * 24 * 3600 * 1000);
-      for await (const msg of client.fetch({ since }, { envelope: true })) {
+      for await (const msg of client.fetch({ since }, { envelope: true, headers: ["references", "in-reply-to"] })) {
         for (const a of msg.envelope?.from || []) senders.add(normEmail(a.address));
+        if (msg.envelope?.inReplyTo) referenced.add(msg.envelope.inReplyTo.trim());
+        const h = msg.headers ? msg.headers.toString() : "";
+        for (const id of h.match(/<[^<>\s]+>/g) || []) referenced.add(id);
       }
     } finally { lock.release(); }
     await client.logout();
@@ -112,7 +120,9 @@ async function stopRepliers(states) {
   }
   let stopped = 0;
   for (const s of active) {
-    if (!senders.has(normEmail(s.email))) continue;
+    const refs = Array.isArray(s.msg_refs) ? s.msg_refs : [];
+    const threadReplied = refs.some((r) => referenced.has(r));
+    if (!threadReplied && !senders.has(normEmail(s.email))) continue;
     const rows = await svc(
       `retarget_state?email=eq.${encodeURIComponent(s.email)}&status=eq.active`,
       { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "stopped" }) }
