@@ -48,6 +48,9 @@
   ];
   var VENDORS = ['Amazon', 'In stock', 'Build in shop', 'Facebook Marketplace', 'Thrift / consignment', 'Local store', 'Borrowed'];
   var CATS = { set: 'Set', prop: 'Props', costume: 'Costumes' };
+  // Department budgets, in cents (CJ, Jul 31). $500 each.
+  var BUDGET = { set: 50000, prop: 50000, costume: 50000 };
+  var BUDGET_TOTAL = BUDGET.set + BUDGET.prop + BUDGET.costume;
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
@@ -363,14 +366,29 @@
       var k = st(it.id).st; return k !== 'done' && k !== 'arrived';
     }).reduce(function (a, it) { return a + lineCost(it); }, 0);
 
+    var spent = grandTotal();
+    var left = BUDGET_TOTAL - spent;
+
     $('budget').innerHTML =
       '<div class="sc-summary">' +
-        '<div class="ss-row big"><span>Total production cost</span><b>' + money(grandTotal()) + '</b></div>' +
+        '<div class="ss-row big"><span>Spent so far</span><b>' + money(spent) + '</b></div>' +
+        '<div class="ss-row"><span>Budget</span><b>' + money(BUDGET_TOTAL) + '</b></div>' +
+        '<div class="ss-row"><span>' + (left < 0 ? 'Over by' : 'Left') + '</span>' +
+          '<b class="' + (left < 0 ? 'over' : 'under') + '">' + money(Math.abs(left)) + '</b></div>' +
         '<div class="ss-row"><span>Still to arrive</span><b>' + money(outstanding) + '</b></div>' +
       '</div>' +
       '<h3>By department</h3>' +
       ['set', 'prop', 'costume'].map(function (c) {
-        return '<div class="kv"><span class="kv-k">' + esc(CATS[c]) + '</span><span class="kv-v">' + money(byCat[c] || 0) + '</span></div>';
+        var used = byCat[c] || 0, cap = BUDGET[c] || 0;
+        var pct = cap ? Math.min(100, Math.round(used / cap * 100)) : 0;
+        var over = used > cap;
+        return '<div class="dept' + (over ? ' over' : '') + '">' +
+          '<div class="dept-h"><b>' + esc(CATS[c]) + '</b>' +
+            '<span>' + money(used) + ' of ' + money(cap) + '</span></div>' +
+          '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+          '<div class="dept-f">' + (over
+            ? '<span class="over">Over by ' + money(used - cap) + '</span>'
+            : '<span>' + money(cap - used) + ' left</span>') + '</div></div>';
       }).join('') +
       '<h3>By scene</h3>' +
       rows.map(function (r) {
@@ -389,12 +407,13 @@
     $('refCrews').innerHTML = D.rhythm.map(function (r) {
       if (!r.v) return '<h3>' + esc(r.k) + '</h3>';
       return '<div class="kv"><span class="kv-k">' + esc(r.k) + '</span><span class="kv-v">' + esc(r.v) + '</span></div>';
-    }).join('');
-    $('refFlags').innerHTML = D.flags.map(function (f) {
-      return '<div class="flag"><div class="flag-h"><span class="flag-t">' + esc(f.type) + '</span>' + esc(f.issue) + '</div>' +
-        '<div class="sc-l"><span>Handled</span>' + esc(f.did) + '</div>' +
-        (f.need && f.need !== 'None.' ? '<div class="sc-l need"><span>You</span>' + esc(f.need) + '</div>' : '') + '</div>';
-    }).join('');
+    }).join('') +
+      '<h3>Still to confirm</h3>' +
+      D.flags.map(function (f) {
+        return '<div class="flag"><div class="flag-h"><span class="flag-t">' + esc(f.type) + '</span>' +
+          esc(f.issue) + '</div>' +
+          '<div class="sc-l need"><span>Next</span>' + esc(f.need) + '</div></div>';
+      }).join('');
   }
 
   // ---------- boot ----------

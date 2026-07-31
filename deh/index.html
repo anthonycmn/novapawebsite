@@ -250,6 +250,39 @@
   .budrow{cursor:pointer}
   .budrow:hover .kv-k{color:var(--gold2)}
 
+  /* ── support tab ──────────────────────────────────────────────────── */
+  .crisis{background:rgba(255,120,120,0.08);border:1px solid rgba(255,140,140,0.4);
+    border-radius:14px;padding:15px 16px;margin:10px 0 22px}
+  #v-support .crisis h3{margin:0 0 12px;font-size:19px;color:#FFB4B4;
+    border-bottom:1px solid rgba(255,140,140,0.25);padding-bottom:9px}
+  .cr{display:flex;flex-direction:column;gap:2px;padding:12px 14px;margin-bottom:8px;border-radius:11px;
+    background:rgba(8,17,31,0.5);border:1px solid rgba(255,140,140,0.28);text-decoration:none}
+  .cr b{font-size:19px;color:#fff;font-variant-numeric:tabular-nums}
+  .cr span{font-size:12.5px;color:var(--dim);line-height:1.45}
+  .cr.urgent{border-color:rgba(255,140,140,0.6);background:rgba(255,120,120,0.12)}
+  .cr-note{font-size:13px;color:var(--dim);line-height:1.6;margin-top:10px}
+  .cr-note b{color:#fff}
+  #v-support h3{font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--gold3);
+    margin:26px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .sup-p{font-size:13.5px;color:var(--dim);line-height:1.6;margin:0 0 12px}
+  .sup{display:flex;flex-direction:column;gap:9px}
+  .sup-i{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    font-size:13.5px;line-height:1.62;color:var(--dim)}
+  .sup-i b{color:#fff}
+  .sup-i a{color:var(--gold2)}
+
+  /* ── department budgets ───────────────────────────────────────────── */
+  .dept{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:9px}
+  .dept.over{border-color:rgba(255,140,140,0.5);background:rgba(255,120,120,0.07)}
+  .dept-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+  .dept-h b{font-size:15px;color:#fff}
+  .dept-h span{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .dept.over .bar i{background:linear-gradient(90deg,#C05050,#FF8C8C)}
+  .dept-f{font-size:12px;color:var(--dim2);margin-top:6px}
+  .over{color:#FFB4B4}
+  .under{color:var(--study)}
+  .ss-row b.over{color:#FFB4B4} .ss-row b.under{color:var(--study)}
+
   /* ── bottom nav ───────────────────────────────────────────────────── */
   .topbar{position:sticky;top:0;z-index:40;background:rgba(8,17,31,0.96);
     backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
@@ -302,7 +335,7 @@
     <button class="navbtn" data-v="scenes" type="button">Scenes</button>
     <button class="navbtn" data-v="budget" type="button">Cost</button>
     <button class="navbtn" data-v="crews" type="button">Crews</button>
-    <button class="navbtn" data-v="flags" type="button">Flags</button>
+    <button class="navbtn" data-v="support" type="button">Support</button>
   </nav>
   </div>
 
@@ -313,7 +346,102 @@
   <section class="view" id="v-scene1"><div id="sceneDetail"></div></section>
   <section class="view" id="v-budget"><h3>Cost analysis</h3><div id="budget"></div></section>
   <section class="view" id="v-crews"><div id="refCrews"></div></section>
-  <section class="view" id="v-flags"><h3>Open questions</h3><div id="refFlags"></div></section>
+  <section class="view" id="v-support">
+
+    <div class="crisis">
+      <h3>If someone is in crisis right now</h3>
+      <a class="cr" href="tel:988"><b>988</b><span>Suicide &amp; Crisis Lifeline &middot; call or text, 24/7</span></a>
+      <a class="cr" href="sms:741741&body=HOME"><b>Text HOME to 741741</b><span>Crisis Text Line &middot; 24/7</span></a>
+      <a class="cr" href="tel:18664887386"><b>1-866-488-7386</b><span>The Trevor Project &middot; LGBTQ+ young people &middot; or text START to 678-678</span></a>
+      <a class="cr urgent" href="tel:911"><b>911</b><span>If there is immediate danger to life</span></a>
+      <p class="cr-note">Then tell <b>Katie Rivers</b>, our Director of Health and Safety and a Licensed
+      Clinical Social Worker, and tell <b>CJ</b>. Same day, not the next morning.</p>
+    </div>
+
+    <h3>If a student tells you something</h3>
+    <div class="sup">
+      <div class="sup-i"><b>Stay with them.</b> Do not leave them alone to go find someone. Bring the help to them, or take them with you.</div>
+      <div class="sup-i"><b>You are not their therapist, and you should not try to be.</b> Your job is to listen, take it seriously, and hand it to Katie. That is enough. That is the whole job.</div>
+      <div class="sup-i"><b>Ask directly.</b> "Are you thinking about killing yourself?" Asking does not put the idea in someone's head — that is a myth, and the research is clear. Not asking is what leaves them alone with it.</div>
+      <div class="sup-i"><b>Do not promise to keep it secret.</b> Say instead: "I care too much about you to keep this to myself. I am going to bring in someone who can help, and I will tell you who." Then do exactly that.</div>
+      <div class="sup-i"><b>Do not argue, minimise, or fill silence.</b> "You have so much to live for" lands as "you are wrong to feel this." Try "I am glad you told me" and then be quiet.</div>
+      <div class="sup-i"><b>Write it down.</b> As soon as you are out of the room, write what they said in their words, with the time and who else was present. Memory rewrites itself and this may matter later.</div>
+      <div class="sup-i"><b>Then hand off, same day.</b> Katie first, CJ second. Do not carry it home and do not sit on it over a weekend.</div>
+    </div>
+
+    <h3>The Monday company conversation</h3>
+    <p class="sup-p">Day one opens with this, before the read-through, with all twenty-four in the room.
+    It is fifteen minutes and it sets the terms for two weeks.</p>
+    <div class="sup">
+      <div class="sup-i"><b>Name the material plainly.</b> "This show is about a boy who dies by suicide and a boy who lies about knowing him. It deals with suicide, depression, anxiety, and grief. We are going to work on it seriously and we are going to look after each other while we do."</div>
+      <div class="sup-i"><b>Say the numbers out loud and put them somewhere.</b> 988. Text HOME to 741741. On the callboard, in the program, in the parent email. Not just said once.</div>
+      <div class="sup-i"><b>Name the adults.</b> Who Katie is, what she does, and that going to her is not a big deal and not a betrayal of anyone.</div>
+      <div class="sup-i"><b>Give them an exit.</b> Anyone can step out of a rehearsal, at any point, without explaining, and no one will chase them or ask why in front of the room. Someone will check on them quietly.</div>
+      <div class="sup-i"><b>Say what we do not do.</b> We do not joke about the subject in this room. We do not improvise around it. What happens in a rehearsal about a suicide does not become a group chat.</div>
+      <div class="sup-i"><b>Ask, do not lecture.</b> End by asking what they need from us to do this well. Then write down what they say.</div>
+    </div>
+
+    <h3>How we talk about it, on stage and off</h3>
+    <p class="sup-p">These are the standard safe-messaging principles used in suicide prevention. They apply
+    to rehearsal notes, the programme, social posts, and how we talk in the room.</p>
+    <div class="sup">
+      <div class="sup-i"><b>"Died by suicide," not "committed suicide."</b> Committed belongs to crimes and sins. It is neither.</div>
+      <div class="sup-i"><b>Never describe method or means.</b> Not in the room, not in notes, not in publicity. This is the single most important rule.</div>
+      <div class="sup-i"><b>Never present suicide as a solution, an escape, or a way to be finally understood.</b> Connor's death is the wound the show is about, not its answer.</div>
+      <div class="sup-i"><b>Pair the subject with help.</b> Every time it comes up publicly, the resources come with it. That pairing is what turns awareness into a route out.</div>
+      <div class="sup-i"><b>Do not romanticise the memorial.</b> The show itself is sharp about how a grieving community turns a death into content. Do not let our own publicity do the thing the show is criticising.</div>
+      <div class="sup-i"><b>Watch the hashtag.</b> #YouWillBeFound is in the artwork. Used well it points at connection. Used carelessly it points at a death. Keep the resources next to it.</div>
+    </div>
+
+    <h3>Getting out of the material</h3>
+    <p class="sup-p">Evan, Connor, Heidi and Zoe spend two weeks inside grief and self-loathing. Teenagers do
+    not automatically leave that at the door, and pretending they do is how a company gets hurt.</p>
+    <div class="sup">
+      <div class="sup-i"><b>Close every heavy call properly.</b> A minute at the end, out of character, in their own name: what they are taking home and what they are leaving here. It sounds small and it works.</div>
+      <div class="sup-i"><b>Watch the ones with the least to do.</b> An ensemble student sitting through "Requiem" for the fifth time is absorbing it with none of the acting task to hold on to.</div>
+      <div class="sup-i"><b>Check in on the two leads by name.</b> Not "you okay?" in a corridor. A real question, from an adult, once a week, in private.</div>
+      <div class="sup-i"><b>Tech week is when it surfaces.</b> Long days, high stakes, tired kids, the material at full volume for the first time. Watch harder that week, not less.</div>
+    </div>
+
+    <h3>Signs worth acting on</h3>
+    <div class="sup">
+      <div class="sup-i">Talking or writing about wanting to die, being a burden, or having no way out — including in a joke.</div>
+      <div class="sup-i">Withdrawing from the company, or a sudden change in someone who had been fine.</div>
+      <div class="sup-i">Giving away things that matter to them. Saying goodbye oddly.</div>
+      <div class="sup-i">Sleep gone, eating gone, appearance changed noticeably across the two weeks.</div>
+      <div class="sup-i">A student identifying hard with Connor, or with Evan's isolation, in a way that stops feeling like acting.</div>
+      <div class="sup-i" style="color:var(--gold3)">If you are not sure whether it counts, it counts. Tell Katie. Being wrong costs a five-minute conversation.</div>
+    </div>
+
+    <h3>The two staged kisses</h3>
+    <p class="sup-p">Evan and Zoe kiss in Act I Sc 11 and again in Sc 12. These are minors, and intimacy is
+    staged like a fight: choreographed, repeatable, and consented to every single time.</p>
+    <div class="sup">
+      <div class="sup-i"><b>Closed call.</b> Only the performers, the intimacy director, and one other adult. Tony directs these per his 7/14 note.</div>
+      <div class="sup-i"><b>Choreograph it exactly.</b> Where the hands go, how long, how it ends. Nothing improvised, nothing "found in the moment."</div>
+      <div class="sup-i"><b>Consent is asked before every call, not once.</b> Yes yesterday is not yes today.</div>
+      <div class="sup-i"><b>Either performer can stop or renegotiate at any point</b>, with no explanation owed and no consequence to their role.</div>
+      <div class="sup-i"><b>Parents know before the first rehearsal of it</b>, not after they see it.</div>
+    </div>
+
+    <h3>Where to read more</h3>
+    <div class="sup">
+      <div class="sup-i"><b><a href="https://afsp.org" target="_blank" rel="noopener">American Foundation for Suicide Prevention</a></b> — "Talk Saves Lives" and their safe messaging recommendations. The clearest starting point for staff.</div>
+      <div class="sup-i"><b><a href="https://988lifeline.org" target="_blank" rel="noopener">988 Lifeline</a></b> — what happens when you call, so you can tell a student honestly.</div>
+      <div class="sup-i"><b><a href="https://jedfoundation.org" target="_blank" rel="noopener">The Jed Foundation</a></b> — teen and young adult mental health, written for the adults around them.</div>
+      <div class="sup-i"><b><a href="https://reportingonsuicide.org" target="_blank" rel="noopener">Reporting on Suicide</a></b> — written for journalists, but it is the plainest guide to safe language anywhere. Read it before writing the programme note.</div>
+      <div class="sup-i"><b><a href="https://www.thetrevorproject.org" target="_blank" rel="noopener">The Trevor Project</a></b> — for LGBTQ+ students, who carry higher risk.</div>
+      <div class="sup-i"><b>MTI</b> — check the materials that came with our Dear Evan Hansen High School Version licence. MTI publishes production support for this title specifically; if it is not in our packet, ring them on (212) 541-4684 and ask.</div>
+    </div>
+
+    <div class="crisis" style="margin-top:22px">
+      <h3>For the adults</h3>
+      <p class="cr-note" style="margin-top:0">Running this show is heavy for staff too, and some of you will
+      have your own history with it. Nobody has to work on this material if it is not safe for them to.
+      Tell CJ and it will be handled quietly, without a reason being asked for.</p>
+    </div>
+
+  </section>
 
   <datalist id="vendorList">
     <option value="Amazon"><option value="In stock"><option value="Build in shop">
