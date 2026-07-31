@@ -369,7 +369,7 @@
       <div id="dayCards"></div>
       <div id="classCards"></div>
     </div>
-    <p class="tiny" style="margin:10px 0 4px">This year, campers in the same age group are in the same cast and show!</p>
+    <p class="tiny" id="sameCastNote" style="margin:10px 0 4px">This year, campers in the same age group are in the same cast and show!</p>
     <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
     <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; $180 per registration reserves your spot today, the rest on monthly autopay.</p>
@@ -1192,6 +1192,13 @@
     return state.allCat.filter(function(a){ return a.category === 'class' && a.bookable; })
       .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
   }
+  function classWhen(a){
+    // day + time + season dates from the Sawyer class_times payload
+    var ct = (a.class_times || [])[0];
+    if (!ct) return String(a.schedule_name || '').trim();
+    var t = ((ct.primary_text || [])[0] || '').replace(/\s*E[DS]T\s*$/, '');
+    return [ct.title_text, t, ct.secondary_text].filter(Boolean).join(' \u00b7 ');
+  }
   function renderClassCards(){
     var host = $('classCards');
     if (!host) return;
@@ -1205,6 +1212,7 @@
       });
     });
     var nSel = Object.keys(selIds).length;
+    state.classSel = Object.keys(selIds);
     host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 2 classes $159/mo \u00b7 3 classes $199/mo per camper \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
       cls.map(function(a){
         var kidRows = state.kids.map(function(k, i){
@@ -1216,25 +1224,15 @@
         return '<div class="showb" data-cat="class">' +
           '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
           '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
-          '<div class="d">' + esc(String(a.schedule_name || '').trim()) + (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/,'')) : '') + ' \u00b7 $90/mo</div>' +
+          '<div class="d">' + esc(classWhen(a)) + (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/,'')) : '') + ' \u00b7 $90/mo</div>' +
           '<div class="kids">' + kidRows + '</div></div></div>';
-      }).join('') +
-      '<div data-cat="class" class="showb" style="border:none;background:none;box-shadow:none;display:' + (nSel ? '' : 'none') + '">' +
-      '<button class="cta" id="clsGo" style="width:100%">Check out ' + nSel + ' class' + (nSel === 1 ? '' : 'es') + ' \u2192</button></div>';
+      }).join('');
     host.querySelectorAll('input[data-cls]').forEach(function(cb){
       cb.addEventListener('change', function(){
         state.assign['cls' + cb.dataset.cls + '|' + cb.dataset.i] = { on: cb.checked };
         ev('reg_class_toggled', { id: +cb.dataset.cls, on: cb.checked });
         renderClassCards();
       });
-    });
-    var go = document.getElementById('clsGo');
-    if (go) go.addEventListener('click', function(){
-      var ids = Object.keys(selIds);
-      if (!ids.length) return;
-      saveCart();
-      ev('reg_class_checkout', { ids: ids.join(',') });
-      location.href = '/register/?activity=' + ids.join(',');
     });
     applySeasonFilter();
   }
@@ -1322,6 +1320,9 @@
     var dc = $('dayCards'), cc = $('classCards');
     if (dc) dc.style.display = (fl === 'day' || fl === 'all') ? '' : 'none';
     if (cc) cc.style.display = (fl === 'class' || fl === 'all') ? '' : 'none';
+    // the "same age group, same cast" line is about summer casts only
+    var scn = $('sameCastNote');
+    if (scn) scn.style.display = (fl === 'summer' || fl === 'all') ? '' : 'none';
     document.querySelectorAll('#seasonChips .schip').forEach(function(c){
       c.classList.toggle('sel', c.dataset.f === fl);
     });
@@ -1572,7 +1573,25 @@
     });
     return items;
   }
-  $('assignNext').addEventListener('click', acquireHold);
+  $('assignNext').addEventListener('click', function(){
+    // classes bill monthly and need their own Stripe order (mixed_cart guard):
+    // a classes-only selection continues straight into the class checkout;
+    // with shows in the cart too, the shows go first and the class picks stay
+    // saved for the next visit.
+    var cls = state.classSel || [];
+    var others = buildItems();
+    if (cls.length && !others.length) {
+      saveCart();
+      ev('reg_class_checkout', { ids: cls.join(',') });
+      location.href = '/register/?activity=' + cls.join(',');
+      return;
+    }
+    if (cls.length && others.length) {
+      $('assignErr').textContent = 'Heads up: classes check out separately (they bill monthly) — finishing your show registration first, your class picks stay saved.';
+      $('assignErr').classList.add('on');
+    }
+    acquireHold();
+  });
   $('catNext').addEventListener('click', function(){
     var errEl = $('catErr'); errEl.classList.remove('on');
     if (!catBirthdaysReady()) { errEl.textContent = 'Add a birthday for each camper you\'re enrolling.'; errEl.classList.add('on'); return; }
