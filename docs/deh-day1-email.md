@@ -4,7 +4,7 @@ Send: Sunday Aug 2 (evening) or first thing Monday Aug 3.
 From: Broadway Bound | NoVAPA (education@novapa.org) via Constant Contact.
 To: DEH company students, parents/guardians copied.
 
-**Three things to fix before this goes out — see the notes at the bottom.**
+**One thing left before this goes out: curtain times. See the note at the bottom.**
 
 ---
 
@@ -64,7 +64,7 @@ This is the part that surprises people new to Broadway Bound Teen. Nobody sits i
 
 ## What to bring, every day
 
-- **A packed lunch and a snack.** We do not provide food. No DoorDash or delivery during the camp day — this one is firm.
+- **A packed lunch and a snack. Lunch is not provided — please pack one.** No DoorDash or delivery during the camp day, and that one is firm.
 - **A refillable water bottle**, named.
 - **A pencil.** Not a pen.
 - **Your script and a binder** once we hand them out.
@@ -111,7 +111,9 @@ If this material is close to something in your own life, you are not obliged to 
 
 **Dates and times.** Monday to Friday, 9:00 AM to 4:00 PM, August 3 through August 14.
 
-**Where.** The National Conference Center, Plaza C, Leesburg VA. **Drop off and pick up in front of Plaza C.** Parking is free and directly out front. [CONFIRM STREET NUMBER — see note]
+**Where.** The National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg VA 20175.
+
+**Getting in and out.** If your performer drives themselves, or if you are coming in with them, **park in the parking lot** — parking is free. If you are dropping off and going, **drop off at Plaza C**. Same at 4:00.
 
 **Pick-up.** 4:00 PM. There is a fifteen minute grace period, after which a late pick-up fee of $15 applies per fifteen minutes. If you are running late, email us rather than letting us wonder.
 
@@ -125,7 +127,7 @@ If this material is close to something in your own life, you are not obliged to 
 
 **Star Pages and Spirit Buttons** are ordered at novapa.booktix.com, not in the merch store. Star Pages put a photo and a personal message to your performer in the show programme. Spirit Buttons are $12 each. **Both are due by 5:00 PM on the second day of camp** — our print deadlines are immovable, so please order early.
 
-**Performance.** Friday, August 14. Call times and ticket information will follow this week. [CONFIRM — see note]
+**Performance.** Friday, August 14. **Call is 90 minutes before curtain** for every performer. Curtain time and ticket information follow this week.
 
 ---
 
@@ -144,20 +146,12 @@ Founder & Executive Director
 ---
 ---
 
-## Before you send — three things
+## Before you send — one thing left
 
-**1. The street number. This is the urgent one.** I have three different numbers for the same building and families drive there Monday morning:
+**The performance schedule.** Danielle's email indicates a Friday 8/14 evening performance and performances on Saturday 8/15. The rehearsal schedule ends Friday at 4:00 with dismissal to performance call, and Saturday is not built. Send me curtain times and I will put the exact call times in (90 minutes before, per your note) and add Saturday to the dashboard.
 
-| Source | Address |
-|---|---|
-| Your email signature, and what you told Valerie Stallcup on 7/31 | **18665** Conference Center Drive, Leesburg VA **20176** |
-| The website, per your instruction in the audit | **18945** Conference Center Drive, Plaza C, Leesburg VA **20175** |
-| The website before that audit | **18495** Conference Center Drive, Plaza C, Leesburg VA **20175** |
+**Answered and now in the draft:** the address is 18945 Conference Center Drive, Plaza C, Leesburg VA 20175 · park in the lot if driving, drop at Plaza C if dropping off · call is 90 minutes before curtain · lunch is not provided.
 
-I have left the number out of the draft rather than guess. Tell me which is right and I will set it here and across all 31 files on the website in one pass.
+**Two things to fix outside this email.** Your Gmail signature reads *18665 Conference Center Drive, Leesburg VA 20176* — wrong street number and wrong ZIP. It goes out on every message you send, and you gave that address to Valerie Stallcup on Friday when she asked where to bring Evelyn. Worth correcting the signature and sending her a one-line follow-up before Monday.
 
-**2. The performance schedule.** Danielle's email indicates a Friday 8/14 evening performance and performances on Saturday 8/15, but the rehearsal schedule ends Friday at 4:00 with dismissal to performance call, and Saturday is not built. Confirm and I will add call times.
-
-**3. Audition requirements.** I have written "a song you are confident singing, sixteen to thirty-two bars, sheet music or a track," which matches what you told Keisha Helsley in June. If Danielle wants something specific for placement — a particular cut, a required monologue, a dance call — send it and I will swap it in.
-
-One more, not blocking: you sent Valerie Stallcup the reply on 7/31 with the editing note `[CONFIRM: whether lunch is provided]` still in the body. Worth a short follow-up to her. This draft states plainly that families pack lunch, which matches the published policy.
+That same reply to her also went out with the editing note `[CONFIRM: whether lunch is provided]` still in the body. The answer is now confirmed: families pack lunch.
