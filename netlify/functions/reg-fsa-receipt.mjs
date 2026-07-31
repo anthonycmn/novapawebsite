@@ -100,7 +100,7 @@ export default async (req) => {
     if (it.show) {
       name = `${SHOW_NAMES[it.show]} — Broadway Bound Summer Camp`;
       dates = `${fmtLong(CAMP_STARTS[it.show])} through ${fmtLong(CAMP_ENDS[it.show])}`;
-      sched = "Monday through Friday, 8:30 AM–4:00 PM";
+      sched = "Monday through Friday, 8:30 AM–4:15 PM";
       listPrice = PRICE_CENTS;
       // label decided at print time: past camps read as provided, future as scheduled
       dateLabel = new Date(CAMP_ENDS[it.show] + "T23:59:59") < now
