@@ -57,7 +57,11 @@ export default async (req) => {
     return new Response("bad signature", { status: 400 });
   }
 
-  if (event.type !== "payment_intent.succeeded") {
+  // setup_intent.succeeded = a first-month-free class enrollment (CJ, Jul 31):
+  // no money moved today, but the saved card + identical metadata drive the
+  // same order + subscription creation. The subscription's trial already ends
+  // at the Oct 1 anchor, so "skip today's charge" needs no other change.
+  if (event.type !== "payment_intent.succeeded" && event.type !== "setup_intent.succeeded") {
     return new Response("ignored", { status: 200 });
   }
 
@@ -79,7 +83,7 @@ export default async (req) => {
       p_email: m.email || "",
       p_parent_name: m.parent_name || null,
       p_plan: m.plan,
-      p_amount_today_cents: pi.amount_received ?? pi.amount,
+      p_amount_today_cents: pi.amount_received ?? pi.amount ?? 0, // SetupIntents carry no amount
       p_total_cents: parseInt(m.total_cents || "0", 10),
       p_installment_cents: parseInt(m.installment_cents || "0", 10) || null,
       p_stripe_payment_intent: pi.id,

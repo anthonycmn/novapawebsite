@@ -4,17 +4,12 @@
 //
 // Pricing rules (CJ, Jul 20 2026):
 //  - No family fee.
-//  - Summer tiers are PER KID: 1 camp 10% / 2 camps 15% / 3 camps 20%,
-//    summer camps only, through the launch sale (EARLYBIRD_END).
-//  - Frozen + Little Mermaid: 10% off both when one kid bundles both;
-//    10% off either when bundled with a summer camp (camps keep their tier).
-//  - Show+camp combo (CJ, Jul 30 — supersedes the Jul 29 trio): a summer camp
-//    plus ONE of Frozen / Little Mermaid for the same kid = 15% off ALL of
-//    that kid's items; a camp plus BOTH fall shows = 20% off all of them.
-//    Camps take the better of the combo or their tier; two fall shows with no
-//    camp stay at the 10% bundle. Prior registrations count toward
-//    qualifying, but only cart items are priced — nothing reprices
-//    retroactively.
+//  - Unified show tiers (CJ, Jul 31 — supersedes the camp-only tiers, the
+//    10% two-show bundle, and the Jul 30 show+camp combo): every Broadway
+//    Bound show counts the same, summer camp or school-year show, Mean Girls
+//    included. PER REGISTRANT, through the launch sale (EARLYBIRD_END):
+//    1 show 10% / 2 shows 15% / 3+ shows 20%, off all of that kid's shows.
+//    Prior registrations qualify a kid; only cart items are priced.
 //  - Sibling 5%: non-BB items (classes) immediately; BB camps/shows only
 //    after the launch sale ends. Never stacks with tier/bundle discounts.
 //  - Payment plans cost 5% more than paying in full (PLAN_FEE_PCT): the fee
@@ -24,9 +19,15 @@
 //    last installment no later than 14 days before the item's start date
 //    AND no later than May 1, 2027 (CJ: collect summer money earlier).
 //    Within 14 days of start: pay-in-full only.
-//  - Classes: $90/mo, first month at checkout, next pull Oct 1, monthly
-//    through Jun 1 2027 (subscription auto-cancels Jul 1 2027).
+//  - Classes (CJ, Jul 31 bundles): PER REGISTRANT 1 class $90/mo, 2 classes
+//    $159/mo, 3 classes $199/mo (each past three +$40). No sibling stacking
+//    on classes — the bundle IS the discount. First month at checkout, next
+//    pull Oct 1, monthly through Jun 1 2027 (auto-cancels Jul 1 2027).
 //    Cancellation: 30 days notice (policy-enforced, not code).
+//  - Class + show cross-sell (CJ, Jul 31): a family with ANY 2026-27 show or
+//    camp registration (web order or Sawyer import) pays $0 today on a class
+//    checkout — first month free; billing simply starts Oct 1. Card is
+//    collected via SetupIntent instead of a charge.
 //  - Tuition insurance (opt-in, camps & shows only — NOT classes): +10% of
 //    the discounted subtotal, collected at checkout. Coverage per
 //    /policies#tuition-insurance: refund 100% at 90-76 days before start,
@@ -138,6 +139,15 @@ export function perKidRate(nCampsForKid, now = new Date()) {
   return 0;
 }
 
+// Class bundles (CJ, Jul 31): per registrant per month. The bundle replaces
+// the old per-class $90 + sibling math — no further stacking on classes.
+export function classMonthlyCents(nClassesForKid) {
+  if (nClassesForKid <= 0) return 0;
+  if (nClassesForKid === 1) return 9000;
+  if (nClassesForKid === 2) return 15900;
+  return 19900 + (nClassesForKid - 3) * 4000; // past three: 3rd-class step
+}
+
 export function siblingActive(isBB, now = new Date()) {
   // classes/non-BB: sibling runs now; BB camps/shows: only after the sale
   return isBB ? now > new Date(EARLYBIRD_END) : true;
@@ -183,47 +193,34 @@ export function priceCart(cart, plan, opts = {}) {
   const special = opts.special || null;
   const couponPct = special ? 0 : Math.min(100, Math.max(0, opts.couponPct || 0));
   const couponFixed = special ? 0 : Math.max(0, opts.couponFixedCents || 0);
-  // Prior registrations (Sawyer/Regpack/web) count toward discounts (CJ):
-  // prior SUMMER CAMPS advance the per-kid camp tier (1 on file + 1 in cart = 15%,
-  // + 2 in cart = 20% each); prior SHOWS qualify the 10% show bundle only.
-  // Cart items only — nothing reprices retroactively.
+  // Unified show tiers (CJ, Jul 31 — supersedes camp tiers, the 10% show
+  // bundle, and the Jul 30 show+camp combo): every Broadway Bound show counts
+  // the same, summer camp or school-year. Per registrant, through Aug 15:
+  // 1 show = 10%, 2 = 15%, 3+ = 20% — on all of that kid's shows. Mean Girls
+  // counts too; Teen Conservatory / DEH / day camps stay outside. Prior
+  // registrations (Sawyer/Regpack/web) qualify a kid, but only cart items
+  // get the price — nothing reprices retroactively.
   const priorCampsByKid = opts.priorCampsByKid || {};
   const priorShowsByKid = opts.priorShowsByKid || {};
-  const campsByKid = {};
-  for (const it of cart) if (it.show) {
-    const k = kidKey(it);
-    campsByKid[k] = (campsByKid[k] || 0) + 1;
-  }
-  for (const k of Object.keys(campsByKid)) campsByKid[k] += (priorCampsByKid[k] || 0);
-  const kidsWithSummer = new Set(Object.keys(campsByKid));
-  for (const it of cart) if (!it.show && (priorCampsByKid[kidKey(it)] || 0) > 0) kidsWithSummer.add(kidKey(it));
   const isDayCampItem = (it) => !it.show && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
-  const showsByKid = {};
-  // Mean Girls and the Teen Conservatory shows are excluded: each carries its
-  // own flat rule, which neither stacks nor counts toward the fall-show bundle
-  // for a kid's other programs
-  for (const it of cart) if (!it.show && !isDayCampItem(it) && !isMeanGirls(it) && !isTeenCon(it) && !isTeenIntensive(it)) {
+  const isCounted = (it) =>
+    it.show || (!isDayCampItem(it) && !isTeenCon(it) && !isTeenIntensive(it));
+  const countByKid = {};
+  for (const it of cart) if (isCounted(it)) {
     const k = kidKey(it);
-    (showsByKid[k] = showsByKid[k] || []).push(it);
+    countByKid[k] = (countByKid[k] || 0) + 1;
+  }
+  for (const k of Object.keys(countByKid)) {
+    countByKid[k] += (priorCampsByKid[k] || 0) + (priorShowsByKid[k] || 0);
   }
   // sibling (post-sale for BB; the tier is 0 then so no stacking)
   const kidOrder = [...new Set(cart.map(kidKey))];
   const firstKid = kidOrder[0];
 
-  // Show+camp combo (CJ, Jul 30): one fall show on top of a summer camp puts
-  // the kid at 15%, both fall shows at 20% — on every one of that kid's
-  // items. Camps take the better of the combo or their tier. Prior
-  // registrations qualify a kid, but only cart items get the price.
-  const comboRate = (k) => {
-    if (!kidsWithSummer.has(k)) return 0;
-    const shows = (showsByKid[k] || []).length + (priorShowsByKid[k] || 0);
-    return shows >= 2 ? 0.20 : shows >= 1 ? 0.15 : 0;
-  };
-
   const priced = cart.map((it) => {
     if (it.show) {
       const kid = kidKey(it);
-      let rate = Math.max(perKidRate(campsByKid[kid], now), comboRate(kid));
+      const rate = perKidRate(countByKid[kid], now);
       let unit = Math.round(PRICE_CENTS * (1 - rate));
       if (rate === 0 && siblingActive(true, now) && kid !== firstKid) {
         unit = Math.round(unit * (1 - SIBLING_PCT / 100));
@@ -255,20 +252,12 @@ export function priceCart(cart, plan, opts = {}) {
         : Math.round(it.price_cents * (1 - SIBLING_PCT / 100));
       return { ...it, unit, rate: 0 };
     }
-    // Broadway Bound Teens (Mean Girls): flat 10%, no stacking. Quietly
-    // extended Aug 1 -> Aug 15 to match the launch sale (Jason, Jul 30)
-    if (isMeanGirls(it)) {
-      const rate = now <= new Date(EARLYBIRD_END) ? 0.10 : 0;
-      return { ...it, unit: Math.round((it.price_cents || 0) * (1 - rate)), rate };
-    }
-    // BB show item (frozen/mermaid): combo rate with a camp (15/20), else the
-    // plain two-show bundle at 10%
+    // Any other Broadway Bound show item (Frozen/Mermaid casts, Mean Girls):
+    // the unified per-registrant tier, else sibling 5% once the sale ends
     const kid = kidKey(it);
-    const showTotal = (showsByKid[kid] || []).length + (priorShowsByKid[kid] || 0);
-    let unit = it.price_cents;
-    const rate = comboRate(kid) || (showTotal >= 2 ? 0.10 : 0);
-    if (rate) unit = Math.round(unit * (1 - rate));
-    else if (siblingActive(true, now) && kid !== firstKid) {
+    const rate = perKidRate(countByKid[kid], now);
+    let unit = Math.round((it.price_cents || 0) * (1 - rate));
+    if (rate === 0 && siblingActive(true, now) && kid !== firstKid) {
       unit = Math.round(unit * (1 - SIBLING_PCT / 100));
     }
     return { ...it, unit, rate };

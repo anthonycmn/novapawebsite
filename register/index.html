@@ -310,6 +310,8 @@
     <div class="season-chips" id="seasonChips">
       <span class="schip" data-f="summer">Summer</span>
       <span class="schip" data-f="year">Year Round</span>
+      <span class="schip" data-f="day">Day Camps</span>
+      <span class="schip" data-f="class">Classes</span>
       <span class="schip" data-f="all">All</span>
     </div>
     <div id="showBlocks">
@@ -364,6 +366,8 @@
           <div class="kids" data-fallshow="meangirls"></div>
         </div>
       </div>
+      <div id="dayCards"></div>
+      <div id="classCards"></div>
     </div>
     <p class="tiny" style="margin:10px 0 4px">This year, campers in the same age group are in the same cast and show!</p>
     <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
@@ -506,8 +510,8 @@
     // payment so the webhook can credit both families
     var rm = location.search.match(/[?&]ref=([A-Za-z0-9]+)/);
     if (rm) { try { localStorage.setItem('nova_ref', rm[1].toUpperCase()); } catch(e){} }
-    var sm = location.search.match(/[?&]season=(fall|all)/);
-    state.seasonFilter = sm ? (sm[1] === 'fall' ? 'year' : 'all') : 'summer';
+    var sm = location.search.match(/[?&]season=(fall|all|day|classes|class)/);
+    state.seasonFilter = sm ? ({ fall: 'year', all: 'all', day: 'day', classes: 'class', 'class': 'class' })[sm[1]] : 'summer';
     state.fallMode = false;
     if (state.catIds.length) {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
@@ -521,6 +525,8 @@
   function isMG(id){ return MG_IDS.indexOf(id) !== -1; }
   var TI_IDS = [1805731]; // Dear Evan Hansen teen intensive — flat price, no bundles
   function isTI(id){ return TI_IDS.indexOf(id) !== -1; }
+  var TC_IDS = [1960809, 1960811]; // Sweeney/Hadestown — their own 10%-pair rule, outside the tiers
+  function isTC(id){ return TC_IDS.indexOf(id) !== -1; }
   // One-off account adjustments entered as coupon codes — mirrors
   // SPECIAL_PLANS in reg-config.mjs (pct = flat off list replacing all other
   // discounts, nofee = no 5% plan fee, months = stretched schedule; server
@@ -593,6 +599,16 @@
   function money(cents){ return '$' + (cents/100).toLocaleString('en-US', {minimumFractionDigits: cents%100 ? 2 : 0, maximumFractionDigits:2}); }
   function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
   function discRate(n){ if (new Date() > new Date(C.EARLYBIRD_END)) return 0; return n>=3?0.20:n===2?0.15:n>=1?0.10:0; }
+  // Unified tiers (CJ, Jul 31): how many tier-counted shows a kid has —
+  // summer camps + fall/MG casts picked in this session + prior registrations
+  function kidShowCount(i){
+    var k = state.kids[i]; if (!k) return 0;
+    var n = 0;
+    Object.keys(SHOW_NAMES).forEach(function(sh){ var a = state.assign[sh + '|' + i]; if (a && a.on) n++; });
+    FALL_SHOWS.forEach(function(fs){ if (fallCastOn(i, fs.key)) n++; });
+    n += (k.already || []).filter(function(sl){ return ['httyd','charlie','trolls','frozen','mermaid'].indexOf(sl) !== -1; }).length;
+    return n;
+  }
   function kidKey(it){ return it && it.ci != null ? 'i' + it.ci : (it && it.camper) || '?'; }
   function saleOn(){ return new Date() <= new Date(C.EARLYBIRD_END); }
   function addonActFor(kind, age){
@@ -997,13 +1013,8 @@
         var a = state.assign[show + '|' + i];
         if (a && a.on) n++;
       });
-      // combo check mirrors localPricing: one fall show (picked or prior) on
-      // top of a camp lifts this kid to 15%, both fall shows to 20%
-      var fallOn = 0;
-      FALL_SHOWS.forEach(function(fs){ if (fs.key !== 'meangirls' && fallCastOn(i, fs.key)) fallOn++; });
-      fallOn += (k.already || []).filter(function(s){ return s === 'frozen' || s === 'mermaid'; }).length;
-      if (n) byKid.push({ name: k.name, fall: fallOn,
-        n: n + (k.already || []).filter(function(s){ return ['httyd','charlie','trolls'].indexOf(s) !== -1; }).length });
+      // unified tiers (CJ, Jul 31): every BB show counts the same
+      if (n) byKid.push({ name: k.name, n: kidShowCount(i) });
     });
     var fallN = 0;
     state.kids.forEach(function(k, i){
@@ -1017,20 +1028,17 @@
       return;
     }
     if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
-    function rateOf(e, n){ return Math.max(discRate(n), e.fall >= 2 ? 0.20 : e.fall >= 1 ? 0.15 : 0); }
-    function label(e){ return e.n + ' show' + (e.n > 1 ? 's' : '') + ' selected, ' + Math.round(rateOf(e, e.n) * 100) + '% off'; }
+    function rateOf(e, n){ return discRate(n); }
+    function label(e){ return e.n + ' show' + (e.n > 1 ? 's' : '') + ' selected, ' + Math.round(discRate(e.n) * 100) + '% off'; }
     function nudge(e){
-      // only dangle a number the next add actually delivers — the fall-show
-      // step usually beats the camp step, so it goes first
-      var cur = rateOf(e, e.n);
+      var cur = discRate(e.n);
       if (cur >= 0.20) return '';
-      if (e.fall === 1) return ' \u00b7 add the 2nd fall show for 20% off everything';
-      if (e.n === 1) return ' \u00b7 add a fall show or 2nd camp for 15% off everything';
-      if (e.n === 2) return ' \u00b7 add the 3rd camp for 20% off everything';
+      if (e.n === 1) return ' \u00b7 add a 2nd show for 15% off both';
+      if (e.n === 2) return ' \u00b7 add a 3rd show for 20% off everything';
       return '';
     }
     if (byKid.length === 1) { t.textContent = label(byKid[0]) + nudge(byKid[0]); return; }
-    var uniform = byKid.every(function(e){ return e.n === byKid[0].n && e.fall === byKid[0].fall; });
+    var uniform = byKid.every(function(e){ return e.n === byKid[0].n; });
     t.textContent = uniform
       ? label(byKid[0]) + ' each' + nudge(byKid[0])
       : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(rateOf(e, e.n) * 100) + '% off)'; }).join(' \u00b7 ');
@@ -1084,9 +1092,112 @@
       p.addEventListener('click', function(){ state.assign[p.dataset.key].band = p.dataset.band; renderShowKids(); saveCart(); });
     });
     renderFallCards();
+    renderDayCards();
+    renderClassCards();
     applySeasonFilter();
     syncShows(); updateTicker(); upsellCheck();
   }
+  // ---- Day Camps tab: one-day $70 events, straight into the same cart ----
+  function dayCampsList(){
+    return state.allCat.filter(function(a){
+      return a.category === 'camp' && a.bookable && (a.price_cents || 0) <= 20000;
+    }).sort(function(a,b){ return castRange(a).min - castRange(b).min || String(a.schedule_name||'').localeCompare(String(b.schedule_name||'')); });
+  }
+  function renderDayCards(){
+    var host = $('dayCards');
+    if (!host) return;
+    var camps = dayCampsList();
+    if (!camps.length) { host.innerHTML = ''; return; }
+    var bands = [];
+    camps.forEach(function(a){ var r = castRange(a); var key = r.min + '\u2013' + r.max; if (bands.indexOf(key) === -1) bands.push(key); });
+    host.innerHTML = '<div id="dayHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps \u00b7 $70 \u00b7 9 AM \u2013 4 PM \u00b7 pay in full at checkout (day camps don\u2019t count toward the show discount)</div>' +
+      bands.map(function(band){
+        var head = '<div style="margin:18px 0 8px;font-weight:800;color:var(--gold3);letter-spacing:.08em;text-transform:uppercase;font-size:12px">Ages ' + band + '</div>';
+        var cards = camps.filter(function(a){ var r = castRange(a); return (r.min + '\u2013' + r.max) === band; }).map(function(a){
+          var when = (String(a.schedule_name || '').split('|')[1] || '').trim();
+          var full = a.remaining != null && a.remaining <= 0;
+          var leftTag = (a.remaining != null && a.remaining < 20 && !full) ? ' \u00b7 <span style="color:var(--gold3)">' + a.remaining + ' spots left</span>' : (full ? ' \u00b7 <span class="left">Full</span>' : '');
+          var kidRows = state.kids.map(function(k, i){
+            if (!k.sel) return '';
+            var key = 'act' + a.id + '|' + i;
+            var on = state.assign[key] && state.assign[key].on;
+            var r = castRange(a);
+            var age = campAge(k);
+            var out = age != null && (age < r.min - 1 || age > r.max);
+            return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-day="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + ((out || full) ? ' disabled' : '') + '> <span>' + esc(k.name) + '</span>' +
+              (out ? ' <span class="badge-done" style="opacity:.65">for ages ' + r.min + '\u2013' + r.max + '</span>' : '') + '</label></div>';
+          }).join('');
+          return '<div class="showb" data-cat="day">' +
+            '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
+            '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
+            '<div class="d">' + esc(when) + ' \u00b7 Ages ' + castRange(a).min + '\u2013' + castRange(a).max + ' \u00b7 $' + Math.round((a.price_cents || 0) / 100) + leftTag + '</div>' +
+            '<div class="kids">' + kidRows + '</div></div></div>';
+        }).join('');
+        return head + cards;
+      }).join('');
+    host.querySelectorAll('input[data-day]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        state.assign['act' + cb.dataset.day + '|' + cb.dataset.i] = { on: cb.checked };
+        ev('reg_daycamp_toggled', { id: +cb.dataset.day, on: cb.checked });
+        renderShowKids(); saveCart();
+      });
+    });
+    applySeasonFilter();
+  }
+
+  // ---- Classes tab: cards here, checkout through the class flow (they bill
+  // monthly, so Stripe needs them in their own order — mixed_cart guard) ----
+  function classesList(){
+    return state.allCat.filter(function(a){ return a.category === 'class' && a.bookable; })
+      .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
+  }
+  function renderClassCards(){
+    var host = $('classCards');
+    if (!host) return;
+    var cls = classesList();
+    if (!cls.length) { host.innerHTML = ''; return; }
+    var selIds = {};
+    cls.forEach(function(a){
+      state.kids.forEach(function(k, i){
+        var v = state.assign['cls' + a.id + '|' + i];
+        if (k.sel && v && v.on) selIds[a.id] = 1;
+      });
+    });
+    var nSel = Object.keys(selIds).length;
+    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 2 classes $159/mo \u00b7 3 classes $199/mo per camper \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
+      cls.map(function(a){
+        var kidRows = state.kids.map(function(k, i){
+          if (!k.sel) return '';
+          var key = 'cls' + a.id + '|' + i;
+          var on = state.assign[key] && state.assign[key].on;
+          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span></label></div>';
+        }).join('');
+        return '<div class="showb" data-cat="class">' +
+          '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
+          '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
+          '<div class="d">' + esc(String(a.schedule_name || '').trim()) + (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/,'')) : '') + ' \u00b7 $90/mo</div>' +
+          '<div class="kids">' + kidRows + '</div></div></div>';
+      }).join('') +
+      '<div data-cat="class" class="showb" style="border:none;background:none;box-shadow:none;display:' + (nSel ? '' : 'none') + '">' +
+      '<button class="cta" id="clsGo" style="width:100%">Check out ' + nSel + ' class' + (nSel === 1 ? '' : 'es') + ' \u2192</button></div>';
+    host.querySelectorAll('input[data-cls]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        state.assign['cls' + cb.dataset.cls + '|' + cb.dataset.i] = { on: cb.checked };
+        ev('reg_class_toggled', { id: +cb.dataset.cls, on: cb.checked });
+        renderClassCards();
+      });
+    });
+    var go = document.getElementById('clsGo');
+    if (go) go.addEventListener('click', function(){
+      var ids = Object.keys(selIds);
+      if (!ids.length) return;
+      saveCart();
+      ev('reg_class_checkout', { ids: ids.join(',') });
+      location.href = '/register/?activity=' + ids.join(',');
+    });
+    applySeasonFilter();
+  }
+
   function renderFallCards(){
     var today = new Date().toISOString().slice(0,10);
     document.querySelectorAll('#showBlocks .kids[data-fallshow]').forEach(function(host){
@@ -1159,9 +1270,17 @@
   function applySeasonFilter(){
     var fl = state.seasonFilter;
     document.querySelectorAll('#showBlocks .showb').forEach(function(card){
-      var isFall = !!card.dataset.fall;
-      card.style.display = (fl === 'all' || (fl === 'summer' && !isFall) || (fl === 'year' && isFall)) ? '' : 'none';
+      var cat = card.dataset.cat || (card.dataset.fall ? 'year' : 'summer');
+      var show = fl === 'all' ? true
+        : fl === 'summer' ? cat === 'summer'
+        : fl === 'year' ? cat === 'year'
+        : fl === 'day' ? cat === 'day'
+        : cat === 'class';
+      card.style.display = show ? '' : 'none';
     });
+    var dh = $('dayHead'), ch = $('classHead');
+    if (dh) dh.style.display = (fl === 'day' || fl === 'all') ? '' : 'none';
+    if (ch) ch.style.display = (fl === 'class' || fl === 'all') ? '' : 'none';
     document.querySelectorAll('#seasonChips .schip').forEach(function(c){
       c.classList.toggle('sel', c.dataset.f === fl);
     });
@@ -1180,18 +1299,13 @@
           var a = state.assign[show + '|' + i];
           return a && a.on;
         });
-        var eff = mine.length + (k.already || []).filter(function(s){ return Object.keys(SHOW_NAMES).indexOf(s) !== -1; }).length;
-        // combo floor: a kid with fall shows already sits at 15/20% — never
-        // dangle a rate the next camp doesn't actually deliver
-        var fallCt = 0;
-        FALL_SHOWS.forEach(function(fs){ if (fs.key !== 'meangirls' && fallCastOn(i, fs.key)) fallCt++; });
-        fallCt += (k.already || []).filter(function(s){ return s === 'frozen' || s === 'mermaid'; }).length;
-        var floor = fallCt >= 2 ? 0.20 : fallCt >= 1 ? 0.15 : 0;
-        if (mine.length >= 1 && eff < 3 && Math.max(discRate(eff + 1), floor) > Math.max(discRate(eff), floor)) {
+        // unified tiers: dangle the rate the next show actually delivers
+        var eff = kidShowCount(i);
+        if (mine.length >= 1 && discRate(eff + 1) > discRate(eff)) {
           var missing = Object.keys(SHOW_NAMES).filter(function(s){
             return mine.indexOf(s) === -1 && (k.already || []).indexOf(s) === -1;
           });
-          if (missing.length) best = { kid: i, n: eff, floor: floor, show: missing[missing.length - 1] };
+          if (missing.length) best = { kid: i, n: eff, show: missing[missing.length - 1] };
         }
       });
     }
@@ -1200,7 +1314,7 @@
       if (toastSig.dismissed[sig]) { t.classList.remove('on'); return; }
       if (toastSig.shown === sig && t.classList.contains('on')) return;
       toastSig.shown = sig;
-      var pct = Math.round(Math.max(discRate(best.n + 1), best.floor || 0) * 100);
+      var pct = Math.round(discRate(best.n + 1) * 100);
       var nm = { httyd: 'Dragon', charlie: 'Charlie', trolls: 'Trolls' }[best.show];
       $('toastMsg').innerHTML = 'In town <b>' + SHOW_DATES[best.show] + '</b>? Save <b>' + pct + '%</b> by bundling ' + nm + ' camp!';
       t.dataset.mode = ''; t.dataset.show = best.show; t.dataset.kid = best.kid; t.dataset.sig = sig;
@@ -1227,13 +1341,10 @@
         if (toastSig.dismissed[fsig]) { t.classList.remove('on'); return; }
         if (toastSig.shown === fsig && t.classList.contains('on')) return;
         toastSig.shown = fsig;
-        // with a camp in the mix the 2nd fall show completes the 20% combo;
-        // shows alone it's the plain 10% bundle
-        var kb = state.kids[fbest.kid] || {};
-        var campN2 = Object.keys(SHOW_NAMES).filter(function(sh){ var a = state.assign[sh + '|' + fbest.kid]; return a && a.on; }).length +
-          (kb.already || []).filter(function(s){ return Object.keys(SHOW_NAMES).indexOf(s) !== -1; }).length;
-        var fpct = campN2 ? 20 : 10;
-        $('toastMsg').innerHTML = 'Add <b>' + fbest.show.title + '</b> and save <b>' + fpct + '%</b> on ' + (campN2 ? 'everything' : 'both shows') + '!';
+        // unified tiers: the 2nd show is 15%, the 3rd is 20% — on everything
+        var fc = kidShowCount(fbest.kid);
+        var fpct = Math.round(discRate(fc + 1) * 100) || 10;
+        $('toastMsg').innerHTML = 'Add <b>' + fbest.show.title + '</b> and save <b>' + fpct + '%</b> on ' + (fc >= 1 ? 'everything' : 'it') + '!';
         t.dataset.mode = 'fall'; t.dataset.show = fbest.show.key; t.dataset.kid = fbest.kid; t.dataset.sig = fsig;
         t.classList.add('on');
         ev('reg_upsell_toast', { show: fbest.show.key, pct: fpct });
@@ -1407,6 +1518,13 @@
         if (cid) items.push({ activity_id: cid, camper: k.name, ci: i });
       });
     });
+    dayCampsList().forEach(function(a){
+      state.kids.forEach(function(k, i){
+        if (!k.sel) return;
+        var v = state.assign['act' + a.id + '|' + i];
+        if (v && v.on) items.push({ activity_id: a.id, camper: k.name, ci: i });
+      });
+    });
     Object.keys(state.addons).forEach(function(key){
       var id = state.addons[key];
       if (id) items.push({ activity_id: id, camper: key.split('|')[1] });
@@ -1544,32 +1662,43 @@
     var bbCount = {};
     items.forEach(function(it){
       var a = byId[it.activity_id] || {};
-      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isTI(it.activity_id)) {
+      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isTI(it.activity_id) && !isTC(it.activity_id)) {
         var k = kidKey(it);
         bbCount[k] = (bbCount[k] || 0) + 1;
       }
     });
     var units = items.map(function(it, i){
       var a = byId[it.activity_id] || {};
-      if (a.category === 'class') {
-        var base = 9000;
-        if (kidKey(it) !== firstChild) { base = Math.round(base * 0.95); sib[i] = true; }
-        return base;
-      }
+      if (a.category === 'class') return 0; // bundle-priced per kid below
       var u = a.price_cents || 0;
       if (u <= 20000) { // day camp: sibling 5% for 2nd+ child, no insurance
         if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
         return u;
       }
-      // Broadway Bound Teens (Mean Girls): flat 10% through the launch sale (Aug 15), no stacking
-      if (isMG(it.activity_id)) {
-        if (new Date() <= new Date(C.EARLYBIRD_END)) { u = Math.round(u * 0.90); mg[i] = true; }
+      // Teen Conservatory (Sweeney/Hadestown): 10% each when one teen does
+      // both — its own page's offer, outside the unified tiers
+      if (isTC(it.activity_id)) {
+        var pair = items.filter(function(x){ return isTC(x.activity_id) && kidKey(x) === kidKey(it); }).length >= 2;
+        if (pair) { u = Math.round(u * 0.90); bund[i] = true; }
+        else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
         return u;
       }
-      // BB show: 10% when one kid does both shows, else sibling 5% for 2nd+ child
-      if ((bbCount[kidKey(it)] || 0) >= 2) { u = Math.round(u * 0.90); bund[i] = true; }
+      // Unified show tiers (CJ, Jul 31): 1/2/3+ shows = 10/15/20 per registrant
+      var r = discRate(bbCount[kidKey(it)] || 0);
+      if (r) { u = Math.round(u * (1 - r)); bund[i] = true; }
       else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
       return u;
+    });
+    // Class bundles (CJ, Jul 31): per registrant 1 = $90, 2 = $159, 3 = $199
+    // a month (each past three +$40) — spread across the kid's class lines
+    // exactly like the server so statements match
+    var clsByKid = {};
+    items.forEach(function(it, i){ var a2 = byId[it.activity_id] || {}; if (a2.category === 'class') (clsByKid[kidKey(it)] = clsByKid[kidKey(it)] || []).push(i); });
+    Object.keys(clsByKid).forEach(function(k){
+      var idxs = clsByKid[k], n2 = idxs.length;
+      var bundle = n2 === 1 ? 9000 : n2 === 2 ? 15900 : 19900 + (n2 - 3) * 4000;
+      var per = Math.floor(bundle / n2);
+      idxs.forEach(function(idx, j){ units[idx] = j === n2 - 1 ? bundle - per * (n2 - 1) : per; });
     });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var coupon = !state.coupon ? 0
@@ -1618,58 +1747,49 @@
   }
   function localPricing(){
     var items = state.hold ? state.hold.items : buildItems();
-    var byKid = {};
-    items.forEach(function(it){ if (it.show) { var k = kidKey(it); byKid[k] = (byKid[k]||0)+1; } });
-    // prior SUMMER CAMPS advance the camp tier (CJ); shows count separately
-    var SUMMER_SLUGS = ['httyd','charlie','trolls'];
-    function priorCamps(kid){ return (kid.already || []).filter(function(s){ return SUMMER_SLUGS.indexOf(s) !== -1; }).length; }
-    Object.keys(byKid).forEach(function(k){
-      var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1;
-      var kid = state.kids[ci];
-      if (kid) byKid[k] += priorCamps(kid);
-    });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
-    // Show+camp combo (CJ, Jul 30): a camp + one of Frozen/Mermaid for the
-    // same kid = 15% on all their items, camp + both = 20%. Mirrors
-    // comboRate() in reg-config.mjs.
     function kidObjFor(k){ var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1; return state.kids[ci]; }
-    function fallShowsOf(k){
+    function isDayId(id){ var a = byIdAll[id] || {}; return a.category === 'camp' && (a.price_cents || 0) <= 20000; }
+    // Unified show tiers (CJ, Jul 31): every Broadway Bound show counts the
+    // same — summer camps, Frozen/Mermaid casts, Mean Girls — 1/2/3+ shows =
+    // 10/15/20% per registrant through Aug 15. Mirrors countByKid +
+    // perKidRate() in reg-config.mjs. DEH and day camps never count.
+    var COUNT_SLUGS = ['httyd','charlie','trolls','frozen','mermaid'];
+    function countOf(k){
       var ko = kidObjFor(k);
-      var cartN = items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === k; }).length;
-      var priorN = ko ? (ko.already || []).filter(function(t){ return t === 'frozen' || t === 'mermaid'; }).length : 0;
-      return cartN + priorN;
+      var cartN = items.filter(function(x){
+        if (kidKey(x) !== k) return false;
+        if (x.show) return true;
+        return !!x.activity_id && !isTI(x.activity_id) && !isDayId(x.activity_id);
+      }).length;
+      var prior = ko ? (ko.already || []).filter(function(t){ return COUNT_SLUGS.indexOf(t) !== -1; }).length : 0;
+      return cartN + prior;
     }
-    function comboRateK(k){
-      var ko = kidObjFor(k);
-      var hasCamp = items.some(function(x){ return x.show && kidKey(x) === k; }) || (ko ? priorCamps(ko) > 0 : false);
-      if (!hasCamp) return 0;
-      var n = fallShowsOf(k);
-      return n >= 2 ? 0.20 : n >= 1 ? 0.15 : 0;
-    }
-    var comboKids = {};
-    items.forEach(function(it){ var k = kidKey(it); if (!(k in comboKids)) comboKids[k] = comboRateK(k); });
+    var comboKids = {};  // per-kid COUNT of tiered shows (renderUpsells reads it)
+    items.forEach(function(it){ var k = kidKey(it); if (!(k in comboKids)) comboKids[k] = countOf(k); });
     var bund = [], mg = [], trio = [], pcts = [];
+    var firstK = items.length ? kidKey(items[0]) : null;
     var units = items.map(function(it, i){
+      var k = kidKey(it);
       if (it.show) {
-        var cr = Math.max(discRate(byKid[kidKey(it)]), comboRateK(kidKey(it)));
+        var cr = discRate(countOf(k));
         pcts[i] = Math.round(cr * 100);
-        return Math.round(C.PRICE * 100 * (1 - cr));
+        var u0 = Math.round(C.PRICE * 100 * (1 - cr));
+        if (!cr && new Date() > new Date(C.EARLYBIRD_END) && k !== firstK) u0 = Math.round(u0 * 0.95);
+        return u0;
       }
       var a = byIdAll[it.activity_id] || {};
       var base = a.price_cents || 69500;
-      // Mean Girls: flat 10% through Aug 15 — never stacks with the camp tier or
-      // the show bundle, and never counts toward another item's bundle either
-      if (isMG(it.activity_id)) {
-        if (new Date() <= new Date(C.EARLYBIRD_END)) { mg[i] = true; return Math.round(base * 0.9); }
-        return base;
-      }
+      // day camps: flat, sibling 5% for a 2nd+ child, never in the tiers
+      if (isDayId(it.activity_id)) return k !== firstK ? Math.round(base * 0.95) : base;
       if (isTI(it.activity_id)) return base; // DEH: flat, never bundles
-      var kid = kidKey(it);
-      var br = comboRateK(kid) || (fallShowsOf(kid) >= 2 ? 0.10 : 0);
+      // every other BB show (Frozen/Mermaid casts, Mean Girls): unified tier
+      var br = discRate(countOf(k));
       if (br) {
         bund[i] = true; pcts[i] = Math.round(br * 100);
         return Math.round(base * (1 - br));
       }
+      if (new Date() > new Date(C.EARLYBIRD_END) && k !== firstK) return Math.round(base * 0.95);
       return base;
     });
     // special code with a pct: flat off list on everything, replacing the
@@ -1697,7 +1817,9 @@
     var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
     if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
-    var deposit = Math.min(Math.round(C.DEPOSIT_PER_CAMP * 100 * n * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
+    var dayCents = 0, dayN = 0;
+    items.forEach(function(it, i){ if (!it.show && isDayId(it.activity_id)) { dayCents += units[i]; dayN++; } });
+    var deposit = Math.min(Math.round((C.DEPOSIT_PER_CAMP * 100 * (n - dayN) + dayCents) * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
     if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = (sp && sp.nofee) ? 0 : Math.round(net * 5 / 100);
     return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
@@ -1830,8 +1952,8 @@
     var rows = items.map(function(it, i){
       var label = it.show
         ? esc(it.camper) + ' — ' + SHOW_NAMES[it.show] + ' <span style="color:var(--ink-dim)">(' + bandLabel(it.band) + ')</span>'
-        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{})) + (p.bund && p.bund[i] ? ' <span class="savings">(' + ((p.pcts && p.pcts[i]) || 10) + '% bundle)</span>' : '') + (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 15)</span>' : '');
-      var pct = (p.bund && p.bund[i]) ? 0 : ((p.pcts && p.pcts[i]) || 0); // bundle badge already carries the pct
+        : esc(it.camper) + ' — ' + esc(actShowName(byIdAll[it.activity_id]||{}));
+      var pct = (p.pcts && p.pcts[i]) || 0; // unified tier badge for every discounted line
       // List price here, not the discounted unit — the discount comes off on
       // the "Launch-sale savings" row below. Showing the already-reduced price
       // AND that row made the column read like the money was coming off twice.
@@ -1866,27 +1988,14 @@
     if (state.coupon && state.coupon.special) { box.style.display = 'none'; return; }
     var html = '';
     if (saleOn()) {
-      // Show+camp combo (CJ, Jul 30): a camp + one fall show = 15% on
-      // everything, camp + both = 20%. The strongest next step is usually a
-      // show, so dangle that first; fall back to the camp tiers. Only ever
-      // surface a step that raises the kid's current rate.
-      function fallsOf(k){
-        var cartN = p.items.filter(function(x){ return !x.show && !isMG(x.activity_id) && !isTI(x.activity_id) && kidKey(x) === k; }).length;
-        var ci = k.charAt(0) === 'i' ? +k.slice(1) : -1;
-        var ko = state.kids[ci];
-        return cartN + (ko ? (ko.already || []).filter(function(t){ return t === 'frozen' || t === 'mermaid'; }).length : 0);
-      }
-      function comboAt(f){ return f >= 2 ? 0.20 : f >= 1 ? 0.15 : 0; }
+      // Unified tiers (CJ, Jul 31): 1/2/3+ shows = 10/15/20 per registrant.
+      // Only ever dangle a step that raises the kid's current rate.
       var hints = Object.keys(byKid).filter(function(k){ return byKid[k].n > 0; }).map(function(k){
-        var f = fallsOf(k);
-        var cur = Math.max(discRate(byKid[k].n), comboAt(f));
-        if (cur >= 0.20) return null;
+        var c = (p.comboKids && p.comboKids[k]) || byKid[k].n;
+        var cur = discRate(c), nxt = discRate(c + 1);
+        if (nxt <= cur) return null;
         var first = esc(byKid[k].name.split(' ')[0]);
-        var oneShow = Math.max(discRate(byKid[k].n), comboAt(f + 1));
-        if (oneShow > cur) return '<b>' + first + '</b> is one fall show away from <b>' + Math.round(oneShow*100) + '% off everything</b>' + (f === 0 ? ' (both shows = 20%)' : '');
-        var oneCamp = byKid[k].n < 3 ? Math.max(discRate(byKid[k].n + 1), comboAt(f)) : cur;
-        if (oneCamp > cur) return '<b>' + first + '</b> is one camp away from <b>' + Math.round(oneCamp*100) + '% off each camp</b>';
-        return null;
+        return '<b>' + first + '</b> is one show away from <b>' + Math.round(nxt*100) + '% off ' + (c + 1 >= 3 ? 'everything' : 'each show') + '</b>';
       }).filter(Boolean);
       if (hints.length) {
         html += '<div>' + hints.join(' · ') + ' — <a href="#" id="upsellAdd">add a show →</a></div>';
@@ -2076,9 +2185,15 @@
         return;
       }
       state.freeOrder = false;
+      state.setupMode = !!res.j.setup;
       state.clientSecret = res.j.client_secret;
       state.pricing = res.j.pricing;
       renderServerBreakdown(res.j.pricing);
+      if (state.setupMode) {
+        $('payBreakdown').innerHTML =
+          '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>$0.00</span></div>' +
+          '<p class="tiny" style="text-align:left;margin-top:2px"><b>First month free</b> \u2014 your family already has a show registration this season. Monthly tuition of <b>' + money(res.j.pricing.monthly_cents) + '</b> starts Oct 1, automatic on this card. Cancel with 30 days\u2019 notice.</p>';
+      }
       setPayH1(res.j.pricing.today_cents);
       mountStripe();
       ev('reg_payment_started', { plan: state.plan, today_cents: res.j.pricing.today_cents });
@@ -2107,7 +2222,9 @@
     });
   }
   function confirmNow(){
-    return state.stripe.confirmPayment({
+    // first-month-free class carts save the card without a charge (SetupIntent)
+    var fn = state.setupMode ? 'confirmSetup' : 'confirmPayment';
+    return state.stripe[fn]({
       elements: state.elements,
       confirmParams: { return_url: location.origin + '/register/?paid=1' },
       redirect: 'if_required'
@@ -2153,14 +2270,17 @@
         $('payErr').classList.remove('on');
         confirmNow().then(function(res){
           if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed', { wallet: true }); return; }
-          if (res.paymentIntent && res.paymentIntent.status === 'succeeded') { state.piId = res.paymentIntent.id; finish(); }
+          var itn = res.paymentIntent || res.setupIntent;
+          if (itn && itn.status === 'succeeded') { state.piId = itn.id; finish(); }
         });
       });
       ece.mount('#expressCheckout');
 
       $('payStart').style.display = 'none';
-      $('paySubmit').innerHTML = (!isCatMode() && state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
-        money(state.pricing.today_cents) + (!isCatMode() && state.plan === 'deposit' ? ' today' : '');
+      $('paySubmit').innerHTML = state.setupMode
+        ? 'Enroll \u2014 $0 today'
+        : (!isCatMode() && state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
+          money(state.pricing.today_cents) + (!isCatMode() && state.plan === 'deposit' ? ' today' : '');
       $('paySubmit').style.display = '';
     }
     if (window.Stripe) return ready();
@@ -2202,7 +2322,8 @@
     confirmNow().then(function(res){
       $('paySubmit').disabled = false;
       if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed'); return; }
-      if (res.paymentIntent && res.paymentIntent.status === 'succeeded') finish();
+      var itn = res.paymentIntent || res.setupIntent;
+      if (itn && itn.status === 'succeeded') finish();
     });
   });
 

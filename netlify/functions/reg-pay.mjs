@@ -151,24 +151,63 @@ export default async (req) => {
 
   if (classItems.length) {
     if (plan !== "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
+    // Class bundles (CJ, Jul 31): per registrant 1 = $90, 2 = $159, 3 = $199
+    // a month. The kid's bundle is spread across their class lines so Stripe
+    // statements stay per-class (remainder lands on the last line).
     const kk = (it) => (it && it.ci != null ? "i" + it.ci : (it && it.camper) || "");
-    const firstChild = kk(classItems[0] || {});
-    const unitPrices = classItems.map((it) => {
-      let base = CLASS_PRICE_CENTS;
-      if (kk(it) && kk(it) !== firstChild) {
-        base = Math.round(base * (1 - SIBLING_PCT / 100)); // sibling runs now (non-BB)
-      }
-      // no insurance on classes — 30-day cancellation makes it pointless
-      return base;
+    const byKidClasses = {};
+    classItems.forEach((it, idx) => {
+      (byKidClasses[kk(it)] = byKidClasses[kk(it)] || []).push(idx);
     });
+    const unitPrices = new Array(classItems.length).fill(0);
+    for (const k of Object.keys(byKidClasses)) {
+      const idxs = byKidClasses[k];
+      const bundle = classMonthlyCents(idxs.length);
+      const per = Math.floor(bundle / idxs.length);
+      idxs.forEach((idx, j) => {
+        unitPrices[idx] = j === idxs.length - 1 ? bundle - per * (idxs.length - 1) : per;
+      });
+    }
     const subtotal = unitPrices.reduce((s, v) => s + v, 0);
     const couponCents = couponPct ? Math.round(subtotal * couponPct / 100) : Math.min(couponFixedCents, subtotal);
+
+    // First month free (CJ, Jul 31): any family already holding a 2026-27
+    // show/camp registration — a paid web order with a non-class item, or a
+    // Sawyer-imported registration on one of their campers — pays $0 today;
+    // billing simply starts with the Oct 1 pull. Failure of this check must
+    // never block checkout, so it degrades to "pay the first month".
+    let firstMonthFree = false;
+    try {
+      const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const hdrs = { apikey: svcKey, Authorization: `Bearer ${svcKey}` };
+      const fam = await (await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}&select=id`, { headers: hdrs })).json();
+      if (fam.length) {
+        const kids = await (await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fam[0].id}&select=already_registered`, { headers: hdrs })).json();
+        firstMonthFree = kids.some((c) => Array.isArray(c.already_registered) && c.already_registered.length);
+      }
+      if (!firstMonthFree) {
+        const ords = await (await fetch(`${SUPABASE_URL}/rest/v1/orders?email=ilike.${encodeURIComponent(email)}&status=in.(paid,confirmed,complete,succeeded)&select=id`, { headers: hdrs })).json();
+        if (ords.length) {
+          const ids = ords.map((o) => o.id).join(",");
+          const its = await (await fetch(`${SUPABASE_URL}/rest/v1/order_items?order_id=in.(${ids})&select=activity_id`, { headers: hdrs })).json();
+          const actIds = [...new Set(its.map((i) => i.activity_id).filter(Boolean))];
+          if (its.some((i) => !i.activity_id)) firstMonthFree = true; // summer camp lines carry no activity_id
+          else if (actIds.length) {
+            const acts = await (await fetch(`${SUPABASE_URL}/rest/v1/activities?id=in.(${actIds.join(",")})&select=id,category`, { headers: hdrs })).json();
+            firstMonthFree = acts.some((a) => a.category !== "class");
+          }
+        }
+      }
+    } catch (e) { console.error("first-month-free check failed:", e.message); }
+
     pricing = {
-      todayCents: subtotal - couponCents, totalCents: subtotal - couponCents,
+      todayCents: firstMonthFree ? 0 : subtotal - couponCents,
+      totalCents: firstMonthFree ? 0 : subtotal - couponCents,
       subtotalCents: subtotal, couponCents,
       insuranceCents: 0, // built into the monthly price for classes
       installmentCents: 0, nInstallments: 0, firstInstallmentUTC: 0,
       unitPrices, monthlyItems: unitPrices, discountPct: 0,
+      firstMonthFree,
     };
     description = classItems
       .map((it) => `${it.camper || "Camper"} — ${byId[it.activity_id].name}`)
@@ -274,6 +313,44 @@ export default async (req) => {
       }, { amount_received: 0, amount: 0 });
     } catch (e) { console.error("free order: email failed:", e.message); }
     return Response.json({ confirmed: true });
+  }
+
+  // First-month-free class carts: nothing to charge today, but the card must
+  // still be saved for the Oct 1 pull — a SetupIntent instead of a payment.
+  if (plan === "subscription" && pricing.firstMonthFree && pricing.todayCents === 0) {
+    const stripeS = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const customerS = await stripeS.customers.create({
+      email, name: parent_name || undefined, metadata: { source: "novapa-register" },
+    });
+    const si = await stripeS.setupIntents.create({
+      customer: customerS.id,
+      payment_method_types: ["card", "link"],
+      metadata: {
+        hold_id, plan, email,
+        parent_name: (parent_name || "").slice(0, 100),
+        total_cents: "0", installment_cents: "0", n_installments: "0",
+        first_installment_utc: "0", insurance_cents: "0", insured: "0",
+        coupon: "", coupon_cents: "0", plan_fee_cents: "0", fsa_eligible: "0",
+        first_month_free: "1",
+        unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
+        monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
+        n_items: String(items.length),
+        order_desc: description.slice(0, 480),
+      },
+    });
+    return Response.json({
+      client_secret: si.client_secret, setup: true,
+      pricing: {
+        n: items.length, discount_pct: 0,
+        unit_prices: pricing.unitPrices,
+        subtotal_cents: pricing.subtotalCents,
+        coupon_cents: 0, coupon: null, plan_fee_cents: 0, insurance_cents: 0,
+        total_cents: 0, today_cents: 0, installment_cents: 0,
+        n_installments: 0, first_installment_utc: 0,
+        monthly_cents: pricing.monthlyItems.reduce((s, v) => s + v, 0),
+        first_month_free: true,
+      },
+    });
   }
 
   if (pricing.todayCents < 50) {
