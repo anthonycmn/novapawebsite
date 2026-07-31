@@ -70,14 +70,10 @@
       var a = e.target && e.target.closest && e.target.closest('a[href]');
       if (!a) return;
       var href = a.getAttribute('href') || '';
-      if (href.indexOf('hisawyer.com') !== -1) {
-        capture('sawyer_link_clicked', {
-          cta_text: (a.textContent || '').trim().slice(0, 80),
-          cta_href: href,
-          page_path: page
-        });
-      } else if (href.indexOf('novapa_registration') !== -1 || href === '#register' ||
-                 href.indexOf('/register/') === 0 || href.indexOf('register/catalog') !== -1) {
+      // Sawyer and Regpack were retired Jul 31 2026 — every registration CTA
+      // now points at our own system, so there is one funnel event, not two.
+      if (href === '#register' || href.indexOf('/register/') === 0 ||
+          href.indexOf('register/catalog') !== -1) {
         capture('registration_cta_clicked', {
           cta_text: (a.textContent || '').trim().slice(0, 80),
           cta_href: href,
@@ -92,7 +88,7 @@
       }
     }, true);
 
-    // --- Sawyer registration widget viewed (registration page only) ---
+    // --- Registration section viewed (pages with an inline #register block) ---
     var regSection = document.getElementById('register');
     if (regSection && 'IntersectionObserver' in window) {
       var seen = false;

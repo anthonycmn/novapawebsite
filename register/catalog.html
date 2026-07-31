@@ -71,6 +71,7 @@
     <button class="tab sel" data-f="all">All</button>
     <button class="tab" data-f="class">Classes</button>
     <button class="tab" data-f="camp">Camps &amp; Shows</button>
+    <button class="tab" data-f="coaching">Coaching</button>
     <input id="q" placeholder="Search programs…">
   </div>
   <div class="count" id="count"></div>
@@ -104,11 +105,14 @@
           cta = r.category === 'class' ? 'Enroll now \u2192' : 'Register \u2192';
         }
       } else {
-        href = 'https://www.hisawyer.com' + (r.pdp_url || '');
-        cta = 'View on Sawyer \u2192';
+        // Sawyer is gone (Jul 31 2026). A row that is not bookable here is not
+        // for sale anywhere, so say that instead of linking off-site.
+        href = '';
+        cta = 'Not currently open';
       }
-      return '<a class="it" style="text-decoration:none" href="' + esc(href) + '"' +
-        (r.bookable ? '' : ' target="_blank" rel="noopener"') + '>' +
+      var tag = href ? 'a' : 'div';
+      return '<' + tag + ' class="it" style="text-decoration:none"' +
+        (href ? ' href="' + esc(href) + '"' : '') + '>' +
         '<div class="img"' + (r.image_url ? ' style="background-image:url(' + esc(r.image_url) + ')"' : '') + '></div>' +
         '<div class="bd">' +
           '<div class="nm">' + esc(r.name) + '</div>' +
@@ -118,7 +122,7 @@
           '<div class="ft"><span class="pr">' + esc((r.pricing||[])[0] || '') + '</span>' +
           '<span class="sp" style="color:var(--gold2);font-weight:700">' + cta + '</span></div>' +
           (note ? '<div class="meta" style="color:var(--gold3)">' + note + '</div>' : '') +
-        '</div></a>';
+        '</div></' + tag + '>';
     }).join('');
   }
   rpc('catalog_list').then(function(rows){ all = rows || []; render(); });

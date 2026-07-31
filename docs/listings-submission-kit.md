@@ -78,8 +78,8 @@ need-based tuition assistance are available.
 - **Visit Loudoun** — things to do listings for the venue
 - **Macaroni KID** Leesburg/Ashburn — camp fairs and guides
 - **Northern Virginia Mag Best Of** — reader nomination window each spring
-- **Sawyer** and **ActivityHero** marketplaces — already a Sawyer seller;
-  confirm the public profile is current
+- **ActivityHero** marketplace — worth a listing that points back at
+  our own registration system
 
 ---
 
