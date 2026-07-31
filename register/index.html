@@ -1098,47 +1098,88 @@
     syncShows(); updateTicker(); upsellCheck();
   }
   // ---- Day Camps tab: one-day $70 events, straight into the same cart ----
+  // Each DATE is one event with age-group sections (the "Musical Theatre Day
+  // Camp" rows are the unthemed 9-12 sections of the same day) — so one card
+  // per date, titled by the themed name, age groups as selections inside.
   function dayCampsList(){
     return state.allCat.filter(function(a){
       return a.category === 'camp' && a.bookable && (a.price_cents || 0) <= 20000;
-    }).sort(function(a,b){ return castRange(a).min - castRange(b).min || String(a.schedule_name||'').localeCompare(String(b.schedule_name||'')); });
+    });
+  }
+  function dayGroups(){
+    var groups = {};
+    dayCampsList().forEach(function(a){
+      var when = (String(a.schedule_name || '').split('|')[1] || '').trim().replace(/(\d+)(st|nd|rd|th)/, '$1');
+      (groups[when] = groups[when] || []).push(a);
+    });
+    var MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+    return Object.keys(groups).map(function(when){
+      var acts = groups[when].sort(function(x, y){ return castRange(x).min - castRange(y).min; });
+      var named = acts.filter(function(a){ return !/musical theatre day camp/i.test(a.name); })[0] || acts[0];
+      var m = when.toLowerCase().match(/([a-z]+)\s+(\d+)/);
+      var mi = m ? MONTHS.indexOf(m[1]) : 0;
+      var ts = new Date(mi >= 8 ? 2026 : 2027, mi, m ? +m[2] : 1).getTime();
+      return { when: when, acts: acts, title: named.name.trim(), img: named.image_url || '', ts: ts };
+    }).sort(function(a, b){ return a.ts - b.ts; });
+  }
+  function dayOn(i, g){
+    for (var j = 0; j < g.acts.length; j++) {
+      var v = state.assign['act' + g.acts[j].id + '|' + i];
+      if (v && v.on) return g.acts[j].id;
+    }
+    return null;
+  }
+  function setDay(i, g, id){
+    g.acts.forEach(function(a){ delete state.assign['act' + a.id + '|' + i]; });
+    if (id) state.assign['act' + id + '|' + i] = { on: true };
   }
   function renderDayCards(){
     var host = $('dayCards');
     if (!host) return;
-    var camps = dayCampsList();
-    if (!camps.length) { host.innerHTML = ''; return; }
-    var bands = [];
-    camps.forEach(function(a){ var r = castRange(a); var key = r.min + '\u2013' + r.max; if (bands.indexOf(key) === -1) bands.push(key); });
-    host.innerHTML = '<div id="dayHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps \u00b7 $70 \u00b7 9 AM \u2013 4 PM \u00b7 pay in full at checkout (day camps don\u2019t count toward the show discount)</div>' +
-      bands.map(function(band){
-        var head = '<div style="margin:18px 0 8px;font-weight:800;color:var(--gold3);letter-spacing:.08em;text-transform:uppercase;font-size:12px">Ages ' + band + '</div>';
-        var cards = camps.filter(function(a){ var r = castRange(a); return (r.min + '\u2013' + r.max) === band; }).map(function(a){
-          var when = (String(a.schedule_name || '').split('|')[1] || '').trim();
-          var full = a.remaining != null && a.remaining <= 0;
-          var leftTag = (a.remaining != null && a.remaining < 20 && !full) ? ' \u00b7 <span style="color:var(--gold3)">' + a.remaining + ' spots left</span>' : (full ? ' \u00b7 <span class="left">Full</span>' : '');
-          var kidRows = state.kids.map(function(k, i){
-            if (!k.sel) return '';
-            var key = 'act' + a.id + '|' + i;
-            var on = state.assign[key] && state.assign[key].on;
-            var r = castRange(a);
-            var age = campAge(k);
-            var out = age != null && (age < r.min - 1 || age > r.max);
-            return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-day="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + ((out || full) ? ' disabled' : '') + '> <span>' + esc(k.name) + '</span>' +
-              (out ? ' <span class="badge-done" style="opacity:.65">for ages ' + r.min + '\u2013' + r.max + '</span>' : '') + '</label></div>';
-          }).join('');
-          return '<div class="showb" data-cat="day">' +
-            '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
-            '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
-            '<div class="d">' + esc(when) + ' \u00b7 Ages ' + castRange(a).min + '\u2013' + castRange(a).max + ' \u00b7 $' + Math.round((a.price_cents || 0) / 100) + leftTag + '</div>' +
-            '<div class="kids">' + kidRows + '</div></div></div>';
+    var groups = dayGroups();
+    if (!groups.length) { host.innerHTML = ''; return; }
+    host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps \u00b7 $70 \u00b7 9 AM \u2013 4 PM \u00b7 paid in full at checkout</div>' +
+      groups.map(function(g, gi){
+        var ages = g.acts.map(function(a){ var r = castRange(a); return r.min + '\u2013' + r.max; }).join(' \u00b7 ');
+        var kidRows = state.kids.map(function(k, i){
+          if (!k.sel) return '';
+          var on = dayOn(i, g);
+          var age = campAge(k);
+          var eligible = g.acts.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); });
+          var pills = '';
+          if (on && eligible.length > 1) {
+            pills = '<div class="pills">' + eligible.map(function(a){
+              var r = castRange(a);
+              var left = a.remaining;
+              var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Full' : left + ' more spots available') + '</span>' : '';
+              return '<span class="pill' + (on === a.id ? ' sel' : '') + '" data-dayg="' + gi + '" data-i="' + i + '" data-act="' + a.id + '">Ages ' + r.min + '\u2013' + r.max + leftTag + '</span>';
+            }).join('') + '</div>';
+          }
+          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-dayg="' + gi + '" data-i="' + i + '" ' + (on ? 'checked' : '') + (eligible.length ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' +
+            (eligible.length ? '' : ' <span class="badge-done" style="opacity:.65">for ages ' + ages + '</span>') + '</label>' + pills + '</div>';
         }).join('');
-        return head + cards;
+        return '<div class="showb" data-cat="day">' +
+          '<div class="poster" style="background-image:url(\'' + g.img + '\')"></div>' +
+          '<div class="bd"><div class="t">' + esc(g.title) + '</div>' +
+          '<div class="d">' + esc(g.when) + ' \u00b7 Ages ' + ages + ' \u00b7 $70</div>' +
+          '<div class="kids">' + kidRows + '</div></div></div>';
       }).join('');
-    host.querySelectorAll('input[data-day]').forEach(function(cb){
+    var groupsRef = groups;
+    host.querySelectorAll('input[data-dayg]').forEach(function(cb){
       cb.addEventListener('change', function(){
-        state.assign['act' + cb.dataset.day + '|' + cb.dataset.i] = { on: cb.checked };
-        ev('reg_daycamp_toggled', { id: +cb.dataset.day, on: cb.checked });
+        var g = groupsRef[+cb.dataset.dayg], i = +cb.dataset.i, k = state.kids[i];
+        if (cb.checked) {
+          var age = campAge(k);
+          var fit = g.acts.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); })[0];
+          setDay(i, g, fit ? fit.id : null);
+        } else setDay(i, g, null);
+        ev('reg_daycamp_toggled', { when: g.when, on: cb.checked });
+        renderShowKids(); saveCart();
+      });
+    });
+    host.querySelectorAll('.pill[data-dayg]').forEach(function(pl){
+      pl.addEventListener('click', function(){
+        setDay(+pl.dataset.i, groupsRef[+pl.dataset.dayg], +pl.dataset.act);
         renderShowKids(); saveCart();
       });
     });
@@ -1278,9 +1319,9 @@
         : cat === 'class';
       card.style.display = show ? '' : 'none';
     });
-    var dh = $('dayHead'), ch = $('classHead');
-    if (dh) dh.style.display = (fl === 'day' || fl === 'all') ? '' : 'none';
-    if (ch) ch.style.display = (fl === 'class' || fl === 'all') ? '' : 'none';
+    var dc = $('dayCards'), cc = $('classCards');
+    if (dc) dc.style.display = (fl === 'day' || fl === 'all') ? '' : 'none';
+    if (cc) cc.style.display = (fl === 'class' || fl === 'all') ? '' : 'none';
     document.querySelectorAll('#seasonChips .schip').forEach(function(c){
       c.classList.toggle('sel', c.dataset.f === fl);
     });
