@@ -52,6 +52,21 @@
   var BUDGET = { set: 50000, prop: 50000, costume: 50000 };
   var BUDGET_TOTAL = BUDGET.set + BUDGET.prop + BUDGET.costume;
 
+  // Tracks and scripts. Everything below is drawn from the MTI and ProductionPro
+  // correspondence on the company account, July 2026. No password is printed on
+  // this page on purpose — see the ORG LOGIN row for why and for who holds it.
+  var ACCESS = [
+    { k: 'TRACKS AND SCRIPTS', v: '' },
+    { k: 'MTI ACCOUNT', v: 'Northern Virginia Performing Arts, account number 9012523. Dear Evan Hansen sits under this account; the ProductionPro order on it is booking 7099101.' },
+    { k: 'REHEARSAL TRACKS', v: 'MTI Player, opened with the rehearsal CODE. No login needed. Danielle and Shelby confirmed these working on 7/22 — ask either of them for the code.' },
+    { k: 'PERFORMANCE TRACKS', v: 'MTI Player, and the rehearsal code will NOT open them. Performance tracks and the vocal sweeteners both need the organisation login.' },
+    { k: 'ORG LOGIN', v: 'Held by Colton, Technical Director (CJ, 7/30). It is not printed here because this page lives in a public repository and our MTI licence does not permit publishing account credentials. Ask Colton, or CJ. If nobody has it, the account admin resets it in two minutes at player.mtishows.com/forgot.' },
+    { k: 'PLAYBACK RULES', v: 'MTI is strict on these. Once the show is loaded on a device, do not update the app or iOS until we close. Put the device in airplane mode with WiFi off before every playback — a call, a text or an auto-update will interrupt the track mid-number.' },
+    { k: 'SCRIPTS AND SCORES', v: 'ProductionPro, ordered 7/24. There is no shared login and there is no company password — every person is invited individually and signs in as themselves.' },
+    { k: 'GETTING INVITED', v: 'Send your email address to CJ or Zoe and you are added to DEAR EVAN HANSEN on ProductionPro. The invite arrives from noreply@production.pro — check spam, that is where most of them land.' },
+    { k: 'IF SOMETHING BREAKS', v: 'MTI Player support: (877) 845-4704 or player@mtishows.com. Licensing rep Spicer Carr: spicerc@mtishows.com, (212) 541-4684. Mid-performance emergency hotline: (888) 340-3505 — that one is for a track failing during a show, nothing else.' }
+  ];
+
   function $(id) { return document.getElementById(id); }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   function clock(ts) {
@@ -407,13 +422,10 @@
     $('refCrews').innerHTML = D.rhythm.map(function (r) {
       if (!r.v) return '<h3>' + esc(r.k) + '</h3>';
       return '<div class="kv"><span class="kv-k">' + esc(r.k) + '</span><span class="kv-v">' + esc(r.v) + '</span></div>';
-    }).join('') +
-      '<h3>Still to confirm</h3>' +
-      D.flags.map(function (f) {
-        return '<div class="flag"><div class="flag-h"><span class="flag-t">' + esc(f.type) + '</span>' +
-          esc(f.issue) + '</div>' +
-          '<div class="sc-l need"><span>Next</span>' + esc(f.need) + '</div></div>';
-      }).join('');
+    }).join('') + ACCESS.map(function (r) {
+      if (!r.v) return '<h3>' + esc(r.k) + '</h3>';
+      return '<div class="kv"><span class="kv-k">' + esc(r.k) + '</span><span class="kv-v">' + esc(r.v) + '</span></div>';
+    }).join('');
   }
 
   // ---------- boot ----------
