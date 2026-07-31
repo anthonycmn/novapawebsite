@@ -85,9 +85,14 @@ export default async (req) => {
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
 
+  // batched sends ({limit}, default 15): spreads the blast over several
+  // calls minutes apart — reads as personal mail, not a blast, and each
+  // invocation stays well inside the function time limit. The sent-stamp
+  // makes every call pick up exactly where the last one stopped.
+  const batch = list.slice(0, Math.max(1, Math.min(50, body.limit || 15)));
   let sent = 0;
   const errors = [];
-  for (const r of list) {
+  for (const r of batch) {
     try {
       await transporter.sendMail({
         from: `Jason from Broadway Bound <${process.env.SMTP_USER}>`,
@@ -103,5 +108,5 @@ export default async (req) => {
       sent++;
     } catch (e) { errors.push({ email: r.email, error: e.message }); }
   }
-  return Response.json({ ok: true, sent, errors });
+  return Response.json({ ok: true, sent, remaining: list.length - sent, errors });
 };
