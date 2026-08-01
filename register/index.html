@@ -1191,7 +1191,7 @@
     if (!host) return;
     var groups = dayGroups();
     if (!groups.length) { host.innerHTML = ''; return; }
-    host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps \u00b7 $70 \u00b7 9 AM \u2013 4 PM \u00b7 paid in full at checkout</div>' +
+    host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps \u00b7 $79 \u00b7 9 AM \u2013 4 PM \u00b7 paid in full at checkout</div>' +
       groups.map(function(g, gi){
         var ages = g.acts.map(function(a){ var r = castRange(a); return r.min + '\u2013' + r.max; }).join(' \u00b7 ');
         var kidRows = state.kids.map(function(k, i){
