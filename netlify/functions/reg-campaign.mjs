@@ -82,6 +82,15 @@ async function svc(path, init = {}) {
   return t ? JSON.parse(t) : null;
 }
 
+// Team always rides along on every blast (Jason's call — good to see what
+// families see). Suppressions and per-campaign sent-stamps still apply.
+const TEAM = [
+  { email: "jason@novapa.org", first: "Jason" },
+  { email: "cj@novapa.org", first: "CJ" },
+  { email: "todd@novapa.org", first: "Todd" },
+  { email: "jen@novapa.org", first: "Jen" },
+];
+
 async function audienceFor(campaign) {
   // non_buyers_2027: every known family without a paid 2026-27 web order
   const [fams, orders, supp, sent] = await Promise.all([
@@ -92,7 +101,7 @@ async function audienceFor(campaign) {
   ]);
   const buyers = new Set(orders.map((o) => (o.email || "").toLowerCase()));
   const out = new Set([...supp.map((s) => s.email.toLowerCase()), ...sent.map((s) => s.email.toLowerCase())]);
-  return fams.filter((f) => {
+  const list = fams.filter((f) => {
     const e = (f.email || "").toLowerCase();
     if (!e.includes("@") || e.endsWith("@novapa.org")) return false;
     if (campaign.audience === "non_buyers_2027" && buyers.has(e)) return false;
@@ -102,6 +111,7 @@ async function audienceFor(campaign) {
     email: (f.email || "").toLowerCase(),
     first: (f.parent_name || "").trim().split(" ")[0] || "there",
   }));
+  return [...TEAM.filter((t) => !out.has(t.email)), ...list];
 }
 
 async function isAdmin(userToken) {
