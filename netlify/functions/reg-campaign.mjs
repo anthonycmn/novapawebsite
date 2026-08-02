@@ -15,7 +15,7 @@ const BATCH_SIZE = 25; // ~18s of SMTP at ~0.7s/send, inside the fn limit
 // Mass sends ride Resend (mail.novapa.org subdomain) so marketing reputation
 // never touches the root domain that receipts and sign-in links depend on.
 // Replies go to Jason's real inbox.
-export const FROM = "Broadway Bound at NOVAPA <hello@mail.novapa.org>";
+export const FROM = "Broadway Bound <hello@mail.novapa.org>";
 export const REPLY_TO = "jason@novapa.org";
 export async function mailer() {
   const { default: nodemailer } = await import("nodemailer");
