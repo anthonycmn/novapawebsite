@@ -12,7 +12,7 @@ import { unsubToken } from "./reg-campaign.mjs";
 // checked box = subscribed = no suppression row; unchecked = row exists
 const SCOPES = [
   { key: "marketing", label: "Sales & announcements", hint: "Season openings, launch sales, new shows" },
-  { key: "informational", label: "Program news & reminders", hint: "Schedules, updates about programs you may join" },
+  { key: "informational", label: "Important program updates", hint: "Schedules, reminders, and updates about your programs" },
 ];
 
 function db(path, init = {}) {
