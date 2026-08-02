@@ -15,9 +15,9 @@ const BATCH_SIZE = 25; // ~18s of SMTP at ~0.7s/send, inside the fn limit
 // Mass sends ride Resend (mail.novapa.org subdomain) so marketing reputation
 // never touches the root domain that receipts and sign-in links depend on.
 // Replies go to Jason's real inbox.
-const FROM = "Broadway Bound at NOVAPA <hello@mail.novapa.org>";
-const REPLY_TO = "jason@novapa.org";
-async function mailer() {
+export const FROM = "Broadway Bound at NOVAPA <hello@mail.novapa.org>";
+export const REPLY_TO = "jason@novapa.org";
+export async function mailer() {
   const { default: nodemailer } = await import("nodemailer");
   return nodemailer.createTransport({
     host: "smtp.resend.com", port: 465, secure: true,
@@ -76,28 +76,7 @@ async function isAdmin(userToken) {
   return r.ok && (await r.text()).trim() === "true";
 }
 
-export default async (req) => {
-  // admin test path: POST {test_to, campaign} sends one fully rendered copy
-  // through the real transport — works from any deploy context
-  if (req && req.method === "POST") {
-    const auth = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!auth || !(await isAdmin(auth))) return Response.json({ error: "not admin" }, { status: 403 });
-    let body = {};
-    try { body = await req.json(); } catch {}
-    if (!body.test_to || !body.campaign) return Response.json({ error: "bad_request" }, { status: 400 });
-    const rows = await svc(`campaigns?name=eq.${encodeURIComponent(body.campaign)}&limit=1`);
-    if (!rows.length) return Response.json({ error: "campaign_not_found" }, { status: 404 });
-    const c = rows[0];
-    const t = await mailer();
-    await t.sendMail({
-      from: FROM, replyTo: REPLY_TO, to: String(body.test_to),
-      subject: c.subject,
-      text: c.body.replaceAll("{first_name}", "Jason").replaceAll("{unsub_url}", unsubUrl(String(body.test_to))),
-      headers: { "List-Unsubscribe": `<${unsubUrl(String(body.test_to))}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
-    });
-    return Response.json({ ok: true, test: true, to: body.test_to, from: FROM });
-  }
-
+export default async () => {
   // production deploy only — branch deploys share the DB (same rule as the drip)
   if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
     return new Response("skipped: non-production context", { status: 200 });
