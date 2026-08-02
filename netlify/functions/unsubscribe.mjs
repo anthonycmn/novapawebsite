@@ -24,10 +24,10 @@ function db(path, init = {}) {
 }
 
 function page(title, inner) {
-  return new Response(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
+  return new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>
 <body style="font-family:system-ui,sans-serif;background:#0B1B33;color:#fff;display:grid;place-items:center;min-height:100vh;margin:0">
 <div style="padding:28px;max-width:440px;width:100%;box-sizing:border-box">${inner}</div></body>`, {
-    status: 200, headers: { "Content-Type": "text/html" },
+    status: 200, headers: { "Content-Type": "text/html; charset=utf-8" },
   });
 }
 
@@ -75,10 +75,8 @@ Registration receipts and account emails always arrive.</p>`);
   return page("Email preferences", `<h2 style="margin:0 0 6px">Email preferences</h2>
 <p style="opacity:.8;margin:0 0 18px;font-size:14px">for ${email}</p>
 <form method="POST">${boxes}
-<label style="display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid rgba(255,255,255,.1);border-radius:10px;margin:0 0 18px;opacity:.6">
-<input type="checkbox" checked disabled style="width:18px;height:18px;margin-top:2px">
-<span><strong>Receipts & account emails</strong><br><span style="font-size:13px">Always on — registration confirmations and sign-in links</span></span></label>
 <button type="submit" style="width:100%;padding:14px;border:0;border-radius:10px;background:#E8B84B;color:#0B1B33;font-weight:700;font-size:16px;cursor:pointer">Save preferences</button>
+<p style="opacity:.55;font-size:12.5px;margin:14px 0 0;text-align:center">Registration receipts and sign-in links always arrive.</p>
 </form>`);
 };
 
