@@ -33,11 +33,13 @@ export function unsubUrl(email) {
   return `https://www.northernvirginiaperformingarts.org/api/unsubscribe?e=${encodeURIComponent(email.toLowerCase())}&t=${unsubToken(email)}`;
 }
 
-// Campaign bodies are markdown-lite: a [TEXT](url) alone on a line renders as
-// a gold button, inline as a normal link; "* " lines become bullets; a lone
-// "--" line starts the small-print footer. The text part is the same body with
-// link syntax flattened to "TEXT: url", so plain-text clients get a clean copy
-// and Gmail never sees a display-text/href mismatch (its phishing wrapper).
+// Campaign bodies are markdown-lite rendered to LOOK like a plain personal
+// email (Jason's call — no buttons, no card): [TEXT](url) becomes a normal
+// blue hyperlink (bold when alone on its own line), "* " lines become
+// bullets, a lone "--" line starts the small-print footer. The text part is
+// the same body with link syntax flattened to "TEXT: url", so plain-text
+// clients get a clean copy and Gmail never sees a display-text/href
+// mismatch (its phishing wrapper).
 export function renderEmail(rawBody, vars) {
   let body = rawBody;
   for (const [k, v] of Object.entries(vars)) body = body.replaceAll(`{${k}}`, v);
@@ -50,19 +52,19 @@ export function renderEmail(rawBody, vars) {
     let lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
     if (lines[0] === "--") { footer = true; lines = lines.slice(1); }
     if (!lines.length) return "";
-    const base = footer ? "font-size:13px;color:#8a93a3" : "font-size:16px;color:#1a2233";
+    const base = footer ? "font-size:12px;color:#777" : "";
     const btn = lines.length === 1 && lines[0].match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
     if (btn) {
-      return `<p style="text-align:center;margin:28px 0"><a href="${esc(btn[2])}" style="display:inline-block;background:#f2c94c;color:#0b1b33;font-weight:700;font-size:16px;padding:13px 30px;border-radius:8px;text-decoration:none">${esc(btn[1])}</a></p>`;
+      return `<p style="margin:0 0 16px"><a href="${esc(btn[2])}" style="color:#0b5fff;font-weight:700">${esc(btn[1])}</a></p>`;
     }
     if (lines.every((l) => l.startsWith("* "))) {
-      return `<ul style="margin:0 0 18px;padding-left:22px;${base}">` +
-        lines.map((l) => `<li style="margin:5px 0">${inline(l.slice(2))}</li>`).join("") + `</ul>`;
+      return `<ul style="margin:0 0 16px;padding-left:24px;${base}">` +
+        lines.map((l) => `<li style="margin:3px 0">${inline(l.slice(2))}</li>`).join("") + `</ul>`;
     }
     const bold = lines.length === 1 && lines[0].endsWith(":") && lines[0].length < 40;
-    return `<p style="margin:0 0 18px;${base}${bold ? ";font-weight:700" : ""}">${lines.map(inline).join("<br>")}</p>`;
+    return `<p style="margin:0 0 16px;${base}${bold ? ";font-weight:700" : ""}">${lines.map(inline).join("<br>")}</p>`;
   }).filter(Boolean).join("\n");
-  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f6f7f9"><div style="max-width:560px;margin:0 auto;padding:32px 20px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55">
+  const html = `<!doctype html><html><body style="margin:0;padding:0"><div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;line-height:1.5;padding:16px">
 ${blocks}
 </div></body></html>`;
   return { text, html };
