@@ -1155,7 +1155,7 @@
     applySeasonFilter();
     syncShows(); updateTicker(); upsellCheck();
   }
-  // ---- Day Camps tab: one-day $70 events, straight into the same cart ----
+  // ---- Day Camps tab: one-day $79 events, straight into the same cart ----
   // Each DATE is one event with age-group sections (the "Musical Theatre Day
   // Camp" rows are the unthemed 9-12 sections of the same day) — so one card
   // per date, titled by the themed name, age groups as selections inside.
@@ -1180,6 +1180,18 @@
       return { when: when, acts: acts, title: named.name.trim(), img: named.image_url || '', ts: ts };
     }).sort(function(a, b){ return a.ts - b.ts; });
   }
+  // Day camp prices come from the catalog, never a literal — a hardcoded price
+  // here silently disagreed with the database (and with /day-camps) for weeks.
+  function dayPriceLabel(acts){
+    var seen = [];
+    acts.forEach(function(a){
+      var c = a.price_cents || 0;
+      if (c && seen.indexOf(c) < 0) seen.push(c);
+    });
+    if (!seen.length) return '';
+    seen.sort(function(x, y){ return x - y; });
+    return seen.length === 1 ? money(seen[0]) : money(seen[0]) + '–' + money(seen[seen.length - 1]);
+  }
   function dayOn(i, g){
     for (var j = 0; j < g.acts.length; j++) {
       var v = state.assign['act' + g.acts[j].id + '|' + i];
@@ -1196,7 +1208,9 @@
     if (!host) return;
     var groups = dayGroups();
     if (!groups.length) { host.innerHTML = ''; return; }
-    host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps \u00b7 $79 \u00b7 9 AM \u2013 4 PM \u00b7 paid in full at checkout</div>' +
+    var allLabel = dayPriceLabel(dayCampsList());
+    host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps' +
+      (allLabel ? ' \u00b7 ' + allLabel : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div>' +
       groups.map(function(g, gi){
         var ages = g.acts.map(function(a){ var r = castRange(a); return r.min + '\u2013' + r.max; }).join(' \u00b7 ');
         var kidRows = state.kids.map(function(k, i){
@@ -1219,7 +1233,8 @@
         return '<div class="showb" data-cat="day">' +
           '<div class="poster" style="background-image:url(\'' + g.img + '\')"></div>' +
           '<div class="bd"><div class="t">' + esc(g.title) + '</div>' +
-          '<div class="d">' + esc(g.when) + ' \u00b7 Ages ' + ages + ' \u00b7 $70</div>' +
+          '<div class="d">' + esc(g.when) + ' \u00b7 Ages ' + ages +
+            (dayPriceLabel(g.acts) ? ' \u00b7 ' + dayPriceLabel(g.acts) : '') + '</div>' +
           '<div class="kids">' + kidRows + '</div></div></div>';
       }).join('');
     var groupsRef = groups;
