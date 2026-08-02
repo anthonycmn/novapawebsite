@@ -729,6 +729,11 @@
     // the URL — without it a failed sign-in would bounce to /summer-2027 and the
     // explanation would never be seen.
     if (!linkError && !location.search && !location.hash) location.replace('/summer-2027');
+    // Registration is public now, so the old "new or returning?" gate is one
+    // tap of dead weight — everyone starts at the email step, which handles
+    // both (known emails sign in, new ones sign up). linkError keeps its own
+    // routing to the resend screen.
+    if (!linkError) openEmailSignup();
   });
 
 
@@ -869,7 +874,7 @@
     });
   }
   $('resendBtn').addEventListener('click', sendLink);
-  $('restartLink').addEventListener('click', function(e){ e.preventDefault(); go('st-gate'); });
+  $('restartLink').addEventListener('click', function(e){ e.preventDefault(); openEmailSignup(); });
 
   // ---------- step: new family (waitlist pre-open, signup after) ----------
   function wlGo(){
