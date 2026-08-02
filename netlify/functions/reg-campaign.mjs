@@ -96,7 +96,7 @@ async function audienceFor(campaign) {
   const [fams, orders, supp, sent] = await Promise.all([
     svc("families?select=email,parent_name&limit=10000"),
     svc("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&limit=10000"),
-    svc("email_suppressions?select=email&limit=10000"),
+    svc("email_suppressions?scope=eq.marketing&select=email&limit=10000"),
     svc(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&limit=20000`),
   ]);
   const buyers = new Set(orders.map((o) => (o.email || "").toLowerCase()));
