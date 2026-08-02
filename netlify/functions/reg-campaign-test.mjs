@@ -29,7 +29,7 @@ export default async (req) => {
   const c = rows[0];
   const t = await mailer();
   const unsub = unsubUrl(String(body.test_to));
-  const { text, html } = renderEmail(c.body, { first_name: "Jason", unsub_url: unsub });
+  const { text, html } = renderEmail(c.body, { first_name: "Jason", unsub_url: unsub, email: encodeURIComponent(String(body.test_to)) });
   await t.sendMail({
     from: FROM, replyTo: REPLY_TO, to: String(body.test_to),
     subject: c.subject,

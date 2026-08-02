@@ -139,7 +139,7 @@ export default async () => {
   let sent = 0;
   for (const r of batch) {
     const unsub = unsubUrl(r.email);
-    const { text, html } = renderEmail(c.body, { first_name: r.first, unsub_url: unsub });
+    const { text, html } = renderEmail(c.body, { first_name: r.first, unsub_url: unsub, email: encodeURIComponent(r.email) });
     try {
       await transporter.sendMail({
         from: FROM, replyTo: REPLY_TO,

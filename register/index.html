@@ -815,6 +815,12 @@
     $('wlOpenNow').style.display = 'none';
     $('wlJoin').textContent = 'Continue';
     $('wlTiny').textContent = 'No password needed.';
+    // campaign links carry ?pe= so families from an email blast never retype
+    // the address we just sent to
+    try {
+      var pe = new URLSearchParams(location.search).get('pe');
+      if (pe && pe.includes('@') && !$('wlEmail').value) $('wlEmail').value = pe.trim();
+    } catch(e){}
     go('st-waitlist'); $('wlEmail').focus();
   }
   $('choiceNew').addEventListener('click', function(){
