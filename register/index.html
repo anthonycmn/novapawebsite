@@ -407,7 +407,7 @@
     <p class="tiny" id="sameCastNote" style="margin:10px 0 4px">This year, campers in the same age group are in the same cast and show!</p>
     <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
-    <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; $180 per registration reserves your spot today, the rest on monthly autopay.</p>
+    <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; equal monthly payments, the first at checkout and the rest on autopay.</p>
     <div class="err" id="assignErr"></div>
     <button class="btn" id="assignNext">Continue →</button>
     <p class="tiny">Nothing is charged yet. Signed in as <span id="whoami2"></span> · <a href="#" id="signout2">not you?</a></p>
@@ -1951,11 +1951,22 @@
     if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var dayCents = 0, dayN = 0;
     items.forEach(function(it, i){ if (!it.show && isDayId(it.activity_id)) { dayCents += units[i]; dayN++; } });
-    var deposit = Math.min(Math.round((C.DEPOSIT_PER_CAMP * 100 * (n - dayN) + dayCents) * (state.coupon ? (1 - state.coupon.pct / 100) : 1)), net);
-    if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var planFee = (sp && sp.nofee) ? 0 : Math.round(net * 5 / 100);
+    if (sp) {
+      // special-plan carts keep their quoted legacy $180-deposit shape
+      var deposit = Math.min(C.DEPOSIT_PER_CAMP * 100 * (n - dayN) + dayCents, net);
+      if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+      return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+               today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / (sp.months || C.INSTALLMENTS)) };
+    }
+    // even split (Jason + CJ, Aug 1): financed balance over N+1 EQUAL payments,
+    // first at checkout — mirrors priceCart; server count reconciles at pay
+    var fin = net - dayCents + planFee;
+    var pmts = C.INSTALLMENTS + 1;
+    var even = Math.floor(fin / pmts);
+    if (even <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
-             today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / ((sp && sp.months) || C.INSTALLMENTS)) };
+             today: (fin - even * C.INSTALLMENTS) + ins + dayCents, inst: even };
   }
 
   var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };

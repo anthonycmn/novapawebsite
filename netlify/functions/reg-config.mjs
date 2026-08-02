@@ -318,13 +318,43 @@ export function priceCart(cart, plan, opts = {}) {
   }
   // day camps are cheap one-offs: charged in full today, never spread over installments
   const dayCampCents = priced.reduce((s, it) => s + (it.daycamp ? it.unit : 0), 0);
-  const planCount = priced.filter((it) => !it.daycamp).length;
-  const depositCents = Math.min(
-    Math.round((DEPOSIT_PER_ITEM_CENTS * planCount + dayCampCents) * (couponCents ? couponFactor : 1)),
-    subtotal);
-  const remainder = subtotal - depositCents;
-  if (remainder <= 0) {
-    // coupon shrank the balance below the deposit — collect it all today (no plan fee)
+  const planFeeCents = (special && special.waivePlanFee)
+    ? 0 : Math.round(subtotal * PLAN_FEE_PCT / 100);
+
+  if (special) {
+    // SPECIAL_PLANS carts keep the legacy $180-per-item deposit shape — the
+    // families holding these codes were quoted exact numbers in writing
+    const planCount = priced.filter((it) => !it.daycamp).length;
+    const depositCents = Math.min(DEPOSIT_PER_ITEM_CENTS * planCount + dayCampCents, subtotal);
+    const remainder = subtotal - depositCents;
+    if (remainder <= 0) {
+      return {
+        items: priced, subtotal, couponCents, insuranceCents, totalCents,
+        planFeeCents: 0,
+        todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
+        payFullOnly: false, plan: "full",
+      };
+    }
+    return {
+      items: priced, subtotal, couponCents, insuranceCents,
+      totalCents: totalCents + planFeeCents, planFeeCents,
+      todayCents: depositCents + insuranceCents,
+      installmentCents: Math.max(0, Math.ceil((remainder + planFeeCents) / schedule.length)),
+      installmentDatesUTC: schedule,
+      payFullOnly: false, plan: "deposit",
+    };
+  }
+
+  // Even split (Jason + CJ, Aug 1): the financed balance (everything except
+  // day camps, plus the plan fee) divides into schedule+1 EQUAL payments —
+  // the first at checkout instead of a stacked $180-per-item deposit. Insurance
+  // and day camps still settle today. Rounding lands on the first payment.
+  const financeable = subtotal - dayCampCents + planFeeCents;
+  const payments = schedule.length + 1;
+  const installmentCents = Math.floor(financeable / payments);
+  const todayShare = financeable - installmentCents * schedule.length;
+  if (installmentCents <= 0) {
+    // tiny balance (deep coupon) — just collect it all today, no fee
     return {
       items: priced, subtotal, couponCents, insuranceCents, totalCents,
       planFeeCents: 0,
@@ -332,15 +362,11 @@ export function priceCart(cart, plan, opts = {}) {
       payFullOnly: false, plan: "full",
     };
   }
-  // choosing the plan costs 5% of the (discounted) balance, financed with it
-  const planFeeCents = (special && special.waivePlanFee)
-    ? 0 : Math.round(subtotal * PLAN_FEE_PCT / 100);
-  const todayCents = depositCents + insuranceCents;
-  const installmentCents = Math.max(0, Math.ceil((remainder + planFeeCents) / schedule.length));
   return {
     items: priced, subtotal, couponCents, insuranceCents,
     totalCents: totalCents + planFeeCents, planFeeCents,
-    todayCents, installmentCents, installmentDatesUTC: schedule,
+    todayCents: todayShare + insuranceCents + dayCampCents,
+    installmentCents, installmentDatesUTC: schedule,
     payFullOnly: false, plan: "deposit",
   };
 }
