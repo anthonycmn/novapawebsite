@@ -15,6 +15,7 @@ import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
   SPECIAL_PLANS, isCoachingId,
+  DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CREDITS, DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END,
 } from "./reg-config.mjs";
 
 // first day of care per summer camp — the date the IRS under-13 test runs on
@@ -98,7 +99,7 @@ export default async (req) => {
   // prior registrations per kid (already_registered on their camper rows) —
   // they count toward the per-kid tier and the show bundle (CJ)
   const priorCampsByKid = {}, priorShowsByKid = {};
-  const bdayByKid = {};
+  const bdayByKid = {}, creditsByKid = {};
   const SUMMER_SLUGS = new Set(["httyd", "charlie", "trolls"]);
   try {
     const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -107,7 +108,7 @@ export default async (req) => {
     });
     const fams = await fr.json();
     if (Array.isArray(fams) && fams.length) {
-      const cr = await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fams[0].id}&select=name,already_registered,birthdate`, {
+      const cr = await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fams[0].id}&select=name,already_registered,birthdate,day_camp_credits,snow_day_credits`, {
         headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` },
       });
       const camps = await cr.json();
@@ -118,6 +119,7 @@ export default async (req) => {
           camps: reg.filter((s) => SUMMER_SLUGS.has(s)).length,
           shows: reg.filter((s) => !SUMMER_SLUGS.has(s)).length,
           bday: c.birthdate || null,
+          dayCr: c.day_camp_credits || 0, snowCr: c.snow_day_credits || 0,
         };
       }
       for (const it of items) {
@@ -126,6 +128,7 @@ export default async (req) => {
         if (p.camps) priorCampsByKid[kidKey(it)] = p.camps;
         if (p.shows) priorShowsByKid[kidKey(it)] = p.shows;
         if (p.bday) bdayByKid[kidKey(it)] = p.bday;
+        if (p.dayCr || p.snowCr) creditsByKid[kidKey(it)] = { day: p.dayCr, snow: p.snowCr };
       }
     }
   } catch (e) { console.error("prior lookup failed:", e.message); }
@@ -223,7 +226,7 @@ export default async (req) => {
         start: showStartFor(byId[it.activity_id].name),
       })),
     ];
-    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid, special });
+    const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid, special, creditsByKid });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
     }
@@ -238,6 +241,7 @@ export default async (req) => {
       unitPrices: p.items.map((it) => it.unit),
       monthlyItems: [],
       discountPct: Math.round(Math.max(...p.items.map((it) => it.rate), 0) * 100),
+      creditsUsed: p.creditsUsed || {},
     };
     description = cart
       .map((it) => it.show
@@ -294,6 +298,18 @@ export default async (req) => {
       try { await svc("redeem_coupon", { p_code: couponCode, p_applied_cents: pricing.couponCents || 0 }); }
       catch (e) { console.error("free order: redeem_coupon failed:", e.message); }
     }
+    // credits still move on a $0 order (a fully-credited day-camp cart never
+    // touches Stripe, so the webhook never runs) — keyed by the synthetic PI
+    try {
+      const grants = items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
+        .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
+          snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 }));
+      const redemptions = Object.entries(pricing.creditsUsed || {})
+        .map(([k, u]) => ({ camper: k, day: u.day || 0, snow: u.snow || 0 }));
+      if (grants.length || redemptions.length) {
+        await svc("apply_credit_events", { p_pi: "free_" + hold_id, p_email: email, p_detail: { grants, redemptions } });
+      }
+    } catch (e) { console.error("free order: credit events failed:", e.message); }
     if (parent_name && email) {
       try {
         await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}`, {
@@ -425,6 +441,13 @@ export default async (req) => {
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
+      // pack purchases grant per-camper credits; redeemed credits deduct —
+      // both applied by the webhook via apply_credit_events (exactly-once)
+      credit_grants: JSON.stringify(items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
+        .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
+          snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 }))).slice(0, 450),
+      credit_redeems: JSON.stringify(Object.entries(pricing.creditsUsed || {})
+        .map(([k, u]) => ({ camper: k, day: u.day || 0, snow: u.snow || 0 }))).slice(0, 450),
       ...refMeta,
     },
   });

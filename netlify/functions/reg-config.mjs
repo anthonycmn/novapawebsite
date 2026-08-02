@@ -80,6 +80,19 @@ export const PLAN_FEE_PCT = 5;   // surcharge for choosing a payment plan
 // Items at or under this price are "day camps" ($79 one-day events):
 // pay-in-full only, no bundle/tier discounts, no insurance, sibling 5% now.
 export const DAY_CAMP_MAX_CENTS = 20000;
+// Day Camp Credit Pack (the product /day-camps has advertised; CJ priced it
+// Aug 2 2026): $349 buys ONE CAMPER 5 day-camp credits, good through Jun 30
+// 2027, credits never shared between siblings. Bought by Labor Day, the pack
+// adds 2 free Snow Day credits for that camper. Credits auto-redeem at
+// checkout: a day camp for a camper with a day credit prices at $0 (snow-day
+// events consume snow credits instead). The webhook grants/deducts via
+// apply_credit_events, keyed by payment intent so retries are no-ops.
+export const DAY_CAMP_PACK_ID = 990010;
+export const DAY_CAMP_PACK_CENTS = 34900;
+export const DAY_CAMP_PACK_CREDITS = 5;
+export const DAY_CAMP_PACK_SNOW_BONUS = 2;
+export const DAY_CAMP_PACK_SNOW_END = new Date("2026-09-08T03:59:59Z"); // end of Labor Day ET
+export const isSnowDayName = (name) => /snow day/i.test(name || "");
 
 export const SHOWS = {
   httyd: "How to Train Your Dragon JR.",
@@ -229,7 +242,7 @@ export function priceCart(cart, plan, opts = {}) {
   // teen mainstage shows (CJ, Jul 31 — this supersedes the flat rules those
   // two carried through July). Day camps, classes, and coaching stay outside.
   const isCounted = (it) =>
-    it.show || (!isDayCampItem(it) && !isCoaching(it));
+    it.show || (!isDayCampItem(it) && !isCoaching(it) && it.activity_id !== DAY_CAMP_PACK_ID);
   const countByKid = {};
   for (const it of cart) if (isCounted(it)) {
     const k = kidKey(it);
@@ -243,6 +256,11 @@ export function priceCart(cart, plan, opts = {}) {
   const firstKid = kidOrder[0];
 
   const priced = cart.map((it) => {
+    // credit pack: flat $349, settled today like a day camp, outside every
+    // discount (no tier, no sibling, no insurance, never financed)
+    if (it.activity_id === DAY_CAMP_PACK_ID) {
+      return { ...it, unit: DAY_CAMP_PACK_CENTS, rate: 0, daycamp: true, pack: true };
+    }
     if (it.show) {
       const kid = kidKey(it);
       const rate = perKidRate(countByKid[kid], now);
@@ -287,6 +305,28 @@ export function priceCart(cart, plan, opts = {}) {
     return { ...it, unit: Math.round(list * (1 - rate)), rate };
   });
 
+  // Credit redemption: a camper's day credits zero out their day-camp lines
+  // (snow-day events pull from snow credits instead). Priciest lines redeem
+  // first so a credit never burns on a sibling-discounted price while a
+  // full-price line pays cash. opts.creditsByKid = { kidKey: {day, snow} }
+  // comes from the DB in reg-pay; the webhook deducts on payment.
+  const creditsByKid = opts.creditsByKid || {};
+  const creditsUsed = {};
+  const redeemable = priced.filter((it) => it.daycamp && !it.coaching && !it.pack)
+    .sort((a, b) => b.unit - a.unit);
+  for (const it of redeemable) {
+    const k = kidKey(it);
+    const bal = creditsByKid[k];
+    if (!bal) continue;
+    const kind = isSnowDayName(it.name) ? "snow" : "day";
+    const used = creditsUsed[k] || (creditsUsed[k] = { day: 0, snow: 0 });
+    if ((bal[kind] || 0) - used[kind] > 0) {
+      used[kind] += 1;
+      it.unit = 0;
+      it.credited = true;
+    }
+  }
+
   const grossSubtotal = priced.reduce((s, it) => s + it.unit, 0);
   const couponCents = couponPct
     ? Math.round(grossSubtotal * couponPct / 100)
@@ -310,7 +350,7 @@ export function priceCart(cart, plan, opts = {}) {
 
   if (plan === "full" || payFullOnly) {
     return {
-      items: priced, subtotal, couponCents, insuranceCents, totalCents,
+      items: priced, creditsUsed, subtotal, couponCents, insuranceCents, totalCents,
       planFeeCents: 0,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly, plan: "full",
@@ -329,14 +369,14 @@ export function priceCart(cart, plan, opts = {}) {
     const remainder = subtotal - depositCents;
     if (remainder <= 0) {
       return {
-        items: priced, subtotal, couponCents, insuranceCents, totalCents,
+        items: priced, creditsUsed, subtotal, couponCents, insuranceCents, totalCents,
         planFeeCents: 0,
         todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
         payFullOnly: false, plan: "full",
       };
     }
     return {
-      items: priced, subtotal, couponCents, insuranceCents,
+      items: priced, creditsUsed, subtotal, couponCents, insuranceCents,
       totalCents: totalCents + planFeeCents, planFeeCents,
       todayCents: depositCents + insuranceCents,
       installmentCents: Math.max(0, Math.ceil((remainder + planFeeCents) / schedule.length)),
@@ -356,14 +396,14 @@ export function priceCart(cart, plan, opts = {}) {
   if (installmentCents <= 0) {
     // tiny balance (deep coupon) — just collect it all today, no fee
     return {
-      items: priced, subtotal, couponCents, insuranceCents, totalCents,
+      items: priced, creditsUsed, subtotal, couponCents, insuranceCents, totalCents,
       planFeeCents: 0,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly: false, plan: "full",
     };
   }
   return {
-    items: priced, subtotal, couponCents, insuranceCents,
+    items: priced, creditsUsed, subtotal, couponCents, insuranceCents,
     totalCents: totalCents + planFeeCents, planFeeCents,
     todayCents: todayShare + insuranceCents + dayCampCents,
     installmentCents, installmentDatesUTC: schedule,

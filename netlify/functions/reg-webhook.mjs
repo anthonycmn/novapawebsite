@@ -208,6 +208,21 @@ export default async (req) => {
         });
       } catch (e) { console.error("referral reward failed:", e.message); }
     }
+    // Day Camp Credit Pack: pack purchases grant per-camper credits, redeemed
+    // credits deduct. apply_credit_events is keyed by payment intent, so
+    // webhook redeliveries apply exactly once.
+    try {
+      const grants = JSON.parse(m.credit_grants || "[]");
+      const redemptions = JSON.parse(m.credit_redeems || "[]");
+      if ((grants.length || redemptions.length) && m.email) {
+        const rk = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        await fetch(`${SUPABASE_URL}/rest/v1/rpc/apply_credit_events`, {
+          method: "POST",
+          headers: { apikey: rk, Authorization: `Bearer ${rk}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ p_pi: pi.id, p_email: m.email, p_detail: { grants, redemptions } }),
+        });
+      }
+    } catch (e) { console.error("credit events failed:", e.message); }
     // internal heads-up to the admin list (Todd/CJ) — one email per order,
     // failure-isolated like everything else post-payment
     try {

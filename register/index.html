@@ -668,6 +668,33 @@
     return n;
   }
   function kidKey(it){ return it && it.ci != null ? 'i' + it.ci : (it && it.camper) || '?'; }
+  function kidByKey(k){
+    if (k && k.charAt(0) === 'i' && !isNaN(+k.slice(1))) return state.kids[+k.slice(1)] || null;
+    for (var j = 0; j < state.kids.length; j++) if (state.kids[j].name === k) return state.kids[j];
+    return null;
+  }
+  var PACK_ID = 990010, PACK_CENTS = 34900;
+  // credits zero out a camper's day-camp lines, priciest first — mirrors
+  // priceCart. isDay(i) decides "is this line a day camp"; snow-day events
+  // consume snow credits instead of day credits.
+  function applyCredits(items, units, isDay, nameOf){
+    var byKid = {};
+    items.forEach(function(it, i){
+      if (it.activity_id === PACK_ID || !isDay(it, i)) return;
+      (byKid[kidKey(it)] = byKid[kidKey(it)] || []).push(i);
+    });
+    var credited = {};
+    Object.keys(byKid).forEach(function(k){
+      var kid = kidByKey(k); if (!kid) return;
+      var day = kid.dayCr || 0, snow = kid.snowCr || 0;
+      byKid[k].sort(function(a, b){ return units[b] - units[a]; });
+      byKid[k].forEach(function(ix){
+        var isSnow = /snow day/i.test(nameOf(items[ix]) || '');
+        if (isSnow ? snow > 0 : day > 0) { if (isSnow) snow--; else day--; units[ix] = 0; credited[ix] = true; }
+      });
+    });
+    return credited;
+  }
   function saleOn(){ return new Date() <= new Date(C.EARLYBIRD_END); }
   function addonActFor(kind, age){
     var re = kind === 'frozen' ? /frozen/i : /mermaid/i;
@@ -945,7 +972,8 @@
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
-        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], verified:c.verified||[], sel:true };
+        return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], verified:c.verified||[], sel:true,
+                 dayCr:c.day_camp_credits||0, snowCr:c.snow_day_credits||0 };
       });
       var returning = state.kids.length > 0;
       $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your campers';
@@ -1220,8 +1248,25 @@
     var groups = dayGroups();
     if (!groups.length) { host.innerHTML = ''; return; }
     var allLabel = dayPriceLabel(dayCampsList());
+    // Credit Pack card: $349 buys ONE camper 5 credits (through Jun 2027);
+    // by Labor Day the pack adds 2 free Snow Day credits. Credits a camper
+    // already owns auto-apply at checkout, so the card also shows balances.
+    var snowOn = new Date() <= new Date('2026-09-08T03:59:59Z');
+    var packKids = state.kids.map(function(k, i){
+      if (!k.sel) return '';
+      var v = state.assign['act' + PACK_ID + '|' + i];
+      var bal = (k.dayCr || k.snowCr)
+        ? ' <span class="badge-done" style="opacity:.75">' + k.dayCr + ' day + ' + k.snowCr + ' snow credits \u2014 applied automatically</span>' : '';
+      return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-packi="' + i + '" ' + (v && v.on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' + bal + '</label></div>';
+    }).join('');
+    var packNote = '<div class="showb" data-cat="day"><div class="bd">' +
+      '<div class="t">Day Camp Credit Pack \u00b7 $349</div>' +
+      '<div class="d">5 day-camp credits for one camper, good through June 2027 \u2014 $69.80 a day instead of $79.' +
+      (snowOn ? ' Buy by Labor Day and we add <b style="color:var(--gold3)">2 free Snow Day credits</b>.' : '') +
+      ' Credits apply automatically at day-camp checkout.</div>' +
+      '<div class="kids">' + packKids + '</div></div></div>';
     host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps' +
-      (allLabel ? ' \u00b7 ' + allLabel : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div>' +
+      (allLabel ? ' \u00b7 ' + allLabel : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div>' + packNote +
       groups.map(function(g, gi){
         var ages = g.acts.map(function(a){ var r = castRange(a); return r.min + '\u2013' + r.max; }).join(' \u00b7 ');
         var kidRows = state.kids.map(function(k, i){
@@ -1258,6 +1303,15 @@
           setDay(i, g, fit ? fit.id : null);
         } else setDay(i, g, null);
         ev('reg_daycamp_toggled', { when: g.when, on: cb.checked });
+        renderShowKids(); saveCart();
+      });
+    });
+    host.querySelectorAll('input[data-packi]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var i = +cb.dataset.packi;
+        if (cb.checked) state.assign['act' + PACK_ID + '|' + i] = { on: true };
+        else delete state.assign['act' + PACK_ID + '|' + i];
+        ev('reg_pack_toggled', { on: cb.checked });
         renderShowKids(); saveCart();
       });
     });
@@ -1669,6 +1723,11 @@
         if (v && v.on) items.push({ activity_id: a.id, camper: k.name, ci: i });
       });
     });
+    state.kids.forEach(function(k, i){
+      if (!k.sel) return;
+      var v = state.assign['act' + PACK_ID + '|' + i];
+      if (v && v.on) items.push({ activity_id: PACK_ID, camper: k.name, ci: i });
+    });
     Object.keys(state.addons).forEach(function(key){
       var id = state.addons[key];
       if (id) items.push({ activity_id: id, camper: key.split('|')[1] });
@@ -1826,7 +1885,7 @@
       var a = byId[it.activity_id] || {};
       // teen intensives and teen mainstage shows count toward the tier now
       // (CJ, Jul 31); coaching never does
-      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isCoach(it.activity_id)) {
+      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isCoach(it.activity_id) && it.activity_id !== PACK_ID) {
         var k = kidKey(it);
         bbCount[k] = (bbCount[k] || 0) + 1;
       }
@@ -1861,6 +1920,13 @@
       var per = Math.floor(bundle / n2);
       idxs.forEach(function(idx, j){ units[idx] = j === n2 - 1 ? bundle - per * (n2 - 1) : per; });
     });
+    // Day Camp Credit Pack: $349 flat, outside every discount; a camper's
+    // credits then zero their day-camp lines (mirrors priceCart)
+    items.forEach(function(it, i){ if (it.activity_id === PACK_ID) units[i] = PACK_CENTS; });
+    var credited = applyCredits(items, units, function(it){
+      var a3 = byId[it.activity_id] || {};
+      return a3.category !== 'class' && !isCoach(it.activity_id) && (a3.price_cents || 0) <= 20000 && !!a3.price_cents;
+    }, function(it){ return (byId[it.activity_id] || {}).name; });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var coupon = !state.coupon ? 0
       : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
@@ -1868,12 +1934,12 @@
     var baseSubtotal = items.reduce(function(sum, it){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
-      if (isCoach(it.activity_id)) return sum;                                 // coaching is not insurable either
+      if (isCoach(it.activity_id) || it.activity_id === PACK_ID) return sum;   // coaching + credit pack not insurable
       return sum + (a.price_cents || 0);
     }, 0);
     var insPctOff2 = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(baseSubtotal * (C.INSURANCE_PCT || 10) / 100 * (1 - insPctOff2 / 100)) : 0;
-    return { items: items, units: units, sib: sib, bund: bund, mg: mg, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0, ins: ins,
+    return { items: items, units: units, sib: sib, bund: bund, mg: mg, credited: credited, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0, ins: ins,
              total: subtotal - coupon + ins, today: subtotal - coupon + ins,
              monthly: catAllClasses() ? units : [] };
   }
@@ -1890,6 +1956,7 @@
         (p.bund && p.bund[i] ? ' <span class="savings">(10% bundle)</span>' : '') +
         (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 15)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
+        (p.credited && p.credited[i] ? ' <span class="savings">(day-camp credit)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
     $('summaryCard').innerHTML =
@@ -1922,7 +1989,7 @@
       var cartN = items.filter(function(x){
         if (kidKey(x) !== k) return false;
         if (x.show) return true;
-        return !!x.activity_id && !isDayId(x.activity_id) && !isCoach(x.activity_id);
+        return !!x.activity_id && !isDayId(x.activity_id) && !isCoach(x.activity_id) && x.activity_id !== PACK_ID;
       }).length;
       var prior = ko ? (ko.already || []).filter(function(t){ return COUNT_SLUGS.indexOf(t) !== -1; }).length : 0;
       return cartN + prior;
@@ -1963,6 +2030,12 @@
       bund[i] = false; mg[i] = false; trio[i] = false; pcts[i] = sp.pct;
       return Math.round(list * (1 - sp.pct / 100));
     });
+    // Day Camp Credit Pack: $349 flat, outside every discount; a camper's
+    // credits then zero their day-camp lines (mirrors priceCart)
+    items.forEach(function(it, i){ if (it.activity_id === PACK_ID) units[i] = PACK_CENTS; });
+    var credited = applyCredits(items, units, function(it){
+      return !it.show && isDayId(it.activity_id);
+    }, function(it){ return (byIdAll[it.activity_id] || {}).name; });
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var coupon = !state.coupon ? 0
       : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
@@ -1973,21 +2046,21 @@
       var a2 = byIdAll[it.activity_id] || {};
       var pc = a2.price_cents || 0;
       if (a2.category === 'class' || pc <= 20000) return s;
-      if (isCoach(it.activity_id)) return s;   // coaching is not insurable
+      if (isCoach(it.activity_id) || it.activity_id === PACK_ID) return s;   // coaching + credit pack not insurable
       return s + pc;
     }, 0);
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, credited:credited, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var dayCents = 0, dayN = 0;
-    items.forEach(function(it, i){ if (!it.show && isDayId(it.activity_id)) { dayCents += units[i]; dayN++; } });
+    items.forEach(function(it, i){ if (!it.show && (isDayId(it.activity_id) || it.activity_id === PACK_ID)) { dayCents += units[i]; dayN++; } });
     var planFee = (sp && sp.nofee) ? 0 : Math.round(net * 5 / 100);
     if (sp) {
       // special-plan carts keep their quoted legacy $180-deposit shape
       var deposit = Math.min(C.DEPOSIT_PER_CAMP * 100 * (n - dayN) + dayCents, net);
-      if (net - deposit <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
-      return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+      if (net - deposit <= 0) return { n:n, items:items, units:units, credited:credited, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+      return { n:n, items:items, units:units, credited:credited, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
                today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / (sp.months || C.INSTALLMENTS)) };
     }
     // even split (Jason + CJ, Aug 1): financed balance over N+1 EQUAL payments,
@@ -1995,8 +2068,8 @@
     var fin = net - dayCents + planFee;
     var pmts = C.INSTALLMENTS + 1;
     var even = Math.floor(fin / pmts);
-    if (even <= 0) return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
-    return { n:n, items:items, units:units, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+    if (even <= 0) return { n:n, items:items, units:units, credited:credited, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    return { n:n, items:items, units:units, credited:credited, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
              today: (fin - even * C.INSTALLMENTS) + ins + dayCents, inst: even };
   }
 
@@ -2114,7 +2187,12 @@
     });
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     function fullPrice(it){ return it.show ? C.PRICE * 100 : ((byIdAll[it.activity_id]||{}).price_cents || 0); }
+    // credited day camps are their own row, not "launch-sale savings"
+    var creditSavings = items.reduce(function(sum, it, i){
+      return sum + (p.credited && p.credited[i] ? fullPrice(it) : 0);
+    }, 0);
     var savings = items.reduce(function(sum, it, i){
+      if (p.credited && p.credited[i]) return sum;
       return sum + Math.max(0, fullPrice(it) - p.units[i]);
     }, 0);
     function actShowName(a){
@@ -2131,12 +2209,14 @@
       // List price here, not the discounted unit — the discount comes off on
       // the "Launch-sale savings" row below. Showing the already-reduced price
       // AND that row made the column read like the money was coming off twice.
-      return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + '</span><span>' + money(fullPrice(it)) + '</span></div>';
+      var credBadge = p.credited && p.credited[i] ? ' <span class="savings">(credit applied)</span>' : '';
+      return '<div class="sumrow"><span>' + label + (pct ? ' <span class="savings">(' + pct + '% off)</span>' : '') + credBadge + '</span><span>' + money(fullPrice(it)) + '</span></div>';
     }).join('');
     var allSummer = items.every(function(it){ return it.show; });
     $('summaryCard').innerHTML =
       '<div class="sumrow head"><span>' + (allSummer ? 'Your summer' : 'Your shows') + '</span><span>' + (allSummer ? 'per-kid launch pricing' : '') + '</span></div>' + rows +
       (savings > 0 ? '<div class="sumrow"><span class="savings">Launch-sale savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
+      (creditSavings > 0 ? '<div class="sumrow"><span class="savings">Day-camp credits</span><span class="savings">−' + money(creditSavings) + '</span></div>' : '') +
       (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
       (p.ins ? '<div class="sumrow"><span>Tuition insurance</span><span>' + money(p.ins) + '</span></div>' : '') +
       (p.planFee ? '<div class="sumrow"><span>Payment plan (5%)</span><span>+' + money(p.planFee) + '</span></div>' : '') +
