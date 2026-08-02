@@ -2,7 +2,7 @@
 // one fully rendered copy through the real Resend transport. Lives outside
 // the scheduled runner because Netlify blocks HTTP calls to scheduled fns.
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
-import { FROM, REPLY_TO, mailer, unsubUrl } from "./reg-campaign.mjs";
+import { FROM, REPLY_TO, mailer, unsubUrl, renderEmail } from "./reg-campaign.mjs";
 
 async function isAdmin(userToken) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
@@ -29,10 +29,11 @@ export default async (req) => {
   const c = rows[0];
   const t = await mailer();
   const unsub = unsubUrl(String(body.test_to));
+  const { text, html } = renderEmail(c.body, { first_name: "Jason", unsub_url: unsub });
   await t.sendMail({
     from: FROM, replyTo: REPLY_TO, to: String(body.test_to),
     subject: c.subject,
-    text: c.body.replaceAll("{first_name}", "Jason").replaceAll("{unsub_url}", unsub),
+    text, html,
     headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
   });
   return Response.json({ ok: true, test: true, to: body.test_to, from: FROM });

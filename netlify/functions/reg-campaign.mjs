@@ -33,6 +33,41 @@ export function unsubUrl(email) {
   return `https://www.northernvirginiaperformingarts.org/api/unsubscribe?e=${encodeURIComponent(email.toLowerCase())}&t=${unsubToken(email)}`;
 }
 
+// Campaign bodies are markdown-lite: a [TEXT](url) alone on a line renders as
+// a gold button, inline as a normal link; "* " lines become bullets; a lone
+// "--" line starts the small-print footer. The text part is the same body with
+// link syntax flattened to "TEXT: url", so plain-text clients get a clean copy
+// and Gmail never sees a display-text/href mismatch (its phishing wrapper).
+export function renderEmail(rawBody, vars) {
+  let body = rawBody;
+  for (const [k, v] of Object.entries(vars)) body = body.replaceAll(`{${k}}`, v);
+  const LINK = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+  const text = body.replace(LINK, (_, t, u) => `${t}: ${u}`);
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s).replace(LINK, '<a href="$2" style="color:#0b5fff">$1</a>');
+  let footer = false;
+  const blocks = body.split(/\n\s*\n/).map((block) => {
+    let lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines[0] === "--") { footer = true; lines = lines.slice(1); }
+    if (!lines.length) return "";
+    const base = footer ? "font-size:13px;color:#8a93a3" : "font-size:16px;color:#1a2233";
+    const btn = lines.length === 1 && lines[0].match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
+    if (btn) {
+      return `<p style="text-align:center;margin:28px 0"><a href="${esc(btn[2])}" style="display:inline-block;background:#f2c94c;color:#0b1b33;font-weight:700;font-size:16px;padding:13px 30px;border-radius:8px;text-decoration:none">${esc(btn[1])}</a></p>`;
+    }
+    if (lines.every((l) => l.startsWith("* "))) {
+      return `<ul style="margin:0 0 18px;padding-left:22px;${base}">` +
+        lines.map((l) => `<li style="margin:5px 0">${inline(l.slice(2))}</li>`).join("") + `</ul>`;
+    }
+    const bold = lines.length === 1 && lines[0].endsWith(":") && lines[0].length < 40;
+    return `<p style="margin:0 0 18px;${base}${bold ? ";font-weight:700" : ""}">${lines.map(inline).join("<br>")}</p>`;
+  }).filter(Boolean).join("\n");
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f6f7f9"><div style="max-width:560px;margin:0 auto;padding:32px 20px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55">
+${blocks}
+</div></body></html>`;
+  return { text, html };
+}
+
 async function svc(path, init = {}) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -101,12 +136,13 @@ export default async () => {
   let sent = 0;
   for (const r of batch) {
     const unsub = unsubUrl(r.email);
+    const { text, html } = renderEmail(c.body, { first_name: r.first, unsub_url: unsub });
     try {
       await transporter.sendMail({
         from: FROM, replyTo: REPLY_TO,
         to: r.email,
         subject: c.subject,
-        text: c.body.replaceAll("{first_name}", r.first).replaceAll("{unsub_url}", unsub),
+        text, html,
         headers: {
           "List-Unsubscribe": `<${unsub}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
