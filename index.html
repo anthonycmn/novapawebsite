@@ -1838,6 +1838,39 @@
      color: rgba(255, 255, 255, 0.7)
    }
 
+   /* Name and Email are required. They always were, but nothing said so until
+      the browser blocked the submit — mark them where people read the label. */
+   .form-group label .req {
+     color: #E8B84B;
+     margin-left: 5px;
+     letter-spacing: 0;
+   }
+
+   /* Only colour a field red once the visitor has actually left it wrong,
+      never while they are still typing into an empty form. */
+   .form-group input:not(:placeholder-shown):invalid {
+     border-color: rgba(255, 155, 155, 0.75);
+   }
+
+   .u-sr-only {
+     position: absolute;
+     width: 1px;
+     height: 1px;
+     padding: 0;
+     margin: -1px;
+     overflow: hidden;
+     clip: rect(0, 0, 0, 0);
+     white-space: nowrap;
+     border: 0;
+   }
+
+   .form-reqnote {
+     font-size: 11.5px;
+     color: rgba(255, 255, 255, 0.55);
+     margin: 0 0 14px;
+   }
+   .form-reqnote span { color: #E8B84B; }
+
    .form-group input,
    .form-group select,
    .form-group textarea {
@@ -5147,18 +5180,19 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <p style="display:none">
        <input name="bot-field"/>
       </p>
+      <p class="form-reqnote"><span aria-hidden="true">*</span> Required. We reply by email, so we need a working address.</p>
       <div class="form-row">
        <div class="form-group">
         <label for="cf-name">
-         Your Name
+         Your Name <span aria-hidden="true" class="req">*</span><span class="u-sr-only">(required)</span>
         </label>
-        <input id="cf-name" name="Name" placeholder="Jane Smith" required="" type="text"/>
+        <input autocomplete="name" id="cf-name" name="Name" placeholder="Jane Smith" required="" type="text"/>
        </div>
        <div class="form-group">
         <label for="cf-email">
-         Email Address
+         Email Address <span aria-hidden="true" class="req">*</span><span class="u-sr-only">(required)</span>
         </label>
-        <input id="cf-email" name="Email" placeholder="jane@example.com" required="" type="email"/>
+        <input autocomplete="email" id="cf-email" inputmode="email" name="Email" placeholder="jane@example.com" required="" type="email"/>
        </div>
       </div>
       <div class="form-row">
@@ -5422,6 +5456,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
    function handleFormSubmit(e) {
      e.preventDefault();
      const form = document.getElementById('contactForm');
+     // Native validation already blocks a submit-button click, but not a
+     // programmatic submit — check anyway so an empty email can never post.
+     if (!form.reportValidity()) return;
      const data = new FormData(form);
      fetch('/', {
          method: 'POST',
@@ -5430,7 +5467,10 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
          },
          body: new URLSearchParams(data).toString()
        })
-       .then(() => {
+       .then((res) => {
+         // fetch only rejects on a network failure, so a 404 or a 500 used to
+         // land here and show the family "we got it" for a message we lost.
+         if (!res.ok) throw new Error('HTTP ' + res.status);
          document.getElementById('form-success').style.display = 'block';
          form.reset();
          setTimeout(() => {
