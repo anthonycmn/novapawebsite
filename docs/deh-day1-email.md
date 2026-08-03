@@ -56,7 +56,7 @@ This is the part that surprises people new to Broadway Bound Teen. Nobody sits i
 
 - **Stage** — blocking and scene work with Danielle
 - **Music** — vocals, harmony, sectionals with Shelby
-- **Costume, hair and makeup** — fittings, builds, makeup labs with Ryanna
+- **Costume, hair and makeup** — fittings, builds, makeup labs with Ryyana
 - **Set, lights, sound and props** — building the actual show with Colton
 - **Study** — off-book drilling, script analysis, character and ensemble track work
 
@@ -100,8 +100,8 @@ If this material is close to something in your own life, you are not obliged to 
 
 - **Danielle Sirinsky** — Director
 - **Shelby Milgram** — Vocal Director
-- **Ryanna** — Assistant Director, costumes, hair and makeup
-- **Colton** — Technical Director, set, lights, sound and props
+- **Ryyana Cunningham** — Assistant Director, costumes, hair and makeup
+- **Colton Sorensen** — Technical Director, set, lights, sound and props
 - **Tony Cimino-Johnson** — intimacy direction and the study track
 - **Katie Rivers** — Director of Health and Safety
 
