@@ -33,6 +33,44 @@ export function unsubUrl(email) {
   return `https://www.northernvirginiaperformingarts.org/api/unsubscribe?e=${encodeURIComponent(email.toLowerCase())}&t=${unsubToken(email)}`;
 }
 
+// Campaign bodies are markdown-lite: a [TEXT](url) alone on a line renders as
+// a gold button, inline as a normal link; "* " lines become bullets; a lone
+// "--" line starts the small-print footer. One butterfly logo up top is the
+// only image — a single hosted img with alt text doesn't move the spam
+// needle. The text part is the same body with link syntax flattened to
+// "TEXT: url", so plain-text clients get a clean copy and Gmail never sees
+// a display-text/href mismatch (its phishing wrapper).
+export function renderEmail(rawBody, vars) {
+  let body = rawBody;
+  for (const [k, v] of Object.entries(vars)) body = body.replaceAll(`{${k}}`, v);
+  const LINK = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+  const text = body.replace(LINK, (_, t, u) => `${t}: ${u}`);
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (s) => esc(s).replace(LINK, '<a href="$2" style="color:#0b5fff">$1</a>');
+  let footer = false;
+  const blocks = body.split(/\n\s*\n/).map((block) => {
+    let lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines[0] === "--") { footer = true; lines = lines.slice(1); }
+    if (!lines.length) return "";
+    const base = footer ? "font-size:13px;color:#8a93a3" : "font-size:16px;color:#1a2233";
+    const btn = lines.length === 1 && lines[0].match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
+    if (btn) {
+      return `<p style="text-align:center;margin:28px 0"><a href="${esc(btn[2])}" style="display:inline-block;background:#f2c94c;color:#0b1b33;font-weight:700;font-size:16px;padding:13px 30px;border-radius:8px;text-decoration:none">${esc(btn[1])}</a></p>`;
+    }
+    if (lines.every((l) => l.startsWith("* "))) {
+      return `<ul style="margin:0 0 18px;padding-left:22px;${base}">` +
+        lines.map((l) => `<li style="margin:5px 0">${inline(l.slice(2))}</li>`).join("") + `</ul>`;
+    }
+    const bold = lines.length === 1 && lines[0].endsWith(":") && lines[0].length < 40;
+    return `<p style="margin:0 0 18px;${base}${bold ? ";font-weight:700" : ""}">${lines.map(inline).join("<br>")}</p>`;
+  }).filter(Boolean).join("\n");
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f6f7f9"><div style="max-width:560px;margin:0 auto;padding:32px 20px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55">
+<p style="text-align:center;margin:0 0 22px"><img src="https://www.northernvirginiaperformingarts.org/favicon.png" width="56" height="56" alt="NOVAPA" style="display:inline-block"></p>
+${blocks}
+</div></body></html>`;
+  return { text, html };
+}
+
 async function svc(path, init = {}) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -44,17 +82,49 @@ async function svc(path, init = {}) {
   return t ? JSON.parse(t) : null;
 }
 
+// Team always rides along on every blast (Jason's call — good to see what
+// families see). Suppressions and per-campaign sent-stamps still apply.
+const TEAM = [
+  { email: "jason@novapa.org", first: "Jason" },
+  { email: "cj@novapa.org", first: "CJ" },
+  { email: "todd@novapa.org", first: "Todd" },
+  { email: "jen@novapa.org", first: "Jen" },
+];
+
 async function audienceFor(campaign) {
+  // cc_batch_N: imported Constant Contact prospects, pre-cleaned and batched
+  // at import time (the ramp — Tue/Wed/Thu — is the batch number). Same
+  // suppression + sent-stamp + team rules as family audiences; buyers drop
+  // out live like everywhere else.
+  const ccBatch = (campaign.audience || "").match(/^cc_batch_(\d+)$/);
+  if (ccBatch) {
+    const [contacts, orders, supp, sent] = await Promise.all([
+      svc(`cc_contacts?batch=eq.${ccBatch[1]}&select=email,first_name&limit=10000`),
+      svc("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&limit=10000"),
+      svc("email_suppressions?scope=eq.marketing&select=email&limit=10000"),
+      svc(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&limit=20000`),
+    ]);
+    const out = new Set([
+      ...orders.map((o) => (o.email || "").toLowerCase()),
+      ...supp.map((s) => s.email.toLowerCase()),
+      ...sent.map((s) => s.email.toLowerCase()),
+    ]);
+    const list = contacts.filter((c) => !out.has(c.email.toLowerCase())).map((c) => ({
+      email: c.email.toLowerCase(),
+      first: (c.first_name || "").trim().split(" ")[0] || "there",
+    }));
+    return [...TEAM.filter((t) => !out.has(t.email)), ...list];
+  }
   // non_buyers_2027: every known family without a paid 2026-27 web order
   const [fams, orders, supp, sent] = await Promise.all([
     svc("families?select=email,parent_name&limit=10000"),
     svc("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&limit=10000"),
-    svc("email_suppressions?select=email&limit=10000"),
+    svc("email_suppressions?scope=eq.marketing&select=email&limit=10000"),
     svc(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&limit=20000`),
   ]);
   const buyers = new Set(orders.map((o) => (o.email || "").toLowerCase()));
   const out = new Set([...supp.map((s) => s.email.toLowerCase()), ...sent.map((s) => s.email.toLowerCase())]);
-  return fams.filter((f) => {
+  const list = fams.filter((f) => {
     const e = (f.email || "").toLowerCase();
     if (!e.includes("@") || e.endsWith("@novapa.org")) return false;
     if (campaign.audience === "non_buyers_2027" && buyers.has(e)) return false;
@@ -64,6 +134,7 @@ async function audienceFor(campaign) {
     email: (f.email || "").toLowerCase(),
     first: (f.parent_name || "").trim().split(" ")[0] || "there",
   }));
+  return [...TEAM.filter((t) => !out.has(t.email)), ...list];
 }
 
 async function isAdmin(userToken) {
@@ -101,12 +172,13 @@ export default async () => {
   let sent = 0;
   for (const r of batch) {
     const unsub = unsubUrl(r.email);
+    const { text, html } = renderEmail(c.body, { first_name: r.first, unsub_url: unsub, email: encodeURIComponent(r.email) });
     try {
       await transporter.sendMail({
         from: FROM, replyTo: REPLY_TO,
         to: r.email,
         subject: c.subject,
-        text: c.body.replaceAll("{first_name}", r.first).replaceAll("{unsub_url}", unsub),
+        text, html,
         headers: {
           "List-Unsubscribe": `<${unsub}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
