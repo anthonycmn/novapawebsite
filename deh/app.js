@@ -17,7 +17,7 @@
   var GATE_WORD = 'orchard';   // curtain, not a lock — change here and tell staff
 
   // Who can sign a block off. Anyone not listed picks "Someone else" and types.
-  var STAFF = ['Danielle', 'Shelby', 'Ryanna', 'Colton', 'Tony', 'Stage Manager'];
+  var STAFF = ['Danielle', 'Shelby', 'Ryyana', 'Colton', 'Tony', 'Stage Manager'];
 
   var done = {}, item = {};
   var me = localStorage.getItem(LS_ME) || '';
@@ -166,7 +166,7 @@
       '<span class="daypct">' + n + '/' + t + '</span></div>' +
       '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
 
-    var staff = [['Danielle', cov.danielle], ['Shelby', cov.shelby], ['Ryanna', cov.ryanna],
+    var staff = [['Danielle', cov.danielle], ['Shelby', cov.shelby], ['Ryyana', cov.ryyana],
                  ['Colton', cov.colton], ['Tony', cov.tony]]
       .filter(function (p) { return p[1]; })
       .map(function (p) {
