@@ -424,7 +424,21 @@
     $('tblCampers').querySelectorAll('.camp-row').forEach(function(tr){
       tr.addEventListener('click', function(){
         var det = tr.nextElementSibling;
-        if (det) det.style.display = det.style.display === 'none' ? '' : 'none';
+        if (!det) return;
+        det.style.display = det.style.display === 'none' ? '' : 'none';
+        // legacy enrollment history (Sawyer per-kid import) — fetched once per row
+        if (det.style.display !== 'none' && !det.dataset.hist) {
+          det.dataset.hist = '1';
+          var c = rows[+tr.dataset.i];
+          sb.rpc('admin_camper_history', { p_name: c.name }).then(function(r){
+            var h = r.data || [];
+            if (!h.length) return;
+            var cell = det.querySelector('td');
+            cell.innerHTML += '<br><b>History (' + h.length + '):</b> ' + h.map(function(e){
+              return esc(e.activity) + (e.paid_cents ? ' ($' + (e.paid_cents / 100).toFixed(0) + ')' : '');
+            }).join(' · ');
+          });
+        }
       });
     });
   }
