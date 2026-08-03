@@ -92,6 +92,29 @@ const TEAM = [
 ];
 
 async function audienceFor(campaign) {
+  // cc_batch_N: imported Constant Contact prospects, pre-cleaned and batched
+  // at import time (the ramp — Tue/Wed/Thu — is the batch number). Same
+  // suppression + sent-stamp + team rules as family audiences; buyers drop
+  // out live like everywhere else.
+  const ccBatch = (campaign.audience || "").match(/^cc_batch_(\d+)$/);
+  if (ccBatch) {
+    const [contacts, orders, supp, sent] = await Promise.all([
+      svc(`cc_contacts?batch=eq.${ccBatch[1]}&select=email,first_name&limit=10000`),
+      svc("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&limit=10000"),
+      svc("email_suppressions?scope=eq.marketing&select=email&limit=10000"),
+      svc(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&limit=20000`),
+    ]);
+    const out = new Set([
+      ...orders.map((o) => (o.email || "").toLowerCase()),
+      ...supp.map((s) => s.email.toLowerCase()),
+      ...sent.map((s) => s.email.toLowerCase()),
+    ]);
+    const list = contacts.filter((c) => !out.has(c.email.toLowerCase())).map((c) => ({
+      email: c.email.toLowerCase(),
+      first: (c.first_name || "").trim().split(" ")[0] || "there",
+    }));
+    return [...TEAM.filter((t) => !out.has(t.email)), ...list];
+  }
   // non_buyers_2027: every known family without a paid 2026-27 web order
   const [fams, orders, supp, sent] = await Promise.all([
     svc("families?select=email,parent_name&limit=10000"),
