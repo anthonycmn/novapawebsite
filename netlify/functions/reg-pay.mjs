@@ -242,6 +242,7 @@ export default async (req) => {
       monthlyItems: [],
       discountPct: Math.round(Math.max(...p.items.map((it) => it.rate), 0) * 100),
       creditsUsed: p.creditsUsed || {},
+      dayPacksByKid: p.dayPacksByKid || {},
     };
     description = cart
       .map((it) => it.show
@@ -301,9 +302,15 @@ export default async (req) => {
     // credits still move on a $0 order (a fully-credited day-camp cart never
     // touches Stripe, so the webhook never runs) — keyed by the synthetic PI
     try {
-      const grants = items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
-        .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
-          snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 }));
+      const grants = [
+        ...items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
+          .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
+            snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 })),
+        ...(new Date() <= DAY_CAMP_PACK_SNOW_END
+          ? Object.entries(pricing.dayPacksByKid || {}).map(([k, n]) =>
+              ({ camper: k, day: 0, snow: DAY_CAMP_PACK_SNOW_BONUS * n }))
+          : []),
+      ];
       const redemptions = Object.entries(pricing.creditsUsed || {})
         .map(([k, u]) => ({ camper: k, day: u.day || 0, snow: u.snow || 0 }));
       if (grants.length || redemptions.length) {
@@ -443,9 +450,17 @@ export default async (req) => {
       order_desc: description.slice(0, 480),
       // pack purchases grant per-camper credits; redeemed credits deduct —
       // both applied by the webhook via apply_credit_events (exactly-once)
-      credit_grants: JSON.stringify(items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
-        .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
-          snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 }))).slice(0, 450),
+      credit_grants: JSON.stringify([
+        ...items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
+          .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
+            snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 })),
+        // cart-form packs: the camper books all 5 days now, so no day credits —
+        // just the Labor Day snow-day bonus
+        ...(new Date() <= DAY_CAMP_PACK_SNOW_END
+          ? Object.entries(pricing.dayPacksByKid || {}).map(([k, n]) =>
+              ({ camper: k, day: 0, snow: DAY_CAMP_PACK_SNOW_BONUS * n }))
+          : []),
+      ]).slice(0, 450),
       credit_redeems: JSON.stringify(Object.entries(pricing.creditsUsed || {})
         .map(([k, u]) => ({ camper: k, day: u.day || 0, snow: u.snow || 0 }))).slice(0, 450),
       ...refMeta,

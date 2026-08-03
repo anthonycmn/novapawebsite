@@ -88,6 +88,7 @@ export const DAY_CAMP_MAX_CENTS = 20000;
 // events consume snow credits instead). The webhook grants/deducts via
 // apply_credit_events, keyed by payment intent so retries are no-ops.
 export const DAY_CAMP_PACK_ID = 990010;
+export const DAY_CAMP_PACK_SIZE = 5;
 export const DAY_CAMP_PACK_CENTS = 34900;
 export const DAY_CAMP_PACK_CREDITS = 5;
 export const DAY_CAMP_PACK_SNOW_BONUS = 2;
@@ -305,6 +306,32 @@ export function priceCart(cart, plan, opts = {}) {
     return { ...it, unit: Math.round(list * (1 - rate)), rate };
   });
 
+  // Day Camp 5-Pack, cart form (Jason, Aug 2 evening — replaces the credit-
+  // pack product UX): a camper booked into 5 day camps in ONE order pays
+  // $349 flat for those 5 (per camper, packs stack). Applied by scaling the
+  // camper's priciest day-camp units so every downstream number inherits it.
+  // The webhook still grants 2 snow-day credits per pack bought by Labor Day.
+  const byKidDc = {};
+  for (const it of priced) {
+    if (it.daycamp && !it.coaching && !it.pack) (byKidDc[kidKey(it)] = byKidDc[kidKey(it)] || []).push(it);
+  }
+  const dayPacksByKid = {};
+  for (const k of Object.keys(byKidDc)) {
+    const arr = byKidDc[k];
+    const packs = Math.floor(arr.length / DAY_CAMP_PACK_SIZE);
+    if (!packs) continue;
+    dayPacksByKid[k] = packs;
+    arr.sort((a, b) => b.unit - a.unit);
+    const packed = arr.slice(0, packs * DAY_CAMP_PACK_SIZE);
+    const target = packs * DAY_CAMP_PACK_CENTS;
+    const packedSum = packed.reduce((sum, it) => sum + it.unit, 0);
+    let acc = 0;
+    packed.forEach((it, i) => {
+      const u = (i === packed.length - 1) ? target - acc : Math.round(it.unit * target / packedSum);
+      acc += u; it.unit = u; it.pack = true;
+    });
+  }
+
   // Credit redemption: a camper's day credits zero out their day-camp lines
   // (snow-day events pull from snow credits instead). Priciest lines redeem
   // first so a credit never burns on a sibling-discounted price while a
@@ -350,7 +377,7 @@ export function priceCart(cart, plan, opts = {}) {
 
   if (plan === "full" || payFullOnly) {
     return {
-      items: priced, creditsUsed, subtotal, couponCents, insuranceCents, totalCents,
+      items: priced, creditsUsed, dayPacksByKid, subtotal, couponCents, insuranceCents, totalCents,
       planFeeCents: 0,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly, plan: "full",
@@ -369,14 +396,14 @@ export function priceCart(cart, plan, opts = {}) {
     const remainder = subtotal - depositCents;
     if (remainder <= 0) {
       return {
-        items: priced, creditsUsed, subtotal, couponCents, insuranceCents, totalCents,
+        items: priced, creditsUsed, dayPacksByKid, subtotal, couponCents, insuranceCents, totalCents,
         planFeeCents: 0,
         todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
         payFullOnly: false, plan: "full",
       };
     }
     return {
-      items: priced, creditsUsed, subtotal, couponCents, insuranceCents,
+      items: priced, creditsUsed, dayPacksByKid, subtotal, couponCents, insuranceCents,
       totalCents: totalCents + planFeeCents, planFeeCents,
       todayCents: depositCents + insuranceCents,
       installmentCents: Math.max(0, Math.ceil((remainder + planFeeCents) / schedule.length)),
@@ -396,14 +423,14 @@ export function priceCart(cart, plan, opts = {}) {
   if (installmentCents <= 0) {
     // tiny balance (deep coupon) — just collect it all today, no fee
     return {
-      items: priced, creditsUsed, subtotal, couponCents, insuranceCents, totalCents,
+      items: priced, creditsUsed, dayPacksByKid, subtotal, couponCents, insuranceCents, totalCents,
       planFeeCents: 0,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly: false, plan: "full",
     };
   }
   return {
-    items: priced, creditsUsed, subtotal, couponCents, insuranceCents,
+    items: priced, creditsUsed, dayPacksByKid, subtotal, couponCents, insuranceCents,
     totalCents: totalCents + planFeeCents, planFeeCents,
     todayCents: todayShare + insuranceCents + dayCampCents,
     installmentCents, installmentDatesUTC: schedule,
