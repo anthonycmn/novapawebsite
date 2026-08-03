@@ -13,7 +13,7 @@ import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
-  CLASS_PRICE_CENTS, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  CLASS_PRICE_CENTS, classMonthlyCents, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
   SPECIAL_PLANS, isCoachingId,
   DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CREDITS, DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END,
 } from "./reg-config.mjs";
