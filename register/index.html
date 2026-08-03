@@ -564,8 +564,15 @@
     // payment so the webhook can credit both families
     var rm = location.search.match(/[?&]ref=([A-Za-z0-9]+)/);
     if (rm) { try { localStorage.setItem('nova_ref', rm[1].toUpperCase()); } catch(e){} }
-    var sm = location.search.match(/[?&]season=(fall|all|day|classes|class)/);
-    state.seasonFilter = sm ? ({ fall: 'year', all: 'all', day: 'day', classes: 'class', 'class': 'class' })[sm[1]] : 'summer';
+    // fall/spring/year all land on the same school-year tab — the tab groups by
+    // year-round vs summer, not by term. Both words are accepted because the
+    // show pages link by the term a family recognises. An unrecognised value
+    // must fall back to a real filter, never to undefined (that silently
+    // showed classes only).
+    var sm = location.search.match(/[?&]season=(fall|spring|year|all|day|classes|class)/);
+    var SEASON_TAB = { fall: 'year', spring: 'year', year: 'year', all: 'all',
+                       day: 'day', classes: 'class', 'class': 'class' };
+    state.seasonFilter = (sm && SEASON_TAB[sm[1]]) || 'summer';
     state.fallMode = false;
     if (state.catIds.length) {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
