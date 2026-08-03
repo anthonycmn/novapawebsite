@@ -2104,15 +2104,15 @@
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
     var ins = state.insurance ? Math.round(listIns * C.INSURANCE_PCT / 100 * (1 - insPctOff / 100)) : 0;
     var n = items.length;
-    if (state.plan === 'full') return { n:n, items:items, units:units, credited:credited, packed:dp.packed, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    if (state.plan === 'full') return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var dayCents = 0, dayN = 0;
     items.forEach(function(it, i){ if (!it.show && (isDayId(it.activity_id) || it.activity_id === PACK_ID)) { dayCents += units[i]; dayN++; } });
     var planFee = (sp && sp.nofee) ? 0 : Math.round(net * 5 / 100);
     if (sp) {
       // special-plan carts keep their quoted legacy $180-deposit shape
       var deposit = Math.min(C.DEPOSIT_PER_CAMP * 100 * (n - dayN) + dayCents, net);
-      if (net - deposit <= 0) return { n:n, items:items, units:units, credited:credited, packed:dp.packed, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
-      return { n:n, items:items, units:units, credited:credited, packed:dp.packed, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+      if (net - deposit <= 0) return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+      return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
                today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / (sp.months || C.INSTALLMENTS)) };
     }
     // even split (Jason + CJ, Aug 1): financed balance over N+1 EQUAL payments,
@@ -2120,8 +2120,8 @@
     var fin = net - dayCents + planFee;
     var pmts = C.INSTALLMENTS + 1;
     var even = Math.floor(fin / pmts);
-    if (even <= 0) return { n:n, items:items, units:units, credited:credited, packed:dp.packed, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
-    return { n:n, items:items, units:units, credited:credited, packed:dp.packed, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
+    if (even <= 0) return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+    return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
              today: (fin - even * C.INSTALLMENTS) + ins + dayCents, inst: even };
   }
 
@@ -2250,6 +2250,11 @@
       if ((p.credited && p.credited[i]) || (p.packed && p.packed[i])) return sum;
       return sum + Math.max(0, fullPrice(it) - p.units[i]);
     }, 0);
+    // the Labor Day snow-day bonus shows as its own FREE line so the value
+    // of the pack is visible at the moment of payment
+    var totalPacks = Object.keys(p.packsByKid || {}).reduce(function(x, k){ return x + p.packsByKid[k]; }, 0);
+    var snowRow = (totalPacks > 0 && new Date() <= PACK_SNOW_END)
+      ? (2 * totalPacks) + ' Snow Day camps' : null;
     function actShowName(a){
       var nm = a.name || 'Show';
       if (/frozen/i.test(nm)) return 'Frozen \u00b7 ' + castLabel(a);
@@ -2274,6 +2279,7 @@
       (savings > 0 ? '<div class="sumrow"><span class="savings">Launch-sale savings</span><span class="savings">−' + money(savings) + '</span></div>' : '') +
       (creditSavings > 0 ? '<div class="sumrow"><span class="savings">Day-camp credits</span><span class="savings">−' + money(creditSavings) + '</span></div>' : '') +
       (packSavings > 0 ? '<div class="sumrow"><span class="savings">5-Day Pack</span><span class="savings">−' + money(packSavings) + '</span></div>' : '') +
+      (snowRow ? '<div class="sumrow"><span>' + snowRow + ' <span class="savings">(with 5-Day Pack)</span></span><span class="savings">FREE</span></div>' : '') +
       (p.coupon ? '<div class="sumrow"><span class="savings">Coupon ' + esc(state.coupon.code) + '</span><span class="savings">−' + money(p.coupon) + '</span></div>' : '') +
       (p.ins ? '<div class="sumrow"><span>Tuition insurance</span><span>' + money(p.ins) + '</span></div>' : '') +
       (p.planFee ? '<div class="sumrow"><span>Payment plan (5%)</span><span>+' + money(p.planFee) + '</span></div>' : '') +
