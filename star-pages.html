@@ -71,19 +71,12 @@
   <h1>Star Page <em>Ads</em></h1>
   <p class="sub">Show your support and make your performer feel extra special with a Star Page Ad in our playbill! Share a heartfelt message and a photo &mdash; a keepsake your performer will treasure for years to come.</p>
 
-  <!-- Step 1: email gate -->
-  <div class="step on" id="stEmail">
+  <!-- The ad -->
+  <div class="step on" id="stForm">
     <div class="card">
-      <label for="email">Your family email (the one on file with NOVAPA)</label>
+      <label for="email">Your email (for your receipt)</label>
       <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
-      <div class="err" id="emailErr">We couldn&rsquo;t find that email in our system. Star Pages are currently for enrolled NOVAPA families &mdash; try the email you used to register, or contact info@novapa.org.</div>
-      <button class="btn" id="emailBtn">Continue</button>
-    </div>
-  </div>
 
-  <!-- Step 2: the ad -->
-  <div class="step" id="stForm">
-    <div class="card">
       <label for="performer">Performer&rsquo;s first and last name</label>
       <input type="text" id="performer" placeholder="e.g. Evan Hansen">
 
@@ -129,7 +122,7 @@
       .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); });
   }
   function show(step){
-    ['stEmail','stForm','stDone'].forEach(function(s){ $(s).classList.toggle('on', s===step); });
+    ['stForm','stDone'].forEach(function(s){ $(s).classList.toggle('on', s===step); });
     window.scrollTo(0,0);
   }
 
@@ -145,19 +138,6 @@
     });
     history.replaceState({}, '', location.pathname);
   }
-
-  $('emailBtn').addEventListener('click', function(){
-    var email = $('email').value.trim().toLowerCase();
-    $('emailErr').style.display = 'none';
-    if (!email || email.indexOf('@') < 0) return;
-    $('emailBtn').disabled = true; $('emailBtn').textContent = 'Checking…';
-    api({ action:'check_email', email: email }).then(function(res){
-      $('emailBtn').disabled = false; $('emailBtn').textContent = 'Continue';
-      if (res.j && res.j.known) { state.email = email; show('stForm'); }
-      else $('emailErr').style.display = 'block';
-    });
-  });
-  $('email').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('emailBtn').click(); });
 
   $('msg').addEventListener('input', function(){ $('msgCount').textContent = $('msg').value.length; });
 
@@ -188,6 +168,8 @@
     var msg = $('msg').value.trim();
     var f = $('photo').files[0];
     var fail = function(t){ err.textContent = t; err.style.display = 'block'; };
+    state.email = $('email').value.trim().toLowerCase();
+    if (!state.email || state.email.indexOf('@') < 0) return fail('Please enter your email.');
     if (!performer) return fail('Please enter your performer’s name.');
     if (!msg) return fail('Please write your message.');
     if (!f) return fail('Please choose a photo.');
