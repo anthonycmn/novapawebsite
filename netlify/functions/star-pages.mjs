@@ -10,7 +10,7 @@
 // buy these too). Payment is a hosted Stripe Checkout with redirect-verify
 // (no webhook); the admin money trail lives in star_page_ads + Stripe.
 import Stripe from "stripe";
-import { SUPABASE_URL } from "./reg-config.mjs";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
 
 const SHOW = "deh";
 const PRICES = { full: 15000, half: 9000, quarter: 6000 };
@@ -103,6 +103,30 @@ export default async function handler(req) {
         return json(200, { paid: true, performer: row?.performer_name, size: SIZE_LABEL[row?.size] || row?.size });
       }
       return json(200, { paid: false });
+    }
+
+    if (body.action === "admin_list") {
+      // Zoe's playbill view — every order, newest first, with 1-hour signed
+      // photo links. Guarded by the same is_admin check as the rest of admin.
+      const auth = req.headers.get("authorization") || "";
+      const userToken = auth.replace(/^Bearer\s+/i, "");
+      const chk = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${userToken}`, "Content-Type": "application/json" },
+        body: "{}",
+      });
+      if (!chk.ok || (await chk.text()).trim() !== "true") return json(403, { error: "admins only" });
+
+      const rows = await db("star_page_ads?select=*&order=created_at.desc");
+      for (const r of rows) {
+        if (!r.photo_path) continue;
+        const s = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/star-pages/${r.photo_path}`, {
+          method: "POST", headers: svc({ "Content-Type": "application/json" }), body: JSON.stringify({ expiresIn: 3600 }),
+        });
+        const t = await s.json().catch(() => null);
+        r.photo_url = t && t.signedURL ? `${SUPABASE_URL}/storage/v1${t.signedURL}` : null;
+      }
+      return json(200, { ads: rows });
     }
 
     return json(400, { error: "unknown action" });
