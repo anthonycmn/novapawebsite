@@ -136,6 +136,8 @@
 
   <div class="main">
     <section class="sec on" id="s-overview">
+      <h2>Sellout Progress</h2>
+      <div id="stFill" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px"></div>
       <h2>Revenue</h2>
       <div class="stats" id="stRevenue"></div>
       <h2>Outstanding</h2>
@@ -360,6 +362,7 @@
   var INV = null;
   function boot(){
     sb.rpc('admin_stats').then(function(r){ if (r.data) renderStats(r.data); });
+    sb.rpc('admin_offering_fill').then(function(r){ renderFill(r.data || []); });
     sb.rpc('admin_orders').then(function(r){ renderOrders(r.data || []); });
     sb.rpc('admin_balances').then(function(r){ renderBalances(r.data || []); });
     sb.rpc('admin_inventory').then(function(r){ if (r.data) { INV = r.data; renderInventory(r.data); buildCal(); } });
@@ -1117,6 +1120,24 @@
     });
   })();
 
+  // the goal is 100% on every ring by end of year — one donut per offering,
+  // detail lives in the Inventory tab
+  function renderFill(rows){
+    $('stFill').innerHTML = rows.map(function(o){
+      var cap = o.cap || 0, taken = o.taken || 0;
+      var pct = cap ? Math.min(100, Math.round(taken * 100 / cap)) : 0;
+      var r = 34, c = 2 * Math.PI * r;
+      var color = pct >= 100 ? '#6BCB77' : pct >= 60 ? '#E8B84B' : '#5B8DEF';
+      return '<div style="text-align:center;min-width:104px">' +
+        '<svg width="88" height="88" viewBox="0 0 88 88">' +
+        '<circle cx="44" cy="44" r="34" fill="none" stroke="rgba(128,140,170,.25)" stroke-width="10"/>' +
+        '<circle cx="44" cy="44" r="34" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round"' +
+        ' stroke-dasharray="' + (c * pct / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 44 44)"/>' +
+        '<text x="44" y="50" text-anchor="middle" font-size="18" font-weight="700" fill="currentColor">' + pct + '%</text></svg>' +
+        '<div style="font-size:12.5px;font-weight:600;margin-top:2px">' + esc(o.label) + '</div>' +
+        '<div style="font-size:11px;opacity:.6">' + taken + ' / ' + cap + ' sold</div></div>';
+    }).join('');
+  }
   function renderStats(s){
     $('stRevenue').innerHTML =
       stat(usd(s.web_collected_cents), 'web collected', 'ok') +
