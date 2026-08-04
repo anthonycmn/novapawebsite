@@ -25,7 +25,6 @@
 //   different blocks in the same second cannot lose each other's work.
 
 import { getStore } from "@netlify/blobs";
-import { SUPABASE_URL as MAIN_URL } from "./reg-config.mjs";
 
 const GATE = process.env.DEH_GATE_WORD || "orchard";
 
