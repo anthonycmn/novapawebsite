@@ -237,18 +237,43 @@ export default async (req) => {
           host: "smtp.gmail.com", port: 465, secure: true,
           auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
         });
+        // Sawyer-detail admin receipt (Todd, Aug 3): full line items with
+        // prices, every fee/discount, the payment schedule, and a Stripe link.
         const paid = ((pi.amount_received ?? pi.amount) / 100).toFixed(2);
         const total = ((parseInt(m.total_cents || "0", 10) || 0) / 100).toFixed(2);
+        const usd = (c) => "$" + ((parseInt(c || "0", 10) || 0) / 100).toFixed(2);
+        let units = [];
+        try { units = JSON.parse(m.unit_prices || "[]"); } catch {}
+        const lines = (m.order_desc || "").split("; ");
+        const itemRows = lines.map((ln, i) =>
+          `<tr><td style="padding:3px 14px 3px 0">${ln}</td><td align="right">${units[i] != null ? usd(units[i]) : ""}</td></tr>`).join("");
+        const subtotalCents = units.reduce((a, b) => a + (b || 0), 0);
+        const nInst = parseInt(m.n_installments || "0", 10) || 0;
+        const instCents = parseInt(m.installment_cents || "0", 10) || 0;
+        const firstInst = parseInt(m.first_installment_utc || "0", 10) || 0;
+        const remaining = Math.max(0, (parseInt(m.total_cents || "0", 10) || 0) - Math.round(parseFloat(paid) * 100));
+        const moneyRows = [
+          [`Subtotal`, usd(subtotalCents)],
+          m.coupon ? [`Coupon ${m.coupon}`, "−" + usd(m.coupon_cents)] : null,
+          (parseInt(m.plan_fee_cents || "0", 10) || 0) ? [`Payment plan fee (5%)`, usd(m.plan_fee_cents)] : null,
+          m.insured === "1" ? [`Tuition insurance`, usd(m.insurance_cents)] : null,
+          [`<b>Order total</b>`, `<b>${usd(m.total_cents)}</b>`],
+          [`Paid today`, `$${paid}`],
+          remaining ? [`Remaining balance`, usd(remaining)] : null,
+          nInst ? [`Schedule`, `${nInst} × ${usd(instCents)} monthly, first ${new Date(firstInst * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`] : null,
+          m.first_month_free === "1" ? [`First month free`, "card saved, billing starts Oct 1"] : null,
+          [`FSA eligible`, m.fsa_eligible === "1" ? "yes" : "no"],
+        ].filter(Boolean).map(([k, v]) =>
+          `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");
         await t2.sendMail({
           from: `NOVAPA Registrations <${process.env.SMTP_USER}>`,
           to: admins.join(", "),
-          subject: `New registration: ${m.parent_name || m.email} — $${paid}`,
+          subject: `New registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
           html: [
-            `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt;`,
-            `${(m.order_desc || "").split("; ").join("<br>")}`,
-            `Plan: ${m.plan} · Paid today: $${paid} · Order total: $${total}` +
-              (m.coupon ? ` · Coupon: ${m.coupon}` : ""),
-            `<a href="https://www.northernvirginiaperformingarts.org/register/admin/">Open admin dashboard</a>`,
+            `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt; · plan: <b>${m.plan}</b>`,
+            `<table style="border-collapse:collapse;font-size:14px">${itemRows}<tr><td colspan="2" style="border-top:1px solid #ddd;padding:0;height:6px"></td></tr>${moneyRows}</table>`,
+            `<a href="https://dashboard.stripe.com/payments/${pi.id}">View payment in Stripe</a> · ` +
+            `<a href="https://www.northernvirginiaperformingarts.org/register/admin/">Admin dashboard</a>`,
           ].join("<br><br>"),
         });
       }
