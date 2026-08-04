@@ -110,6 +110,14 @@
     if (!c) return '$0';
     return '$' + (c / 100).toLocaleString('en-US', { minimumFractionDigits: c % 100 ? 2 : 0, maximumFractionDigits: 2 });
   }
+  function shortWhen(iso) {
+    if (!iso) return '';
+    var t = +new Date(iso);
+    if (!isFinite(t)) return '';
+    var d = new Date(t), today = new Date();
+    var sameDay = d.toDateString() === today.toDateString();
+    return sameDay ? clock(t) : (d.getMonth() + 1) + '/' + d.getDate();
+  }
   function safeUrl(u) {
     u = String(u || '').trim();
     return /^https?:\/\//i.test(u) ? u : '';   // never render a javascript: href
@@ -254,6 +262,77 @@
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function setSync(msg) { $('syncNote').textContent = msg; }
+
+  // ---------- live sync ----------
+  // connect() only ran at boot, so a phone showed whatever was true when it
+  // was opened. During a rehearsal that is useless: Danielle ticks a block and
+  // Colton's phone still shows it open an hour later. Poll while the page is
+  // visible, and refresh the moment someone returns to the app.
+  var POLL_MS = 25000;
+  var lastSync = 0, polling = null, refreshing = false;
+
+  function editing() {
+    var a = document.activeElement;
+    if (!a) return false;
+    var t = (a.tagName || '').toLowerCase();
+    return t === 'input' || t === 'select' || t === 'textarea';
+  }
+  function sinceLabel(ts) {
+    if (!ts) return '';
+    var secs = Math.round((Date.now() - ts) / 1000);
+    if (secs < 45) return 'just now';
+    if (secs < 90) return 'a minute ago';
+    if (secs < 3600) return Math.round(secs / 60) + ' min ago';
+    return clock(ts);
+  }
+  function syncLine() {
+    if (!remote) { setSync('Not syncing — saved on this phone'); return; }
+    setSync('Shared with the whole team · updated ' + sinceLabel(lastSync));
+  }
+
+  // Pull everything again and repaint. Never repaints over a field someone is
+  // typing in — the data still lands, the screen just waits its turn.
+  function refresh(force) {
+    if (refreshing) return Promise.resolve();
+    if (!force && editing()) return Promise.resolve();
+    refreshing = true;
+    var iso = D.days[cur].iso;
+    loadedDays[iso] = false;
+    return connect()
+      .then(function () { return loadDayNow(iso); })
+      .then(function () {
+        lastSync = Date.now();
+        if (!editing()) { renderAll(); renderDay(); }
+        syncLine();
+      })
+      .catch(function () {})
+      .then(function () { refreshing = false; });
+  }
+  function loadDayNow(iso) {
+    if (!remote) return Promise.resolve();
+    return Promise.all([
+      api('attendance_list', { day: iso }).then(function (rows) {
+        Object.keys(att).forEach(function (k) { if (k.indexOf(iso + '|') === 0) delete att[k]; });
+        (rows || []).forEach(function (x) {
+          att[iso + '|' + x.person_id] = { status: x.status || 'present', note: x.note || '', by: x.updated_by || '' };
+        });
+      }).catch(function () {}),
+      api('notes_list', { day: iso }).then(function (rows) {
+        notes = notes.filter(function (n) { return n.day !== iso; })
+          .concat((rows || []).map(function (x) {
+            return { note_id: x.note_id, day: iso, dept: x.dept || 'general',
+                     body: x.body || '', author: x.author || '', created_at: x.created_at };
+          }));
+      }).catch(function () {})
+    ]).then(function () { loadedDays[iso] = true; saveLocal(); });
+  }
+  function startPolling() {
+    if (polling) clearInterval(polling);
+    polling = setInterval(function () {
+      if (document.visibilityState === 'visible') refresh();
+      else syncLine();
+    }, POLL_MS);
+  }
 
   // ---------- schedule progress ----------
   function tasksOf(day) { return day.blocks.filter(isTask); }
@@ -648,7 +727,11 @@
         '<label>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"></label>' +
       '</div>' +
       (link ? '<a class="it-link" href="' + esc(link) + '" target="_blank" rel="noopener">Open the source &rarr;</a>' : '') +
-      (s.by ? '<div class="it-by">Last touched by <b>' + esc(s.by) + '</b></div>' : '') +
+      '<div class="it-foot">' +
+        '<button class="it-save" data-saveitem type="button">Save this item</button>' +
+        (s.by ? '<span class="it-by">Last touched by <b>' + esc(s.by) + '</b>' +
+                (s.at ? ' &middot; ' + esc(shortWhen(s.at)) : '') + '</span>' : '') +
+      '</div>' +
     '</div>';
   }
 
@@ -980,6 +1063,60 @@
 
     // sourcing edits — one delegated handler for every field on every item
     $('sceneDetail').addEventListener('click', function (e) {
+      // Save the whole card. Fields already commit on blur, but on a phone that
+      // is invisible — people want a button that says the row is stored.
+      var si = e.target.closest('[data-saveitem]');
+      if (si) {
+        var ibox = si.closest('[data-item]');
+        var iid = ibox.dataset.item;
+        var cur2 = item[iid] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
+        var badUrl = false;
+        ibox.querySelectorAll('[data-f]').forEach(function (el) {
+          var g = el.dataset.f;
+          if (g === 'price') {
+            var pv = parseFloat(el.value);
+            cur2.price = isFinite(pv) && pv >= 0 ? Math.round(pv * 100) : 0;
+          } else if (g === 'qty') {
+            var qv = parseInt(el.value, 10);
+            cur2.qty = isFinite(qv) && qv > 0 ? qv : 1;
+          } else if (g === 'link') {
+            var raw2 = el.value.trim();
+            if (raw2 && !safeUrl(raw2)) { badUrl = true; return; }
+            cur2.link = raw2;
+          } else {
+            cur2[g] = el.value;
+          }
+        });
+        if (badUrl) {
+          var lk = ibox.querySelector('.lk');
+          if (lk) { lk.classList.add('bad'); setTimeout(function () { lk.classList.remove('bad'); }, 1600); }
+          si.textContent = 'Check the link';
+          setTimeout(function () { si.textContent = 'Save this item'; }, 1600);
+          return;
+        }
+        cur2.by = me || cur2.by || '';
+        cur2.at = new Date().toISOString();
+        item[iid] = cur2;
+        saveLocal(); pushItem(iid);
+        ibox.classList.add('just-saved');
+        si.textContent = 'Saved \u2713';
+        var lk2 = ibox.querySelector('.lk');
+        if (lk2) {
+          lk2.classList.toggle('saved', !!safeUrl(cur2.link));
+          var g2 = lk2.querySelector('.lk-go');
+          if (g2) g2.innerHTML = safeUrl(cur2.link) ? '&#10003;' : 'Save';
+        }
+        var costCell = ibox.querySelector('.it-cost');
+        var itObj = S.allItems.filter(function (x) { return x.id === iid; })[0];
+        if (costCell && itObj) costCell.textContent = money(lineCost(itObj));
+        renderBudget(); renderBuy();
+        setTimeout(function () {
+          ibox.classList.remove('just-saved');
+          si.textContent = 'Save this item';
+        }, 1800);
+        return;
+      }
+
       // Explicit save for a pasted link. The field still commits on blur, but
       // on a phone "blur" is ambiguous — people paste and expect a button.
       var sv = e.target.closest('[data-savelink]');
@@ -1107,13 +1244,20 @@
       b.addEventListener('click', function () { showView(b.dataset.v); });
     });
 
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') refresh(true);
+    });
+    window.addEventListener('online', function () { refresh(true); });
+    window.addEventListener('focus', function () { refresh(); });
+
     connect().then(function () {
       // Three states, and the difference matters: nobody should think the
       // team is sharing when it is not.
-      setSync(remote ? 'Shared with the whole team'
-                     : 'Database unreachable — saved on this phone');
+      lastSync = Date.now();
+      syncLine();
       renderAll();
       loadDay(D.days[cur].iso, renderDay);
+      startPolling();
     });
   }
 
