@@ -1063,6 +1063,7 @@
 
     // sourcing edits — one delegated handler for every field on every item
     $('sceneDetail').addEventListener('click', function (e) {
+<<<<<<< HEAD
       // Save the whole card. Fields already commit on blur, but on a phone that
       // is invisible — people want a button that says the row is stored.
       var si = e.target.closest('[data-saveitem]');
@@ -1117,6 +1118,8 @@
         return;
       }
 
+=======
+>>>>>>> origin/claude/novapa-netlify-github-publish-p7o51o
       // Explicit save for a pasted link. The field still commits on blur, but
       // on a phone "blur" is ambiguous — people paste and expect a button.
       var sv = e.target.closest('[data-savelink]');
