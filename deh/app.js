@@ -147,19 +147,30 @@
   // Until the cast list lands, attendance still has to work. Seed the creative
   // team plus one row per principal role from the scene breakdown; names get
   // corrected in the dashboard as students are cast.
-  function seedRoster() {
-    var out = [
-      { person_id: 'staff-danielle', name: 'Danielle Sirinsky', role: 'Director / Choreographer', kind: 'staff', sort: 1 },
-      { person_id: 'staff-shelby', name: 'Shelby Milgram', role: 'Vocal Director', kind: 'staff', sort: 2 },
-      { person_id: 'staff-ryyana', name: 'Ryyana Cunningham', role: 'Assistant Director', kind: 'staff', sort: 3 },
-      { person_id: 'staff-colton', name: 'Colton Sorensen', role: 'Technical Director', kind: 'staff', sort: 4 },
-      { person_id: 'staff-tony', name: 'Tony Cimino-Johnson', role: 'Intimacy / Study track', kind: 'staff', sort: 5 }
-    ];
-    (S && S.cast ? S.cast : []).forEach(function (r, i) {
-      if (r === 'Company') return;
-      out.push({ person_id: 'role-' + r.toLowerCase(), name: '', role: r, kind: 'cast', sort: 10 + i });
+  // The company, as given by CJ on 8/4. Nineteen students. Roles are left
+  // blank because casting has not been published — type them in beside a name
+  // and they save like anything else.
+  var COMPANY = [
+    'Alexis Cottrell', 'Aubrey Stapler', 'Ben Corliss', 'Claire Sproule',
+    'Cooper Burns', 'Hailey Manuel', 'Haylee Bierd', 'Jackson Kanatzar',
+    'James Grimes', 'Leah Vepraskas', 'Liam VanVeelen', 'Madelyn Biehl',
+    'madz Cramer', 'Makenzie Kofchak', 'Regan Stroup', 'Riddhima Verma',
+    'Ruth MacDonald', 'Ryan Rodgers', 'Vanessa (Kai) Stuermann'
+  ];
+  var CREATIVE = [
+    { person_id: 'staff-danielle', name: 'Danielle Sirinsky', role: 'Director / Choreographer', kind: 'staff', sort: 1 },
+    { person_id: 'staff-shelby', name: 'Shelby Milgram', role: 'Vocal Director', kind: 'staff', sort: 2 },
+    { person_id: 'staff-ryyana', name: 'Ryyana Cunningham', role: 'Assistant Director', kind: 'staff', sort: 3 },
+    { person_id: 'staff-colton', name: 'Colton Sorensen', role: 'Technical Director', kind: 'staff', sort: 4 },
+    { person_id: 'staff-tony', name: 'Tony Cimino-Johnson', role: 'Intimacy / Study track', kind: 'staff', sort: 5 }
+  ];
+  function castRows() {
+    return COMPANY.map(function (n, i) {
+      return { person_id: 'cast-' + slug(n), name: n, role: '', kind: 'cast', sort: 10 + i };
     });
-    return out;
+  }
+  function seedRoster() {
+    return CREATIVE.concat(castRows());
   }
   function slug(s) {
     return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
@@ -197,11 +208,28 @@
         });
       }).catch(function () {}),
       api('roster_list').then(function (rows) {
-        if (!rows || !rows.length) return;
-        roster = rows.map(function (x) {
-          return { person_id: x.person_id, name: x.name || '', role: x.role || '',
-                   kind: x.kind || 'cast', sort: x.sort == null ? 100 : x.sort };
-        });
+        rows = rows || [];
+        // Ask what the SERVER holds, not what this phone happens to have —
+        // loadLocal() has already seeded a roster in memory, so checking that
+        // would always look full and the company would never get published.
+        var serverCast = rows.filter(function (x) { return (x.kind || 'cast') === 'cast'; }).length;
+        if (rows.length) {
+          roster = rows.map(function (x) {
+            return { person_id: x.person_id, name: x.name || '', role: x.role || '',
+                     kind: x.kind || 'cast', sort: x.sort == null ? 100 : x.sort };
+          });
+        }
+        // Empty store, or one with staff but no students: publish the company
+        // so nobody has to type nineteen names into a phone. Only when the
+        // server has NO students at all, so a name someone deliberately
+        // removed cannot come back.
+        if (!serverCast) {
+          var seed = seedRoster();
+          var have = {};
+          roster.forEach(function (p) { have[p.person_id] = true; });
+          seed.forEach(function (p) { if (!have[p.person_id]) roster.push(p); });
+          roster.forEach(function (p) { pushRoster(p); });
+        }
       }).catch(function () {}),
       api('reports_list').then(function (rows) {
         (rows || []).forEach(function (x) { reports[x.day] = { at: x.sent_at, by: x.sent_by || '' }; });
