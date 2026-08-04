@@ -138,15 +138,8 @@
     <section class="sec on" id="s-overview">
       <h2>Sellout Progress</h2>
       <div id="stFill" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px"></div>
-      <h2>Revenue</h2>
+      <h2>Revenue (Stripe)</h2>
       <div class="stats" id="stRevenue"></div>
-      <h2>Outstanding</h2>
-      <div class="stats" id="stOut"></div>
-      <h2>People</h2>
-      <div class="stats" id="stPeople"></div>
-      <h2>Summer Camps</h2>
-      <div class="stats" id="stSummer"></div>
-      <div class="stats" id="stMG" style="margin-top:10px"></div>
     </section>
 
     <section class="sec" id="s-orders">
@@ -1138,30 +1131,16 @@
         '<div style="font-size:11px;opacity:.6">' + taken + ' / ' + cap + ' sold</div></div>';
     }).join('');
   }
+  // Overview is deliberately minimal now (Jason, Aug 3): donuts + the numbers
+  // that mirror Stripe (our orders table). Legacy platform totals and
+  // outstanding balances live with Todd's audit, not this dashboard.
   function renderStats(s){
     $('stRevenue').innerHTML =
-      stat(usd(s.web_collected_cents), 'web collected', 'ok') +
-      stat(usd(s.web_booked_value_cents), 'web booked value') +
-      stat(s.web_orders, 'web orders') +
-      stat(s.web_orders_7d, 'orders · 7d') +
-      stat(usd(s.regpack_collected_cents), 'regpack collected', 'ok') +
-      stat(usd(s.sawyer_collected_cents), 'sawyer collected', 'ok');
-    $('stOut').innerHTML =
-      stat(usd(s.regpack_outstanding_cents), 'regpack outstanding', 'bad') +
-      stat(s.regpack_outstanding_count, 'accounts owing') +
-      stat(usd(s.sawyer_outstanding_cents), 'sawyer outstanding', s.sawyer_outstanding_cents ? 'bad' : '') +
-      stat(s.sawyer_outstanding_count, 'sawyer owing') +
-      stat(usd((s.regpack_due_now_cents || 0) + (s.sawyer_due_now_cents || 0)), 'overdue now', 'bad');
-    $('stPeople').innerHTML =
-      stat(s.families, 'families') +
-      stat(s.campers, 'campers') +
-      stat(s.waitlist, 'waitlist');
-    $('stSummer').innerHTML =
-      stat(s.summer_taken + ' / ' + s.summer_cap, 'spots taken', 'gold') +
-      stat(s.active_holds, 'active holds');
+      stat(usd(s.web_collected_cents), 'collected', 'ok') +
+      stat(usd(s.web_booked_value_cents), 'booked value') +
+      stat(s.web_orders, 'orders') +
+      stat(s.web_orders_7d, 'orders · 7d');
   }
-  // (regpack summer kids were folded into inventory.booked on 7/22 — no
-  // separate stat patch anymore, the base numbers already include them)
 
   function renderOrders(rows){
     if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
