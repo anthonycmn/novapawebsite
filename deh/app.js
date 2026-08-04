@@ -184,7 +184,8 @@
       api('items_list').then(function (rows) {
         (rows || []).forEach(function (x) {
           item[x.item_id] = { st: x.status || 'todo', src: x.vendor || '', link: x.link || '',
-                              price: x.price_cents || 0, qty: x.qty || 1, by: x.updated_by || '' };
+                              price: x.price_cents || 0, qty: x.qty || 1, by: x.updated_by || '',
+                              at: x.updated_at || '' };
         });
       }).catch(function () {}),
       api('roster_list').then(function (rows) {
@@ -407,6 +408,21 @@
       '<div class="rep-note" id="repNote"></div></div>';
   }
 
+  // Anything with a buy link that was touched on this date. CJ wants the links
+  // themselves in the end-of-day email so purchasing can happen off the report
+  // rather than by going back into the dashboard.
+  function sourcedOn(iso) {
+    return S.allItems.filter(function (it) {
+      var s = st(it.id);
+      return safeUrl(s.link) && String(s.at || '').slice(0, 10) === iso;
+    }).map(function (it) {
+      var s = st(it.id), q = qtyOf(it);
+      return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat,
+               vendor: s.src || '', link: safeUrl(s.link), status: s.st || 'todo',
+               qty: q, price_cents: s.price || 0, line_cents: s.price * q, by: s.by || '' };
+    });
+  }
+
   function buildReport(d) {
     var t = tasksOf(d), n = doneCount(d);
     var completed = t.filter(function (b) { return done[b.id]; })
@@ -424,7 +440,8 @@
       spentCents: spentTotal(), budgetCents: BUDGET_TOTAL, outstandingCents: outstandingTotal(),
       attendance: attendance,
       notes: notesOf(d.iso).map(function (x) { return { dept: x.dept, body: x.body, author: x.author || '' }; }),
-      completed: completed
+      completed: completed,
+      sourcing: sourcedOn(d.iso)
     };
   }
   function reportPlainText(r) {
@@ -442,6 +459,15 @@
     if (!r.notes.length) L.push('  None filed.');
     r.notes.forEach(function (n) {
       L.push('  [' + deptLabel(n.dept) + '] ' + n.body + (n.author ? ' — ' + n.author : ''));
+    });
+    L.push('', 'SOURCED TODAY');
+    if (!r.sourcing.length) L.push('  Nothing new sourced.');
+    r.sourcing.forEach(function (x) {
+      L.push('  ' + x.name + (x.qty > 1 ? ' x' + x.qty : '') +
+             (x.vendor ? '  [' + x.vendor + ']' : '') +
+             (x.price_cents ? '  ' + money(x.line_cents) : '') +
+             (x.by ? '  - ' + x.by : ''));
+      L.push('      ' + x.link);
     });
     L.push('', 'COMPLETED TODAY');
     if (!r.completed.length) L.push('  Nothing checked off.');
@@ -551,7 +577,7 @@
 
   // ---------- scene breakdown + sourcing ----------
   function st(id) {
-    return item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '' };
+    return item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
   }
   function qtyOf(it) { var s = st(it.id); return s.qty || it.qty || 1; }
   function lineCost(it) { return st(it.id).price * qtyOf(it); }
@@ -611,7 +637,12 @@
           return '<option value="' + x.k + '"' + (s.st === x.k ? ' selected' : '') + '>' + x.l + '</option>';
         }).join('') + '</select></label>' +
         '<label>Where from<input list="vendorList" data-f="src" value="' + esc(s.src) + '" placeholder="Amazon, in stock, build&hellip;"></label>' +
-        '<label>Link<input data-f="link" type="url" inputmode="url" value="' + esc(s.link) + '" placeholder="https://&hellip;"></label>' +
+        '<label class="lk' + (safeUrl(s.link) ? ' saved' : '') + '">Link' +
+          '<span class="lk-row">' +
+            '<input data-f="link" type="url" inputmode="url" value="' + esc(s.link) + '" placeholder="https://&hellip;">' +
+            '<button class="lk-go" data-savelink type="button" aria-label="Save this link">' +
+              (safeUrl(s.link) ? '&#10003;' : 'Save') + '</button>' +
+          '</span></label>' +
         '<label>Unit price<input data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' +
           (s.price ? (s.price / 100).toFixed(2) : '') + '" placeholder="0.00"></label>' +
         '<label>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"></label>' +
@@ -949,6 +980,24 @@
 
     // sourcing edits — one delegated handler for every field on every item
     $('sceneDetail').addEventListener('click', function (e) {
+      // Explicit save for a pasted link. The field still commits on blur, but
+      // on a phone "blur" is ambiguous — people paste and expect a button.
+      var sv = e.target.closest('[data-savelink]');
+      if (sv) {
+        var box = sv.closest('[data-item]');
+        var input = box.querySelector('[data-f="link"]');
+        var lab = sv.closest('.lk');
+        var url = safeUrl(input.value);
+        if (!url && input.value.trim()) {
+          lab.classList.add('bad');
+          setTimeout(function () { lab.classList.remove('bad'); }, 1600);
+          return;
+        }
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        lab.classList.toggle('saved', !!url);
+        sv.innerHTML = url ? '&#10003;' : 'Save';
+        return;
+      }
       if (e.target.id === 'scBack') {
         $('v-scene1').classList.remove('on');
         $('v-scenes').classList.add('on');
@@ -963,13 +1012,27 @@
       var box = e.target.closest('[data-item]');
       if (!box) return;
       var id = box.dataset.item;
-      var s = item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '' };
+      var s = item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
       if (f === 'price') {
         var v = parseFloat(e.target.value);
         s.price = isFinite(v) && v >= 0 ? Math.round(v * 100) : 0;
       } else if (f === 'qty') {
         var q = parseInt(e.target.value, 10);
         s.qty = isFinite(q) && q > 0 ? q : 1;
+      } else if (f === 'link') {
+        // Blur commits every other field, but a half-typed or pasted-wrong URL
+        // should not be stored at all. safeUrl already stops it rendering as a
+        // link; this stops it reaching the store and the rehearsal report.
+        var raw = e.target.value.trim();
+        if (raw && !safeUrl(raw)) {
+          var badLab = e.target.closest('.lk');
+          if (badLab) {
+            badLab.classList.add('bad');
+            setTimeout(function () { badLab.classList.remove('bad'); }, 1600);
+          }
+          return;
+        }
+        s.link = raw;
       } else {
         s[f] = e.target.value;
       }
@@ -992,6 +1055,7 @@
         });
       }
       s.by = me || s.by || '';
+      s.at = new Date().toISOString();
       item[id] = s;
       saveLocal(); pushItem(id);
       // repaint totals without losing the field the user is typing in
@@ -1006,6 +1070,12 @@
       // a full re-render here would steal the caret mid-edit.
       if (f === 'link') {
         var url = safeUrl(s.link);
+        var lab2 = e.target.closest('.lk');
+        if (lab2) {
+          lab2.classList.toggle('saved', !!url);
+          var btn2 = lab2.querySelector('.lk-go');
+          if (btn2) btn2.innerHTML = url ? '&#10003;' : 'Save';
+        }
         var a2 = box.querySelector('.it-link');
         if (url && !a2) {
           a2 = document.createElement('a');
