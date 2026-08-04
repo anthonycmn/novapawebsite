@@ -4,10 +4,6 @@ Send: Sunday Aug 2 (evening) or first thing Monday Aug 3.
 From: Broadway Bound | NoVAPA (education@novapa.org) via Constant Contact.
 To: DEH company students, parents/guardians copied.
 
-**One thing left before this goes out: curtain times. See the note at the bottom.**
-
----
-
 **Subject:** Tomorrow: Day 1 of Dear Evan Hansen — auditions, what to bring, and how we start
 
 **Preheader:** Everyone auditions who has not yet. Read this one all the way through.
@@ -21,7 +17,7 @@ Monday, August 3
 
 Dear Broadway Bound Teens,
 
-Tomorrow morning twenty-four of you walk into a room and become a company. By Friday the fourteenth you will have built, rehearsed, and performed one of the most demanding musicals written this century. Two weeks. That is the whole runway.
+Tomorrow morning nineteen of you walk into a room and become a company. Twelve days later you will have built, rehearsed, and performed one of the most demanding musicals written this century, four times. That is the whole runway.
 
 I want to be straight with you about what this one asks, because *Dear Evan Hansen* is not like the shows most of you have done with us. It is about a boy who dies by suicide and a boy who lies about having known him. It is about loneliness, mental illness, grief, and what people do when they are desperate to be seen. It is funny and it is devastating, sometimes in the same breath.
 
@@ -93,7 +89,8 @@ If this material is close to something in your own life, you are not obliged to 
 
 - **Act I off book by Monday the tenth.** Weekend homework is real homework.
 - **We are in the theatre from Friday the seventh.** After that, no phones on the deck.
-- **Tech week is mandatory.** Every call, all of it. Tech is the first time the show, the set, the lights and the sound exist in the same room, and it does not work if anyone is missing.
+- **Tech week and the performance weekend are mandatory.** Every call, all of it — including both shows on Saturday and the closing matinee on Sunday. Tech is the first time the show, the set, the lights and the sound exist in the same room, and it does not work if anyone is missing.
+- **Strike is part of the show.** Sunday, straight after we close, the whole company takes the set down. Nobody leaves until the room is empty. Plan on being done by 7:00 PM.
 - Be on time. Be off book when you said you would be. Look after the person next to you.
 
 ## Who you will be working with
@@ -109,7 +106,7 @@ If this material is close to something in your own life, you are not obliged to 
 
 ## For parents and guardians
 
-**Dates and times.** Monday to Friday, 9:00 AM to 4:00 PM, August 3 through August 14.
+**Dates and times.** Rehearsals Monday to Friday, 9:00 AM to 4:00 PM, August 3 through August 14. Then performances Friday evening through Sunday afternoon, August 14 to 16.
 
 **Where.** The National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg VA 20175.
 
@@ -127,7 +124,20 @@ If this material is close to something in your own life, you are not obliged to 
 
 **Star Pages and Spirit Buttons** are ordered at novapa.booktix.com, not in the merch store. Star Pages put a photo and a personal message to your performer in the show programme. Spirit Buttons are $12 each. **Both are due by 5:00 PM on the second day of camp** — our print deadlines are immovable, so please order early.
 
-**Performance.** Friday, August 14. **Call is 90 minutes before curtain** for every performer. Curtain time and ticket information follow this week.
+**Performances.** Four of them, at the National Conference Center:
+
+| | | |
+|---|---|---|
+| **Friday 14 August** | 7:00 PM | Opening |
+| **Saturday 15 August** | 2:00 PM | Matinee |
+| **Saturday 15 August** | 7:00 PM | Evening |
+| **Sunday 16 August** | 2:00 PM | Closing |
+
+**Call is 90 minutes before curtain** for every performer — 5:30 PM for a 7:00 show, 12:30 PM for a 2:00 show. On Saturday the company is called at 12:30 and works through both shows with a supper break between; please send them with a packed supper or arrange to feed them in the break.
+
+**Everyone performs in all four.** There is no double cast. Please hold the whole weekend before you book anything else.
+
+Tickets are at novapa.booktix.com.
 
 ---
 
@@ -146,12 +156,12 @@ Founder & Executive Director
 ---
 ---
 
-## Before you send — one thing left
+## Before you send
 
-**The performance schedule.** Danielle's email indicates a Friday 8/14 evening performance and performances on Saturday 8/15. The rehearsal schedule ends Friday at 4:00 with dismissal to performance call, and Saturday is not built. Send me curtain times and I will put the exact call times in (90 minutes before, per your note) and add Saturday to the dashboard.
+**Everything is answered.** Address, parking, call times, lunch, and the performance schedule are all in the draft above.
 
-**Answered and now in the draft:** the address is 18945 Conference Center Drive, Plaza C, Leesburg VA 20175 · park in the lot if driving, drop at Plaza C if dropping off · call is 90 minutes before curtain · lunch is not provided.
+**Two things to fix outside this email.** Your Gmail signature reads *18665 Conference Center Drive, Leesburg VA 20176* — wrong street number and wrong ZIP. It goes out on every message you send, and you gave that address to Valerie Stallcup when she asked where to bring Evelyn. Worth correcting the signature and sending her a one-line follow-up.
 
-**Two things to fix outside this email.** Your Gmail signature reads *18665 Conference Center Drive, Leesburg VA 20176* — wrong street number and wrong ZIP. It goes out on every message you send, and you gave that address to Valerie Stallcup on Friday when she asked where to bring Evelyn. Worth correcting the signature and sending her a one-line follow-up before Monday.
+That same reply also went out with the editing note `[CONFIRM: whether lunch is provided]` still in the body. The answer is now confirmed: families pack lunch.
 
-That same reply to her also went out with the editing note `[CONFIRM: whether lunch is provided]` still in the body. The answer is now confirmed: families pack lunch.
+**One thing to check before this goes out.** You sent a company of nineteen. The rehearsal schedule was built for twenty-four, and three students Todd chased for DEH registration on 30 July — Amara Perez, Alponz Nikko Luspo, Nora Sunderman — are not on your list. If they are still coming, the email should go to them too. If they are not, the track assignments need rebuilding for nineteen.
