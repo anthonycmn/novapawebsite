@@ -255,6 +255,26 @@
     color:var(--dim);font:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px}
   .back:hover{color:var(--gold2);border-color:rgba(232,184,75,0.5)}
 
+  /* step from scene to scene without going back to the list */
+  .scnav{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .scnav .back{margin-bottom:0;flex:0 0 auto;white-space:nowrap}
+  .scstep{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
+    background:rgba(232,184,75,0.07);border:1px solid var(--line);border-radius:99px;
+    padding:7px 12px;color:var(--gold3);font:inherit;font-size:12.5px;font-weight:700;
+    cursor:pointer;white-space:nowrap;overflow:hidden}
+  .scstep:hover{background:rgba(232,184,75,0.16);border-color:rgba(232,184,75,0.5);color:var(--gold2)}
+  .scstep-l{overflow:hidden;text-overflow:ellipsis}
+  .scstep-ar{color:var(--gold2);font-weight:700}
+  .scstep.empty{flex:1 1 0;border:0;background:none;pointer-events:none}
+  .scpos{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim2);
+    text-align:center;margin-bottom:12px}
+  .scnav.foot{margin:22px 0 4px}
+  .scstep.wide{flex:1 1 100%;padding:12px 16px;font-size:14px}
+  @media (max-width:520px){
+    .scnav .back{padding:7px 11px;font-size:12px}
+    .scstep{font-size:12px;padding:7px 9px}
+  }
+
   /* the day rail belongs to the schedule only */
   body:not(.on-day) #dayChips{display:none}
 
