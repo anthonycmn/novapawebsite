@@ -1,17 +1,16 @@
-// Star Page Ads — private playbill ad orders for families already in our system.
+// Star Page Ads — playbill ad orders, reachable only by private URL.
 // POST /api/star-pages with { action, ... }:
-//   { action: 'check_email', email }                          -> { known }
-//   { action: 'upload_url', email, filename, content_type }   -> { path, url, token }  (signed upload to private bucket)
+//   { action: 'upload_url', filename, content_type }          -> { path, url }  (signed upload to private bucket)
 //   { action: 'create_order', email, performer, message,
 //             size, photo_path }                              -> { url }  (Stripe Checkout redirect)
 //   { action: 'verify', session_id }                          -> { paid, performer, size }
 //
-// Currently DEH-only (show hardcoded below); the page is unlisted and the
-// email gate keeps it to families that exist in our DB. Payment is a hosted
-// Stripe Checkout with redirect-verify (no webhook) — same pattern we trust
-// elsewhere; the admin money trail lives in star_page_ads + Stripe.
+// Currently DEH-only (show hardcoded below); the page is unlisted/noindex and
+// shared privately with DEH families — no account gate by design (grandparents
+// buy these too). Payment is a hosted Stripe Checkout with redirect-verify
+// (no webhook); the admin money trail lives in star_page_ads + Stripe.
 import Stripe from "stripe";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
+import { SUPABASE_URL } from "./reg-config.mjs";
 
 const SHOW = "deh";
 const PRICES = { full: 15000, half: 9000, quarter: 6000 };
@@ -29,15 +28,6 @@ async function db(path, init = {}) {
   if (!r.ok) throw new Error(`${r.status} ${t.slice(0, 200)}`);
   try { return JSON.parse(t); } catch { return null; }
 }
-async function emailKnown(email) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/email_known`, {
-    method: "POST",
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ p_email: email }),
-  });
-  if (!r.ok) return false;
-  return (await r.text()).trim() === "true";
-}
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
 export default async function handler(req) {
@@ -47,13 +37,7 @@ export default async function handler(req) {
   const email = String(body.email || "").trim().toLowerCase();
 
   try {
-    if (body.action === "check_email") {
-      if (!email) return json(400, { error: "email required" });
-      return json(200, { known: await emailKnown(email) });
-    }
-
     if (body.action === "upload_url") {
-      if (!email || !(await emailKnown(email))) return json(403, { error: "not recognized" });
       const clean = String(body.filename || "photo.jpg").replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
       const path = `${SHOW}/${crypto.randomUUID()}-${clean}`;
       const r = await fetch(`${SUPABASE_URL}/storage/v1/object/upload/sign/star-pages/${path}`, {
@@ -65,7 +49,7 @@ export default async function handler(req) {
     }
 
     if (body.action === "create_order") {
-      if (!email || !(await emailKnown(email))) return json(403, { error: "not recognized" });
+      if (!email || email.indexOf("@") < 0) return json(400, { error: "valid email required" });
       const size = String(body.size || "");
       if (!PRICES[size]) return json(400, { error: "bad size" });
       const performer = String(body.performer || "").trim().slice(0, 120);
