@@ -95,9 +95,168 @@ $fn$;
 grant execute on function public.deh_items_list() to anon, authenticated;
 grant execute on function public.deh_item_set(text, text, text, text, int, int, text) to anon, authenticated;
 
+-- ── Company roster ───────────────────────────────────────────────────────
+-- Who can be marked present. Editable in the dashboard because the cast list
+-- did not exist when this was built — add names as they are cast.
+create table if not exists deh_roster (
+  person_id  text primary key,          -- slug, stable once created
+  name       text not null,
+  role       text,                      -- 'Evan', 'Ensemble', 'Costumes'...
+  kind       text not null default 'cast',   -- cast | crew | staff
+  sort       int  not null default 100,
+  active     boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+alter table deh_roster enable row level security;
+
+create or replace function public.deh_roster_list()
+returns setof deh_roster
+language sql stable security definer set search_path = public as $fn$
+  select * from deh_roster where active order by kind, sort, name;
+$fn$;
+
+create or replace function public.deh_roster_set(
+  p_person_id text, p_name text, p_role text, p_kind text, p_sort int, p_active boolean)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  insert into deh_roster (person_id, name, role, kind, sort, active, updated_at)
+  values (p_person_id, trim(p_name), nullif(trim(p_role), ''),
+          coalesce(nullif(trim(p_kind), ''), 'cast'), coalesce(p_sort, 100),
+          coalesce(p_active, true), now())
+  on conflict (person_id) do update set
+    name = excluded.name, role = excluded.role, kind = excluded.kind,
+    sort = excluded.sort, active = excluded.active, updated_at = now();
+$fn$;
+
+grant execute on function public.deh_roster_list() to anon, authenticated;
+grant execute on function public.deh_roster_set(text, text, text, text, int, boolean) to anon, authenticated;
+
+-- ── Attendance ───────────────────────────────────────────────────────────
+-- One row per person per rehearsal day. Absent rows are the ones that matter;
+-- "present" is stored too so a blank day is distinguishable from a day nobody
+-- took attendance on.
+create table if not exists deh_attendance (
+  day        date not null,
+  person_id  text not null,
+  status     text not null default 'present',   -- present | late | absent | excused
+  note       text,
+  updated_by text,
+  updated_at timestamptz not null default now(),
+  primary key (day, person_id)
+);
+alter table deh_attendance enable row level security;
+
+create or replace function public.deh_attendance_list(p_day date)
+returns setof deh_attendance
+language sql stable security definer set search_path = public as $fn$
+  select * from deh_attendance where day = p_day;
+$fn$;
+
+create or replace function public.deh_attendance_set(
+  p_day date, p_person_id text, p_status text, p_note text, p_by text)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  insert into deh_attendance (day, person_id, status, note, updated_by, updated_at)
+  values (p_day, p_person_id, coalesce(nullif(trim(p_status), ''), 'present'),
+          nullif(trim(p_note), ''), nullif(trim(p_by), ''), now())
+  on conflict (day, person_id) do update set
+    status = excluded.status, note = excluded.note,
+    updated_by = excluded.updated_by, updated_at = now();
+$fn$;
+
+grant execute on function public.deh_attendance_list(date) to anon, authenticated;
+grant execute on function public.deh_attendance_set(date, text, text, text, text) to anon, authenticated;
+
+-- ── Rehearsal notes ──────────────────────────────────────────────────────
+-- Free text, filed against a day and a department, the way a stage manager
+-- files notes to each design head.
+create table if not exists deh_notes (
+  note_id    text primary key,           -- client-generated, day|dept|counter
+  day        date not null,
+  dept       text not null default 'general',  -- general|stage|music|costume|tech|props|safety
+  body       text not null,
+  author     text,
+  created_at timestamptz not null default now()
+);
+alter table deh_notes enable row level security;
+create index if not exists deh_notes_day_idx on deh_notes (day);
+
+create or replace function public.deh_notes_list(p_day date)
+returns setof deh_notes
+language sql stable security definer set search_path = public as $fn$
+  select * from deh_notes where day = p_day order by created_at;
+$fn$;
+
+create or replace function public.deh_note_add(
+  p_note_id text, p_day date, p_dept text, p_body text, p_author text)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  insert into deh_notes (note_id, day, dept, body, author)
+  values (p_note_id, p_day, coalesce(nullif(trim(p_dept), ''), 'general'),
+          trim(p_body), nullif(trim(p_author), ''))
+  on conflict (note_id) do update set
+    dept = excluded.dept, body = excluded.body, author = excluded.author;
+$fn$;
+
+create or replace function public.deh_note_delete(p_note_id text)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  delete from deh_notes where note_id = p_note_id;
+$fn$;
+
+grant execute on function public.deh_notes_list(date) to anon, authenticated;
+grant execute on function public.deh_note_add(text, date, text, text, text) to anon, authenticated;
+grant execute on function public.deh_note_delete(text) to anon, authenticated;
+
+-- ── Report log ───────────────────────────────────────────────────────────
+-- So the dashboard can say "already sent at 4:12pm by Danielle" instead of
+-- letting four people each send CJ the same recap.
+create table if not exists deh_reports (
+  day      date primary key,
+  sent_at  timestamptz not null default now(),
+  sent_by  text,
+  sent_to  text,
+  summary  jsonb
+);
+alter table deh_reports enable row level security;
+
+create or replace function public.deh_reports_list()
+returns setof deh_reports
+language sql stable security definer set search_path = public as $fn$
+  select * from deh_reports order by day;
+$fn$;
+
+create or replace function public.deh_report_log(
+  p_day date, p_by text, p_to text, p_summary jsonb)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  insert into deh_reports (day, sent_at, sent_by, sent_to, summary)
+  values (p_day, now(), nullif(trim(p_by), ''), p_to, p_summary)
+  on conflict (day) do update set
+    sent_at = now(), sent_by = excluded.sent_by,
+    sent_to = excluded.sent_to, summary = excluded.summary;
+$fn$;
+
+grant execute on function public.deh_reports_list() to anon, authenticated;
+grant execute on function public.deh_report_log(date, text, text, jsonb) to anon, authenticated;
+
+-- ── Seed the roster with the creative team ───────────────────────────────
+-- Cast names get added in the dashboard as they are cast. Roles come from
+-- deh/scenes.js so attendance lines up with the scene breakdown.
+insert into deh_roster (person_id, name, role, kind, sort) values
+  ('staff-danielle', 'Danielle Sirinsky',  'Director / Choreographer', 'staff', 1),
+  ('staff-shelby',   'Shelby Milgram',     'Vocal Director',           'staff', 2),
+  ('staff-ryyana',   'Ryyana Cunningham',  'Assistant Director',       'staff', 3),
+  ('staff-colton',   'Colton Sorensen',    'Technical Director',       'staff', 4),
+  ('staff-tony',     'Tony Cimino-Johnson','Intimacy / Study track',   'staff', 5)
+on conflict (person_id) do nothing;
+
 -- What the staff have checked off so far.
 select block_id, done_by, done_at from deh_progress where done order by block_id;
 
 -- Where the money is going.
 select item_id, status, vendor, price_cents, qty, (price_cents * qty) as line_cents, updated_by
 from deh_items order by item_id;
+
+-- Who is on the roster.
+select person_id, name, role, kind from deh_roster where active order by kind, sort;

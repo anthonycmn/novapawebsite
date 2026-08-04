@@ -98,6 +98,101 @@
     background:rgba(232,184,75,0.09);border:1px dashed rgba(232,184,75,0.45);color:var(--gold3)}
   .gap b{display:block;color:var(--gold2);margin-bottom:3px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase}
 
+  /* ── attendance ───────────────────────────────────────────────────── */
+  .at{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
+  .at summary{padding:12px 15px;font-size:14px;font-weight:700;color:var(--gold3);cursor:pointer;
+    list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .at summary::-webkit-details-marker{display:none}
+  .at summary b{color:#fff;font-weight:700}
+  .at summary::after{content:'▾';margin-left:auto;color:var(--dim2)}
+  .at[open] summary::after{content:'▴'}
+  .at-pill{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+    padding:3px 9px;border-radius:99px}
+  .at-pill.out{background:rgba(255,140,140,0.16);color:#FFB4B4}
+  .at-pill.late{background:rgba(232,184,75,0.16);color:var(--gold2)}
+  .at-pill.todo{background:rgba(255,255,255,0.07);color:var(--dim2)}
+  .at-bd{padding:0 12px 12px}
+  .at-grp{font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim2);
+    font-weight:700;margin:12px 0 6px}
+  .at-row{display:flex;align-items:center;gap:8px;padding:5px 0;flex-wrap:wrap}
+  .at-st{flex:0 0 34px;height:34px;border-radius:9px;border:1px solid var(--line);cursor:pointer;
+    font:inherit;font-size:15px;font-weight:700;background:rgba(255,255,255,0.05);color:var(--dim)}
+  .at-st.s-present{background:rgba(120,220,160,0.16);border-color:rgba(120,220,160,0.5);color:#8FE3B4}
+  .at-st.s-late{background:rgba(232,184,75,0.18);border-color:rgba(232,184,75,0.55);color:var(--gold2)}
+  .at-st.s-absent{background:rgba(255,120,120,0.18);border-color:rgba(255,120,120,0.55);color:#FFB4B4}
+  .at-st.s-excused{background:rgba(150,170,255,0.16);border-color:rgba(150,170,255,0.5);color:#B9C6FF}
+  .at-name{flex:1 1 130px;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--line);
+    border-radius:9px;padding:8px 10px;color:#fff;font:inherit;font-size:14px}
+  .at-name::placeholder{color:var(--dim2);font-style:italic}
+  /* Role sits under the name rather than beside it — at 390px there is not
+     room for both on one line, and it was running off the right edge. */
+  .at-role{flex:1 1 100%;padding-left:42px;margin-top:-3px;font-size:11.5px;color:var(--dim2);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .at-note{flex:1 1 100%;background:rgba(255,255,255,0.04);border:1px dashed var(--line);
+    border-radius:9px;padding:7px 10px;color:var(--gold3);font:inherit;font-size:13px}
+  .at-add{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap}
+  .at-add input{flex:1 1 130px;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--line);
+    border-radius:9px;padding:9px 11px;color:#fff;font:inherit;font-size:14px}
+  .at-add select{background:var(--navy2);border:1px solid var(--line);border-radius:9px;
+    padding:9px 8px;color:#fff;font:inherit;font-size:13px}
+  .at-hint{font-size:11.5px;color:var(--dim2);line-height:1.5;margin:11px 0 0}
+
+  /* ── rehearsal notes ──────────────────────────────────────────────── */
+  .notes{margin-top:20px;padding-top:4px;border-top:1px solid var(--line)}
+  .notes h3{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--gold3);margin:16px 0 10px}
+  .nt{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px}
+  .nt-h{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .nt-d{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:var(--gold2)}
+  .nt-a{font-size:11.5px;color:var(--dim2)}
+  .nt-x{margin-left:auto;background:none;border:0;color:var(--dim2);font-size:19px;line-height:1;
+    cursor:pointer;padding:0 2px}
+  .nt-b{font-size:14px;line-height:1.55;color:var(--ink);white-space:pre-wrap}
+  .nt-none{font-size:13px;color:var(--dim2);margin:0 0 10px}
+  .nt-new{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+  .nt-new select,.nt-new textarea{background:rgba(255,255,255,0.05);border:1px solid var(--line);
+    border-radius:10px;padding:10px 11px;color:#fff;font:inherit;font-size:14px;width:100%}
+  .nt-new textarea{resize:vertical;line-height:1.5}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206;border:0;
+    border-radius:10px;padding:11px 16px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+
+  /* ── end-of-day report ────────────────────────────────────────────── */
+  /* The report bar sticks to the bottom of the day view, so the last of the
+     notes needs room to scroll clear of it. */
+  #day{padding-bottom:4px}
+  .notes{padding-bottom:6px}
+  .rep{position:sticky;bottom:0;margin:18px -14px 0;padding:13px 14px calc(13px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(8,17,31,0.75),var(--navy0) 45%);
+    border-top:1px solid var(--line);display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .rep-go{flex:1 1 190px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206;
+    border:0;border-radius:11px;padding:14px 16px;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
+  .rep-go[disabled]{opacity:0.55}
+  .rep-pv{background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--dim);
+    border-radius:11px;padding:14px 14px;font:inherit;font-size:14px;cursor:pointer}
+  .rep-sent{flex:1 1 100%;font-size:12.5px;color:#8FE3B4}
+  .rep-sent b{color:#fff}
+  .rep-note{flex:1 1 100%;font-size:12.5px;color:var(--gold3);line-height:1.5}
+  .rep-note a{color:var(--gold2)}
+
+  /* ── buy list ─────────────────────────────────────────────────────── */
+  .buy-acts{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:14px 0 16px}
+  .buy-hint{font-size:12px;color:var(--dim2)}
+  .ven{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:11px}
+  .ven-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px;
+    padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .ven-h b{font-size:15px;color:#fff}
+  .ven-h span{font-size:12px;color:var(--gold2);white-space:nowrap}
+  .ven-i{display:flex;align-items:flex-start;gap:9px;padding:7px 0}
+  .ven-tick{flex:0 0 28px;height:28px;border-radius:8px;border:1px solid var(--line);cursor:pointer;
+    background:rgba(255,255,255,0.05);color:var(--dim2);font-size:14px;line-height:1}
+  .ven-tick:hover{color:#8FE3B4;border-color:rgba(120,220,160,0.5)}
+  .ven-t{flex:1;min-width:0;font-size:14px;line-height:1.45;color:var(--ink)}
+  .ven-t a{color:var(--gold3)}
+  .ven-s{display:block;font-size:11.5px;color:var(--dim2);margin-top:2px}
+  .ven-c{font-size:13px;color:var(--gold2);white-space:nowrap}
+  .ven-c i{color:var(--dim2);font-size:11.5px}
+  .ven-open{width:100%;margin-top:9px;background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.4);
+    color:var(--gold2);border-radius:10px;padding:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+
   /* ── blocks ───────────────────────────────────────────────────────── */
   .rest{display:flex;justify-content:center;gap:10px;padding:9px;margin:8px 0;
     font-size:12.5px;color:var(--dim2);letter-spacing:0.04em}
@@ -284,10 +379,15 @@
   .topbar{position:sticky;top:0;z-index:40;background:rgba(8,17,31,0.96);
     backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
   .topbar header{position:static;background:none;backdrop-filter:none;border-bottom:0;padding-bottom:8px}
-  nav{display:flex;gap:3px;padding:0 8px 9px}
-  .navbtn{flex:1 1 0;min-width:0;padding:9px 6px;border:0;background:none;font:inherit;font-size:12.5px;
+  /* Six tabs will not fit across a 390px phone, and squeezing them ran the
+     labels into each other. The row scrolls instead; on a wide screen there
+     is room for all of them, so they spread out and the scroll never shows. */
+  nav{display:flex;gap:4px;padding:0 8px 9px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  .navbtn{flex:0 0 auto;padding:9px 11px;border:0;background:none;font:inherit;font-size:13px;
     font-weight:700;color:var(--dim2);cursor:pointer;border-radius:10px;letter-spacing:0;white-space:nowrap}
-  @media (min-width:420px){ .navbtn{font-size:13.5px;padding:10px 10px} }
+  @media (min-width:700px){ nav{overflow-x:visible} .navbtn{flex:1 1 0;font-size:13.5px;padding:10px} }
   .navbtn.sel{color:#1a1206;background:linear-gradient(135deg,var(--gold),var(--gold2))}
 
   @media (min-width:720px){
@@ -330,6 +430,7 @@
   <nav>
     <button class="navbtn sel" data-v="day" type="button">Schedule</button>
     <button class="navbtn" data-v="scenes" type="button">Scenes</button>
+    <button class="navbtn" data-v="buy" type="button">Buy</button>
     <button class="navbtn" data-v="budget" type="button">Cost</button>
     <button class="navbtn" data-v="crews" type="button">Crews</button>
     <button class="navbtn" data-v="support" type="button">Support</button>
@@ -341,6 +442,7 @@
   <section class="view on" id="v-day"><div id="day"></div></section>
   <section class="view" id="v-scenes"><h3>Scene breakdown</h3><div id="scenes"></div></section>
   <section class="view" id="v-scene1"><div id="sceneDetail"></div></section>
+  <section class="view" id="v-buy"><h3>Still to buy</h3><div id="buy"></div></section>
   <section class="view" id="v-budget"><h3>Cost analysis</h3><div id="budget"></div></section>
   <section class="view" id="v-crews"><div id="refCrews"></div></section>
   <section class="view" id="v-support">
