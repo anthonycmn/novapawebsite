@@ -12,10 +12,6 @@
    identical either way, so nobody has to know which mode they are in. */
 (function () {
   var D = window.DEH, S = window.DEHSCENES;
-  // This dashboard has its own Supabase project (deh/config.js) so it cannot
-  // reach registration or payment data. Nothing else on the site shares it.
-  var C = window.DEHDB || {};
-  var CONFIGURED = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY);
   var LS_DONE = 'deh.done.v1', LS_ITEM = 'deh.items.v1', LS_ME = 'deh.me.v1', LS_GATE = 'deh.gate.v1';
   var LS_ROSTER = 'deh.roster.v1', LS_ATT = 'deh.att.v1', LS_NOTE = 'deh.notes.v1', LS_REP = 'deh.rep.v1';
   var GATE_WORD = 'orchard';   // curtain, not a lock — change here and tell staff
@@ -57,7 +53,7 @@
   var roster = [], att = {}, notes = [], reports = {};
   var loadedDays = {};   // iso -> true, so a day's attendance/notes fetch once
   var me = localStorage.getItem(LS_ME) || '';
-  var sb = null, remote = false;
+  var remote = false;
 
   var TRACKS = {
     'STAGE': 'stage', 'STAGE (CLOSED)': 'stage', 'STAGE+MUSIC': 'stage',
@@ -103,6 +99,7 @@
     { k: 'IF SOMETHING BREAKS', v: 'MTI Player support: (877) 845-4704 or player@mtishows.com. Licensing rep Spicer Carr: spicerc@mtishows.com, (212) 541-4684. Mid-performance emergency hotline: (888) 340-3505 — that one is for a track failing during a show, nothing else.' }
   ];
 
+  function gateWord() { try { return localStorage.getItem(LS_GATE) || ''; } catch (e) { return ''; } }
   function $(id) { return document.getElementById(id); }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   function clock(ts) {
@@ -161,37 +158,44 @@
   }
   function personName(p) { return p.name || (p.role ? '(' + p.role + ' — unnamed)' : '(unnamed)'); }
   function attOf(iso, pid) { return att[iso + '|' + pid] || { status: 'present', note: '' }; }
+  // Every database call goes through /api/deh-db. The browser holds no key:
+  // the function on the other side has the service-role key and an allow-list
+  // of exactly the operations below, and it checks the company word itself.
+  function api(op, args) {
+    return fetch('/api/deh-db', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word: gateWord(), op: op, args: args || {} })
+    }).then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || 'failed');
+        return j.data;
+      });
+  }
+
   function connect() {
-    if (!window.supabase || !CONFIGURED) return Promise.resolve();
-    try { sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY); } catch (e) { return Promise.resolve(); }
     return Promise.all([
-      sb.rpc('deh_progress_list').then(function (r) {
-        if (r.error || !r.data) return null;
+      api('progress_list').then(function (rows) {
         remote = true;
-        (r.data || []).forEach(function (x) {
+        (rows || []).forEach(function (x) {
           if (x.done) done[x.block_id] = { by: x.done_by || '', at: x.done_at ? +new Date(x.done_at) : Date.now() };
           else delete done[x.block_id];
         });
       }).catch(function () {}),
-      sb.rpc('deh_items_list').then(function (r) {
-        if (r.error || !r.data) return null;
-        (r.data || []).forEach(function (x) {
+      api('items_list').then(function (rows) {
+        (rows || []).forEach(function (x) {
           item[x.item_id] = { st: x.status || 'todo', src: x.vendor || '', link: x.link || '',
                               price: x.price_cents || 0, qty: x.qty || 1, by: x.updated_by || '' };
         });
       }).catch(function () {}),
-      sb.rpc('deh_roster_list').then(function (r) {
-        if (r.error || !r.data || !r.data.length) return null;
-        roster = r.data.map(function (x) {
+      api('roster_list').then(function (rows) {
+        if (!rows || !rows.length) return;
+        roster = rows.map(function (x) {
           return { person_id: x.person_id, name: x.name || '', role: x.role || '',
                    kind: x.kind || 'cast', sort: x.sort == null ? 100 : x.sort };
         });
       }).catch(function () {}),
-      sb.rpc('deh_reports_list').then(function (r) {
-        if (r.error || !r.data) return null;
-        (r.data || []).forEach(function (x) {
-          reports[x.day] = { at: x.sent_at, by: x.sent_by || '' };
-        });
+      api('reports_list').then(function (rows) {
+        (rows || []).forEach(function (x) { reports[x.day] = { at: x.sent_at, by: x.sent_by || '' }; });
       }).catch(function () {})
     ]).then(function () { saveLocal(); });
   }
@@ -202,16 +206,14 @@
     if (!remote || loadedDays[iso]) { if (then) then(); return; }
     loadedDays[iso] = true;
     Promise.all([
-      sb.rpc('deh_attendance_list', { p_day: iso }).then(function (r) {
-        if (r.error || !r.data) return;
-        (r.data || []).forEach(function (x) {
+      api('attendance_list', { day: iso }).then(function (rows) {
+        (rows || []).forEach(function (x) {
           att[iso + '|' + x.person_id] = { status: x.status || 'present', note: x.note || '', by: x.updated_by || '' };
         });
       }).catch(function () {}),
-      sb.rpc('deh_notes_list', { p_day: iso }).then(function (r) {
-        if (r.error || !r.data) return;
+      api('notes_list', { day: iso }).then(function (rows) {
         notes = notes.filter(function (n) { return n.day !== iso; })
-          .concat((r.data || []).map(function (x) {
+          .concat((rows || []).map(function (x) {
             return { note_id: x.note_id, day: iso, dept: x.dept || 'general',
                      body: x.body || '', author: x.author || '', created_at: x.created_at };
           }));
@@ -221,33 +223,33 @@
   function pushAttendance(iso, pid) {
     if (!remote) return;
     var a = attOf(iso, pid);
-    sb.rpc('deh_attendance_set', { p_day: iso, p_person_id: pid, p_status: a.status,
-                                   p_note: a.note || '', p_by: me || '' })
+    api('attendance_set', { day: iso, person_id: pid, status: a.status,
+                            note: a.note || '', by: me || '' })
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function pushNote(n) {
     if (!remote) return;
-    sb.rpc('deh_note_add', { p_note_id: n.note_id, p_day: n.day, p_dept: n.dept,
-                             p_body: n.body, p_author: n.author || '' })
+    api('note_add', { note_id: n.note_id, day: n.day, dept: n.dept,
+                      body: n.body, author: n.author || '' })
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function pushRoster(p) {
     if (!remote) return;
-    sb.rpc('deh_roster_set', { p_person_id: p.person_id, p_name: p.name || '', p_role: p.role || '',
-                               p_kind: p.kind || 'cast', p_sort: p.sort || 100, p_active: true })
+    api('roster_set', { person_id: p.person_id, name: p.name || '', role: p.role || '',
+                        kind: p.kind || 'cast', sort: p.sort || 100, active: true })
       .catch(function () {});
   }
   function pushBlock(id, isDone, by) {
     if (!remote) return;
-    sb.rpc('deh_progress_set', { p_block_id: id, p_done: isDone, p_by: by || '' })
+    api('progress_set', { block_id: id, done: isDone, by: by || '' })
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function pushItem(id) {
     if (!remote) return;
     var s = item[id] || {};
-    sb.rpc('deh_item_set', { p_item_id: id, p_status: s.st || 'todo', p_vendor: s.src || '',
-                             p_link: s.link || '', p_price_cents: s.price || 0, p_qty: s.qty || 1,
-                             p_by: s.by || me || '' })
+    api('item_set', { item_id: id, status: s.st || 'todo', vendor: s.src || '',
+                      link: s.link || '', price_cents: s.price || 0, qty: s.qty || 1,
+                      by: s.by || me || '' })
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function setSync(msg) { $('syncNote').textContent = msg; }
@@ -460,8 +462,8 @@
         reports[d.iso] = { at: new Date().toISOString(), by: me };
         saveLocal();
         if (remote) {
-          sb.rpc('deh_report_log', { p_day: d.iso, p_by: me, p_to: 'cj@novapa.org',
-                                     p_summary: { done: r.blocksDone, of: r.blocksTotal } })
+          api('report_log', { day: d.iso, by: me, to: 'cj@novapa.org',
+                              summary: { done: r.blocksDone, of: r.blocksTotal } })
             .catch(function () {});
         }
         renderDay();
@@ -867,7 +869,7 @@
         var nid = dn.dataset.delnote;
         notes = notes.filter(function (x) { return x.note_id !== nid; });
         saveLocal();
-        if (remote) sb.rpc('deh_note_delete', { p_note_id: nid }).catch(function () {});
+        if (remote) api('note_delete', { note_id: nid }).catch(function () {});
         renderDay();
         return;
       }
@@ -1039,8 +1041,7 @@
       // Three states, and the difference matters: nobody should think the
       // team is sharing when it is not.
       setSync(remote ? 'Shared with the whole team'
-            : CONFIGURED ? 'Database unreachable — saved on this phone'
-            : 'Saved on this phone only — database not connected yet');
+                     : 'Database unreachable — saved on this phone');
       renderAll();
       loadDay(D.days[cur].iso, renderDay);
     });
