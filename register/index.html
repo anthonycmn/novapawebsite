@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <script src="/posthog.js" defer></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18370900407"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-18370900407');</script>
 <script src="/register/config.js"></script>
 <script src="/register/coaching.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -2514,6 +2516,7 @@
       setPayH1(res.j.pricing.today_cents);
       mountStripe();
       ev('reg_payment_started', { plan: state.plan, today_cents: res.j.pricing.today_cents });
+      try { gtag('event', 'begin_checkout', { currency: 'USD', value: (res.j.pricing.total_cents || 0) / 100 }); } catch (e) {}
     }).catch(function(){
       if (mySeq !== paySeq) return;
       $('payStart').disabled = false;
@@ -2825,6 +2828,7 @@
       }
     }
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
+    try { gtag('event', 'conversion', { send_to: 'AW-18370900407/p5eoCJ3V6tscELfj9rdE', value: (p.total_cents || 0) / 100, currency: 'USD', transaction_id: state.piId || '' }); } catch (e) {}
     $('doneH1').innerHTML = "One more <em>step!</em>";
     go('st-done');
   }
