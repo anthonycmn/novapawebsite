@@ -12,7 +12,10 @@
    identical either way, so nobody has to know which mode they are in. */
 (function () {
   var D = window.DEH, S = window.DEHSCENES;
-  var C = window.NOVAREG || {};
+  // This dashboard has its own Supabase project (deh/config.js) so it cannot
+  // reach registration or payment data. Nothing else on the site shares it.
+  var C = window.DEHDB || {};
+  var CONFIGURED = !!(C.SUPABASE_URL && C.SUPABASE_ANON_KEY);
   var LS_DONE = 'deh.done.v1', LS_ITEM = 'deh.items.v1', LS_ME = 'deh.me.v1', LS_GATE = 'deh.gate.v1';
   var LS_ROSTER = 'deh.roster.v1', LS_ATT = 'deh.att.v1', LS_NOTE = 'deh.notes.v1', LS_REP = 'deh.rep.v1';
   var GATE_WORD = 'orchard';   // curtain, not a lock — change here and tell staff
@@ -159,7 +162,7 @@
   function personName(p) { return p.name || (p.role ? '(' + p.role + ' — unnamed)' : '(unnamed)'); }
   function attOf(iso, pid) { return att[iso + '|' + pid] || { status: 'present', note: '' }; }
   function connect() {
-    if (!window.supabase || !C.SUPABASE_URL) return Promise.resolve();
+    if (!window.supabase || !CONFIGURED) return Promise.resolve();
     try { sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY); } catch (e) { return Promise.resolve(); }
     return Promise.all([
       sb.rpc('deh_progress_list').then(function (r) {
@@ -1033,7 +1036,11 @@
     });
 
     connect().then(function () {
-      setSync(remote ? 'Shared with the whole team' : 'Saved on this phone');
+      // Three states, and the difference matters: nobody should think the
+      // team is sharing when it is not.
+      setSync(remote ? 'Shared with the whole team'
+            : CONFIGURED ? 'Database unreachable — saved on this phone'
+            : 'Saved on this phone only — database not connected yet');
       renderAll();
       loadDay(D.days[cur].iso, renderDay);
     });
