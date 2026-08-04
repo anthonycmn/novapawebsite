@@ -150,12 +150,15 @@
   // The company, as given by CJ on 8/4. Nineteen students. Roles are left
   // blank because casting has not been published — type them in beside a name
   // and they save like anything else.
+  // Bumped whenever a name is added below, so the addition reaches stores that
+  // already hold an earlier version — see the seed logic in connect().
+  var SEED_VERSION = 2;
   var COMPANY = [
-    'Alexis Cottrell', 'Aubrey Stapler', 'Ben Corliss', 'Claire Sproule',
-    'Cooper Burns', 'Hailey Manuel', 'Haylee Bierd', 'Jackson Kanatzar',
-    'James Grimes', 'Leah Vepraskas', 'Liam VanVeelen', 'Madelyn Biehl',
-    'madz Cramer', 'Makenzie Kofchak', 'Regan Stroup', 'Riddhima Verma',
-    'Ruth MacDonald', 'Ryan Rodgers', 'Vanessa (Kai) Stuermann'
+    'Alexis Cottrell', 'Amara Perez', 'Aubrey Stapler', 'Ben Corliss',
+    'Claire Sproule', 'Cooper Burns', 'Hailey Manuel', 'Haylee Bierd',
+    'Jackson Kanatzar', 'James Grimes', 'Leah Vepraskas', 'Liam VanVeelen',
+    'Madelyn Biehl', 'madz Cramer', 'Makenzie Kofchak', 'Regan Stroup',
+    'Riddhima Verma', 'Ruth MacDonald', 'Ryan Rodgers', 'Vanessa (Kai) Stuermann'
   ];
   var CREATIVE = [
     { person_id: 'staff-danielle', name: 'Danielle Sirinsky', role: 'Director / Choreographer', kind: 'staff', sort: 1 },
@@ -169,8 +172,14 @@
       return { person_id: 'cast-' + slug(n), name: n, role: '', kind: 'cast', sort: 10 + i };
     });
   }
+  var SEED_KEY = '_seed-version';
   function seedRoster() {
     return CREATIVE.concat(castRows());
+  }
+  // The version marker lives in the roster table so it needs no new operation.
+  // It is not a person and must never reach attendance or the report.
+  function people() {
+    return roster.filter(function (p) { return (p.kind || 'cast') !== 'meta'; });
   }
   function slug(s) {
     return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
@@ -213,22 +222,34 @@
         // loadLocal() has already seeded a roster in memory, so checking that
         // would always look full and the company would never get published.
         var serverCast = rows.filter(function (x) { return (x.kind || 'cast') === 'cast'; }).length;
+        var marker = rows.filter(function (x) { return x.person_id === SEED_KEY; })[0];
+        var seenVersion = marker ? (marker.sort || 0) : 0;
+
         if (rows.length) {
           roster = rows.map(function (x) {
             return { person_id: x.person_id, name: x.name || '', role: x.role || '',
                      kind: x.kind || 'cast', sort: x.sort == null ? 100 : x.sort };
           });
         }
-        // Empty store, or one with staff but no students: publish the company
-        // so nobody has to type nineteen names into a phone. Only when the
-        // server has NO students at all, so a name someone deliberately
-        // removed cannot come back.
-        if (!serverCast) {
-          var seed = seedRoster();
+
+        // Two cases publish names:
+        //   - an empty store, or one with staff but no students
+        //   - a store seeded from an older COMPANY list than this build has
+        // The version marker is what makes the second safe. Without it a
+        // top-up would resurrect anyone the team had deliberately removed;
+        // with it, each addition is applied exactly once and a later removal
+        // sticks. Nothing here ever deletes.
+        if (!serverCast || seenVersion < SEED_VERSION) {
           var have = {};
           roster.forEach(function (p) { have[p.person_id] = true; });
-          seed.forEach(function (p) { if (!have[p.person_id]) roster.push(p); });
-          roster.forEach(function (p) { pushRoster(p); });
+          var added = 0;
+          seedRoster().forEach(function (p) {
+            if (!have[p.person_id]) { roster.push(p); pushRoster(p); added++; }
+          });
+          if (!serverCast) roster.forEach(function (p) { pushRoster(p); });
+          pushRoster({ person_id: SEED_KEY, name: 'roster version', role: '',
+                       kind: 'meta', sort: SEED_VERSION });
+          if (added) setSync('Roster updated — ' + added + ' name' + (added === 1 ? '' : 's') + ' added');
         }
       }).catch(function () {}),
       api('reports_list').then(function (rows) {
@@ -438,7 +459,7 @@
   // ---------- attendance ----------
   function attCounts(iso) {
     var c = { present: 0, late: 0, absent: 0, excused: 0, taken: 0 };
-    roster.forEach(function (p) {
+    people().forEach(function (p) {
       var k = iso + '|' + p.person_id;
       if (att[k]) { c.taken++; c[att[k].status] = (c[att[k].status] || 0) + 1; }
       else c.present++;
@@ -447,13 +468,13 @@
   }
   function attendancePanel(d) {
     var iso = d.iso, c = attCounts(iso);
-    var inRoom = roster.length - c.absent - c.excused;
+    var inRoom = people().length - c.absent - c.excused;
     var groups = [['cast', 'Company'], ['crew', 'Crew'], ['staff', 'Creative team']];
     var body = groups.map(function (g) {
-      var people = roster.filter(function (p) { return (p.kind || 'cast') === g[0]; })
+      var group = people().filter(function (p) { return (p.kind || 'cast') === g[0]; })
         .sort(function (x, y) { return (x.sort || 100) - (y.sort || 100); });
-      if (!people.length) return '';
-      return '<div class="at-grp">' + esc(g[1]) + '</div>' + people.map(function (p) {
+      if (!group.length) return '';
+      return '<div class="at-grp">' + esc(g[1]) + '</div>' + group.map(function (p) {
         var a = attOf(iso, p.person_id), L = attLabel(a.status);
         return '<div class="at-row' + (a.status !== 'present' ? ' flag' : '') + '">' +
           '<button class="at-st s-' + a.status + '" data-att="' + esc(p.person_id) + '" ' +
@@ -470,7 +491,7 @@
       }).join('') + '</div>';
     }).join('');
     return '<details class="at"' + (c.absent || c.late ? ' open' : '') + '>' +
-      '<summary>Attendance <b>' + inRoom + '/' + roster.length + ' in</b>' +
+      '<summary>Attendance <b>' + inRoom + '/' + people().length + ' in</b>' +
       (c.absent ? '<span class="at-pill out">' + c.absent + ' out</span>' : '') +
       (c.late ? '<span class="at-pill late">' + c.late + ' late</span>' : '') +
       (!c.taken ? '<span class="at-pill todo">not taken</span>' : '') + '</summary>' +
@@ -534,7 +555,7 @@
     var t = tasksOf(d), n = doneCount(d);
     var completed = t.filter(function (b) { return done[b.id]; })
       .map(function (b) { return { t: b.t, a: b.a, by: (done[b.id] || {}).by || '' }; });
-    var attendance = roster.map(function (p) {
+    var attendance = people().map(function (p) {
       var a = attOf(d.iso, p.person_id);
       return { name: personName(p), role: p.role || '', status: a.status, note: a.note || '' };
     });
@@ -992,8 +1013,8 @@
         var nm = ($('atNew').value || '').trim();
         if (!nm) return;
         var kind = $('atKind').value || 'cast';
-        var id = kind + '-' + slug(nm) + '-' + (roster.length + 1);
-        var p = { person_id: id, name: nm, role: '', kind: kind, sort: 100 + roster.length };
+        var id = kind + '-' + slug(nm) + '-' + (people().length + 1);
+        var p = { person_id: id, name: nm, role: '', kind: kind, sort: 100 + people().length };
         roster.push(p); saveLocal(); pushRoster(p); renderDay();
         return;
       }
