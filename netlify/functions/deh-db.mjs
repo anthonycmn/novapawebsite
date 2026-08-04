@@ -119,12 +119,16 @@ const BLOBS = {
   items_list: async () => asRows(
     (await readDoc("items")).data,
     (k, v) => ({ item_id: k, status: v.status || "todo", vendor: v.vendor || "", link: v.link || "",
-                 price_cents: v.price_cents || 0, qty: v.qty || 1, updated_by: v.by || "" })
+                 price_cents: v.price_cents || 0, qty: v.qty || 1, updated_by: v.by || "",
+                 updated_at: v.at || null })
   ),
 
+  // `at` is stamped server-side. The rehearsal report asks "what was sourced
+  // today", and a client clock is the wrong thing to answer that with.
   item_set: async (a) => mutate("items", (d) => {
     d[S(a.item_id)] = { status: S(a.status) || "todo", vendor: S(a.vendor), link: S(a.link),
-                        price_cents: I(a.price_cents), qty: I(a.qty) || 1, by: S(a.by) };
+                        price_cents: I(a.price_cents), qty: I(a.qty) || 1, by: S(a.by),
+                        at: new Date().toISOString() };
     return d;
   }),
 

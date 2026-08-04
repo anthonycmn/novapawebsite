@@ -70,6 +70,24 @@ function reportHtml(r) {
           ${byDept[d].map((n) => `<li style="font-size:15px;line-height:1.6;color:#1a1a1a;margin-bottom:5px">${esc(n.body)}${n.author ? ` <span style="color:#8a94a6">— ${esc(n.author)}</span>` : ""}</li>`).join("")}
         </ul>`).join("");
 
+  // CJ wants the day's buy links in the email itself, so purchasing can happen
+  // straight off the report rather than by going back into the dashboard.
+  const STATUS_L = { todo: "To source", sourced: "Sourced", ordered: "Ordered", arrived: "Arrived", done: "Done" };
+  const srcTotal = (r.sourcing || []).reduce((a, x) => a + (x.line_cents || 0), 0);
+  const sourcing = (r.sourcing || []).length
+    ? `<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">` +
+      r.sourcing.map((x) => `
+        <tr>
+          <td style="padding:9px 0;border-bottom:1px solid #eee8dd">
+            <a href="${esc(x.link)}" style="font-size:15px;color:${GOLD};font-weight:600;text-decoration:none">${esc(x.name)}${x.qty > 1 ? ` &times;${x.qty}` : ""}</a>
+            <div style="font-size:12.5px;color:#8a94a6;margin-top:3px">${esc(x.scene || "")}${x.cat ? ` &middot; ${esc(x.cat)}` : ""}${x.vendor ? ` &middot; ${esc(x.vendor)}` : ""}${x.status ? ` &middot; ${esc(STATUS_L[x.status] || x.status)}` : ""}${x.by ? ` &middot; ${esc(x.by)}` : ""}</div>
+            <div style="font-size:12px;color:#b0b6c0;margin-top:3px;word-break:break-all">${esc(x.link)}</div>
+          </td>
+          <td style="padding:9px 0;border-bottom:1px solid #eee8dd;text-align:right;vertical-align:top;white-space:nowrap;font-size:14px;color:#1a1a1a">${x.line_cents ? money(x.line_cents) : `<span style="color:#8a94a6">no price</span>`}</td>
+        </tr>`).join("") + `</table>
+      <p style="margin:10px 0 0;font-size:13px;color:#8a94a6">Every title above is a link to the source. Added today: <b style="color:#1a1a1a">${money(srcTotal)}</b>.</p>`
+    : `<p style="margin:0;color:#8a94a6;font-size:14px">No new buy links today.</p>`;
+
   const completed = (r.completed || []).length
     ? `<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">` +
       r.completed.map((b) => `
@@ -107,6 +125,11 @@ function reportHtml(r) {
       <tr><td style="padding:22px 32px 0">
         <h2 style="margin:0 0 10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:${NAVY};border-bottom:2px solid ${GOLD};padding-bottom:6px">Notes</h2>
         ${notesBlock}
+      </td></tr>
+
+      <tr><td style="padding:22px 32px 0">
+        <h2 style="margin:0 0 10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:${NAVY};border-bottom:2px solid ${GOLD};padding-bottom:6px">Sourced today &mdash; links to buy</h2>
+        ${sourcing}
       </td></tr>
 
       <tr><td style="padding:14px 32px 0">
@@ -147,6 +170,13 @@ function reportText(r) {
   if (!(r.notes || []).length) L.push("  None filed.");
   else (r.notes || []).forEach((n) => L.push(`  [${DEPTS[n.dept] || n.dept}] ${n.body}${n.author ? ` — ${n.author}` : ""}`));
   L.push("");
+  L.push("SOURCED TODAY \u2014 LINKS TO BUY");
+  if (!(r.sourcing || []).length) L.push("  No new buy links today.");
+  else (r.sourcing || []).forEach((x) => {
+    L.push(`  ${x.name}${x.qty > 1 ? ` x${x.qty}` : ""}${x.vendor ? `  [${x.vendor}]` : ""}${x.line_cents ? `  ${money(x.line_cents)}` : ""}${x.by ? `  - ${x.by}` : ""}`);
+    L.push(`      ${x.link}`);
+  });
+  L.push("");
   L.push("COMPLETED TODAY");
   if (!(r.completed || []).length) L.push("  Nothing checked off.");
   else (r.completed || []).forEach((b) => L.push(`  ${b.t}  ${b.a}${b.by ? ` — ${b.by}` : ""}`));
@@ -164,6 +194,7 @@ export default async (req) => {
   r.notes = (r.notes || []).slice(0, 200);
   r.attendance = (r.attendance || []).slice(0, 200);
   r.completed = (r.completed || []).slice(0, 200);
+  r.sourcing = (r.sourcing || []).slice(0, 200);
 
   const user = process.env.SMTP_USER, pass = process.env.SMTP_PASS;
   if (!user || !pass) {
