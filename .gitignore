@@ -1,3 +1,8 @@
-.claude/
+# Local Claude settings stay out of the repo — but skills are project assets,
+# not local settings, and have to be tracked or they die with whatever
+# container created them. Git will not descend into an ignored directory, so
+# this ignores the CONTENTS of .claude rather than the directory itself.
+.claude/*
+!.claude/skills/
 node_modules
 .DS_Store
