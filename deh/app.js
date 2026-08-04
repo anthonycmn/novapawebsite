@@ -784,6 +784,24 @@
     '</div>';
   }
 
+  // The show in order: the standing "whole show" list first, then every scene
+  // as it plays. This is the spine for the prev/next arrows on an open scene.
+  function sceneOrder() {
+    return ['ALL'].concat(S.scenes.map(function (x) { return x.id; }));
+  }
+  function sceneLabel(id) {
+    if (id === 'ALL') return 'Whole show';
+    var s = S.scenes.filter(function (x) { return x.id === id; })[0];
+    return s ? 'Act ' + s.act + ' Sc ' + s.sc : '';
+  }
+  function stepScene(dir) {
+    if (!openScene) return;
+    var order = sceneOrder();
+    var i = order.indexOf(openScene) + dir;
+    if (i < 0 || i >= order.length) return;
+    renderSceneDetail(order[i]);
+  }
+
   function renderSceneDetail(id) {
     var s = id === 'ALL'
       ? { id: 'ALL', act: '', sc: '', loc: 'Looks and units used across the whole show',
@@ -801,8 +819,29 @@
         xs.map(itemRow).join('') + '</div>';
     }).join('');
 
+    // Walk the show without going back to the list every time.
+    var order = sceneOrder();
+    var pos = order.indexOf(id);
+    var prevId = pos > 0 ? order[pos - 1] : null;
+    var nextId = pos > -1 && pos < order.length - 1 ? order[pos + 1] : null;
+    function arrow(target, dir) {
+      if (!target) return '<span class="scstep empty" aria-hidden="true"></span>';
+      var lab = esc(sceneLabel(target));
+      return '<button class="scstep ' + (dir < 0 ? 'prev' : 'next') + '" type="button" ' +
+        'data-goscene="' + esc(target) + '" aria-label="Go to ' + lab + '">' +
+        (dir < 0 ? '<span class="scstep-ar">&larr;</span>' : '') +
+        '<span class="scstep-l">' + lab + '</span>' +
+        (dir > 0 ? '<span class="scstep-ar">&rarr;</span>' : '') +
+        '</button>';
+    }
+
     $('sceneDetail').innerHTML =
-      '<button class="back" id="scBack">&larr; All scenes</button>' +
+      '<div class="scnav">' +
+        arrow(prevId, -1) +
+        '<button class="back" id="scBack" type="button">All scenes</button>' +
+        arrow(nextId, 1) +
+      '</div>' +
+      '<div class="scpos">' + (pos + 1) + ' of ' + order.length + '</div>' +
       '<div class="eyebrow">' + esc(s.when) + '</div>' +
       '<h1>' + esc(title) + '</h1>' +
       '<p class="sub">' + esc(s.loc) + '</p>' +
@@ -811,7 +850,12 @@
         s.cast.map(function (c) { return '<span class="castpill">' + esc(c) + '</span>'; }).join('') + '</div></div>' : '') +
       (s.tech ? '<div class="gap"><b>Watch</b>' + esc(s.tech) + '</div>' : '') +
       '<div class="sc-total"><span>Scene total</span><b>' + money(cost) + '</b></div>' +
-      groups;
+      groups +
+      // finish a scene, carry straight on to the next one
+      (nextId ? '<div class="scnav foot">' +
+        '<button class="scstep next wide" type="button" data-goscene="' + esc(nextId) + '">' +
+        '<span class="scstep-l">Next: ' + esc(sceneLabel(nextId)) + '</span>' +
+        '<span class="scstep-ar">&rarr;</span></button></div>' : '');
     openScene = id;
     document.body.classList.remove('on-day');
     $('v-scenes').classList.remove('on');
@@ -1184,7 +1228,11 @@
         sv.innerHTML = url ? '&#10003;' : 'Save';
         return;
       }
-      if (e.target.id === 'scBack') {
+      // straight to the neighbouring scene, no trip back through the list
+      var go = e.target.closest('[data-goscene]');
+      if (go) { renderSceneDetail(go.dataset.goscene); return; }
+
+      if (e.target.closest('#scBack')) {
         $('v-scene1').classList.remove('on');
         $('v-scenes').classList.add('on');
         openScene = null;
@@ -1192,6 +1240,15 @@
         window.scrollTo({ top: 0 });
       }
     });
+    // arrow keys walk the show on a laptop; ignored while typing in a field
+    document.addEventListener('keydown', function (e) {
+      if (!openScene || e.metaKey || e.ctrlKey || e.altKey) return;
+      var t = e.target, tag = t && t.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); stepScene(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); stepScene(-1); }
+    });
+
     function onEdit(e) {
       var f = e.target.dataset && e.target.dataset.f;
       if (!f) return;
