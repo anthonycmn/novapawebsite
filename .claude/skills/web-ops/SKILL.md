@@ -25,6 +25,25 @@ ToolSearch("browser chrome navigate click page")
 If a browser-control tool exists in the session, use it — drive the task
 directly. Everything below about handoffs only applies when it does not.
 
+**But be precise about what a browser tool would buy you.** Two different things
+get called "the browser", and conflating them wastes everyone's time:
+
+- **The user's Chrome, with the user's logins.** This is what the Claude browser
+  extension drives. It is a *separate Claude session*. It has the cookies. There
+  is no channel from this session to it.
+- **A browser running in this container.** A Playwright or Chrome-DevTools MCP
+  server would give you this. It is a fresh profile with no cookies, so it lands
+  on the login screen of every authenticated service and stops.
+
+So a browser tool on this side does **not** solve "log into Supabase and click
+things". Adding one is worth doing for public-web work — scraping, checking how a
+deployed page renders, filling an unauthenticated form — and worth nothing for
+work that depends on being signed in as the user. Say which of the two is needed
+before anyone goes and installs something.
+
+`WebFetch` exists in most sessions. It reads a public page and fails on anything
+authenticated. Do not offer it as a substitute for dashboard access.
+
 ## Route the work to what can do it
 
 Work down this list. Stop at the first route that can complete the task.
