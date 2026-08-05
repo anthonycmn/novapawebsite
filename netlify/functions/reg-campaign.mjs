@@ -82,6 +82,22 @@ async function svc(path, init = {}) {
   return t ? JSON.parse(t) : null;
 }
 
+// PostgREST silently caps every response at max-rows (1,000 on this project)
+// no matter how large a `limit=` you pass. That cap is what caused the
+// Aug 4-5 duplicate-send incident: the sent-stamps fetch returned 1,000 of
+// 1,004 rows, so the 4 missing people looked unsent and were re-emailed every
+// tick all night. Any audience-sized read MUST page through to the end.
+async function svcAll(path) {
+  const all = [];
+  for (let offset = 0; ; offset += 1000) {
+    const page = await svc(`${path}&limit=1000&offset=${offset}`);
+    if (!Array.isArray(page)) break;
+    all.push(...page);
+    if (page.length < 1000) break;
+  }
+  return all;
+}
+
 // Team always rides along on every blast (Jason's call — good to see what
 // families see). Suppressions and per-campaign sent-stamps still apply.
 const TEAM = [
@@ -99,10 +115,10 @@ async function audienceFor(campaign) {
   const ccBatch = (campaign.audience || "").match(/^cc_batch_(\d+)$/);
   if (ccBatch) {
     const [contacts, orders, supp, sent] = await Promise.all([
-      svc(`cc_contacts?batch=eq.${ccBatch[1]}&select=email,first_name&limit=10000`),
-      svc("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&limit=10000"),
-      svc("email_suppressions?scope=eq.marketing&select=email&limit=10000"),
-      svc(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&limit=20000`),
+      svcAll(`cc_contacts?batch=eq.${ccBatch[1]}&select=email,first_name&order=email`),
+      svcAll("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&order=created_at"),
+      svcAll("email_suppressions?scope=eq.marketing&select=email&order=email"),
+      svcAll(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&order=email`),
     ]);
     const out = new Set([
       ...orders.map((o) => (o.email || "").toLowerCase()),
@@ -117,10 +133,10 @@ async function audienceFor(campaign) {
   }
   // non_buyers_2027: every known family without a paid 2026-27 web order
   const [fams, orders, supp, sent] = await Promise.all([
-    svc("families?select=email,parent_name&limit=10000"),
-    svc("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&limit=10000"),
-    svc("email_suppressions?scope=eq.marketing&select=email&limit=10000"),
-    svc(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&limit=20000`),
+    svcAll("families?select=email,parent_name&order=email"),
+    svcAll("orders?status=in.(paid,confirmed,complete,succeeded)&select=email&order=created_at"),
+    svcAll("email_suppressions?scope=eq.marketing&select=email&order=email"),
+    svcAll(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&order=email`),
   ]);
   const buyers = new Set(orders.map((o) => (o.email || "").toLowerCase()));
   const out = new Set([...supp.map((s) => s.email.toLowerCase()), ...sent.map((s) => s.email.toLowerCase())]);
