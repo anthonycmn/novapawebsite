@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My NOVAPA</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --navy0:#08111F; --navy1:#0F1E36; --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+    --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
+    --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45); --danger:#E8654B;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%);
+    min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:40px 20px;
+  }
+  .wrap { width:100%; max-width:560px; }
+  .brand {
+    font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.18em; font-size:12px;
+    color:var(--gold2); text-align:center; margin-bottom:18px;
+  }
+  h1 {
+    font-family:'Cormorant Garamond',serif; font-weight:700; font-size:32px;
+    color:#fff; text-align:center; margin-bottom:6px;
+  }
+  h1 em { font-style:italic; color:var(--gold3); }
+  .sub { text-align:center; color:var(--ink-dim); font-size:15px; margin-bottom:26px; }
+  .card {
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:26px; margin-bottom:16px;
+  }
+  input {
+    width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-family:inherit; font-size:16px; outline:none;
+  }
+  input:focus { border-color:var(--gold); }
+  button {
+    width:100%; margin-top:12px; padding:14px 20px; border:0; border-radius:12px;
+    background:linear-gradient(180deg, var(--gold2), var(--gold));
+    color:#1a1206; font-family:inherit; font-weight:700; font-size:16px; cursor:pointer;
+  }
+  button:disabled { opacity:0.6; cursor:default; }
+  .err { color:var(--danger); font-size:13.5px; margin-top:10px; min-height:17px; }
+  .camper {
+    font-family:'Cormorant Garamond',serif; font-weight:700; font-size:24px; color:var(--gold3);
+    margin-bottom:12px;
+  }
+  .item { padding:13px 0; border-top:1px solid var(--line); }
+  .item:first-of-type { border-top:0; padding-top:0; }
+  .item b { display:block; font-size:15.5px; color:#fff; font-weight:500; }
+  .item span { font-size:13.5px; color:var(--ink-dim); }
+  .foot { text-align:center; font-size:13.5px; color:var(--ink-dim); margin-top:20px; line-height:1.7; }
+  .foot a { color:var(--gold2); }
+  .signout { background:none; border:0; color:var(--ink-dim); font-size:13px; width:auto; margin:14px auto 0; display:block; text-decoration:underline; cursor:pointer; padding:0; }
+  .empty { text-align:center; color:var(--ink-dim); padding:10px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">NOVAPA</div>
+  <h1>My <em>NOVAPA</em></h1>
+  <p class="sub" id="subLine">Everything your family is registered for.</p>
+
+  <!-- Sign in -->
+  <div class="card" id="authCard" style="display:none">
+    <div id="emailStep">
+      <input type="email" id="email" placeholder="Email address" autocomplete="email">
+      <button id="sendBtn">EMAIL ME A SIGN-IN CODE</button>
+    </div>
+    <div id="codeStep" style="display:none">
+      <input inputmode="numeric" id="code" placeholder="6-digit code" maxlength="6" style="letter-spacing:0.3em;text-align:center">
+      <button id="verifyBtn">SIGN IN</button>
+    </div>
+    <div class="err" id="authErr"></div>
+  </div>
+
+  <!-- Registrations -->
+  <div id="list"></div>
+
+  <p class="foot" id="foot" style="display:none">
+    Something missing or look wrong? Email <a href="mailto:info@novapa.org">info@novapa.org</a> and we'll fix it fast.<br>
+    <a href="/register/">Register for something new</a>
+  </p>
+  <button class="signout" id="signout" style="display:none">Sign out</button>
+</div>
+
+<script>
+  var sb = window.supabase.createClient(window.NOVAPA_CONFIG.SUPABASE_URL, window.NOVAPA_CONFIG.SUPABASE_ANON_KEY);
+  var $ = function(id){ return document.getElementById(id); };
+
+  function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+  function load(token) {
+    $('authCard').style.display = 'none';
+    $('list').innerHTML = '<div class="card"><div class="empty">Loading your registrations…</div></div>';
+    fetch('/api/reg-account', { method:'POST', headers:{ Authorization: 'Bearer ' + token } })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.error) { showAuth(d.error); return; }
+        $('subLine').textContent = d.family.parent_name
+          ? 'Everything registered under ' + d.family.parent_name + "'s account."
+          : 'Everything registered under ' + d.family.email + '.';
+        if (!d.campers.length) {
+          $('list').innerHTML = '<div class="card"><div class="empty">No registrations found under this email yet.</div></div>';
+        } else {
+          $('list').innerHTML = d.campers.map(function(c){
+            return '<div class="card"><div class="camper">' + esc(c.name) + '</div>' +
+              c.items.map(function(it){
+                return '<div class="item"><b>' + esc(it.title) + '</b>' +
+                  (it.dates ? '<span>' + esc(it.dates) + '</span>' : '') + '</div>';
+              }).join('') + '</div>';
+          }).join('');
+        }
+        $('foot').style.display = 'block';
+        $('signout').style.display = 'block';
+      })
+      .catch(function(){ showAuth('Network hiccup, try again.'); });
+  }
+
+  function showAuth(msg) {
+    $('list').innerHTML = '';
+    $('authCard').style.display = 'block';
+    $('authErr').textContent = msg && msg !== 'sign in required' ? msg : '';
+  }
+
+  $('sendBtn').onclick = function(){
+    var email = $('email').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('authErr').textContent = 'Enter a valid email.'; return; }
+    var b = this; b.disabled = true; b.textContent = 'SENDING…';
+    sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } }).then(function(res){
+      b.disabled = false; b.textContent = 'EMAIL ME A SIGN-IN CODE';
+      if (res.error) { $('authErr').textContent = res.error.message; return; }
+      $('authErr').textContent = '';
+      $('emailStep').style.display = 'none';
+      $('codeStep').style.display = 'block';
+      $('code').focus();
+    });
+  };
+
+  $('verifyBtn').onclick = function(){
+    var email = $('email').value.trim().toLowerCase();
+    var code = $('code').value.trim();
+    var b = this; b.disabled = true; b.textContent = 'CHECKING…';
+    sb.auth.verifyOtp({ email: email, token: code, type: 'email' }).then(function(res){
+      b.disabled = false; b.textContent = 'SIGN IN';
+      if (res.error || !res.data.session) { $('authErr').textContent = 'That code didn\'t work. Double check it or request a new one.'; return; }
+      load(res.data.session.access_token);
+    });
+  };
+
+  $('signout').onclick = function(){
+    sb.auth.signOut().then(function(){ location.reload(); });
+  };
+
+  sb.auth.getSession().then(function(res){
+    var s = res.data && res.data.session;
+    if (s) load(s.access_token); else showAuth();
+  });
+</script>
+</body>
+</html>
