@@ -27,15 +27,26 @@ const fmtDate = (iso) => {
 
 export default async (req) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
-  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (!token) return Response.json({ error: "sign in required" }, { status: 401 });
 
-  const who = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: { apikey: ANON_KEY, Authorization: `Bearer ${token}` },
-  });
-  if (!who.ok) return Response.json({ error: "sign in required" }, { status: 401 });
-  const email = ((await who.json()).email || "").toLowerCase();
-  if (!email) return Response.json({ error: "sign in required" }, { status: 401 });
+  // Two ways in: the family's private portal token (the link in their
+  // emails — zero friction), or a Supabase session (OTP fallback).
+  let email = "";
+  let body = {};
+  try { body = await req.json(); } catch {}
+  if (body.portal_token && /^[0-9a-f-]{36}$/.test(body.portal_token)) {
+    const fams = await svc(`families?select=email&portal_token=eq.${body.portal_token}&limit=1`);
+    email = (fams[0]?.email || "").toLowerCase();
+    if (!email) return Response.json({ error: "link not recognized" }, { status: 401 });
+  } else {
+    const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+    if (!token) return Response.json({ error: "sign in required" }, { status: 401 });
+    const who = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${token}` },
+    });
+    if (!who.ok) return Response.json({ error: "sign in required" }, { status: 401 });
+    email = ((await who.json()).email || "").toLowerCase();
+    if (!email) return Response.json({ error: "sign in required" }, { status: 401 });
+  }
 
   try {
     const fam = (await svc(`families?select=id,parent_name,email&email=eq.${encodeURIComponent(email)}&limit=1`))[0] || null;

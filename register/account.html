@@ -98,10 +98,14 @@
 
   function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
-  function load(token) {
+  function load(token, portalToken) {
     $('authCard').style.display = 'none';
     $('list').innerHTML = '<div class="card"><div class="empty">Loading your registrations…</div></div>';
-    fetch('/api/reg-account', { method:'POST', headers:{ Authorization: 'Bearer ' + token } })
+    fetch('/api/reg-account', {
+      method:'POST',
+      headers: portalToken ? { 'Content-Type':'application/json' } : { Authorization: 'Bearer ' + token },
+      body: portalToken ? JSON.stringify({ portal_token: portalToken }) : undefined
+    })
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (d.error) { showAuth(d.error); return; }
@@ -164,10 +168,16 @@
     sb.auth.signOut().then(function(){ location.reload(); });
   };
 
-  sb.auth.getSession().then(function(res){
-    var s = res.data && res.data.session;
-    if (s) load(s.access_token); else showAuth();
-  });
+  var portalToken = new URLSearchParams(location.search).get('t');
+  if (portalToken) {
+    load(null, portalToken);
+    $('signout').style.display = 'none';
+  } else {
+    sb.auth.getSession().then(function(res){
+      var s = res.data && res.data.session;
+      if (s) load(s.access_token); else showAuth();
+    });
+  }
 </script>
 </body>
 </html>
