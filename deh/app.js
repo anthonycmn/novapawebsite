@@ -19,6 +19,14 @@
   // Who can sign a block off. Anyone not listed picks "Someone else" and types.
   var STAFF = ['Danielle', 'Shelby', 'Ryyana', 'Colton', 'Tony', 'Stage Manager'];
 
+  // Where the two outgoing emails land. These are printed on the buttons so
+  // nobody sends one without knowing who reads it. The addresses themselves
+  // are fixed inside netlify/functions/deh-report.mjs — this page only names
+  // them, it cannot choose them.
+  var REPORT_TO = ['colton@novapa.org', 'ryyana@novapa.org', 'katieh@novapa.org', 'cj@novapa.org'];
+  var REPORT_WHO = 'Colton, Ryyana, Katie and CJ';
+  var BUY_TO = 'todd@novapa.org';
+
   // Attendance states, in the order a tap cycles through them.
   var ATT = [
     { k: 'present', l: 'In',      s: '✓' },
@@ -36,15 +44,37 @@
   }
 
   // Departments a note can be filed against, the way a stage manager files to
-  // each design head. Keys match db/deh-progress.sql and deh-report.mjs.
+  // each design head. Keys match db/deh-progress.sql and deh-report.mjs, and
+  // this order is the order the report prints them in.
+  //
+  // The design departments were one line each ("Costume / H&M", "Set / LX /
+  // Sound") until CJ asked for them separately — a note for the wig head
+  // should not have to be read out of a paragraph addressed to costumes.
   var DEPTS = [
-    { k: 'general', l: 'General' }, { k: 'stage', l: 'Stage' }, { k: 'music', l: 'Music' },
-    { k: 'costume', l: 'Costume / H&M' }, { k: 'tech', l: 'Set / LX / Sound' },
-    { k: 'props', l: 'Props' }, { k: 'safety', l: 'Safety' }
+    { k: 'general',    l: 'General' },
+    { k: 'stage',      l: 'Stage' },
+    { k: 'music',      l: 'Music' },
+    { k: 'scenic',     l: 'Scenic' },
+    { k: 'lighting',   l: 'Lighting' },
+    { k: 'sound',      l: 'Sound' },
+    { k: 'projection', l: 'Projection' },
+    { k: 'sfx',        l: 'Special FX' },
+    { k: 'props',      l: 'Props' },
+    { k: 'costume',    l: 'Costumes' },
+    { k: 'hair',       l: 'Hair & Make-Up' },
+    { k: 'wigs',       l: 'Wigs' },
+    { k: 'safety',     l: 'Safety' }
   ];
+  // Notes filed before the split still carry this key. It is not offered in
+  // the picker any more, but it has to keep rendering with a name on it.
+  var DEPTS_OLD = { tech: 'Set / LX / Sound' };
   function deptLabel(k) {
     for (var i = 0; i < DEPTS.length; i++) if (DEPTS[i].k === k) return DEPTS[i].l;
-    return k;
+    return DEPTS_OLD[k] || k;
+  }
+  function deptRank(k) {
+    for (var i = 0; i < DEPTS.length; i++) if (DEPTS[i].k === k) return i;
+    return DEPTS.length;   // anything retired sorts to the end
   }
 
   var done = {}, item = {};
@@ -101,7 +131,16 @@
 
   function gateWord() { try { return localStorage.getItem(LS_GATE) || ''; } catch (e) { return ''; } }
   function $(id) { return document.getElementById(id); }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  // textContent -> innerHTML escapes &, < and >, but NOT quotes — and nearly
+  // every use of this lands inside an attribute. A pasted link is the one
+  // string on this page a person controls character by character, so the
+  // quotes have to go too or a URL can close the attribute it sits in.
+  // Escaping them costs nothing in text: &quot; still renders as ".
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
   function clock(ts) {
     var d = new Date(ts), h = d.getHours(), m = d.getMinutes();
     return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? 'am' : 'pm');
@@ -212,6 +251,7 @@
       api('items_list').then(function (rows) {
         (rows || []).forEach(function (x) {
           item[x.item_id] = { st: x.status || 'todo', src: x.vendor || '', link: x.link || '',
+                              links: x.links || (x.link ? [x.link] : []),
                               price: x.price_cents || 0, qty: x.qty || 1, by: x.updated_by || '',
                               at: x.updated_at || '' };
         });
@@ -306,7 +346,8 @@
     if (!remote) return;
     var s = item[id] || {};
     api('item_set', { item_id: id, status: s.st || 'todo', vendor: s.src || '',
-                      link: s.link || '', price_cents: s.price || 0, qty: s.qty || 1,
+                      link: s.link || '', links: linksOf(s),
+                      price_cents: s.price || 0, qty: s.qty || 1,
                       by: s.by || me || '' })
       .catch(function () { setSync('offline — saved on this phone'); });
   }
@@ -527,7 +568,7 @@
   function reportBar(d) {
     var r = reports[d.iso];
     return '<div class="rep">' +
-      (r ? '<div class="rep-sent">Sent to cj@novapa.org' +
+      (r ? '<div class="rep-sent">Sent to ' + esc(REPORT_WHO) +
             (r.by ? ' by <b>' + esc(r.by) + '</b>' : '') +
             (r.at ? ' &middot; ' + esc(clock(+new Date(r.at))) : '') + '</div>' : '') +
       '<button class="rep-go" id="repSend" type="button">' +
@@ -542,11 +583,11 @@
   function sourcedOn(iso) {
     return S.allItems.filter(function (it) {
       var s = st(it.id);
-      return safeUrl(s.link) && String(s.at || '').slice(0, 10) === iso;
+      return linksOf(s).length && String(s.at || '').slice(0, 10) === iso;
     }).map(function (it) {
-      var s = st(it.id), q = qtyOf(it);
-      return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat,
-               vendor: s.src || '', link: safeUrl(s.link), status: s.st || 'todo',
+      var s = st(it.id), q = qtyOf(it), ls = linksOf(s);
+      return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
+               vendor: s.src || '', link: ls[0], links: ls, status: s.st || 'todo',
                qty: q, price_cents: s.price || 0, line_cents: s.price * q, by: s.by || '' };
     });
   }
@@ -567,7 +608,11 @@
       showDone: all.filter(function (b) { return done[b.id]; }).length, showTotal: all.length,
       spentCents: spentTotal(), budgetCents: BUDGET_TOTAL, outstandingCents: outstandingTotal(),
       attendance: attendance,
-      notes: notesOf(d.iso).map(function (x) { return { dept: x.dept, body: x.body, author: x.author || '' }; }),
+      // Sorted the way the departments are listed, so the report reads down
+      // the design table rather than in the order notes happened to be typed.
+      notes: notesOf(d.iso).slice()
+        .sort(function (a, b) { return deptRank(a.dept) - deptRank(b.dept); })
+        .map(function (x) { return { dept: x.dept, body: x.body, author: x.author || '' }; }),
       completed: completed,
       sourcing: sourcedOn(d.iso)
     };
@@ -616,7 +661,7 @@
         reports[d.iso] = { at: new Date().toISOString(), by: me };
         saveLocal();
         if (remote) {
-          api('report_log', { day: d.iso, by: me, to: 'cj@novapa.org',
+          api('report_log', { day: d.iso, by: me, to: REPORT_TO.join(', '),
                               summary: { done: r.blocksDone, of: r.blocksTotal } })
             .catch(function () {});
         }
@@ -625,7 +670,7 @@
       .catch(function (e) {
         btn.disabled = false;
         note.innerHTML = 'Could not send &mdash; ' + esc(String(e.message || e)) +
-          '. <a href="#" id="repCopy">Copy the report</a> and email it to cj@novapa.org.';
+          '. <a href="#" id="repCopy">Copy the report</a> and email it to ' + esc(REPORT_WHO) + '.';
         var c = $('repCopy');
         if (c) c.addEventListener('click', function (ev) {
           ev.preventDefault();
@@ -633,8 +678,10 @@
         });
       });
   }
-  function copyText(txt, noteEl) {
-    function done() { if (noteEl) noteEl.textContent = 'Copied. Paste it into an email to cj@novapa.org.'; }
+  function copyText(txt, noteEl, where) {
+    function done() {
+      if (noteEl) noteEl.textContent = 'Copied. Paste it into an email to ' + (where || REPORT_WHO) + '.';
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(done, function () { fallback(); });
     } else fallback();
@@ -705,8 +752,36 @@
 
   // ---------- scene breakdown + sourcing ----------
   function st(id) {
-    return item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
+    return item[id] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
   }
+
+  // One costume rarely comes from one page: a look is a top from one shop, a
+  // pair of shoes from another and a jacket off Marketplace. Everything below
+  // reads links through here, so an item saved back when there was a single
+  // `link` field keeps working with no migration.
+  var MAX_LINKS = 12;
+  function linksOf(s) {
+    var raw = (s && s.links && s.links.length) ? s.links : (s && s.link ? [s.link] : []);
+    var out = [];
+    for (var i = 0; i < raw.length && out.length < MAX_LINKS; i++) {
+      var u = safeUrl(raw[i]);
+      if (u && out.indexOf(u) < 0) out.push(u);
+    }
+    return out;
+  }
+  function itemLinks(id) { return linksOf(st(id)); }
+  // `link` stays in step with the head of the list so anything still reading
+  // the old single field — the store, the SQL column — sees the primary one.
+  function setLinks(s, arr) {
+    s.links = arr.slice(0, MAX_LINKS);
+    s.link = s.links[0] || '';
+    return s;
+  }
+  function shortLink(u) {
+    var s = String(u).replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+    return s.length > 46 ? s.slice(0, 44) + '…' : s;
+  }
+
   function qtyOf(it) { var s = st(it.id); return s.qty || it.qty || 1; }
   function lineCost(it) { return st(it.id).price * qtyOf(it); }
   function sceneItems(sc) { return sc.items; }
@@ -747,10 +822,37 @@
     $('scenes').innerHTML = head + standing + list;
   }
 
+  // Saved links, then one empty field to add another. Deleting is keyed on the
+  // URL rather than its position: two people sourcing the same look at once
+  // would otherwise delete each other's row by index.
+  function linkBox(id, links) {
+    var rows = links.map(function (u) {
+      return '<li class="lkx">' +
+        '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(shortLink(u)) + '</a>' +
+        '<button class="lkx-x" type="button" data-dellink="' + esc(u) + '" data-lkitem="' + esc(id) + '" ' +
+          'aria-label="Remove this link">&times;</button></li>';
+    }).join('');
+    var full = links.length >= MAX_LINKS;
+    return '<div class="lks' + (links.length ? ' has' : '') + '">' +
+      // With nothing saved yet, "Links" above "Add a link" is two headings
+      // saying the same thing. The count is the only reason to print it.
+      (links.length ? '<div class="lks-h">Links <b>' + links.length + '</b></div>' : '') +
+      (rows ? '<ul class="lks-l">' + rows + '</ul>' : '') +
+      (full
+        ? '<p class="lks-none">That is ' + MAX_LINKS + ' links — remove one before adding another.</p>'
+        : '<label class="lk"><span class="lk-lab">' +
+            (links.length ? 'Add another' : 'Add a link') + '</span>' +
+            '<span class="lk-row">' +
+              '<input data-nl type="url" inputmode="url" placeholder="https://&hellip;">' +
+              '<button class="lk-go" data-addlink type="button" aria-label="Add this link">Add</button>' +
+            '</span></label>') +
+      '</div>';
+  }
+
   function itemRow(it) {
     var s = st(it.id);
     var q = qtyOf(it);
-    var link = safeUrl(s.link);
+    var links = linksOf(s);
     return '<div class="it it-' + esc(s.st) + '" data-item="' + esc(it.id) + '">' +
       '<div class="it-h">' +
         '<span class="it-cat it-' + esc(it.cat) + '">' + esc(CATS[it.cat] || it.cat) + '</span>' +
@@ -765,17 +867,11 @@
           return '<option value="' + x.k + '"' + (s.st === x.k ? ' selected' : '') + '>' + x.l + '</option>';
         }).join('') + '</select></label>' +
         '<label>Where from<input list="vendorList" data-f="src" value="' + esc(s.src) + '" placeholder="Amazon, in stock, build&hellip;"></label>' +
-        '<label class="lk' + (safeUrl(s.link) ? ' saved' : '') + '">Link' +
-          '<span class="lk-row">' +
-            '<input data-f="link" type="url" inputmode="url" value="' + esc(s.link) + '" placeholder="https://&hellip;">' +
-            '<button class="lk-go" data-savelink type="button" aria-label="Save this link">' +
-              (safeUrl(s.link) ? '&#10003;' : 'Save') + '</button>' +
-          '</span></label>' +
         '<label>Unit price<input data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' +
           (s.price ? (s.price / 100).toFixed(2) : '') + '" placeholder="0.00"></label>' +
         '<label>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"></label>' +
       '</div>' +
-      (link ? '<a class="it-link" href="' + esc(link) + '" target="_blank" rel="noopener">Open the source &rarr;</a>' : '') +
+      linkBox(it.id, links) +
       '<div class="it-foot">' +
         '<button class="it-save" data-saveitem type="button">Save this item</button>' +
         (s.by ? '<span class="it-by">Last touched by <b>' + esc(s.by) + '</b>' +
@@ -908,20 +1004,26 @@
     var body = vendors.map(function (v) {
       var list = byVendor[v];
       var sub = list.reduce(function (a, it) { return a + lineCost(it); }, 0);
-      var links = list.map(function (it) { return safeUrl(st(it.id).link); }).filter(Boolean);
+      var links = list.reduce(function (a, it) { return a.concat(itemLinks(it.id)); }, []);
       return '<div class="ven">' +
         '<div class="ven-h"><b>' + esc(v) + '</b><span>' + list.length + ' item' +
           (list.length === 1 ? '' : 's') + ' &middot; ' + money(sub) + '</span></div>' +
         list.map(function (it) {
-          var s = st(it.id), q = qtyOf(it), href = safeUrl(s.link);
+          var s = st(it.id), q = qtyOf(it), ls = linksOf(s);
           return '<div class="ven-i">' +
             '<button class="ven-tick" data-buytick="' + esc(it.id) + '" ' +
               'aria-label="Mark ' + esc(it.name) + ' arrived">&#10003;</button>' +
-            '<div class="ven-t">' + (href
-              ? '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(it.name) + '</a>'
+            '<div class="ven-t">' + (ls.length
+              ? '<a href="' + esc(ls[0]) + '" target="_blank" rel="noopener">' + esc(it.name) + '</a>'
               : esc(it.name)) +
               '<span class="ven-s">' + esc(it.scene) + ' &middot; ' + esc(CATS[it.cat] || it.cat) +
-              (q > 1 ? ' &middot; &times;' + q : '') + '</span></div>' +
+              (q > 1 ? ' &middot; &times;' + q : '') + '</span>' +
+              // Everything after the first link, so a look built from three
+              // shops can be bought in one pass without opening the item.
+              (ls.length > 1 ? '<span class="ven-more">' + ls.slice(1).map(function (u, i) {
+                return '<a href="' + esc(u) + '" target="_blank" rel="noopener">Link ' + (i + 2) + '</a>';
+              }).join('') + '</span>' : '') +
+            '</div>' +
             '<span class="ven-c">' + (s.price ? money(s.price * q) : '<i>no price</i>') + '</span></div>';
         }).join('') +
         (links.length ? '<button class="ven-open" data-openall="' + esc(v) + '" type="button">Open ' +
@@ -929,9 +1031,82 @@
         '</div>';
     }).join('');
 
+    var toBuy = buyLinkList();
+    var linked = toBuy.items.length;
+
     $('buy').innerHTML = head +
-      '<div class="buy-acts"><button class="btn" id="buyCopy" type="button">Copy the whole list</button>' +
-      '<span class="buy-hint">Tick an item when it arrives.</span></div>' + body;
+      '<div class="buy-acts">' +
+        '<button class="buy-send" id="buySend" type="button"' + (linked ? '' : ' disabled') + '>' +
+          'Send links to Todd to buy</button>' +
+        '<button class="btn buy-copy" id="buyCopy" type="button">Copy the whole list</button>' +
+        '<span class="buy-hint">' + (linked
+          ? linked + ' item' + (linked === 1 ? '' : 's') + ' with links, ' + money(toBuy.totalCents) +
+            ', straight to ' + esc(BUY_TO) + '.' +
+            (toBuy.missing ? ' ' + toBuy.missing + ' still ' + (toBuy.missing === 1 ? 'has' : 'have') +
+              ' no link — those are listed too, marked.' : '')
+          : 'Nothing has a link yet. Add links on an item and this sends them to ' + esc(BUY_TO) + '.') +
+        '</span>' +
+        '<div class="buy-note" id="buyNote"></div>' +
+      '</div>' + body;
+  }
+
+  // What goes to Todd: everything still outstanding, links and all. Items with
+  // no link ride along at the bottom so he can see the list is not finished
+  // rather than buying two thirds of a show and assuming that was all of it.
+  function buyLinkList() {
+    var open = S.allItems.filter(function (it) {
+      var k = st(it.id).st; return k !== 'done' && k !== 'arrived';
+    });
+    var items = [], missing = 0, total = 0;
+    open.forEach(function (it) {
+      var s = st(it.id), ls = linksOf(s), q = qtyOf(it);
+      if (!ls.length) { missing++; return; }
+      total += (s.price || 0) * q;
+      items.push({ name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
+                   vendor: s.src || '', links: ls, status: s.st || 'todo', qty: q,
+                   price_cents: s.price || 0, line_cents: (s.price || 0) * q, by: s.by || '' });
+    });
+    var unlinked = open.filter(function (it) { return !linksOf(st(it.id)).length; })
+      .map(function (it) {
+        return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat,
+                 vendor: st(it.id).src || '', qty: qtyOf(it) };
+      });
+    return { items: items, unlinked: unlinked, missing: missing, totalCents: total };
+  }
+
+  function sendBuyList() {
+    var note = $('buyNote'), btn = $('buySend');
+    var d = D.days[cur];
+    var list = buyLinkList();
+    if (!list.items.length) { note.textContent = 'Nothing to send — no item has a link yet.'; return; }
+    var n = list.items.reduce(function (a, x) { return a + x.links.length; }, 0);
+    if (!window.confirm('Email ' + n + ' link' + (n === 1 ? '' : 's') + ' across ' +
+        list.items.length + ' item' + (list.items.length === 1 ? '' : 's') + ' to ' + BUY_TO + '?')) return;
+    btn.disabled = true; note.textContent = 'Sending…';
+    fetch('/api/deh-report', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'buy', dayLabel: (d && d.date) || 'Today', by: me || 'staff', at: clock(Date.now()),
+        items: list.items, unlinked: list.unlinked, missing: list.missing,
+        totalCents: list.totalCents, budgetCents: BUDGET_TOTAL, spentCents: spentTotal()
+      })
+    }).then(function (res) { return res.json().catch(function () { return { ok: res.ok }; }); })
+      .then(function (j) {
+        btn.disabled = false;
+        if (!j || !j.ok) throw new Error((j && j.error) || 'send failed');
+        note.textContent = 'Sent to ' + BUY_TO + ' — ' + n + ' link' + (n === 1 ? '' : 's') +
+                           ', ' + money(list.totalCents) + '.';
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        note.innerHTML = 'Could not send &mdash; ' + esc(String(e.message || e)) +
+          '. <a href="#" id="buyCopy2">Copy the list</a> and email it to ' + esc(BUY_TO) + '.';
+        var c = $('buyCopy2');
+        if (c) c.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          copyText(buyListText(), note, BUY_TO);
+        });
+      });
   }
   function buyListText() {
     var open = S.allItems.filter(function (it) {
@@ -951,7 +1126,7 @@
         L.push('  - ' + it.name + (q > 1 ? ' x' + q : '') + '  ' +
                (s.price ? money(s.price * q) : 'no price') +
                '   [' + it.scene + ' / ' + (CATS[it.cat] || it.cat) + ']' +
-               (safeUrl(s.link) ? '\n      ' + s.link : ''));
+               linksOf(s).map(function (u) { return '\n      ' + u; }).join(''));
       });
       L.push('');
     });
@@ -1116,6 +1291,7 @@
     });
 
     $('buy').addEventListener('click', function (e) {
+      if (e.target.id === 'buySend') { sendBuyList(); return; }
       if (e.target.id === 'buyCopy') {
         copyText(buyListText(), null);
         e.target.textContent = 'Copied';
@@ -1129,8 +1305,7 @@
           var s = st(it.id);
           if (s.st === 'done' || s.st === 'arrived') return;
           if (((s.src || '').trim() || 'Not sourced yet') !== v) return;
-          var u = safeUrl(s.link);
-          if (u) window.open(u, '_blank', 'noopener');
+          linksOf(s).forEach(function (u) { window.open(u, '_blank', 'noopener'); });
         });
         return;
       }
@@ -1162,8 +1337,7 @@
       if (si) {
         var ibox = si.closest('[data-item]');
         var iid = ibox.dataset.item;
-        var cur2 = item[iid] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
-        var badUrl = false;
+        var cur2 = item[iid] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
         ibox.querySelectorAll('[data-f]').forEach(function (el) {
           var g = el.dataset.f;
           if (g === 'price') {
@@ -1172,20 +1346,24 @@
           } else if (g === 'qty') {
             var qv = parseInt(el.value, 10);
             cur2.qty = isFinite(qv) && qv > 0 ? qv : 1;
-          } else if (g === 'link') {
-            var raw2 = el.value.trim();
-            if (raw2 && !safeUrl(raw2)) { badUrl = true; return; }
-            cur2.link = raw2;
           } else {
             cur2[g] = el.value;
           }
         });
-        if (badUrl) {
-          var lk = ibox.querySelector('.lk');
-          if (lk) { lk.classList.add('bad'); setTimeout(function () { lk.classList.remove('bad'); }, 1600); }
-          si.textContent = 'Check the link';
-          setTimeout(function () { si.textContent = 'Save this item'; }, 1600);
-          return;
+        // A link typed but not added yet would otherwise be lost by the
+        // re-render this save triggers. Take it along.
+        var pending = ibox.querySelector('[data-nl]');
+        if (pending && pending.value.trim()) {
+          var pu = safeUrl(pending.value);
+          if (!pu) {
+            var lk = ibox.querySelector('.lk');
+            if (lk) { lk.classList.add('bad'); setTimeout(function () { lk.classList.remove('bad'); }, 1600); }
+            si.textContent = 'Check the link';
+            setTimeout(function () { si.textContent = 'Save this item'; }, 1600);
+            return;
+          }
+          setLinks(cur2, linksOf(cur2).concat([pu]));
+          pending.value = '';
         }
         cur2.by = me || cur2.by || '';
         cur2.at = new Date().toISOString();
@@ -1193,12 +1371,8 @@
         saveLocal(); pushItem(iid);
         ibox.classList.add('just-saved');
         si.textContent = 'Saved \u2713';
-        var lk2 = ibox.querySelector('.lk');
-        if (lk2) {
-          lk2.classList.toggle('saved', !!safeUrl(cur2.link));
-          var g2 = lk2.querySelector('.lk-go');
-          if (g2) g2.innerHTML = safeUrl(cur2.link) ? '&#10003;' : 'Save';
-        }
+        var lkbox = ibox.querySelector('.lks');
+        if (lkbox) lkbox.outerHTML = linkBox(iid, itemLinks(iid));
         var costCell = ibox.querySelector('.it-cost');
         var itObj = S.allItems.filter(function (x) { return x.id === iid; })[0];
         if (costCell && itObj) costCell.textContent = money(lineCost(itObj));
@@ -1210,22 +1384,24 @@
         return;
       }
 
-      // Explicit save for a pasted link. The field still commits on blur, but
-      // on a phone "blur" is ambiguous — people paste and expect a button.
-      var sv = e.target.closest('[data-savelink]');
-      if (sv) {
-        var box = sv.closest('[data-item]');
-        var input = box.querySelector('[data-f="link"]');
-        var lab = sv.closest('.lk');
-        var url = safeUrl(input.value);
-        if (!url && input.value.trim()) {
-          lab.classList.add('bad');
-          setTimeout(function () { lab.classList.remove('bad'); }, 1600);
-          return;
-        }
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        lab.classList.toggle('saved', !!url);
-        sv.innerHTML = url ? '&#10003;' : 'Save';
+      // Add a link to the list. There is no "blur to commit" here on purpose:
+      // with several links per item, a field that silently swallows what was
+      // typed is worse than one that waits for the button.
+      var sv = e.target.closest('[data-addlink]');
+      if (sv) { addLinkFrom(sv.closest('[data-item]')); return; }
+
+      var dl = e.target.closest('[data-dellink]');
+      if (dl) {
+        var lid = dl.dataset.lkitem, gone = dl.dataset.dellink;
+        var s3 = item[lid] || st(lid);
+        setLinks(s3, linksOf(s3).filter(function (u) { return u !== gone; }));
+        s3.by = me || s3.by || '';
+        s3.at = new Date().toISOString();
+        item[lid] = s3;
+        saveLocal(); pushItem(lid);
+        var lbox = dl.closest('.lks');
+        if (lbox) lbox.outerHTML = linkBox(lid, itemLinks(lid));
+        renderBuy();
         return;
       }
       // straight to the neighbouring scene, no trip back through the list
@@ -1249,33 +1425,54 @@
       else if (e.key === 'ArrowLeft') { e.preventDefault(); stepScene(-1); }
     });
 
+    // Take whatever is in a card's "add a link" field and put it on the item.
+    // Called by the Add button, by Enter, and by blurring the field, so there
+    // is no way to type a link and have it quietly disappear.
+    function addLinkFrom(box) {
+      if (!box) return false;
+      var input = box.querySelector('[data-nl]');
+      if (!input) return false;
+      var raw = input.value.trim();
+      var lab = input.closest('.lk');
+      if (!raw) return false;
+      var url = safeUrl(raw);
+      if (!url) {
+        if (lab) {
+          lab.classList.add('bad');
+          setTimeout(function () { lab.classList.remove('bad'); }, 1600);
+        }
+        return false;
+      }
+      var id = box.dataset.item;
+      var s = item[id] || st(id);
+      var have = linksOf(s);
+      if (have.indexOf(url) < 0) setLinks(s, have.concat([url]));
+      s.by = me || s.by || '';
+      s.at = new Date().toISOString();
+      item[id] = s;
+      input.value = '';
+      saveLocal(); pushItem(id);
+      var lbox = box.querySelector('.lks');
+      if (lbox) lbox.outerHTML = linkBox(id, itemLinks(id));
+      var again = box.querySelector('[data-nl]');
+      if (again) again.focus();
+      renderBuy();
+      return true;
+    }
+
     function onEdit(e) {
       var f = e.target.dataset && e.target.dataset.f;
       if (!f) return;
       var box = e.target.closest('[data-item]');
       if (!box) return;
       var id = box.dataset.item;
-      var s = item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
+      var s = item[id] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
       if (f === 'price') {
         var v = parseFloat(e.target.value);
         s.price = isFinite(v) && v >= 0 ? Math.round(v * 100) : 0;
       } else if (f === 'qty') {
         var q = parseInt(e.target.value, 10);
         s.qty = isFinite(q) && q > 0 ? q : 1;
-      } else if (f === 'link') {
-        // Blur commits every other field, but a half-typed or pasted-wrong URL
-        // should not be stored at all. safeUrl already stops it rendering as a
-        // link; this stops it reaching the store and the rehearsal report.
-        var raw = e.target.value.trim();
-        if (raw && !safeUrl(raw)) {
-          var badLab = e.target.closest('.lk');
-          if (badLab) {
-            badLab.classList.add('bad');
-            setTimeout(function () { badLab.classList.remove('bad'); }, 1600);
-          }
-          return;
-        }
-        s.link = raw;
       } else {
         s[f] = e.target.value;
       }
@@ -1309,28 +1506,6 @@
         var cell = box.querySelector('.it-cost');
         if (cell) cell.textContent = money(lineCost(it));
       }
-      // Show or drop the source link as soon as it is entered, in place —
-      // a full re-render here would steal the caret mid-edit.
-      if (f === 'link') {
-        var url = safeUrl(s.link);
-        var lab2 = e.target.closest('.lk');
-        if (lab2) {
-          lab2.classList.toggle('saved', !!url);
-          var btn2 = lab2.querySelector('.lk-go');
-          if (btn2) btn2.innerHTML = url ? '&#10003;' : 'Save';
-        }
-        var a2 = box.querySelector('.it-link');
-        if (url && !a2) {
-          a2 = document.createElement('a');
-          a2.className = 'it-link'; a2.target = '_blank'; a2.rel = 'noopener';
-          a2.textContent = 'Open the source \u2192';
-          box.appendChild(a2);
-        }
-        if (a2) {
-          if (url) a2.setAttribute('href', url);
-          else a2.remove();
-        }
-      }
       var sc = openScene === 'ALL'
         ? { items: S.standing }
         : S.scenes.filter(function (x) { return x.id === openScene; })[0];
@@ -1344,6 +1519,25 @@
     $('sceneDetail').addEventListener('change', onEdit);
     $('sceneDetail').addEventListener('input', function (e) {
       if (e.target.dataset && (e.target.dataset.f === 'price' || e.target.dataset.f === 'qty')) onEdit(e);
+    });
+    // Enter adds the link too. Without this, pressing it inside a lone input
+    // would submit nothing and look like the paste was rejected.
+    $('sceneDetail').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      if (!(e.target.dataset && 'nl' in e.target.dataset)) return;
+      e.preventDefault();
+      addLinkFrom(e.target.closest('[data-item]'));
+    });
+    // And blurring a filled field commits it, so tapping straight from the
+    // link box to Save does not drop what was pasted.
+    $('sceneDetail').addEventListener('focusout', function (e) {
+      if (!(e.target.dataset && 'nl' in e.target.dataset)) return;
+      if (!e.target.value.trim()) return;
+      var box = e.target.closest('[data-item]');
+      // Let a tap on Add or Save run first — both handle the field themselves.
+      setTimeout(function () {
+        if (box && box.isConnected && box.querySelector('[data-nl]')) addLinkFrom(box);
+      }, 180);
     });
 
     document.querySelectorAll('.navbtn').forEach(function (b) {

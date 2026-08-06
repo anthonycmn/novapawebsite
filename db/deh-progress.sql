@@ -55,7 +55,8 @@ create table if not exists deh_items (
   item_id     text primary key,
   status      text not null default 'todo',   -- todo | sourced | ordered | arrived | done
   vendor      text,                           -- Amazon, in stock, build in shop, Marketplace...
-  link        text,
+  link        text,                           -- the primary link; == links[1]
+  links       text[] not null default '{}',   -- a costume look is often three shops
   price_cents int  not null default 0,        -- UNIT price; multiply by qty for the line
   qty         int  not null default 1,
   updated_by  text,
@@ -63,22 +64,37 @@ create table if not exists deh_items (
 );
 alter table deh_items enable row level security;
 
+-- Existing installs: add the column and seed it from the single link already
+-- stored, so nothing sourced before this change loses its source. This has to
+-- run BEFORE deh_item_set is (re)created — a `language sql` body is parsed at
+-- creation time, so a function naming a column that does not exist yet fails
+-- to create at all.
+alter table deh_items add column if not exists links text[] not null default '{}';
+update deh_items set links = array[link]
+  where link is not null and link <> '' and cardinality(links) = 0;
+
 create or replace function public.deh_items_list()
 returns setof deh_items
 language sql stable security definer set search_path = public as $fn$
   select * from deh_items;
 $fn$;
 
+-- Re-running this after the single-link version has to remove that signature
+-- first: `create or replace` with different arguments makes an overload, and
+-- two candidates would make the PostgREST call ambiguous.
+drop function if exists public.deh_item_set(text, text, text, text, int, int, text);
+
 create or replace function public.deh_item_set(
-  p_item_id text, p_status text, p_vendor text, p_link text,
+  p_item_id text, p_status text, p_vendor text, p_link text, p_links text[],
   p_price_cents int, p_qty int, p_by text)
 returns void
 language sql volatile security definer set search_path = public as $fn$
-  insert into deh_items (item_id, status, vendor, link, price_cents, qty, updated_by, updated_at)
+  insert into deh_items (item_id, status, vendor, link, links, price_cents, qty, updated_by, updated_at)
   values (p_item_id,
           coalesce(nullif(trim(p_status), ''), 'todo'),
           nullif(trim(p_vendor), ''),
           nullif(trim(p_link), ''),
+          coalesce(p_links, '{}'),
           greatest(coalesce(p_price_cents, 0), 0),
           greatest(coalesce(p_qty, 1), 1),
           nullif(trim(p_by), ''), now())
@@ -86,6 +102,7 @@ language sql volatile security definer set search_path = public as $fn$
     status      = excluded.status,
     vendor      = excluded.vendor,
     link        = excluded.link,
+    links       = excluded.links,
     price_cents = excluded.price_cents,
     qty         = excluded.qty,
     updated_by  = excluded.updated_by,
@@ -93,7 +110,7 @@ language sql volatile security definer set search_path = public as $fn$
 $fn$;
 
 grant execute on function public.deh_items_list() to anon, authenticated;
-grant execute on function public.deh_item_set(text, text, text, text, int, int, text) to anon, authenticated;
+grant execute on function public.deh_item_set(text, text, text, text, text[], int, int, text) to anon, authenticated;
 
 -- ── Company roster ───────────────────────────────────────────────────────
 -- Who can be marked present. Editable in the dashboard because the cast list
@@ -173,7 +190,10 @@ grant execute on function public.deh_attendance_set(date, text, text, text, text
 create table if not exists deh_notes (
   note_id    text primary key,           -- client-generated, day|dept|counter
   day        date not null,
-  dept       text not null default 'general',  -- general|stage|music|costume|tech|props|safety
+  dept       text not null default 'general',
+  -- general|stage|music|scenic|lighting|sound|projection|sfx|props|costume|
+  -- hair|wigs|safety. 'tech' and the combined 'costume / H&M' predate the
+  -- split into separate design departments and are still read back.
   body       text not null,
   author     text,
   created_at timestamptz not null default now()
