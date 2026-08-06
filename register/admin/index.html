@@ -352,10 +352,12 @@
       if (a.dataset.s === 'cashflow' && !CF) loadCashflow();
       if (a.dataset.s === 'starpages') loadStars();
       if (a.dataset.s === 'referrals') loadRefs();
-      if (a.dataset.s === 'credits' && !CR) {
+      if (a.dataset.s === 'credits') {
         // default the expiry to the end of the current season, which is what
         // Todd has picked every time so far
         if (!$('crExp').value) $('crExp').value = '2027-07-31';
+        // refetch on every visit — codes get minted outside this page too,
+        // and a once-per-load cache made those invisible until a hard refresh
         loadCredits();
       }
     });
