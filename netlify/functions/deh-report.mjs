@@ -270,6 +270,26 @@ export function buyHtml(r) {
       </td></tr>`;
   }).join("");
 
+  // Sent on an earlier email and not yet arrived. Struck through rather than
+  // left out: the older email asking for these is still in Todd's inbox, and
+  // a line he can see and skip is worth more than a line that is not there.
+  const already = (r.already || []).length
+    ? `<tr><td style="padding:22px 32px 0">
+        <h2 style="margin:0 0 10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:${NAVY};border-bottom:2px solid #ddd;padding-bottom:6px">Already sent &mdash; do not buy again</h2>
+        <p style="margin:0 0 10px;font-size:13.5px;color:#8a94a6">These went out on an earlier email and have not been marked arrived. They are here so you can recognise them, not so you can order them.</p>
+        <table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">
+          ${r.already.map((x) => `
+            <tr>
+              <td style="padding:8px 0;border-bottom:1px solid #f2eee6">
+                <span style="font-size:14.5px;color:#9aa2b1;text-decoration:line-through">${esc(x.name)}${x.qty > 1 ? ` &times;${x.qty}` : ""}</span>
+                <div style="font-size:12px;color:#b0b6c0;margin-top:2px">${esc(x.who || "")}${x.who && x.scene ? " &middot; " : ""}${esc(x.scene || "")}${x.vendor ? ` &middot; ${esc(x.vendor)}` : ""}${x.sent ? ` &middot; sent ${esc(String(x.sent).slice(0, 10))}` : ""}${x.sentBy ? ` by ${esc(x.sentBy)}` : ""}</div>
+              </td>
+              <td style="padding:8px 0;border-bottom:1px solid #f2eee6;text-align:right;vertical-align:top;white-space:nowrap;font-size:13px;color:#b0b6c0;text-decoration:line-through">${x.line_cents ? money(x.line_cents) : ""}</td>
+            </tr>`).join("")}
+        </table>
+      </td></tr>`
+    : "";
+
   const unlinked = (r.unlinked || []).length
     ? `<tr><td style="padding:22px 32px 0">
         <h2 style="margin:0 0 10px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:${NAVY};border-bottom:2px solid #ddd;padding-bottom:6px">Still has no link &mdash; not ready to buy</h2>
@@ -299,6 +319,7 @@ export function buyHtml(r) {
       </td></tr>
 
       ${groups}
+      ${already}
       ${unlinked}
 
       <tr><td style="padding:24px 32px 28px">
@@ -331,6 +352,11 @@ export function buyText(r) {
     });
     L.push("");
   });
+  if ((r.already || []).length) {
+    L.push("ALREADY SENT — DO NOT BUY AGAIN");
+    r.already.forEach((x) => L.push(`  x ${x.name}${x.qty > 1 ? ` x${x.qty}` : ""}${x.sent ? `   sent ${String(x.sent).slice(0, 10)}` : ""}${x.sentBy ? ` by ${x.sentBy}` : ""}`));
+    L.push("");
+  }
   if ((r.unlinked || []).length) {
     L.push("STILL HAS NO LINK — NOT READY TO BUY");
     r.unlinked.forEach((x) => L.push(`  - ${x.name}${x.qty > 1 ? ` x${x.qty}` : ""}   [${x.scene || ""}]`));
@@ -358,6 +384,7 @@ export default async (req) => {
   r.sourcing = (r.sourcing || []).slice(0, 200);
   r.items = (r.items || []).slice(0, 400);
   r.unlinked = (r.unlinked || []).slice(0, 400);
+  r.already = (r.already || []).slice(0, 400);
 
   if (isBuy && !r.items.length) {
     return Response.json({ ok: false, error: "nothing-to-send" }, { status: 400 });

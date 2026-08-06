@@ -94,6 +94,8 @@ create table if not exists deh_items (
   vendor      text,                           -- Amazon, in stock, build in shop, Marketplace...
   link        text,                           -- the primary link; == links[1]
   links       text[] not null default '{}',   -- a costume look is often three shops
+  sent_at     timestamptz,                    -- emailed to Todd; frozen once set
+  sent_by     text,
   price_cents int  not null default 0,        -- UNIT price; multiply by qty for the line
   qty         int  not null default 1,
   updated_by  text,
@@ -109,6 +111,8 @@ alter table deh_items enable row level security;
 alter table deh_items add column if not exists links text[] not null default '{}';
 update deh_items set links = array[link]
   where link is not null and link <> '' and cardinality(links) = 0;
+alter table deh_items add column if not exists sent_at timestamptz;
+alter table deh_items add column if not exists sent_by text;
 
 create or replace function public.deh_items_list()
 returns setof deh_items
@@ -120,13 +124,14 @@ $fn$;
 -- first: `create or replace` with different arguments makes an overload, and
 -- two candidates would make the PostgREST call ambiguous.
 drop function if exists public.deh_item_set(text, text, text, text, int, int, text);
+drop function if exists public.deh_item_set(text, text, text, text, text[], int, int, text);
 
 create or replace function public.deh_item_set(
   p_item_id text, p_status text, p_vendor text, p_link text, p_links text[],
-  p_price_cents int, p_qty int, p_by text)
+  p_price_cents int, p_qty int, p_sent_at timestamptz, p_sent_by text, p_by text)
 returns void
 language sql volatile security definer set search_path = public as $fn$
-  insert into deh_items (item_id, status, vendor, link, links, price_cents, qty, updated_by, updated_at)
+  insert into deh_items (item_id, status, vendor, link, links, price_cents, qty, sent_at, sent_by, updated_by, updated_at)
   values (p_item_id,
           coalesce(nullif(trim(p_status), ''), 'todo'),
           nullif(trim(p_vendor), ''),
@@ -134,6 +139,7 @@ language sql volatile security definer set search_path = public as $fn$
           coalesce(p_links, '{}'),
           greatest(coalesce(p_price_cents, 0), 0),
           greatest(coalesce(p_qty, 1), 1),
+          p_sent_at, nullif(trim(p_sent_by), ''),
           nullif(trim(p_by), ''), now())
   on conflict (item_id) do update set
     status      = excluded.status,
@@ -142,12 +148,14 @@ language sql volatile security definer set search_path = public as $fn$
     links       = excluded.links,
     price_cents = excluded.price_cents,
     qty         = excluded.qty,
+    sent_at     = excluded.sent_at,
+    sent_by     = excluded.sent_by,
     updated_by  = excluded.updated_by,
     updated_at  = now();
 $fn$;
 
 grant execute on function public.deh_items_list() to anon, authenticated;
-grant execute on function public.deh_item_set(text, text, text, text, text[], int, int, text) to anon, authenticated;
+grant execute on function public.deh_item_set(text, text, text, text, text[], int, int, timestamptz, text, text) to anon, authenticated;
 
 -- ── Company roster ───────────────────────────────────────────────────────
 -- Who can be marked present. Editable in the dashboard because the cast list

@@ -137,7 +137,10 @@ const BLOBS = {
                  // Items written before multiple links existed have only `link`.
                  links: URLS(v.links, v.link),
                  price_cents: v.price_cents || 0, qty: v.qty || 1, updated_by: v.by || "",
-                 updated_at: v.at || null })
+                 updated_at: v.at || null,
+                 // Set once the item has been emailed to Todd. Its presence is
+                 // what stops the next email carrying the same thing again.
+                 sent_at: v.sent_at || null, sent_by: v.sent_by || "" })
   ),
 
   // `at` is stamped server-side. The rehearsal report asks "what was sourced
@@ -149,7 +152,11 @@ const BLOBS = {
                         // reading the single field gets the primary source.
                         link: links[0] || "", links,
                         price_cents: I(a.price_cents), qty: I(a.qty) || 1, by: S(a.by),
-                        at: new Date().toISOString() };
+                        at: new Date().toISOString(),
+                        // Empty clears it — that is the unlock path, and it has
+                        // to be able to travel or an unlock on one phone would
+                        // never reach the others.
+                        sent_at: S(a.sent_at) || null, sent_by: S(a.sent_by) };
     return d;
   }),
 
@@ -225,7 +232,7 @@ const RPC = {
   progress_list:   ["deh_progress_list",   () => ({})],
   progress_set:    ["deh_progress_set",    (a) => ({ p_block_id: S(a.block_id), p_done: B(a.done), p_by: S(a.by) })],
   items_list:      ["deh_items_list",      () => ({})],
-  item_set:        ["deh_item_set",        (a) => { const l = URLS(a.links, a.link); return { p_item_id: S(a.item_id), p_status: S(a.status), p_vendor: S(a.vendor), p_link: l[0] || "", p_links: l, p_price_cents: I(a.price_cents), p_qty: I(a.qty) || 1, p_by: S(a.by) }; }],
+  item_set:        ["deh_item_set",        (a) => { const l = URLS(a.links, a.link); return { p_item_id: S(a.item_id), p_status: S(a.status), p_vendor: S(a.vendor), p_link: l[0] || "", p_links: l, p_price_cents: I(a.price_cents), p_qty: I(a.qty) || 1, p_sent_at: S(a.sent_at) || null, p_sent_by: S(a.sent_by), p_by: S(a.by) }; }],
   roster_list:     ["deh_roster_list",     () => ({})],
   roster_set:      ["deh_roster_set",      (a) => ({ p_person_id: S(a.person_id), p_name: S(a.name), p_role: S(a.role), p_kind: S(a.kind) || "cast", p_sort: I(a.sort) || 100, p_active: a.active !== false })],
   attendance_list: ["deh_attendance_list", (a) => ({ p_day: D(a.day) })],
