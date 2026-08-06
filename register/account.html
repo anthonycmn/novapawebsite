@@ -92,7 +92,7 @@
 </div>
 
 <script>
-  var sb = window.supabase.createClient(window.NOVAPA_CONFIG.SUPABASE_URL, window.NOVAPA_CONFIG.SUPABASE_ANON_KEY);
+  var sb = window.supabase.createClient(window.NOVAREG.SUPABASE_URL, window.NOVAREG.SUPABASE_ANON_KEY);
   var $ = function(id){ return document.getElementById(id); };
 
   function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
