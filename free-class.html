@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Claim Your Free Class | NOVAPA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
+    --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+    --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
+    --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45);
+    --ok:#5BC98C;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; color:var(--ink); min-height:100vh;
+    background:
+      radial-gradient(1100px 500px at 75% -10%, rgba(200,137,42,0.16), transparent 60%),
+      radial-gradient(900px 600px at 10% 110%, rgba(22,43,82,0.9), transparent 70%),
+      linear-gradient(160deg, var(--navy0), var(--navy1) 55%, var(--navy0));
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .popup {
+    width:100%; max-width:440px; background:linear-gradient(180deg, rgba(22,43,82,0.75), rgba(15,30,54,0.92));
+    border:1px solid var(--line); border-radius:22px; padding:34px 28px 28px;
+    box-shadow:0 30px 80px rgba(0,0,0,0.55); backdrop-filter:blur(8px);
+    position:relative; overflow:hidden;
+  }
+  .dots { display:flex; gap:8px; justify-content:center; margin-bottom:22px; }
+  .dots i { width:8px; height:8px; border-radius:50%; background:var(--line); transition:all .25s; }
+  .dots i.on { background:var(--gold2); transform:scale(1.25); }
+  .step { display:none; animation:pop .28s ease; }
+  .step.on { display:block; }
+  @keyframes pop { from { opacity:0; transform:translateY(10px) scale(.985); } to { opacity:1; transform:none; } }
+  h1 { font-family:'Cinzel',serif; font-size:24px; text-align:center; color:var(--gold3); line-height:1.25; margin-bottom:6px; }
+  .sub { text-align:center; color:var(--ink-dim); font-size:14.5px; margin-bottom:22px; }
+  .opt {
+    display:flex; align-items:center; gap:14px; width:100%; text-align:left;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    color:var(--ink); padding:16px 18px; font-size:16.5px; font-weight:500;
+    font-family:inherit; cursor:pointer; margin-bottom:12px; transition:all .15s;
+  }
+  .opt:hover { border-color:var(--gold); transform:translateY(-1px); }
+  .opt .ic { font-size:22px; width:30px; text-align:center; }
+  .opt small { display:block; color:var(--ink-dim); font-weight:400; font-size:13px; margin-top:2px; }
+  .btn {
+    display:block; width:100%; border:0; border-radius:14px; cursor:pointer;
+    background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1204;
+    font-family:'DM Sans',sans-serif; font-weight:700; font-size:16.5px; letter-spacing:0.04em;
+    padding:16px; transition:transform .15s;
+  }
+  .btn:hover { transform:translateY(-1px); }
+  .btn[disabled] { opacity:.55; cursor:default; transform:none; }
+  .ghost {
+    display:block; width:100%; background:none; border:0; color:var(--ink-dim);
+    font-family:inherit; font-size:14px; margin-top:14px; cursor:pointer; text-decoration:underline;
+  }
+  input[type=email] {
+    width:100%; background:rgba(8,17,31,0.6); border:1px solid var(--line); border-radius:14px;
+    color:var(--ink); font-family:inherit; font-size:16.5px; padding:16px 18px; margin-bottom:12px; outline:none;
+  }
+  input[type=email]:focus { border-color:var(--gold); }
+  .prize {
+    font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:600;
+    color:var(--gold3); font-size:21px;
+  }
+  .chips { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:6px 0 18px; }
+  .chip {
+    background:var(--card); border:1px solid var(--line); border-radius:12px; color:var(--ink);
+    font-family:inherit; font-size:15px; font-weight:500; padding:12px 14px; cursor:pointer; transition:all .15s;
+  }
+  .chip:hover { border-color:var(--gold); }
+  .chip.on { background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1204; border-color:transparent; font-weight:700; }
+  .chip b { display:block; font-size:11px; font-weight:500; opacity:.7; text-transform:uppercase; letter-spacing:.08em; }
+  .big-check { text-align:center; font-size:54px; margin:8px 0 4px; }
+  .offer-card {
+    display:block; text-decoration:none; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:15px 18px; margin-bottom:11px; transition:all .15s; color:var(--ink);
+  }
+  .offer-card:hover { border-color:var(--gold); transform:translateY(-1px); }
+  .offer-card b { display:block; font-size:16px; }
+  .offer-card span { color:var(--ink-dim); font-size:13.5px; }
+  .offer-card em { display:block; color:var(--gold2); font-size:13px; font-style:normal; font-weight:700; margin-top:4px; }
+  .err { color:#E8654B; font-size:13.5px; text-align:center; min-height:18px; margin-bottom:6px; }
+  .confetti { position:absolute; top:-10px; width:9px; height:14px; opacity:0; pointer-events:none; }
+  @keyframes fall { 0% { opacity:1; transform:translateY(0) rotate(0); } 100% { opacity:0; transform:translateY(480px) rotate(600deg); } }
+  .back { position:absolute; top:16px; left:18px; background:none; border:0; color:var(--ink-dim); font-size:22px; cursor:pointer; display:none; }
+</style>
+</head>
+<body>
+<div class="popup" id="popup">
+  <button class="back" id="back" aria-label="Back">&#8249;</button>
+  <div class="dots" id="dots"><i class="on"></i><i></i><i></i></div>
+
+  <!-- Step 1: track -->
+  <div class="step on" data-step="0">
+    <h1>What lights them up?</h1>
+    <p class="sub">30 seconds. Something free at the end.</p>
+    <button class="opt" data-track="performance"><span class="ic">&#127908;</span><span>Performance<small>Acting, singing, dancing, the spotlight</small></span></button>
+    <button class="opt" data-track="tech"><span class="ic">&#128295;</span><span>Tech &amp; Backstage<small>Sets, lights, sound, stage crew</small></span></button>
+  </div>
+
+  <!-- Step 2: age -->
+  <div class="step" data-step="1">
+    <h1>What age?</h1>
+    <p class="sub">We&rsquo;ll match the right group.</p>
+    <button class="opt" data-age="5-9"><span class="ic">&#127793;</span><span>5 to 9 years</span></button>
+    <button class="opt" data-age="9-12"><span class="ic">&#11088;</span><span>9 to 12 years</span></button>
+    <button class="opt" data-age="12-19"><span class="ic">&#127775;</span><span>12 to 19 years</span></button>
+    <button class="opt" data-age="adult"><span class="ic">&#127917;</span><span>Adult</span></button>
+  </div>
+
+  <!-- Step 3: experience -->
+  <div class="step" data-step="2">
+    <h1>How much experience?</h1>
+    <p class="sub">No wrong answers here.</p>
+    <button class="opt" data-exp="first-show"><span>First show ever</span></button>
+    <button class="opt" data-exp="few-productions"><span>A few productions</span></button>
+    <button class="opt" data-exp="seasoned"><span>Seasoned performer</span></button>
+    <button class="opt" data-exp="pre-professional"><span>Pre-professional</span></button>
+  </div>
+
+  <!-- Step 4: congrats + claim -->
+  <div class="step" data-step="3">
+    <div class="big-check">&#127881;</div>
+    <h1>Congrats! You qualify for a free <span class="prize" id="prizeName"></span> class!</h1>
+    <p class="sub" id="prizeSub"></p>
+    <div class="err" id="claimErr"></div>
+    <input type="email" id="email" placeholder="Email address" autocomplete="email">
+    <button class="btn" id="claimBtn">CLAIM MY FREE CLASS</button>
+  </div>
+
+  <!-- Step 5: booking -->
+  <div class="step" data-step="4">
+    <h1>Let&rsquo;s get you booked</h1>
+    <p class="sub" id="bookSub"></p>
+    <div class="chips" id="dateChips"></div>
+    <button class="btn" id="bookBtn" disabled>BOOK IT</button>
+    <button class="ghost" id="laterBtn">I&rsquo;ll do this later</button>
+  </div>
+
+  <!-- Step 6: booked -->
+  <div class="step" data-step="5">
+    <div class="big-check" style="color:var(--ok)">&#10003;</div>
+    <h1 id="seeYou">See you soon!</h1>
+    <p class="sub" id="seeYouSub"></p>
+    <button class="btn" id="moreBtn">WHAT ELSE IS ON THIS SEASON</button>
+  </div>
+
+  <!-- Step 7: other offerings -->
+  <div class="step" data-step="6">
+    <h1>Made for them</h1>
+    <p class="sub">Based on your answers, here&rsquo;s what else fits.</p>
+    <div id="offers"></div>
+  </div>
+</div>
+
+<script>
+  // The free-class offer per track/age. Schedules mirror the live catalog
+  // (activities raw class_times) — if a class moves nights, update here too.
+  var OFFERS = {
+    'performance:5-9':   { name:'Musical Theatre',        sub:'Tuesdays 5:00 pm, ages 5 to 9',    day:2, time:'5:00 pm',  start:'2026-09-15' },
+    'performance:9-12':  { name:'Acting & Musical Theatre', sub:'Saturdays 12:00 pm, ages 9 to 12', day:6, time:'12:00 pm', start:'2026-09-19' },
+    'performance:12-19': { name:'Musical Theatre Acting', sub:'Tuesdays 8:00 pm, teens',          day:2, time:'8:00 pm',  start:'2026-09-15' },
+    'performance:adult': { name:'Adult Musical Theatre',  sub:'Saturdays 9:00 am',                day:6, time:'9:00 am',  start:'2026-09-19' },
+    'tech:*':            { name:'Tech Theatre Intro',     sub:'Saturdays, hands-on backstage',    day:6, time:'10:00 am', start:'2026-09-19' }
+  };
+
+  var OFFER_CARDS = {
+    '5-9': [
+      { t:'Trolls Jr (Ages 5 to 9)', s:'Their first big show, full costumes and lights', c:'See the show', h:'/register/' },
+      { t:'How to Train Your Dragon', s:'Broadway Bound production for young performers', c:'Explore', h:'/register/' },
+      { t:'Day Camps', s:'One-day themed adventures, $79', c:'See dates', h:'/day-camps.html' }
+    ],
+    '9-12': [
+      { t:'Frozen Jr + Little Mermaid Jr', s:'The Stagelighter season, two full productions', c:'Register', h:'/register/' },
+      { t:'Trolls (Ages 9 to 12)', s:'Big energy, big hair, big stage', c:'Explore', h:'/register/' },
+      { t:'K-Pop Dance', s:'Saturday mornings', c:'Join a class', h:'/classes.html' }
+    ],
+    '12-19': [
+      { t:'Frozen + Little Mermaid for Teens', s:'Lead roles and real production credits', c:'Register', h:'/register/' },
+      { t:'Trolls (Ages 12 to 15)', s:'A full production this fall', c:'Explore', h:'/register/' },
+      { t:'Weekly Teen Classes', s:'Musical Theatre Dance and Acting, Tuesdays', c:'See classes', h:'/classes.html' }
+    ],
+    'adult': [
+      { t:'Adult Acting, Dance and Musical Theatre', s:'Saturday morning classes, zero pressure', c:'See classes', h:'/classes.html' },
+      { t:'Our Season', s:'Come see what our performers put on', c:'View calendar', h:'/calendar.html' }
+    ]
+  };
+  var PRE_PRO_CARD = { t:'Teen Conservatory + College Audition Coaching', s:'Sweeney Todd, Hadestown, and one-on-one audition prep', c:'Learn more', h:'/teen-conservatory.html' };
+
+  var state = { track:null, age:null, exp:null, leadId:null, date:null, offer:null };
+  var stepEls = [].slice.call(document.querySelectorAll('.step'));
+  var cur = 0;
+
+  function show(i) {
+    cur = i;
+    stepEls.forEach(function(el){ el.classList.toggle('on', +el.dataset.step === i); });
+    var dots = document.getElementById('dots');
+    dots.style.display = i <= 2 ? 'flex' : 'none';
+    [].forEach.call(dots.children, function(d, j){ d.classList.toggle('on', j <= i); });
+    document.getElementById('back').style.display = (i >= 1 && i <= 2) ? 'block' : 'none';
+  }
+  document.getElementById('back').onclick = function(){ if (cur >= 1 && cur <= 2) show(cur - 1); };
+
+  document.querySelectorAll('[data-track]').forEach(function(b){
+    b.onclick = function(){ state.track = b.dataset.track; show(1); };
+  });
+  document.querySelectorAll('[data-age]').forEach(function(b){
+    b.onclick = function(){ state.age = b.dataset.age; show(2); };
+  });
+  document.querySelectorAll('[data-exp]').forEach(function(b){
+    b.onclick = function(){ state.exp = b.dataset.exp; prep(); show(3); };
+  });
+
+  function offerFor() {
+    return OFFERS[state.track + ':' + state.age] || OFFERS[state.track + ':*'] || OFFERS['performance:9-12'];
+  }
+  var EXP_LINES = {
+    'first-show': 'The perfect first step. No experience needed, just show up.',
+    'few-productions': 'A great fit to keep the momentum going.',
+    'seasoned': 'Time to stretch. This one will push them in the best way.',
+    'pre-professional': 'Serious training with people who take it as seriously as you do.'
+  };
+  function prep() {
+    var o = offerFor();
+    state.offer = o.name;
+    document.getElementById('prizeName').textContent = o.name;
+    document.getElementById('prizeSub').textContent = EXP_LINES[state.exp] || '';
+    confetti();
+  }
+
+  function confetti() {
+    var popup = document.getElementById('popup');
+    var colors = ['#C8892A','#E8B84B','#F7D98F','#5BC98C','#fff'];
+    for (var i = 0; i < 26; i++) {
+      var c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = (4 + Math.random() * 92) + '%';
+      c.style.background = colors[i % colors.length];
+      c.style.animation = 'fall ' + (1.4 + Math.random() * 1.4) + 's ease-in ' + (Math.random() * 0.5) + 's forwards';
+      popup.appendChild(c);
+      setTimeout(function(el){ return function(){ el.remove(); }; }(c), 3500);
+    }
+  }
+
+  function nextDates(o, n) {
+    var out = [], d = new Date(o.start + 'T12:00:00');
+    var today = new Date();
+    while (d < today) d.setDate(d.getDate() + 7);
+    while (out.length < n) { out.push(new Date(d)); d.setDate(d.getDate() + 7); }
+    return out;
+  }
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  document.getElementById('claimBtn').onclick = function(){
+    var email = document.getElementById('email').value.trim();
+    var err = document.getElementById('claimErr');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Enter a valid email to claim it.'; return; }
+    err.textContent = '';
+    var btn = this; btn.disabled = true; btn.textContent = 'CLAIMING...';
+    fetch('/api/reg-funnel', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'claim', email:email, track:state.track, age_band:state.age, experience:state.exp, offer:state.offer })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      btn.disabled = false; btn.textContent = 'CLAIM MY FREE CLASS';
+      if (d.error) { err.textContent = d.error; return; }
+      state.leadId = d.lead_id;
+      var o = offerFor();
+      document.getElementById('bookSub').textContent = o.name + ', ' + o.sub.split(',')[0].toLowerCase() + ' at ' + o.time;
+      var chips = document.getElementById('dateChips');
+      chips.innerHTML = '';
+      nextDates(o, 5).forEach(function(dt){
+        var b = document.createElement('button');
+        b.className = 'chip';
+        b.innerHTML = '<b>' + MONTHS[dt.getMonth()] + '</b>' + dt.getDate();
+        b.onclick = function(){
+          state.date = dt;
+          [].forEach.call(chips.children, function(x){ x.classList.remove('on'); });
+          b.classList.add('on');
+          document.getElementById('bookBtn').disabled = false;
+        };
+        chips.appendChild(b);
+      });
+      show(4);
+    }).catch(function(){ btn.disabled = false; btn.textContent = 'CLAIM MY FREE CLASS'; err.textContent = 'Network hiccup, try again.'; });
+  };
+
+  document.getElementById('bookBtn').onclick = function(){
+    if (!state.date) return;
+    var iso = state.date.toISOString().slice(0,10);
+    fetch('/api/reg-funnel', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'book', lead_id: state.leadId, date: iso }) });
+    document.getElementById('seeYou').textContent = 'See you ' + DAYS[state.date.getDay()] + '!';
+    document.getElementById('seeYouSub').textContent = state.offer + ', ' + MONTHS[state.date.getMonth()] + ' ' + state.date.getDate() + ' at ' + offerFor().time + '. Check your email for details.';
+    show(5);
+  };
+  document.getElementById('laterBtn').onclick = function(){
+    fetch('/api/reg-funnel', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'decline', lead_id: state.leadId }) });
+    document.getElementById('seeYou').textContent = 'Your free class is saved!';
+    document.getElementById('seeYouSub').textContent = 'We emailed you the details so you can book any time.';
+    show(5);
+  };
+
+  document.getElementById('moreBtn').onclick = function(){
+    var cards = (OFFER_CARDS[state.age] || []).slice();
+    if (state.exp === 'pre-professional' && state.age === '12-19') cards.unshift(PRE_PRO_CARD);
+    var wrap = document.getElementById('offers');
+    wrap.innerHTML = '';
+    cards.forEach(function(c){
+      var a = document.createElement('a');
+      a.className = 'offer-card'; a.href = c.h;
+      a.innerHTML = '<b></b><span></span><em></em>';
+      a.querySelector('b').textContent = c.t;
+      a.querySelector('span').textContent = c.s;
+      a.querySelector('em').textContent = c.c + ' →';
+      wrap.appendChild(a);
+    });
+    show(6);
+  };
+
+  // PostHog, matching the rest of the site when present
+  try { if (window.posthog) posthog.capture('funnel_opened'); } catch(e) {}
+</script>
+</body>
+</html>
