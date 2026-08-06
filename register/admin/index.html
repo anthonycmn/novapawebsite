@@ -129,6 +129,7 @@
       <a data-s="credits">Credits</a>
       <a data-s="referrals">Referrals</a>
       <a data-s="marketing">Marketing</a>
+      <a data-s="starpages">Star Pages</a>
       <a data-s="hiring">Hiring</a>
     </div>
     <div class="who"><span id="whoEmail"></span><br><a href="#" id="signOut">sign out</a></div>
@@ -185,6 +186,13 @@
         <button id="campCopy" style="padding:10px 14px;border:0;border-radius:10px;background:var(--gold,#C8892A);color:#1a1206;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px">Copy chase-list emails</button>
       </div>
       <div class="wrap-scroll"><table id="tblCampers"></table></div>
+    </section>
+
+    <section class="sec" id="s-starpages">
+      <h2>Star Page Ads</h2>
+      <p class="sub" style="margin:-6px 0 10px">Playbill ad orders from /star-pages (currently Dear Evan Hansen). Photo links are good for an hour — reopen the tab for fresh ones. Only <b>paid</b> ads go in the playbill.</p>
+      <div id="spStatus" class="sub"></div>
+      <div class="wrap-scroll"><table id="tblStars"></table></div>
     </section>
 
     <section class="sec" id="s-hiring">
@@ -342,6 +350,7 @@
       // the forecast is cheap and always wanted — fetch it the first time the
       // tab is opened rather than making Todd hunt for a Load button
       if (a.dataset.s === 'cashflow' && !CF) loadCashflow();
+      if (a.dataset.s === 'starpages') loadStars();
       if (a.dataset.s === 'referrals') loadRefs();
       if (a.dataset.s === 'credits' && !CR) {
         // default the expiry to the end of the current season, which is what
@@ -608,6 +617,39 @@
       renderInsurance();
     }).catch(function(){ $('insStatus').textContent = 'network error'; });
   });
+
+  // ---- Star Pages (Zoe builds the playbill from these) ----
+  function loadStars(){
+    $('spStatus').textContent = 'loading…';
+    sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/star-pages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ action: 'admin_list' })
+      });
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.error) { $('spStatus').textContent = 'error: ' + d.error; return; }
+      var ads = d.ads || [];
+      var paidTotal = ads.filter(function(a){ return a.status === 'paid'; })
+        .reduce(function(s,a){ return s + (a.amount_cents||0); }, 0);
+      $('spStatus').textContent = ads.length + ' order' + (ads.length===1?'':'s') + ' · $' + (paidTotal/100).toFixed(2) + ' collected';
+      var rows = ads.map(function(a){
+        return '<tr>' +
+          '<td>' + new Date(a.created_at).toLocaleDateString() + '</td>' +
+          '<td>' + (a.status === 'paid' ? '<span style="color:var(--ok, #5BC98C)">paid</span>' : a.status) + '</td>' +
+          '<td>' + esc(a.performer_name) + '</td>' +
+          '<td>' + esc(a.size) + '</td>' +
+          '<td>$' + ((a.amount_cents||0)/100).toFixed(0) + '</td>' +
+          '<td style="max-width:340px; white-space:normal">' + esc(a.message) + '</td>' +
+          '<td>' + (a.photo_url ? '<a href="' + a.photo_url + '" target="_blank">photo</a>' : '—') + '</td>' +
+          '<td>' + esc(a.family_email) + '</td>' +
+        '</tr>';
+      }).join('');
+      $('tblStars').innerHTML = '<tr><th>Placed</th><th>Status</th><th>Performer</th><th>Size</th><th>Amount</th><th>Message</th><th>Photo</th><th>From</th></tr>' +
+        (rows || '<tr><td colspan="8" class="sub">No orders yet.</td></tr>');
+    }).catch(function(){ $('spStatus').textContent = 'network error'; });
+  }
 
   // ---- Credits (Todd mints these himself) ----
   var CR = null;

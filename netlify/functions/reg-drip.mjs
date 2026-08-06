@@ -37,6 +37,20 @@ async function svc(path, opts = {}) {
   try { return JSON.parse(t); } catch { return t; }
 }
 
+// PostgREST caps every response at 1,000 rows regardless of `limit=` — the
+// cause of the Aug 4-5 campaign duplicate-send incident. Any table that can
+// outgrow 1,000 rows (orders, retarget_state) must be read in pages.
+async function svcAll(path) {
+  const all = [];
+  for (let offset = 0; ; offset += 1000) {
+    const page = await svc(`${path}&limit=1000&offset=${offset}`);
+    if (!Array.isArray(page)) break;
+    all.push(...page);
+    if (page.length < 1000) break;
+  }
+  return all;
+}
+
 function joinNames(arr) {
   const a = [...new Set(arr.filter(Boolean))];
   if (!a.length) return "";
@@ -149,10 +163,10 @@ export default async () => {
 
   // all orders (suppression) + holds + families/campers context
   const [orders, holds, families, activities] = await Promise.all([
-    svc("orders?select=email,created_at&limit=2000"),
+    svcAll("orders?select=email,created_at&order=created_at"),
     svc("holds?select=email,items,created_at,expires_at&order=created_at.desc&limit=1000"),
-    svc("families?select=email,parent_name&limit=2000"),
-    svc("activities?select=id,name&limit=2000"),
+    svcAll("families?select=email,parent_name&order=email"),
+    svcAll("activities?select=id,name&order=id"),
   ]);
   const purchased = new Set(orders.map((o) => String(o.email || "").toLowerCase()));
   // Cart items are either a summer camp (it.show) or a catalog item
@@ -193,7 +207,7 @@ export default async () => {
   }
 
   // current state
-  const states = await svc("retarget_state?select=*&limit=2000");
+  const states = await svcAll("retarget_state?select=*&order=email");
   const stateByEmail = {};
   for (const s of states) stateByEmail[s.email] = s;
 
@@ -238,7 +252,7 @@ export default async () => {
   }
 
   // refresh states after enrollment
-  const states2 = await svc("retarget_state?select=*&status=eq.active&limit=2000");
+  const states2 = await svcAll("retarget_state?select=*&status=eq.active&order=email");
 
   // ---- sends ----
   for (const st of states2) {

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Star Page Ads — Dear Evan Hansen | NOVAPA</title>
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
+    --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+    --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
+    --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45);
+    --danger:#E8654B; --ok:#5BC98C;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%);
+    min-height:100vh;
+  }
+  a { color:var(--gold2); }
+  .wrap { max-width:640px; margin:0 auto; padding:40px 20px 80px; }
+  .kicker { font-family:'Cinzel',serif; letter-spacing:0.22em; text-transform:uppercase; font-size:12px; color:var(--gold2); text-align:center; }
+  h1 { font-family:'Cormorant Garamond',serif; font-size:42px; font-weight:600; text-align:center; margin:10px 0 6px; }
+  h1 em { font-style:italic; color:var(--gold3); }
+  .sub { text-align:center; color:var(--ink-dim); font-size:15px; line-height:1.55; max-width:520px; margin:0 auto 30px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:16px; }
+  label { display:block; font-size:13px; color:var(--ink-dim); margin:14px 0 6px; }
+  input[type=text], input[type=email], textarea {
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:var(--ink); font-family:inherit; font-size:15px;
+  }
+  textarea { min-height:110px; resize:vertical; }
+  input:focus, textarea:focus { outline:none; border-color:var(--gold); }
+  .btn {
+    display:block; width:100%; margin-top:18px; padding:14px; border:none; border-radius:10px;
+    background:linear-gradient(180deg, var(--gold2), var(--gold)); color:#101a2c;
+    font-weight:700; font-size:16px; font-family:inherit; cursor:pointer;
+  }
+  .btn:disabled { opacity:0.5; cursor:default; }
+  .sizes { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:6px; }
+  .size {
+    border:1px solid var(--line); border-radius:12px; padding:14px 8px; text-align:center; cursor:pointer;
+    background:rgba(8,17,31,0.4);
+  }
+  .size.on { border-color:var(--gold2); background:rgba(200,137,42,0.12); }
+  .size b { display:block; font-size:15px; }
+  .size span { display:block; margin-top:4px; color:var(--gold3); font-size:18px; font-weight:700; }
+  .hint { font-size:12px; color:var(--ink-dim); margin-top:6px; }
+  .err { color:var(--danger); font-size:14px; margin-top:10px; display:none; }
+  .photo-drop {
+    margin-top:6px; border:1.5px dashed var(--line); border-radius:12px; padding:22px; text-align:center;
+    color:var(--ink-dim); cursor:pointer; font-size:14px;
+  }
+  .photo-drop.has { border-style:solid; border-color:var(--gold2); color:var(--ink); }
+  .photo-drop img { max-width:120px; max-height:120px; border-radius:8px; display:block; margin:0 auto 8px; }
+  .done-card { text-align:center; padding:40px 22px; }
+  .done-card .big { font-size:44px; }
+  .step { display:none; }
+  .step.on { display:block; }
+  .foot { text-align:center; color:var(--ink-dim); font-size:12px; margin-top:26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img src="/star-pages-hero.jpg" alt="NOVAPA Star Pages" style="width:100%; border-radius:14px; border:1px solid var(--line); margin-bottom:26px; display:block;">
+  <div class="kicker">Dear Evan Hansen &middot; Playbill</div>
+  <h1>Star Page <em>Ads</em></h1>
+  <p class="sub">Show your support and make your performer feel extra special with a Star Page Ad in our playbill! Share a heartfelt message and a photo &mdash; a keepsake your performer will treasure for years to come.</p>
+
+  <!-- The ad -->
+  <div class="step on" id="stForm">
+    <div class="card">
+      <label for="email">Your email (for your receipt)</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+
+      <label for="performer">Performer&rsquo;s first and last name</label>
+      <input type="text" id="performer" placeholder="e.g. Evan Hansen">
+
+      <label for="msg">Message from you (appears in the playbill)</label>
+      <textarea id="msg" maxlength="600" placeholder="We are so proud of you..."></textarea>
+      <div class="hint"><span id="msgCount">0</span>/600 characters</div>
+
+      <label>Photo (headshot they&rsquo;d like to use)</label>
+      <div class="photo-drop" id="photoDrop">Tap to choose a photo<br><span class="hint">JPG, PNG or HEIC &middot; up to 10MB</span></div>
+      <input type="file" id="photo" accept="image/*" style="display:none">
+
+      <label>Ad size</label>
+      <div class="sizes" id="sizes">
+        <div class="size" data-size="full"><b>Full Page</b><span>$150</span></div>
+        <div class="size" data-size="half"><b>Half Page</b><span>$90</span></div>
+        <div class="size" data-size="quarter"><b>Quarter Page</b><span>$60</span></div>
+      </div>
+
+      <div class="err" id="formErr"></div>
+      <button class="btn" id="payBtn">Continue to payment</button>
+    </div>
+  </div>
+
+  <!-- Step 3: done -->
+  <div class="step" id="stDone">
+    <div class="card done-card">
+      <div class="big">&#11088;</div>
+      <h1 style="font-size:32px">Thank <em>you!</em></h1>
+      <p class="sub" id="doneMsg" style="margin-bottom:0">Your Star Page Ad is confirmed. Your performer is going to love it.</p>
+    </div>
+  </div>
+
+  <div class="foot">Northern Virginia Performing Arts &middot; questions? info@novapa.org</div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var state = { email:'', size:'', photoPath:'' };
+
+  function api(body){
+    return fetch('/api/star-pages', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+      .then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); });
+  }
+  function show(step){
+    ['stForm','stDone'].forEach(function(s){ $(s).classList.toggle('on', s===step); });
+    window.scrollTo(0,0);
+  }
+
+  // Returning from Stripe
+  var q = new URLSearchParams(location.search);
+  if (q.get('done') === '1' && q.get('sid')) {
+    show('stDone');
+    $('doneMsg').textContent = 'Confirming your payment…';
+    api({ action:'verify', session_id: q.get('sid') }).then(function(res){
+      $('doneMsg').textContent = (res.j && res.j.paid)
+        ? 'Your ' + (res.j.size || '') + ' Star Page Ad for ' + (res.j.performer || 'your performer') + ' is confirmed. A receipt is in your email — your performer is going to love it.'
+        : 'We could not confirm the payment yet. If you completed checkout, your receipt email is the source of truth — or contact info@novapa.org.';
+    });
+    history.replaceState({}, '', location.pathname);
+  }
+
+  $('msg').addEventListener('input', function(){ $('msgCount').textContent = $('msg').value.length; });
+
+  var sizeEls = document.querySelectorAll('.size');
+  sizeEls.forEach(function(el){
+    el.addEventListener('click', function(){
+      sizeEls.forEach(function(x){ x.classList.remove('on'); });
+      el.classList.add('on'); state.size = el.getAttribute('data-size');
+    });
+  });
+
+  $('photoDrop').addEventListener('click', function(){ $('photo').click(); });
+  $('photo').addEventListener('change', function(){
+    var f = $('photo').files[0];
+    if (!f) return;
+    if (f.size > 10 * 1024 * 1024) { alert('That photo is over 10MB — please choose a smaller one.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e){
+      $('photoDrop').classList.add('has');
+      $('photoDrop').innerHTML = '<img src="' + e.target.result + '" alt=""><span>' + f.name + ' — tap to change</span>';
+    };
+    reader.readAsDataURL(f);
+  });
+
+  $('payBtn').addEventListener('click', function(){
+    var err = $('formErr'); err.style.display = 'none';
+    var performer = $('performer').value.trim();
+    var msg = $('msg').value.trim();
+    var f = $('photo').files[0];
+    var fail = function(t){ err.textContent = t; err.style.display = 'block'; };
+    state.email = $('email').value.trim().toLowerCase();
+    if (!state.email || state.email.indexOf('@') < 0) return fail('Please enter your email.');
+    if (!performer) return fail('Please enter your performer’s name.');
+    if (!msg) return fail('Please write your message.');
+    if (!f) return fail('Please choose a photo.');
+    if (!state.size) return fail('Please pick an ad size.');
+    $('payBtn').disabled = true; $('payBtn').textContent = 'Uploading photo…';
+
+    api({ action:'upload_url', email: state.email, filename: f.name, content_type: f.type }).then(function(res){
+      if (!res.ok || !res.j.url) throw new Error(res.j.error || 'upload failed');
+      state.photoPath = res.j.path;
+      return fetch(res.j.url, { method:'PUT', headers:{ 'Content-Type': f.type || 'image/jpeg', 'x-upsert':'false' }, body: f });
+    }).then(function(up){
+      if (!up.ok) throw new Error('photo upload failed');
+      $('payBtn').textContent = 'Preparing checkout…';
+      return api({ action:'create_order', email: state.email, performer: performer, message: msg, size: state.size, photo_path: state.photoPath });
+    }).then(function(res){
+      if (!res.ok || !res.j.url) throw new Error(res.j.error || 'checkout failed');
+      location.href = res.j.url;
+    }).catch(function(e){
+      $('payBtn').disabled = false; $('payBtn').textContent = 'Continue to payment';
+      fail('Something went wrong: ' + e.message + '. Please try again or contact info@novapa.org.');
+    });
+  });
+})();
+</script>
+</body>
+</html>
