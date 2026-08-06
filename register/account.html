@@ -137,11 +137,15 @@
     var b = this; b.disabled = true; b.textContent = 'SENDING…';
     sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html') } }).then(function(res){
       b.disabled = false; b.textContent = 'EMAIL ME A SIGN-IN CODE';
-      if (res.error) { $('authErr').textContent = res.error.message; return; }
-      $('authErr').textContent = '';
+      // Show the code box even on a rate-limit error: a code from the
+      // previous email is still valid and the parent already has it.
+      $('authErr').textContent = res.error ? res.error.message : '';
       $('emailStep').style.display = 'none';
       $('codeStep').style.display = 'block';
       $('code').focus();
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'EMAIL ME A SIGN-IN CODE';
+      $('authErr').textContent = 'Network hiccup, try again.';
     });
   };
 
