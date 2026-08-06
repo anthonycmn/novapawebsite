@@ -425,6 +425,46 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 .pb-ask{margin-top:18px;font-size:13.5px;color:var(--text3);line-height:1.7}
 .pb-ask a{color:#7A5010;font-weight:600}
 
+/* ── what families tell us: dark auto-scrolling rail ────────────────────
+   This used to be white cards on the cream page, which on a phone stacked
+   into one unbroken sheet of white. Dark band, gold rules, real names. */
+.revband{background:linear-gradient(135deg,#08111F 0%,#0F1E36 55%,#08111F 100%);
+  padding:clamp(34px,4.5vw,52px) 0 clamp(38px,5vw,56px);overflow:hidden}
+.revband-head{max-width:1080px;margin:0 auto 22px;padding:0 clamp(20px,5vw,48px);text-align:center}
+.revband-eye{font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:#E8B84B;margin-bottom:10px}
+.revband-h{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,3.6vw,38px);font-weight:700;
+  color:#fff;line-height:1.12;margin:0 0 8px}
+.revband-h em{font-style:italic;color:#E8B84B}
+.revband-sub{font-size:13.5px;line-height:1.7;color:rgba(255,255,255,0.62);max-width:560px;margin:0 auto}
+.revrail{position:relative;overflow:hidden;
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%)}
+/* width:max-content keeps the two identical halves side by side; the gap is a
+   right margin on the card, not flex gap, so -50% lands exactly on the seam */
+.revtrack{display:flex;width:max-content;animation:revScroll 78s linear infinite;will-change:transform}
+@keyframes revScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.revrail:hover .revtrack,.revrail.is-paused .revtrack{animation-play-state:paused}
+.revtrack:focus-within{animation-play-state:paused}
+.revcard{flex:0 0 300px;width:300px;margin-right:16px;background:rgba(15,30,54,0.62);
+  border:1px solid rgba(232,184,75,0.28);border-radius:16px;padding:20px 22px;
+  display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,0.32)}
+.revstars{color:#E8B84B;font-size:13px;letter-spacing:3px;margin-bottom:10px}
+.revcard blockquote{margin:0 0 15px;font-size:13.5px;line-height:1.62;font-style:italic;
+  color:rgba(255,255,255,0.92)}
+.revwho{display:flex;align-items:center;gap:11px;margin-top:auto}
+.revav{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#C8892A,#E8B84B);
+  color:#08111F;font-weight:800;font-size:12.5px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0}
+.revnm{display:flex;flex-direction:column;line-height:1.35;font-size:11.5px;color:rgba(255,255,255,0.6)}
+.revnm b{color:#fff;font-size:13px;font-weight:700}
+@media(max-width:560px){.revcard{flex-basis:270px;width:270px}}
+/* no motion: fall back to a rail you swipe yourself */
+@media(prefers-reduced-motion:reduce){
+  .revtrack{animation:none}
+  .revrail{overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+
 /* testimonials */
 .pb-quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
 .pb-quote{background:#fff;border:1px solid var(--border2);border-radius:13px;padding:22px 24px 20px;
@@ -473,7 +513,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <a class="u-active" href="classes.html">Classes</a>
     <a href="broadway-bound.html">Broadway Bound</a>
     <a href="teen-conservatory.html">Teen Conservatory</a>
-    <a href="summer-2027.html">Summer Camps</a>
+    <a href="summer-2027.html">Broadway Bound Shows and Camps</a>
     <a href="day-camps.html">Day Camps</a>
     <a href="coaching.html">Coaching</a>
     <a href="https://novapa.booktix.com" target="_blank" rel="noopener">Tickets</a>
@@ -523,6 +563,40 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <span class="badge"><span class="badge-dot" style="background:#5B3785"></span>Teen Conservatory / DE</span>
     </div>
     <a class="hero-scroll-btn" href="#classlist">Browse Weekly Classes <span aria-hidden="true">&#8595;</span></a>
+  </div>
+</section>
+
+<!-- WHAT FAMILIES TELL US — auto-scrolling, straight under the hero.
+     Every card is duplicated once; the track slides exactly -50% so the loop
+     is seamless. The second set is aria-hidden so screen readers hear each
+     family once. Tap or hover to stop it and read. -->
+<section class="revband" id="families" aria-label="What families tell us">
+  <div class="revband-head">
+    <div class="revband-eye">What families tell us</div>
+    <h2 class="revband-h">In their <em>own words</em></h2>
+    <p class="revband-sub">Unedited, straight from parent emails at the end of last season.</p>
+  </div>
+  <div class="revrail" id="revRail">
+    <div class="revtrack">
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up &mdash; he&rsquo;d never been in a play before. After the first day he was all smiles, told us about the friends he made, and immediately wanted to practice when he got home.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">SW</span><span class="revnm"><b>Stefania Whittington</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;She had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence &mdash; it was worth every penny!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">AW</span><span class="revnm"><b>Ashley H. Wills</b>Parent &middot; Day Camps</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Every child walks through those doors feeling seen, valued, and like a star &mdash; and that&rsquo;s something they&rsquo;ll remember long after the curtain closes.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">HT</span><span class="revnm"><b>Holly Tucker</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Broadway Bound is successful not because of its location, but because of the people in it. Our fifth year!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">JE</span><span class="revnm"><b>Jacklyn Esquerra</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Your crew very quickly built a passion in her that I hope lasts a lifetime. I&rsquo;ve been truly impressed!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">MR</span><span class="revnm"><b>Megan Rosh</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;The genuine care comes through to the kids &mdash; they feel the love of the cast, crew, and directors.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">JV</span><span class="revnm"><b>Jenevieve Vogue</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Such a fun experience &mdash; the best theater summer camp there is, in my opinion!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">TC</span><span class="revnm"><b>Tyler Craft</b>Student &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;One of the best summer camps they&rsquo;ve ever done &mdash; it helped my daughter overcome her stage fright.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">NC</span><span class="revnm"><b>Nancy Chu</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard"><div class="revstars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Our daughter was confident and comfortable in her role. She&rsquo;s already asking about the next program!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">KM</span><span class="revnm"><b>Kanages Mohler</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up &mdash; he&rsquo;d never been in a play before. After the first day he was all smiles, told us about the friends he made, and immediately wanted to practice when he got home.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">SW</span><span class="revnm"><b>Stefania Whittington</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;She had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence &mdash; it was worth every penny!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">AW</span><span class="revnm"><b>Ashley H. Wills</b>Parent &middot; Day Camps</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Every child walks through those doors feeling seen, valued, and like a star &mdash; and that&rsquo;s something they&rsquo;ll remember long after the curtain closes.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">HT</span><span class="revnm"><b>Holly Tucker</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Broadway Bound is successful not because of its location, but because of the people in it. Our fifth year!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">JE</span><span class="revnm"><b>Jacklyn Esquerra</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Your crew very quickly built a passion in her that I hope lasts a lifetime. I&rsquo;ve been truly impressed!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">MR</span><span class="revnm"><b>Megan Rosh</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;The genuine care comes through to the kids &mdash; they feel the love of the cast, crew, and directors.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">JV</span><span class="revnm"><b>Jenevieve Vogue</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Such a fun experience &mdash; the best theater summer camp there is, in my opinion!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">TC</span><span class="revnm"><b>Tyler Craft</b>Student &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;One of the best summer camps they&rsquo;ve ever done &mdash; it helped my daughter overcome her stage fright.&rdquo;</blockquote><figcaption class="revwho"><span class="revav">NC</span><span class="revnm"><b>Nancy Chu</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+      <figure class="revcard" aria-hidden="true"><div class="revstars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><blockquote>&ldquo;Our daughter was confident and comfortable in her role. She&rsquo;s already asking about the next program!&rdquo;</blockquote><figcaption class="revwho"><span class="revav">KM</span><span class="revnm"><b>Kanages Mohler</b>Parent &middot; Broadway Bound</span></figcaption></figure>
+    </div>
   </div>
 </section>
 
@@ -855,15 +929,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       <div class="pb-step"><div class="pb-step-n">To stop earlier</div><h4>Thirty days notice</h4><p>Email us thirty days ahead and billing stops. No penalty, no fee, no conversation required.</p></div>
     </div>
     <p class="pb-fine">Second and additional children take 5% off. Tuition assistance is available and handled privately; email <a href="mailto:info@novapa.org">info@novapa.org</a> and our CFO will send you the application.</p>
-  </section>
-  <section class="pb" id="families">
-    <h2 class="pb-h">What families <em>tell us</em></h2>
-    <p class="pb-sub">Unedited, from parent emails at the end of last season.</p>
-    <div class="pb-quotes">
-      <div class="pb-quote"><p>He wasn&rsquo;t happy when I told him I had signed him up. He had never been in a play before. After the first day he was all smiles, told us about the friends he made and how much he loved the counselors, and immediately wanted to practice when he got home. Thank you for opening his eyes to something new he now loves.</p><div class="pb-who">Broadway Bound parent &middot; Summer 2026</div></div>
-      <div class="pb-quote"><p>She had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence. It was worth every penny.</p><div class="pb-who">Summer camp parent &middot; Summer 2026</div></div>
-      <div class="pb-quote"><p>Your program has been an integral part of our family&rsquo;s summers since 2018.</p><div class="pb-who">Returning family &middot; Eight summers with us</div></div>
-    </div>
   </section>
   <section class="pb" id="your-account">
     <div class="pb-acct">
@@ -1922,6 +1987,15 @@ function checkEmpty() {
     var e = a.querySelector('.audition-banner-eyebrow');
     if (e) e.innerHTML = '<span class="ab-pulse"></span>Registration Now Open';
   });
+})();
+</script>
+<script>
+// Tap the reviews to stop them so you can actually read one. Hover already
+// pauses on a mouse; a phone has no hover, so touch gets the same courtesy.
+(function(){
+  var rail = document.getElementById('revRail');
+  if (!rail) return;
+  rail.addEventListener('click', function(){ rail.classList.toggle('is-paused'); });
 })();
 </script>
 </body>
