@@ -40,6 +40,21 @@ const D = (v) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
 };
 
+// An item can carry several links — a costume look is often three shops. Only
+// http(s) is stored: this is the last point before something becomes an href
+// in an email nobody sanitises again.
+const MAX_LINKS = 12;
+const URLS = (list, one) => {
+  const raw = Array.isArray(list) && list.length ? list : (one ? [one] : []);
+  const out = [];
+  for (const u of raw) {
+    const s = S(u).trim();
+    if (/^https?:\/\//i.test(s) && !out.includes(s)) out.push(s);
+    if (out.length >= MAX_LINKS) break;
+  }
+  return out;
+};
+
 // ── Netlify Blobs backend ────────────────────────────────────────────────
 // Strong consistency is what we want: five people editing one rehearsal
 // should not read each other's stale data. It needs an `uncachedEdgeURL` in
@@ -119,6 +134,8 @@ const BLOBS = {
   items_list: async () => asRows(
     (await readDoc("items")).data,
     (k, v) => ({ item_id: k, status: v.status || "todo", vendor: v.vendor || "", link: v.link || "",
+                 // Items written before multiple links existed have only `link`.
+                 links: URLS(v.links, v.link),
                  price_cents: v.price_cents || 0, qty: v.qty || 1, updated_by: v.by || "",
                  updated_at: v.at || null })
   ),
@@ -126,7 +143,11 @@ const BLOBS = {
   // `at` is stamped server-side. The rehearsal report asks "what was sourced
   // today", and a client clock is the wrong thing to answer that with.
   item_set: async (a) => mutate("items", (d) => {
-    d[S(a.item_id)] = { status: S(a.status) || "todo", vendor: S(a.vendor), link: S(a.link),
+    const links = URLS(a.links, a.link);
+    d[S(a.item_id)] = { status: S(a.status) || "todo", vendor: S(a.vendor),
+                        // `link` stays the head of the list so anything still
+                        // reading the single field gets the primary source.
+                        link: links[0] || "", links,
                         price_cents: I(a.price_cents), qty: I(a.qty) || 1, by: S(a.by),
                         at: new Date().toISOString() };
     return d;
@@ -204,7 +225,7 @@ const RPC = {
   progress_list:   ["deh_progress_list",   () => ({})],
   progress_set:    ["deh_progress_set",    (a) => ({ p_block_id: S(a.block_id), p_done: B(a.done), p_by: S(a.by) })],
   items_list:      ["deh_items_list",      () => ({})],
-  item_set:        ["deh_item_set",        (a) => ({ p_item_id: S(a.item_id), p_status: S(a.status), p_vendor: S(a.vendor), p_link: S(a.link), p_price_cents: I(a.price_cents), p_qty: I(a.qty) || 1, p_by: S(a.by) })],
+  item_set:        ["deh_item_set",        (a) => { const l = URLS(a.links, a.link); return { p_item_id: S(a.item_id), p_status: S(a.status), p_vendor: S(a.vendor), p_link: l[0] || "", p_links: l, p_price_cents: I(a.price_cents), p_qty: I(a.qty) || 1, p_by: S(a.by) }; }],
   roster_list:     ["deh_roster_list",     () => ({})],
   roster_set:      ["deh_roster_set",      (a) => ({ p_person_id: S(a.person_id), p_name: S(a.name), p_role: S(a.role), p_kind: S(a.kind) || "cast", p_sort: I(a.sort) || 100, p_active: a.active !== false })],
   attendance_list: ["deh_attendance_list", (a) => ({ p_day: D(a.day) })],
