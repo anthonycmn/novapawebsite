@@ -63,6 +63,21 @@ export function confirmationHtml(m, pi) {
     </table>
   </td></tr></table></body></html>`;
 }
+// Some families want a second parent on every receipt (families.cc_email).
+// Looked up here rather than threaded through every caller.
+async function ccFor(email) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key || !email) return null;
+  try {
+    const r = await fetch(
+      `https://tlkuqwsqicxcjdmumkje.supabase.co/rest/v1/families?select=cc_email&email=eq.${encodeURIComponent(email.toLowerCase())}&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+    );
+    const rows = r.ok ? await r.json() : [];
+    return rows[0]?.cc_email || null;
+  } catch { return null; }
+}
+
 export async function sendConfirmationEmail(m, pi) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !m.email) return;
   const { default: nodemailer } = await import("nodemailer");
@@ -70,9 +85,11 @@ export async function sendConfirmationEmail(m, pi) {
     host: "smtp.gmail.com", port: 465, secure: true,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
+  const cc = await ccFor(m.email);
   await transporter.sendMail({
     from: `NOVAPA <${process.env.SMTP_USER}>`,
     to: m.email,
+    ...(cc ? { cc } : {}),
     subject: "You're in — NOVAPA registration confirmed",
     html: confirmationHtml(m, pi),
   });
