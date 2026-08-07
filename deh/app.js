@@ -14,6 +14,7 @@
   var D = window.DEH, S = window.DEHSCENES;
   var LS_DONE = 'deh.done.v1', LS_ITEM = 'deh.items.v1', LS_ME = 'deh.me.v1', LS_GATE = 'deh.gate.v1';
   var LS_ROSTER = 'deh.roster.v1', LS_ATT = 'deh.att.v1', LS_NOTE = 'deh.notes.v1', LS_REP = 'deh.rep.v1';
+  var LS_STRIKE = 'deh.strike.v1';
   var GATE_WORD = 'orchard';   // curtain, not a lock — change here and tell staff
 
   // Who can sign a block off. Anyone not listed picks "Someone else" and types.
@@ -50,20 +51,23 @@
   // The design departments were one line each ("Costume / H&M", "Set / LX /
   // Sound") until CJ asked for them separately — a note for the wig head
   // should not have to be read out of a paragraph addressed to costumes.
+  // The prompt is what the box says before anyone types in it. A stage manager
+  // filling this in while the director is still working needs to be reminded
+  // what this department wants to hear, not asked an open question.
   var DEPTS = [
-    { k: 'general',    l: 'General' },
-    { k: 'stage',      l: 'Stage' },
-    { k: 'music',      l: 'Music' },
-    { k: 'scenic',     l: 'Scenic' },
-    { k: 'lighting',   l: 'Lighting' },
-    { k: 'sound',      l: 'Sound' },
-    { k: 'projection', l: 'Projection' },
-    { k: 'sfx',        l: 'Special FX' },
-    { k: 'props',      l: 'Props' },
-    { k: 'costume',    l: 'Costumes' },
-    { k: 'hair',       l: 'Hair & Make-Up' },
-    { k: 'wigs',       l: 'Wigs' },
-    { k: 'safety',     l: 'Safety' }
+    { k: 'general',    l: 'General',        p: 'Anything the whole team should know' },
+    { k: 'stage',      l: 'Stage',          p: 'Blocking changes, spacing, calls, running order' },
+    { k: 'music',      l: 'Music',          p: 'Cuts, tempi, harmony fixes, who needs a part call' },
+    { k: 'scenic',     l: 'Scenic',         p: 'Set pieces, shifts, tracking, what is standing in for what' },
+    { k: 'lighting',   l: 'Lighting',       p: 'Specials, cues, blackouts, anything the actor cannot find' },
+    { k: 'sound',      l: 'Sound',          p: 'Mics, balance, playback, cue placement' },
+    { k: 'projection', l: 'Projection',     p: 'Content, timing, surfaces, what is still a placeholder' },
+    { k: 'sfx',        l: 'Special FX',     p: 'Practicals, haze, breakaways, anything that fires' },
+    { k: 'props',      l: 'Props',          p: 'Adds, cuts, substitutions, what broke' },
+    { k: 'costume',    l: 'Costumes',       p: 'Fittings, quick changes, adds and cuts, what needs a double' },
+    { k: 'hair',       l: 'Hair & Make-Up', p: 'Looks, timing, what has to be done before the half' },
+    { k: 'wigs',       l: 'Wigs',           p: 'Fittings, prep, changes, who is in what' },
+    { k: 'safety',     l: 'Safety',         p: 'Injuries, near misses, anything that needs a spot or a rail' }
   ];
   // Notes filed before the split still carry this key. It is not offered in
   // the picker any more, but it has to keep rendering with a name on it.
@@ -76,11 +80,17 @@
     for (var i = 0; i < DEPTS.length; i++) if (DEPTS[i].k === k) return i;
     return DEPTS.length;   // anything retired sorts to the end
   }
+  function deptPrompt(k) {
+    for (var i = 0; i < DEPTS.length; i++) if (DEPTS[i].k === k) return DEPTS[i].p;
+    return 'What happened, what is needed, what to watch';
+  }
 
   var done = {}, item = {};
   // roster: [{person_id,name,role,kind,sort}]  att: { 'iso|person_id': {status,note,by} }
   // notes: [{note_id,day,dept,body,author,created_at}]  reports: { iso: {at,by} }
   var roster = [], att = {}, notes = [], reports = {};
+  // strike: [{task_id,area,body,who,done,done_by,sort}]
+  var strike = [];
   var loadedDays = {};   // iso -> true, so a day's attendance/notes fetch once
   var me = localStorage.getItem(LS_ME) || '';
   var remote = false;
@@ -170,7 +180,9 @@
     try { att = JSON.parse(localStorage.getItem(LS_ATT) || '{}'); } catch (e) { att = {}; }
     try { notes = JSON.parse(localStorage.getItem(LS_NOTE) || '[]'); } catch (e) { notes = []; }
     try { reports = JSON.parse(localStorage.getItem(LS_REP) || '{}'); } catch (e) { reports = {}; }
+    try { strike = JSON.parse(localStorage.getItem(LS_STRIKE) || '[]'); } catch (e) { strike = []; }
     if (!roster.length) roster = seedRoster();
+    if (!strike.length) strike = seedStrike();
   }
   function saveLocal() {
     try {
@@ -180,6 +192,7 @@
       localStorage.setItem(LS_ATT, JSON.stringify(att));
       localStorage.setItem(LS_NOTE, JSON.stringify(notes));
       localStorage.setItem(LS_REP, JSON.stringify(reports));
+      localStorage.setItem(LS_STRIKE, JSON.stringify(strike));
     } catch (e) {}
   }
 
@@ -253,7 +266,8 @@
           item[x.item_id] = { st: x.status || 'todo', src: x.vendor || '', link: x.link || '',
                               links: x.links || (x.link ? [x.link] : []),
                               price: x.price_cents || 0, qty: x.qty || 1, by: x.updated_by || '',
-                              at: x.updated_at || '' };
+                              at: x.updated_at || '',
+                              sent: x.sent_at || '', sentBy: x.sent_by || '' };
         });
       }).catch(function () {}),
       api('roster_list').then(function (rows) {
@@ -294,6 +308,25 @@
       }).catch(function () {}),
       api('reports_list').then(function (rows) {
         (rows || []).forEach(function (x) { reports[x.day] = { at: x.sent_at, by: x.sent_by || '' }; });
+      }).catch(function () {}),
+      api('strike_list').then(function (rows) {
+        rows = rows || [];
+        var real = rows.filter(function (x) { return x.task_id !== STRIKE_SEED_KEY; });
+        var seeded = rows.filter(function (x) { return x.task_id === STRIKE_SEED_KEY; }).length;
+        if (real.length || seeded) {
+          strike = real.map(function (x) {
+            return { task_id: x.task_id, area: x.area || 'set', body: x.body || '',
+                     who: x.who || '', done: !!x.done, done_by: x.done_by || '',
+                     sort: x.sort == null ? 0 : x.sort };
+          });
+          return;
+        }
+        // Nothing there and never seeded: publish the starter list once, and
+        // leave a marker so emptying the list later does not bring it back.
+        strike = seedStrike();
+        strike.forEach(function (t) { saveStrike(t); });
+        api('strike_set', { task_id: STRIKE_SEED_KEY, area: 'meta', body: 'seeded',
+                            who: '', done: false, done_by: '', sort: 0 }).catch(function () {});
       }).catch(function () {})
     ]).then(function () { saveLocal(); });
   }
@@ -348,10 +381,31 @@
     api('item_set', { item_id: id, status: s.st || 'todo', vendor: s.src || '',
                       link: s.link || '', links: linksOf(s),
                       price_cents: s.price || 0, qty: s.qty || 1,
+                      sent_at: s.sent || '', sent_by: s.sentBy || '',
                       by: s.by || me || '' })
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function setSync(msg) { $('syncNote').textContent = msg; }
+
+  // The header is sticky and its height is not fixed — it changes with the
+  // width, with the day label, and with whichever sync line is showing. The
+  // scene stepper sticks directly beneath it, so it has to be told where that
+  // is rather than guessing.
+  function measureTopbar() {
+    var tb = document.querySelector('.topbar');
+    if (!tb) return;
+    var h = Math.round(tb.getBoundingClientRect().height);
+    if (h) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+  }
+  function watchTopbar() {
+    measureTopbar();
+    window.addEventListener('resize', measureTopbar);
+    window.addEventListener('orientationchange', measureTopbar);
+    if (window.ResizeObserver) {
+      var tb = document.querySelector('.topbar');
+      if (tb) new ResizeObserver(measureTopbar).observe(tb);
+    }
+  }
 
   // ---------- live sync ----------
   // connect() only ran at boot, so a phone showed whatever was true when it
@@ -363,9 +417,18 @@
 
   function editing() {
     var a = document.activeElement;
-    if (!a) return false;
-    var t = (a.tagName || '').toLowerCase();
-    return t === 'input' || t === 'select' || t === 'textarea';
+    var t = a && (a.tagName || '').toLowerCase();
+    if (t === 'input' || t === 'select' || t === 'textarea') return true;
+    // A department box can be holding a typed-but-not-yet-added note while the
+    // stage manager is looking at a different one. Focus has moved on; the
+    // words have not. A repaint here would throw them away.
+    return !!pendingNotes().length;
+  }
+  function pendingNotes() {
+    return Array.prototype.filter.call(
+      document.querySelectorAll('[data-ntbody]'),
+      function (x) { return (x.value || '').trim(); }
+    );
   }
   function sinceLabel(ts) {
     if (!ts) return '';
@@ -546,22 +609,104 @@
   }
 
   // ---------- rehearsal notes ----------
+  // One box per department, the way a paper rehearsal report is laid out, so
+  // the stage manager can work down it live while the director is still
+  // working rather than stopping to choose a category from a dropdown.
   function notesOf(iso) { return notes.filter(function (n) { return n.day === iso; }); }
-  function notesPanel(d) {
-    var mine = notesOf(d.iso);
-    var list = mine.length ? mine.map(function (n) {
-      return '<div class="nt"><div class="nt-h"><span class="nt-d">' + esc(deptLabel(n.dept)) + '</span>' +
-        (n.author ? '<span class="nt-a">' + esc(n.author) + '</span>' : '') +
+  function notesFor(iso, k) {
+    return notes.filter(function (n) { return n.day === iso && n.dept === k; });
+  }
+
+  // Every department gets a box; any retired one still carrying a note today
+  // gets one too, so an old note is never stranded somewhere nobody looks.
+  function deptKeys(iso) {
+    var keys = DEPTS.map(function (x) { return x.k; });
+    notesOf(iso).forEach(function (n) { if (keys.indexOf(n.dept) < 0) keys.push(n.dept); });
+    return keys;
+  }
+
+  function noteRow(n) {
+    return '<div class="nt">' +
+      '<div class="nt-h">' + (n.author ? '<span class="nt-a">' + esc(n.author) + '</span>' : '') +
         '<button class="nt-x" data-delnote="' + esc(n.note_id) + '" aria-label="Delete note">&times;</button></div>' +
-        '<div class="nt-b">' + esc(n.body) + '</div></div>';
-    }).join('') : '<p class="nt-none">No notes yet. Anything the report should carry goes here.</p>';
-    return '<div class="notes"><h3>Notes for ' + esc(d.date) + '</h3>' + list +
-      '<div class="nt-new">' +
-      '<select id="ntDept">' + DEPTS.map(function (x) {
-        return '<option value="' + x.k + '">' + esc(x.l) + '</option>';
-      }).join('') + '</select>' +
-      '<textarea id="ntBody" rows="2" placeholder="What happened, what is needed, what to watch"></textarea>' +
-      '<button class="btn" id="ntAdd" type="button">Add note</button></div></div>';
+      '<div class="nt-b">' + esc(n.body) + '</div></div>';
+  }
+
+  // Rendered on its own so adding or deleting a note repaints one department
+  // instead of the whole day — a full re-render would close every other box
+  // and throw away anything half-typed in them.
+  function deptBox(iso, k) {
+    var list = notesFor(iso, k);
+    return '<details class="dn' + (list.length ? ' has' : '') + '"' + (list.length ? ' open' : '') +
+        ' data-deptbox="' + esc(k) + '">' +
+      '<summary><span class="dn-n">' + esc(deptLabel(k)) + '</span>' +
+        (list.length ? '<span class="dn-c">' + list.length + '</span>'
+                     : '<span class="dn-c none">&ndash;</span>') + '</summary>' +
+      '<div class="dn-bd">' +
+        list.map(noteRow).join('') +
+        '<textarea data-ntbody="' + esc(k) + '" rows="2" placeholder="' + esc(deptPrompt(k)) + '"></textarea>' +
+        '<button class="btn dn-add" data-ntadd="' + esc(k) + '" type="button">Add to ' +
+          esc(deptLabel(k)) + '</button>' +
+      '</div></details>';
+  }
+
+  function notesPanel(d) {
+    var n = notesOf(d.iso).length;
+    return '<div class="notes"><h3>Rehearsal report notes</h3>' +
+      '<p class="nt-lead">' + (n
+        ? n + ' note' + (n === 1 ? '' : 's') + ' filed for ' + esc(d.date) +
+          '. They go out grouped by department when the report is sent.'
+        : 'Nothing filed for ' + esc(d.date) + ' yet. Open a department and type — ' +
+          'each one goes to its own head in the report.') + '</p>' +
+      '<div class="dnlist">' + deptKeys(d.iso).map(function (k) {
+        return deptBox(d.iso, k);
+      }).join('') + '</div></div>';
+  }
+
+  // File a note without going through the click handler. Used by the Add
+  // button and by the sweep below.
+  function addNote(iso, dept, body) {
+    var n = { note_id: iso + '|' + Date.now() + '|' + Math.floor(Math.random() * 1e4),
+              day: iso, dept: dept, body: body,
+              author: me || '', created_at: new Date().toISOString() };
+    notes.push(n); pushNote(n);
+    return n;
+  }
+
+  // Anything typed into a department box but never Added is still a note the
+  // stage manager wrote on the rehearsal report. Sending the report with it
+  // sitting on screen, unsent, is the one way this form could lose work — so
+  // sending files it first, and says how many it took.
+  function sweepPendingNotes(iso) {
+    var pending = pendingNotes(), depts = [];
+    pending.forEach(function (ta) {
+      var k = ta.dataset.ntbody;
+      addNote(iso, k, ta.value.trim());
+      ta.value = '';
+      if (depts.indexOf(k) < 0) depts.push(k);
+    });
+    if (pending.length) {
+      saveLocal();
+      depts.forEach(function (k) { refreshDeptBox(iso, k); });
+    }
+    return pending.length;
+  }
+
+  // Swap one department's box for a freshly rendered one, keeping it open.
+  function refreshDeptBox(iso, k) {
+    var el = document.querySelector('[data-deptbox="' + k.replace(/"/g, '') + '"]');
+    if (!el) { renderDay(); return; }
+    var open = el.open;
+    el.outerHTML = deptBox(iso, k);
+    var now = document.querySelector('[data-deptbox="' + k.replace(/"/g, '') + '"]');
+    if (now) now.open = open || !!notesFor(iso, k).length;
+    var lead = document.querySelector('.nt-lead');
+    if (lead) {
+      var n = notesOf(iso).length;
+      lead.textContent = n
+        ? n + ' note' + (n === 1 ? '' : 's') + ' filed. They go out grouped by department when the report is sent.'
+        : 'Nothing filed yet. Open a department and type — each one goes to its own head in the report.';
+    }
   }
 
   // ---------- end-of-day report ----------
@@ -650,8 +795,12 @@
   function sendReport(d) {
     var note = $('repNote'), btn = $('repSend');
     if (!me) { note.textContent = 'Pick your name on any block first, so the report says who filed it.'; return; }
+    var swept = sweepPendingNotes(d.iso);
     var r = buildReport(d);
-    btn.disabled = true; note.textContent = 'Sending…';
+    btn.disabled = true;
+    note.textContent = swept
+      ? 'Filed ' + swept + ' note' + (swept === 1 ? '' : 's') + ' still in the boxes. Sending…'
+      : 'Sending…';
     fetch('/api/deh-report', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r)
     }).then(function (res) { return res.json().catch(function () { return { ok: res.ok }; }); })
@@ -755,6 +904,18 @@
     return item[id] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
   }
 
+  // Once an item has gone to Todd it is frozen: it drops off the next buy
+  // email, and its fields stop taking edits. Two people cannot both be
+  // changing the price of something already sitting in someone's basket.
+  // `sent` is the timestamp of the email that carried it.
+  function isSent(id) { return !!st(id).sent; }
+  function sentLabel(s) {
+    var d = s.sent ? new Date(s.sent) : null;
+    if (!d || !isFinite(+d)) return 'Sent to Todd';
+    return 'Sent to Todd ' + (d.getMonth() + 1) + '/' + d.getDate() +
+           (s.sentBy ? ' by ' + s.sentBy : '');
+  }
+
   // One costume rarely comes from one page: a look is a top from one shop, a
   // pair of shoes from another and a jacket off Marketplace. Everything below
   // reads links through here, so an item saved back when there was a single
@@ -826,11 +987,13 @@
   // URL rather than its position: two people sourcing the same look at once
   // would otherwise delete each other's row by index.
   function linkBox(id, links) {
+    var locked = isSent(id);
     var rows = links.map(function (u) {
       return '<li class="lkx">' +
         '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(shortLink(u)) + '</a>' +
-        '<button class="lkx-x" type="button" data-dellink="' + esc(u) + '" data-lkitem="' + esc(id) + '" ' +
-          'aria-label="Remove this link">&times;</button></li>';
+        (locked ? '' :
+          '<button class="lkx-x" type="button" data-dellink="' + esc(u) + '" data-lkitem="' + esc(id) + '" ' +
+            'aria-label="Remove this link">&times;</button>') + '</li>';
     }).join('');
     var full = links.length >= MAX_LINKS;
     return '<div class="lks' + (links.length ? ' has' : '') + '">' +
@@ -838,7 +1001,9 @@
       // saying the same thing. The count is the only reason to print it.
       (links.length ? '<div class="lks-h">Links <b>' + links.length + '</b></div>' : '') +
       (rows ? '<ul class="lks-l">' + rows + '</ul>' : '') +
-      (full
+      (locked
+        ? (links.length ? '' : '<p class="lks-none">No links were on this when it went out.</p>')
+        : full
         ? '<p class="lks-none">That is ' + MAX_LINKS + ' links — remove one before adding another.</p>'
         : '<label class="lk"><span class="lk-lab">' +
             (links.length ? 'Add another' : 'Add a link') + '</span>' +
@@ -853,7 +1018,9 @@
     var s = st(it.id);
     var q = qtyOf(it);
     var links = linksOf(s);
-    return '<div class="it it-' + esc(s.st) + '" data-item="' + esc(it.id) + '">' +
+    var locked = !!s.sent;
+    var off = locked ? ' disabled' : '';
+    return '<div class="it it-' + esc(s.st) + (locked ? ' sent' : '') + '" data-item="' + esc(it.id) + '">' +
       '<div class="it-h">' +
         '<span class="it-cat it-' + esc(it.cat) + '">' + esc(CATS[it.cat] || it.cat) + '</span>' +
         (it.who ? '<span class="it-who">' + esc(it.who) + '</span>' : '') +
@@ -862,18 +1029,24 @@
       '</div>' +
       '<div class="it-n">' + esc(it.name) + '</div>' +
       (it.note ? '<div class="it-note">' + esc(it.note) + '</div>' : '') +
+      (locked ? '<div class="it-lock">' + esc(sentLabel(s)) +
+                ' &middot; locked so it cannot be bought twice</div>' : '') +
       '<div class="it-ctl">' +
-        '<label>Status<select data-f="st">' + STATES.map(function (x) {
+        '<label>Status<select data-f="st"' + off + '>' + STATES.map(function (x) {
           return '<option value="' + x.k + '"' + (s.st === x.k ? ' selected' : '') + '>' + x.l + '</option>';
         }).join('') + '</select></label>' +
-        '<label>Where from<input list="vendorList" data-f="src" value="' + esc(s.src) + '" placeholder="Amazon, in stock, build&hellip;"></label>' +
+        '<label>Where from<input list="vendorList" data-f="src" value="' + esc(s.src) + '" placeholder="Amazon, in stock, build&hellip;"' + off + '></label>' +
         '<label>Unit price<input data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' +
-          (s.price ? (s.price / 100).toFixed(2) : '') + '" placeholder="0.00"></label>' +
-        '<label>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"></label>' +
+          (s.price ? (s.price / 100).toFixed(2) : '') + '" placeholder="0.00"' + off + '></label>' +
+        '<label>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"' + off + '></label>' +
       '</div>' +
       linkBox(it.id, links) +
       '<div class="it-foot">' +
-        '<button class="it-save" data-saveitem type="button">Save this item</button>' +
+        (locked
+          // Not a way round the lock — a way to correct a mistake. Sending the
+          // wrong price would otherwise freeze it into the record for good.
+          ? '<button class="it-unlock" data-unlock="' + esc(it.id) + '" type="button">Unlock to edit</button>'
+          : '<button class="it-save" data-saveitem type="button">Save this item</button>') +
         (s.by ? '<span class="it-by">Last touched by <b>' + esc(s.by) + '</b>' +
                 (s.at ? ' &middot; ' + esc(shortWhen(s.at)) : '') + '</span>' : '') +
       '</div>' +
@@ -1004,20 +1177,25 @@
     var body = vendors.map(function (v) {
       var list = byVendor[v];
       var sub = list.reduce(function (a, it) { return a + lineCost(it); }, 0);
-      var links = list.reduce(function (a, it) { return a.concat(itemLinks(it.id)); }, []);
+      // Nothing already with Todd — reopening those tabs is how a thing gets
+      // ordered twice by two different people.
+      var links = list.reduce(function (a, it) {
+        return st(it.id).sent ? a : a.concat(itemLinks(it.id));
+      }, []);
       return '<div class="ven">' +
         '<div class="ven-h"><b>' + esc(v) + '</b><span>' + list.length + ' item' +
           (list.length === 1 ? '' : 's') + ' &middot; ' + money(sub) + '</span></div>' +
         list.map(function (it) {
           var s = st(it.id), q = qtyOf(it), ls = linksOf(s);
-          return '<div class="ven-i">' +
+          return '<div class="ven-i' + (s.sent ? ' sent' : '') + '">' +
             '<button class="ven-tick" data-buytick="' + esc(it.id) + '" ' +
               'aria-label="Mark ' + esc(it.name) + ' arrived">&#10003;</button>' +
             '<div class="ven-t">' + (ls.length
               ? '<a href="' + esc(ls[0]) + '" target="_blank" rel="noopener">' + esc(it.name) + '</a>'
               : esc(it.name)) +
               '<span class="ven-s">' + esc(it.scene) + ' &middot; ' + esc(CATS[it.cat] || it.cat) +
-              (q > 1 ? ' &middot; &times;' + q : '') + '</span>' +
+              (q > 1 ? ' &middot; &times;' + q : '') +
+              (s.sent ? ' &middot; <b class="ven-sent">' + esc(sentLabel(s)) + '</b>' : '') + '</span>' +
               // Everything after the first link, so a look built from three
               // shops can be bought in one pass without opening the item.
               (ls.length > 1 ? '<span class="ven-more">' + ls.slice(1).map(function (u, i) {
@@ -1044,7 +1222,11 @@
             ', straight to ' + esc(BUY_TO) + '.' +
             (toBuy.missing ? ' ' + toBuy.missing + ' still ' + (toBuy.missing === 1 ? 'has' : 'have') +
               ' no link — those are listed too, marked.' : '')
-          : 'Nothing has a link yet. Add links on an item and this sends them to ' + esc(BUY_TO) + '.') +
+          : toBuy.already.length
+            ? 'Nothing new to send. ' + toBuy.already.length + ' item' +
+              (toBuy.already.length === 1 ? ' is' : 's are') + ' already with ' + esc(BUY_TO) +
+              ' — struck through below. Add links to something else and this lights up again.'
+            : 'Nothing has a link yet. Add links on an item and this sends them to ' + esc(BUY_TO) + '.') +
         '</span>' +
         '<div class="buy-note" id="buyNote"></div>' +
       '</div>' + body;
@@ -1054,14 +1236,18 @@
   // no link ride along at the bottom so he can see the list is not finished
   // rather than buying two thirds of a show and assuming that was all of it.
   function buyLinkList() {
-    var open = S.allItems.filter(function (it) {
+    var outstanding = S.allItems.filter(function (it) {
       var k = st(it.id).st; return k !== 'done' && k !== 'arrived';
     });
-    var items = [], missing = 0, total = 0;
+    // Anything already emailed to Todd is off the list. He was asked once; a
+    // second copy of the same link is how a show ends up with two of a thing.
+    var open = outstanding.filter(function (it) { return !st(it.id).sent; });
+    var items = [], missing = 0, total = 0, ids = [];
     open.forEach(function (it) {
       var s = st(it.id), ls = linksOf(s), q = qtyOf(it);
       if (!ls.length) { missing++; return; }
       total += (s.price || 0) * q;
+      ids.push(it.id);
       items.push({ name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
                    vendor: s.src || '', links: ls, status: s.st || 'todo', qty: q,
                    price_cents: s.price || 0, line_cents: (s.price || 0) * q, by: s.by || '' });
@@ -1071,7 +1257,32 @@
         return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat,
                  vendor: st(it.id).src || '', qty: qtyOf(it) };
       });
-    return { items: items, unlinked: unlinked, missing: missing, totalCents: total };
+    // Struck through in the email rather than dropped from it — a line Todd
+    // can see and skip beats a line that quietly is not there, when the
+    // previous email asking for it is still sitting in his inbox.
+    var already = outstanding.filter(function (it) { return st(it.id).sent; })
+      .map(function (it) {
+        var s = st(it.id);
+        return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
+                 vendor: s.src || '', qty: qtyOf(it), line_cents: (s.price || 0) * qtyOf(it),
+                 sent: s.sent, sentBy: s.sentBy || '' };
+      });
+    return { items: items, unlinked: unlinked, already: already,
+             ids: ids, missing: missing, totalCents: total };
+  }
+
+  // Freeze everything that just went out, so the next email cannot carry it
+  // again and nobody edits a price out from under an order in flight.
+  function markSent(ids) {
+    var now = new Date().toISOString();
+    ids.forEach(function (id) {
+      var s = item[id] || st(id);
+      s.sent = now;
+      s.sentBy = me || s.by || '';
+      item[id] = s;
+      pushItem(id);
+    });
+    if (ids.length) saveLocal();
   }
 
   function sendBuyList() {
@@ -1087,15 +1298,23 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         kind: 'buy', dayLabel: (d && d.date) || 'Today', by: me || 'staff', at: clock(Date.now()),
-        items: list.items, unlinked: list.unlinked, missing: list.missing,
+        items: list.items, unlinked: list.unlinked, already: list.already, missing: list.missing,
         totalCents: list.totalCents, budgetCents: BUDGET_TOTAL, spentCents: spentTotal()
       })
     }).then(function (res) { return res.json().catch(function () { return { ok: res.ok }; }); })
       .then(function (j) {
         btn.disabled = false;
         if (!j || !j.ok) throw new Error((j && j.error) || 'send failed');
-        note.textContent = 'Sent to ' + BUY_TO + ' — ' + n + ' link' + (n === 1 ? '' : 's') +
-                           ', ' + money(list.totalCents) + '.';
+        // Only after the mail is away. Marking first would lock items off a
+        // send that never happened, and nothing would ever reach Todd.
+        markSent(list.ids);
+        renderBuy(); renderBudget();
+        var note2 = $('buyNote');
+        if (note2) {
+          note2.textContent = 'Sent to ' + BUY_TO + ' — ' + n + ' link' + (n === 1 ? '' : 's') +
+            ', ' + money(list.totalCents) + '. ' + list.ids.length +
+            ' item' + (list.ids.length === 1 ? '' : 's') + ' locked; they will not go again.';
+        }
       })
       .catch(function (e) {
         btn.disabled = false;
@@ -1123,9 +1342,10 @@
       L.push(v.toUpperCase() + '  (' + money(sub) + ')');
       byVendor[v].forEach(function (it) {
         var s = st(it.id), q = qtyOf(it);
-        L.push('  - ' + it.name + (q > 1 ? ' x' + q : '') + '  ' +
+        L.push('  ' + (s.sent ? '[SENT] ' : '- ') + it.name + (q > 1 ? ' x' + q : '') + '  ' +
                (s.price ? money(s.price * q) : 'no price') +
                '   [' + it.scene + ' / ' + (CATS[it.cat] || it.cat) + ']' +
+               (s.sent ? '  ' + sentLabel(s) + ' — do not re-buy' : '') +
                linksOf(s).map(function (u) { return '\n      ' + u; }).join(''));
       });
       L.push('');
@@ -1184,7 +1404,175 @@
       'item and every total here fills in on its own.</p>';
   }
 
-  function renderAll() { renderSchedule(); renderScenes(); renderBudget(); renderBuy(); }
+  function renderAll() { renderSchedule(); renderScenes(); renderBudget(); renderBuy(); renderStrike(); }
+
+  // ---------- strike ----------
+  // What has to happen after the last performance, and whose name is against
+  // each line. Strike is the part of a production that gets planned last and
+  // goes wrong most: people leave, things go home in the wrong bag, and the
+  // borrowed furniture is the thing nobody remembers. A name against a line
+  // is the whole point of this tab.
+  var STRIKE_AREAS = [
+    { k: 'set',       l: 'Set' },
+    { k: 'lighting',  l: 'Lighting' },
+    { k: 'sound',     l: 'Sound' },
+    { k: 'projection', l: 'Projection' },
+    { k: 'props',     l: 'Props' },
+    { k: 'costume',   l: 'Costumes' },
+    { k: 'hair',      l: 'Hair & Wigs' },
+    { k: 'house',     l: 'Front of house' },
+    { k: 'backstage', l: 'Backstage & dressing rooms' },
+    { k: 'load',      l: 'Load-out & returns' }
+  ];
+  function areaLabel(k) {
+    for (var i = 0; i < STRIKE_AREAS.length; i++) if (STRIKE_AREAS[i].k === k) return STRIKE_AREAS[i].l;
+    return k;
+  }
+
+  // A starting list, not a fixed one — every line can be edited or deleted,
+  // and the tab is just as usable emptied out. It exists because a blank page
+  // at 10pm on closing night is how the borrowed furniture gets forgotten.
+  var STRIKE_SEED = [
+    ['set', 'Unbolt and stack decking, screws out and boxed'],
+    ['set', 'Break down anything we are not keeping'],
+    ['set', 'Return borrowed furniture — check it against the list of who lent what'],
+    ['set', 'Sweep and mop the stage'],
+    ['lighting', 'Let the lamps cool before anyone touches the grid'],
+    ['lighting', 'Drop the specials, cap and coil every cable'],
+    ['lighting', 'Gel out of the frames, labelled and boxed'],
+    ['lighting', 'House plot back to rep'],
+    ['lighting', 'Ladders and lift away, floor clear'],
+    ['sound', 'Mics off, batteries out, packs back in the case'],
+    ['sound', 'Every scrap of mic tape off the deck and off the actors'],
+    ['sound', 'XLR coiled over-under and labelled'],
+    ['sound', 'Monitors and stands to storage'],
+    ['projection', 'Content off the machine'],
+    ['projection', 'Projector, cabling and surfaces down'],
+    ['props', 'Everything back to the props table for check-in'],
+    ['props', 'Check every prop against the running list before anything leaves'],
+    ['props', 'Borrowed props bagged with the owner’s name on the bag'],
+    ['props', 'Consumables binned'],
+    ['costume', 'Every costume on a hanger with the actor’s name — nothing goes home'],
+    ['costume', 'Wash pile kept separate from dry-clean'],
+    ['costume', 'Count the shoes'],
+    ['costume', 'Rentals bagged with their paperwork'],
+    ['hair', 'Wigs back on blocks'],
+    ['hair', 'Brushes and combs washed, kits sealed'],
+    ['hair', 'Bin every used applicator'],
+    ['house', 'Programmes and signage down'],
+    ['house', 'Lobby and concessions cleared and counted'],
+    ['house', 'Lost property bagged and labelled'],
+    ['backstage', 'Quick-change booths struck, glow tape up'],
+    ['backstage', 'Every dressing room emptied and walked'],
+    ['backstage', 'Bin bags out'],
+    ['load', 'Van loaded in the order it unloads'],
+    ['load', 'Collect every script and MTI material — none of it goes home with anyone'],
+    ['load', 'Count the scripts against the list before we leave'],
+    ['load', 'Final walk of the building with the venue rep']
+  ];
+  var STRIKE_SEED_KEY = '__seeded__';
+
+  function strikeRows() {
+    return strike.filter(function (t) { return t.task_id !== STRIKE_SEED_KEY; });
+  }
+  function strikeOf(area) {
+    return strikeRows().filter(function (t) { return t.area === area; })
+      .sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); });
+  }
+  function strikeAreas() {
+    var keys = STRIKE_AREAS.map(function (x) { return x.k; });
+    strikeRows().forEach(function (t) { if (keys.indexOf(t.area) < 0) keys.push(t.area); });
+    return keys;
+  }
+  function seedStrike() {
+    return STRIKE_SEED.map(function (row, i) {
+      return { task_id: 'seed-' + i, area: row[0], body: row[1], who: '',
+               done: false, done_by: '', sort: i };
+    });
+  }
+
+  function renderStrike() {
+    var dl = $('strikeWho');
+    if (dl) {
+      dl.innerHTML = people().filter(function (p) { return p.name; })
+        .map(function (p) { return '<option value="' + esc(p.name) + '">'; }).join('');
+    }
+    var all = strikeRows();
+    var done = all.filter(function (t) { return t.done; }).length;
+    var pct = all.length ? Math.round(done / all.length * 100) : 0;
+    var unassigned = all.filter(function (t) { return !(t.who || '').trim(); }).length;
+    var mine = me ? all.filter(function (t) {
+      return (t.who || '').trim().toLowerCase() === me.toLowerCase();
+    }).length : 0;
+
+    var head = '<div class="sc-summary">' +
+      '<div class="ss-row"><span>Struck</span><b>' + done + ' of ' + all.length + '</b></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="ss-row"><span>Nobody’s name on it</span><b class="' +
+        (unassigned ? 'over' : 'under') + '">' + unassigned + '</b></div>' +
+      (me ? '<div class="ss-row"><span>Yours, ' + esc(me) + '</span><b>' + mine + '</b></div>' : '') +
+      '<p class="ss-note">Put a name against every line before the last show. On the night, tap the box ' +
+      'as each one is finished — everyone sees the same list.</p></div>';
+
+    var body = strikeAreas().map(function (k) {
+      var list = strikeOf(k);
+      var d = list.filter(function (t) { return t.done; }).length;
+      return '<div class="stk' + (list.length && d === list.length ? ' full' : '') + '">' +
+        '<div class="stk-h"><b>' + esc(areaLabel(k)) + '</b>' +
+          '<span>' + d + '/' + list.length + '</span></div>' +
+        (list.length ? list.map(strikeRow).join('')
+                     : '<p class="stk-none">Nothing on this list yet.</p>') +
+        '<div class="stk-add">' +
+          '<input data-stknew="' + esc(k) + '" placeholder="Add a job" autocomplete="off">' +
+          '<button class="btn stk-go" data-stkadd="' + esc(k) + '" type="button">Add</button>' +
+        '</div></div>';
+    }).join('');
+
+    $('strike').innerHTML = head +
+      '<div class="buy-acts"><button class="btn buy-copy" id="stkCopy" type="button">Copy the list</button>' +
+      '<span class="buy-hint">Names save as you type. Anyone with the dashboard sees the same list.</span></div>' +
+      body;
+  }
+
+  function strikeRow(t) {
+    return '<div class="stk-i' + (t.done ? ' done' : '') + '" data-stk="' + esc(t.task_id) + '">' +
+      '<button class="stk-tick" data-stktick="' + esc(t.task_id) + '" aria-pressed="' + (t.done ? 'true' : 'false') +
+        '" aria-label="' + (t.done ? 'Mark not done' : 'Mark done') + '">' + (t.done ? '&#10003;' : '') + '</button>' +
+      '<div class="stk-t"><span class="stk-b">' + esc(t.body) + '</span>' +
+        (t.done && t.done_by ? '<span class="stk-by">struck by ' + esc(t.done_by) + '</span>' : '') + '</div>' +
+      '<input class="stk-who" list="strikeWho" data-stkwho="' + esc(t.task_id) + '" value="' + esc(t.who || '') +
+        '" placeholder="who" autocomplete="off" aria-label="Who is doing this">' +
+      '<button class="stk-x" data-stkdel="' + esc(t.task_id) + '" aria-label="Remove this job">&times;</button>' +
+    '</div>';
+  }
+
+  function strikeText() {
+    var L = ['DEAR EVAN HANSEN — STRIKE', ''];
+    strikeAreas().forEach(function (k) {
+      var list = strikeOf(k);
+      if (!list.length) return;
+      L.push(areaLabel(k).toUpperCase());
+      list.forEach(function (t) {
+        L.push('  [' + (t.done ? 'x' : ' ') + '] ' + t.body +
+               (t.who ? '   — ' + t.who : '   — UNASSIGNED'));
+      });
+      L.push('');
+    });
+    var all = strikeRows();
+    L.push(all.filter(function (t) { return t.done; }).length + ' of ' + all.length + ' done.');
+    return L.join('\n');
+  }
+
+  function saveStrike(t) {
+    saveLocal();
+    if (!remote) return;
+    api('strike_set', { task_id: t.task_id, area: t.area, body: t.body, who: t.who || '',
+                        done: !!t.done, done_by: t.done_by || '', sort: t.sort || 0 })
+      .catch(function () { setSync('offline — saved on this phone'); });
+  }
+  function strikeById(id) {
+    return strikeRows().filter(function (t) { return t.task_id === id; })[0];
+  }
 
   // ---------- reference tabs ----------
   function renderRef() {
@@ -1202,6 +1590,7 @@
     loadLocal();
     renderRef();
     renderAll();
+    watchTopbar();
 
     document.body.classList.add('on-day');
     var today = new Date().toISOString().slice(0, 10);
@@ -1237,22 +1626,29 @@
         roster.push(p); saveLocal(); pushRoster(p); renderDay();
         return;
       }
-      if (e.target.id === 'ntAdd') {
-        var body = ($('ntBody').value || '').trim();
-        if (!body) return;
-        var n = { note_id: d.iso + '|' + Date.now() + '|' + Math.floor(Math.random() * 1e4),
-                  day: d.iso, dept: $('ntDept').value || 'general', body: body,
-                  author: me || '', created_at: new Date().toISOString() };
-        notes.push(n); saveLocal(); pushNote(n); renderDay();
+      var na = e.target.closest('[data-ntadd]');
+      if (na) {
+        var dept = na.dataset.ntadd;
+        var ta = document.querySelector('[data-ntbody="' + dept.replace(/"/g, '') + '"]');
+        var body = ta ? (ta.value || '').trim() : '';
+        if (!body) { if (ta) ta.focus(); return; }
+        addNote(d.iso, dept, body);
+        saveLocal();
+        // Repaint this department only — the stage manager may have half a
+        // note typed into two others.
+        refreshDeptBox(d.iso, dept);
+        var again = document.querySelector('[data-ntbody="' + dept.replace(/"/g, '') + '"]');
+        if (again) again.focus();
         return;
       }
       var dn = e.target.closest('[data-delnote]');
       if (dn) {
         var nid = dn.dataset.delnote;
+        var gone = notes.filter(function (x) { return x.note_id === nid; })[0];
         notes = notes.filter(function (x) { return x.note_id !== nid; });
         saveLocal();
         if (remote) api('note_delete', { note_id: nid }).catch(function () {});
-        renderDay();
+        if (gone) refreshDeptBox(d.iso, gone.dept); else renderDay();
         return;
       }
       if (e.target.id === 'repSend') { sendReport(d); return; }
@@ -1269,6 +1665,14 @@
       }
       var blk = e.target.closest('.blk');
       if (blk) blk.classList.toggle('open');
+    });
+
+    // A box holding text nobody has pressed Add on gets marked, so an unsent
+    // note is visible from the closed summary rather than only from inside.
+    $('day').addEventListener('input', function (e) {
+      if (!(e.target.dataset && e.target.dataset.ntbody)) return;
+      var box = e.target.closest('[data-deptbox]');
+      if (box) box.classList.toggle('pending', !!e.target.value.trim());
     });
 
     // attendance notes and roster names save as they are typed
@@ -1303,7 +1707,7 @@
         var v = oa.dataset.openall;
         S.allItems.forEach(function (it) {
           var s = st(it.id);
-          if (s.st === 'done' || s.st === 'arrived') return;
+          if (s.st === 'done' || s.st === 'arrived' || s.sent) return;
           if (((s.src || '').trim() || 'Not sourced yet') !== v) return;
           linksOf(s).forEach(function (u) { window.open(u, '_blank', 'noopener'); });
         });
@@ -1316,6 +1720,69 @@
         item[iid] = s2; saveLocal(); pushItem(iid);
         renderBuy(); renderBudget(); renderScenes();
       }
+    });
+
+    // ---------- strike ----------
+    $('strike').addEventListener('click', function (e) {
+      if (e.target.id === 'stkCopy') {
+        copyText(strikeText(), null, 'whoever needs it');
+        e.target.textContent = 'Copied';
+        setTimeout(function () { e.target.textContent = 'Copy the list'; }, 1800);
+        return;
+      }
+      var tk = e.target.closest('[data-stktick]');
+      if (tk) {
+        var t = strikeById(tk.dataset.stktick);
+        if (!t) return;
+        t.done = !t.done;
+        // Who struck it, not who is down to do it. On the night those differ
+        // more often than not, and the person who actually did it is the one
+        // worth having on the record.
+        t.done_by = t.done ? (me || '') : '';
+        saveStrike(t); renderStrike();
+        return;
+      }
+      var dx = e.target.closest('[data-stkdel]');
+      if (dx) {
+        var id = dx.dataset.stkdel;
+        strike = strike.filter(function (x) { return x.task_id !== id; });
+        saveLocal();
+        if (remote) api('strike_delete', { task_id: id }).catch(function () {});
+        renderStrike();
+        return;
+      }
+      var ad = e.target.closest('[data-stkadd]');
+      if (ad) {
+        var area = ad.dataset.stkadd;
+        var box = document.querySelector('[data-stknew="' + area.replace(/"/g, '') + '"]');
+        var body = box ? (box.value || '').trim() : '';
+        if (!body) { if (box) box.focus(); return; }
+        var next = { task_id: 'stk-' + Date.now() + '-' + Math.floor(Math.random() * 1e4),
+                     area: area, body: body, who: '', done: false, done_by: '',
+                     sort: strikeOf(area).length + 1000 };
+        strike.push(next);
+        saveStrike(next); renderStrike();
+        var again = document.querySelector('[data-stknew="' + area.replace(/"/g, '') + '"]');
+        if (again) again.focus();
+        return;
+      }
+    });
+    // A name saves as it is typed — nobody presses a button to claim a job.
+    $('strike').addEventListener('change', function (e) {
+      var w = e.target.closest('[data-stkwho]');
+      if (!w) return;
+      var t = strikeById(w.dataset.stkwho);
+      if (!t) return;
+      t.who = w.value.trim();
+      saveStrike(t);
+    });
+    $('strike').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var n = e.target.closest('[data-stknew]');
+      if (!n) return;
+      e.preventDefault();
+      var btn = document.querySelector('[data-stkadd="' + n.dataset.stknew.replace(/"/g, '') + '"]');
+      if (btn) btn.click();
     });
 
     $('scenes').addEventListener('click', function (e) {
@@ -1333,10 +1800,31 @@
     $('sceneDetail').addEventListener('click', function (e) {
       // Save the whole card. Fields already commit on blur, but on a phone that
       // is invisible — people want a button that says the row is stored.
+      // Deliberately reopen something already emailed to Todd. Confirmed,
+      // because the point of the lock is that it is not a stray tap, and it
+      // puts the item back on the next list — which is usually what you want
+      // after correcting a wrong price, and never what you want by accident.
+      var ul = e.target.closest('[data-unlock]');
+      if (ul) {
+        var uid = ul.dataset.unlock;
+        var us = item[uid] || st(uid);
+        if (!window.confirm('This already went to ' + BUY_TO + ' on ' +
+            (us.sent ? new Date(us.sent).toLocaleDateString() : 'an earlier day') +
+            '. Unlocking puts it back on the next email — Todd could buy it twice. Continue?')) return;
+        delete us.sent; delete us.sentBy;
+        us.by = me || us.by || '';
+        us.at = new Date().toISOString();
+        item[uid] = us;
+        saveLocal(); pushItem(uid);
+        renderSceneDetail(openScene); renderBuy(); renderBudget();
+        return;
+      }
+
       var si = e.target.closest('[data-saveitem]');
       if (si) {
         var ibox = si.closest('[data-item]');
         var iid = ibox.dataset.item;
+        if (isSent(iid)) return;   // the fields are disabled; belt and braces
         var cur2 = item[iid] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
         ibox.querySelectorAll('[data-f]').forEach(function (el) {
           var g = el.dataset.f;
@@ -1393,6 +1881,7 @@
       var dl = e.target.closest('[data-dellink]');
       if (dl) {
         var lid = dl.dataset.lkitem, gone = dl.dataset.dellink;
+        if (isSent(lid)) return;
         var s3 = item[lid] || st(lid);
         setLinks(s3, linksOf(s3).filter(function (u) { return u !== gone; }));
         s3.by = me || s3.by || '';
@@ -1444,6 +1933,7 @@
         return false;
       }
       var id = box.dataset.item;
+      if (isSent(id)) return false;
       var s = item[id] || st(id);
       var have = linksOf(s);
       if (have.indexOf(url) < 0) setLinks(s, have.concat([url]));
@@ -1466,6 +1956,7 @@
       var box = e.target.closest('[data-item]');
       if (!box) return;
       var id = box.dataset.item;
+      if (isSent(id)) return;
       var s = item[id] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
       if (f === 'price') {
         var v = parseFloat(e.target.value);
@@ -1500,7 +1991,27 @@
       saveLocal(); pushItem(id);
       // repaint totals without losing the field the user is typing in
       var active = document.activeElement;
-      if (f === 'st') { renderSceneDetail(openScene); renderBudget(); return; }
+      // Marking one thing done used to re-render the whole scene, which threw
+      // the page back to the top — so working down a scene ticking items off
+      // meant scrolling back to your place after every single one. Nothing
+      // about a status change moves anything, so repaint the row and leave the
+      // page exactly where it is.
+      if (f === 'st') {
+        box.className = 'it it-' + esc(s.st) + (s.sent ? ' sent' : '');
+        renderBudget(); renderBuy();
+        var sc0 = openScene === 'ALL'
+          ? { items: S.standing }
+          : S.scenes.filter(function (x) { return x.id === openScene; })[0];
+        if (sc0) {
+          var tot0 = $('sceneDetail').querySelector('.sc-total b');
+          if (tot0) tot0.textContent = money(sc0.items.reduce(function (a, x) { return a + lineCost(x); }, 0));
+        }
+        var cell0 = box.querySelector('.it-cost');
+        var it0 = S.allItems.filter(function (x) { return x.id === id; })[0];
+        if (cell0 && it0) cell0.textContent = money(lineCost(it0));
+        if (active && active.focus) active.focus();
+        return;
+      }
       var it = S.allItems.filter(function (x) { return x.id === id; })[0];
       if (it) {
         var cell = box.querySelector('.it-cost');
@@ -1569,6 +2080,7 @@
     if (v === 'scenes') { openScene = null; renderScenes(); }
     if (v === 'budget') renderBudget();
     if (v === 'buy') renderBuy();
+    if (v === 'strike') renderStrike();
     window.scrollTo({ top: 0 });
   }
 

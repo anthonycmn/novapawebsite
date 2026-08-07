@@ -137,7 +137,10 @@ const BLOBS = {
                  // Items written before multiple links existed have only `link`.
                  links: URLS(v.links, v.link),
                  price_cents: v.price_cents || 0, qty: v.qty || 1, updated_by: v.by || "",
-                 updated_at: v.at || null })
+                 updated_at: v.at || null,
+                 // Set once the item has been emailed to Todd. Its presence is
+                 // what stops the next email carrying the same thing again.
+                 sent_at: v.sent_at || null, sent_by: v.sent_by || "" })
   ),
 
   // `at` is stamped server-side. The rehearsal report asks "what was sourced
@@ -149,7 +152,11 @@ const BLOBS = {
                         // reading the single field gets the primary source.
                         link: links[0] || "", links,
                         price_cents: I(a.price_cents), qty: I(a.qty) || 1, by: S(a.by),
-                        at: new Date().toISOString() };
+                        at: new Date().toISOString(),
+                        // Empty clears it — that is the unlock path, and it has
+                        // to be able to travel or an unlock on one phone would
+                        // never reach the others.
+                        sent_at: S(a.sent_at) || null, sent_by: S(a.sent_by) };
     return d;
   }),
 
@@ -206,6 +213,22 @@ const BLOBS = {
     return mutate(`notes/${day}`, (d) => { delete d[id]; return d; });
   },
 
+  // Strike: one row per job, with whose name is against it. Shared, because
+  // the whole point is that everyone is looking at the same list on the night.
+  strike_list: async () => asRows(
+    (await readDoc("strike")).data,
+    (k, v) => ({ task_id: k, area: v.area || "set", body: v.body || "", who: v.who || "",
+                 done: !!v.done, done_by: v.done_by || "", sort: v.sort == null ? 0 : v.sort })
+  ).sort((x, y) => (x.sort - y.sort) || x.task_id.localeCompare(y.task_id)),
+
+  strike_set: async (a) => mutate("strike", (d) => {
+    d[S(a.task_id)] = { area: S(a.area) || "set", body: S(a.body), who: S(a.who),
+                        done: B(a.done), done_by: S(a.done_by), sort: I(a.sort) };
+    return d;
+  }),
+
+  strike_delete: async (a) => mutate("strike", (d) => { delete d[S(a.task_id)]; return d; }),
+
   reports_list: async () => asRows(
     (await readDoc("reports")).data,
     (k, v) => ({ day: k, sent_at: v.at || null, sent_by: v.by || "", sent_to: v.to || "" })
@@ -225,7 +248,7 @@ const RPC = {
   progress_list:   ["deh_progress_list",   () => ({})],
   progress_set:    ["deh_progress_set",    (a) => ({ p_block_id: S(a.block_id), p_done: B(a.done), p_by: S(a.by) })],
   items_list:      ["deh_items_list",      () => ({})],
-  item_set:        ["deh_item_set",        (a) => { const l = URLS(a.links, a.link); return { p_item_id: S(a.item_id), p_status: S(a.status), p_vendor: S(a.vendor), p_link: l[0] || "", p_links: l, p_price_cents: I(a.price_cents), p_qty: I(a.qty) || 1, p_by: S(a.by) }; }],
+  item_set:        ["deh_item_set",        (a) => { const l = URLS(a.links, a.link); return { p_item_id: S(a.item_id), p_status: S(a.status), p_vendor: S(a.vendor), p_link: l[0] || "", p_links: l, p_price_cents: I(a.price_cents), p_qty: I(a.qty) || 1, p_sent_at: S(a.sent_at) || null, p_sent_by: S(a.sent_by), p_by: S(a.by) }; }],
   roster_list:     ["deh_roster_list",     () => ({})],
   roster_set:      ["deh_roster_set",      (a) => ({ p_person_id: S(a.person_id), p_name: S(a.name), p_role: S(a.role), p_kind: S(a.kind) || "cast", p_sort: I(a.sort) || 100, p_active: a.active !== false })],
   attendance_list: ["deh_attendance_list", (a) => ({ p_day: D(a.day) })],
@@ -233,6 +256,9 @@ const RPC = {
   notes_list:      ["deh_notes_list",      (a) => ({ p_day: D(a.day) })],
   note_add:        ["deh_note_add",        (a) => ({ p_note_id: S(a.note_id), p_day: D(a.day), p_dept: S(a.dept) || "general", p_body: S(a.body), p_author: S(a.author) })],
   note_delete:     ["deh_note_delete",     (a) => ({ p_note_id: S(a.note_id) })],
+  strike_list:     ["deh_strike_list",     () => ({})],
+  strike_set:      ["deh_strike_set",      (a) => ({ p_task_id: S(a.task_id), p_area: S(a.area) || "set", p_body: S(a.body), p_who: S(a.who), p_done: B(a.done), p_done_by: S(a.done_by), p_sort: I(a.sort) })],
+  strike_delete:   ["deh_strike_delete",   (a) => ({ p_task_id: S(a.task_id) })],
   reports_list:    ["deh_reports_list",    () => ({})],
   report_log:      ["deh_report_log",      (a) => ({ p_day: D(a.day), p_by: S(a.by), p_to: S(a.to), p_summary: a.summary && typeof a.summary === "object" ? a.summary : {} })],
 };

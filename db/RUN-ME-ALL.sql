@@ -94,6 +94,8 @@ create table if not exists deh_items (
   vendor      text,                           -- Amazon, in stock, build in shop, Marketplace...
   link        text,                           -- the primary link; == links[1]
   links       text[] not null default '{}',   -- a costume look is often three shops
+  sent_at     timestamptz,                    -- emailed to Todd; frozen once set
+  sent_by     text,
   price_cents int  not null default 0,        -- UNIT price; multiply by qty for the line
   qty         int  not null default 1,
   updated_by  text,
@@ -109,6 +111,8 @@ alter table deh_items enable row level security;
 alter table deh_items add column if not exists links text[] not null default '{}';
 update deh_items set links = array[link]
   where link is not null and link <> '' and cardinality(links) = 0;
+alter table deh_items add column if not exists sent_at timestamptz;
+alter table deh_items add column if not exists sent_by text;
 
 create or replace function public.deh_items_list()
 returns setof deh_items
@@ -120,13 +124,14 @@ $fn$;
 -- first: `create or replace` with different arguments makes an overload, and
 -- two candidates would make the PostgREST call ambiguous.
 drop function if exists public.deh_item_set(text, text, text, text, int, int, text);
+drop function if exists public.deh_item_set(text, text, text, text, text[], int, int, text);
 
 create or replace function public.deh_item_set(
   p_item_id text, p_status text, p_vendor text, p_link text, p_links text[],
-  p_price_cents int, p_qty int, p_by text)
+  p_price_cents int, p_qty int, p_sent_at timestamptz, p_sent_by text, p_by text)
 returns void
 language sql volatile security definer set search_path = public as $fn$
-  insert into deh_items (item_id, status, vendor, link, links, price_cents, qty, updated_by, updated_at)
+  insert into deh_items (item_id, status, vendor, link, links, price_cents, qty, sent_at, sent_by, updated_by, updated_at)
   values (p_item_id,
           coalesce(nullif(trim(p_status), ''), 'todo'),
           nullif(trim(p_vendor), ''),
@@ -134,6 +139,7 @@ language sql volatile security definer set search_path = public as $fn$
           coalesce(p_links, '{}'),
           greatest(coalesce(p_price_cents, 0), 0),
           greatest(coalesce(p_qty, 1), 1),
+          p_sent_at, nullif(trim(p_sent_by), ''),
           nullif(trim(p_by), ''), now())
   on conflict (item_id) do update set
     status      = excluded.status,
@@ -142,12 +148,14 @@ language sql volatile security definer set search_path = public as $fn$
     links       = excluded.links,
     price_cents = excluded.price_cents,
     qty         = excluded.qty,
+    sent_at     = excluded.sent_at,
+    sent_by     = excluded.sent_by,
     updated_by  = excluded.updated_by,
     updated_at  = now();
 $fn$;
 
 grant execute on function public.deh_items_list() to anon, authenticated;
-grant execute on function public.deh_item_set(text, text, text, text, text[], int, int, text) to anon, authenticated;
+grant execute on function public.deh_item_set(text, text, text, text, text[], int, int, timestamptz, text, text) to anon, authenticated;
 
 -- ── Company roster ───────────────────────────────────────────────────────
 -- Who can be marked present. Editable in the dashboard because the cast list
@@ -220,6 +228,58 @@ $fn$;
 
 grant execute on function public.deh_attendance_list(date) to anon, authenticated;
 grant execute on function public.deh_attendance_set(date, text, text, text, text) to anon, authenticated;
+
+-- ── Strike ───────────────────────────────────────────────────────────────
+-- What has to happen after the last performance, and whose name is against
+-- each line. Shared, because the whole point is that everyone is looking at
+-- the same list on the night.
+create table if not exists deh_strike (
+  task_id    text primary key,          -- client-generated
+  area       text not null default 'set',  -- set|lighting|sound|projection|props|
+                                           -- costume|hair|house|backstage|load
+  body       text not null,
+  who        text,                      -- who is down to do it
+  done       boolean not null default false,
+  done_by    text,                      -- who actually struck it; often not `who`
+  sort       int not null default 0,
+  updated_at timestamptz not null default now()
+);
+alter table deh_strike enable row level security;
+
+create or replace function public.deh_strike_list()
+returns setof deh_strike
+language sql stable security definer set search_path = public as $fn$
+  select * from deh_strike order by sort, task_id;
+$fn$;
+
+create or replace function public.deh_strike_set(
+  p_task_id text, p_area text, p_body text, p_who text,
+  p_done boolean, p_done_by text, p_sort int)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  insert into deh_strike (task_id, area, body, who, done, done_by, sort, updated_at)
+  values (p_task_id,
+          coalesce(nullif(trim(p_area), ''), 'set'),
+          trim(p_body),
+          nullif(trim(p_who), ''),
+          coalesce(p_done, false),
+          nullif(trim(p_done_by), ''),
+          coalesce(p_sort, 0), now())
+  on conflict (task_id) do update set
+    area = excluded.area, body = excluded.body, who = excluded.who,
+    done = excluded.done, done_by = excluded.done_by, sort = excluded.sort,
+    updated_at = now();
+$fn$;
+
+create or replace function public.deh_strike_delete(p_task_id text)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  delete from deh_strike where task_id = p_task_id;
+$fn$;
+
+grant execute on function public.deh_strike_list() to anon, authenticated;
+grant execute on function public.deh_strike_set(text, text, text, text, boolean, text, int) to anon, authenticated;
+grant execute on function public.deh_strike_delete(text) to anon, authenticated;
 
 -- ── Rehearsal notes ──────────────────────────────────────────────────────
 -- Free text, filed against a day and a department, the way a stage manager
