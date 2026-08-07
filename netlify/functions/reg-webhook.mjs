@@ -328,12 +328,9 @@ export default async (req) => {
     // enough context to act; alert failure itself must not mask the 500.
     try {
       if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const ar = await fetch(`${SUPABASE_URL}/rest/v1/admin_emails?select=email`, {
-          headers: { apikey: key, Authorization: `Bearer ${key}` },
-        });
-        const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
-        if (admins.length) {
+        {
+          // Failure alerts go to Jason only (his call, Aug 7) — Todd/CJ get
+          // the happy-path registration emails, not the plumbing pages.
           const { default: nodemailer } = await import("nodemailer");
           const t = nodemailer.createTransport({
             host: "smtp.gmail.com", port: 465, secure: true,
@@ -342,7 +339,7 @@ export default async (req) => {
           const md = (pi && pi.metadata) || {};
           await t.sendMail({
             from: `NOVAPA Alerts <${process.env.SMTP_USER}>`,
-            to: admins.join(", "),
+            to: "jason@novapa.org",
             subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
             html: [
               `A Stripe event was received but order creation FAILED. The customer paid (or saved a card) and got nothing.`,
