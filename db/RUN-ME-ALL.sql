@@ -93,7 +93,9 @@ create table if not exists deh_items (
   status      text not null default 'todo',   -- todo | sourced | ordered | arrived | done
   vendor      text,                           -- Amazon, in stock, build in shop, Marketplace...
   link        text,                           -- the primary link; == links[1]
-  links       text[] not null default '{}',   -- a costume look is often three shops
+  -- One object per link: {"u": url, "p": unit price in cents, "q": quantity}.
+  -- A costume look is often three shops, each with its own price.
+  links       jsonb not null default '[]',
   sent_at     timestamptz,                    -- emailed to Todd; frozen once set
   sent_by     text,
   price_cents int  not null default 0,        -- UNIT price; multiply by qty for the line
@@ -108,11 +110,34 @@ alter table deh_items enable row level security;
 -- run BEFORE deh_item_set is (re)created — a `language sql` body is parsed at
 -- creation time, so a function naming a column that does not exist yet fails
 -- to create at all.
-alter table deh_items add column if not exists links text[] not null default '{}';
-update deh_items set links = array[link]
-  where link is not null and link <> '' and cardinality(links) = 0;
+alter table deh_items add column if not exists links jsonb not null default '[]';
 alter table deh_items add column if not exists sent_at timestamptz;
 alter table deh_items add column if not exists sent_by text;
+
+-- An install made against the first version of this file has `links` as
+-- text[] — a plain list of addresses with no prices on it. Convert it in
+-- place, giving every existing link a price of nothing and a count of one,
+-- which is exactly what it had.
+do $mig$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_name = 'deh_items' and column_name = 'links'
+               and data_type = 'ARRAY') then
+    alter table deh_items rename column links to links_txt;
+    alter table deh_items add column links jsonb not null default '[]';
+    update deh_items set links = coalesce(
+      (select jsonb_agg(jsonb_build_object('u', u, 'p', 0, 'q', 1))
+         from unnest(links_txt) u where u is not null and u <> ''), '[]');
+    alter table deh_items drop column links_txt;
+  end if;
+end
+$mig$;
+
+-- And anything still carrying only the single `link` column gets a one-link
+-- list, so nothing sourced before any of this loses its source.
+update deh_items
+   set links = jsonb_build_array(jsonb_build_object('u', link, 'p', price_cents, 'q', qty))
+ where link is not null and link <> '' and jsonb_array_length(links) = 0;
 
 create or replace function public.deh_items_list()
 returns setof deh_items
@@ -125,9 +150,10 @@ $fn$;
 -- two candidates would make the PostgREST call ambiguous.
 drop function if exists public.deh_item_set(text, text, text, text, int, int, text);
 drop function if exists public.deh_item_set(text, text, text, text, text[], int, int, text);
+drop function if exists public.deh_item_set(text, text, text, text, text[], int, int, timestamptz, text, text);
 
 create or replace function public.deh_item_set(
-  p_item_id text, p_status text, p_vendor text, p_link text, p_links text[],
+  p_item_id text, p_status text, p_vendor text, p_link text, p_links jsonb,
   p_price_cents int, p_qty int, p_sent_at timestamptz, p_sent_by text, p_by text)
 returns void
 language sql volatile security definer set search_path = public as $fn$
@@ -136,7 +162,7 @@ language sql volatile security definer set search_path = public as $fn$
           coalesce(nullif(trim(p_status), ''), 'todo'),
           nullif(trim(p_vendor), ''),
           nullif(trim(p_link), ''),
-          coalesce(p_links, '{}'),
+          coalesce(p_links, '[]'::jsonb),
           greatest(coalesce(p_price_cents, 0), 0),
           greatest(coalesce(p_qty, 1), 1),
           p_sent_at, nullif(trim(p_sent_by), ''),
@@ -155,7 +181,7 @@ language sql volatile security definer set search_path = public as $fn$
 $fn$;
 
 grant execute on function public.deh_items_list() to anon, authenticated;
-grant execute on function public.deh_item_set(text, text, text, text, text[], int, int, timestamptz, text, text) to anon, authenticated;
+grant execute on function public.deh_item_set(text, text, text, text, jsonb, int, int, timestamptz, text, text) to anon, authenticated;
 
 -- ── Company roster ───────────────────────────────────────────────────────
 -- Who can be marked present. Editable in the dashboard because the cast list

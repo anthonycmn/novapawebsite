@@ -34,16 +34,31 @@ const esc = (s) =>
 // Never put a javascript: or data: URL into an href, even one that reached us
 // through our own dashboard.
 const safeUrl = (u) => (/^https?:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "");
+
+// A link is { u, p, q } — address, unit price in cents, quantity. The first
+// version of this stored bare strings; those read back as a link with no
+// price, which is what they were.
 const linksOf = (x) => {
   const raw = Array.isArray(x?.links) && x.links.length ? x.links : (x?.link ? [x.link] : []);
-  const out = [];
-  for (const u of raw) {
-    const s = safeUrl(u);
-    if (s && !out.includes(s)) out.push(s);
+  const out = [], seen = new Set();
+  for (const item of raw) {
+    const src = typeof item === "string" ? { u: item } : (item || {});
+    const u = safeUrl(src.u ?? src.url ?? src.link);
+    if (!u || seen.has(u)) continue;
+    seen.add(u);
+    const p = Number.parseInt(src.p, 10);
+    const q = Number.parseInt(src.q, 10);
+    out.push({ u, p: Number.isFinite(p) && p > 0 ? p : 0, q: Number.isFinite(q) && q > 0 ? q : 1 });
     if (out.length >= 12) break;
   }
   return out;
 };
+const linkSum = (ls) => ls.reduce((a, L) => a + L.p * L.q, 0);
+// What one link costs, spelled out only when there is something to spell out.
+const linkPrice = (L) =>
+  L.p ? `${money(L.p)}${L.q > 1 ? ` &times;${L.q} = <b>${money(L.p * L.q)}</b>` : ""}` : "";
+const linkPriceText = (L) =>
+  L.p ? `   ${money(L.p)}${L.q > 1 ? ` x${L.q} = ${money(L.p * L.q)}` : ""}` : "";
 
 // Keys and order match DEPTS in deh/app.js.
 const DEPT_ORDER = [
@@ -110,7 +125,7 @@ export function reportHtml(r) {
   // CJ wants the day's buy links in the email itself, so purchasing can happen
   // straight off the report rather than by going back into the dashboard.
   const STATUS_L = { todo: "To source", sourced: "Sourced", ordered: "Ordered", arrived: "Arrived", done: "Done" };
-  const srcTotal = (r.sourcing || []).reduce((a, x) => a + (x.line_cents || 0), 0);
+  const srcTotal = (r.sourcing || []).reduce((a, x) => a + (linkSum(linksOf(x)) || x.line_cents || 0), 0);
   const sourcing = (r.sourcing || []).length
     ? `<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">` +
       r.sourcing.map((x) => {
@@ -119,10 +134,10 @@ export function reportHtml(r) {
         <tr>
           <td style="padding:9px 0;border-bottom:1px solid #eee8dd">
             ${ls.length
-              ? `<a href="${esc(ls[0])}" style="font-size:15px;color:${GOLD};font-weight:600;text-decoration:none">${esc(x.name)}${x.qty > 1 ? ` &times;${x.qty}` : ""}</a>`
+              ? `<a href="${esc(ls[0].u)}" style="font-size:15px;color:${GOLD};font-weight:600;text-decoration:none">${esc(x.name)}${x.qty > 1 ? ` &times;${x.qty}` : ""}</a>`
               : `<span style="font-size:15px;color:#1a1a1a;font-weight:600">${esc(x.name)}${x.qty > 1 ? ` &times;${x.qty}` : ""}</span>`}
             <div style="font-size:12.5px;color:#8a94a6;margin-top:3px">${esc(x.who || x.scene || "")}${x.who && x.scene ? ` &middot; ${esc(x.scene)}` : ""}${x.cat ? ` &middot; ${esc(x.cat)}` : ""}${x.vendor ? ` &middot; ${esc(x.vendor)}` : ""}${x.status ? ` &middot; ${esc(STATUS_L[x.status] || x.status)}` : ""}${x.by ? ` &middot; ${esc(x.by)}` : ""}</div>
-            ${ls.map((u, i) => `<div style="font-size:12px;color:#b0b6c0;margin-top:3px;word-break:break-all">${ls.length > 1 ? `<b style="color:#8a94a6">${i + 1}.</b> ` : ""}<a href="${esc(u)}" style="color:#b0b6c0;text-decoration:none">${esc(u)}</a></div>`).join("")}
+            ${ls.map((L, i) => `<div style="font-size:12px;color:#b0b6c0;margin-top:3px;word-break:break-all">${ls.length > 1 ? `<b style="color:#8a94a6">${i + 1}.</b> ` : ""}<a href="${esc(L.u)}" style="color:#b0b6c0;text-decoration:none">${esc(L.u)}</a>${L.p ? `<span style="color:#8a94a6"> &mdash; ${linkPrice(L)}</span>` : ""}</div>`).join("")}
           </td>
           <td style="padding:9px 0;border-bottom:1px solid #eee8dd;text-align:right;vertical-align:top;white-space:nowrap;font-size:14px;color:#1a1a1a">${x.line_cents ? money(x.line_cents) : `<span style="color:#8a94a6">no price</span>`}</td>
         </tr>`;
@@ -217,7 +232,7 @@ export function reportText(r) {
   if (!(r.sourcing || []).length) L.push("  No new buy links today.");
   else (r.sourcing || []).forEach((x) => {
     L.push(`  ${x.name}${x.qty > 1 ? ` x${x.qty}` : ""}${x.who ? `  (${x.who})` : ""}${x.vendor ? `  [${x.vendor}]` : ""}${x.line_cents ? `  ${money(x.line_cents)}` : ""}${x.by ? `  - ${x.by}` : ""}`);
-    linksOf(x).forEach((u) => L.push(`      ${u}`));
+    linksOf(x).forEach((L2) => L.push(`      ${L2.u}${linkPriceText(L2)}`));
   });
   L.push("");
   L.push("COMPLETED TODAY");
@@ -245,7 +260,7 @@ export function buyHtml(r) {
 
   const groups = vendors.map((v) => {
     const list = byVendor[v];
-    const sub = list.reduce((a, x) => a + (x.line_cents || 0), 0);
+    const sub = list.reduce((a, x) => a + (linkSum(linksOf(x)) || x.line_cents || 0), 0);
     return `
       <tr><td style="padding:20px 32px 0">
         <h2 style="margin:0 0 4px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:${NAVY};border-bottom:2px solid ${GOLD};padding-bottom:6px">
@@ -259,10 +274,10 @@ export function buyHtml(r) {
               <td style="padding:11px 0;border-bottom:1px solid #eee8dd">
                 <div style="font-size:15px;color:#1a1a1a;font-weight:600">${esc(x.name)}${x.qty > 1 ? ` &times;${x.qty}` : ""}</div>
                 <div style="font-size:12.5px;color:#8a94a6;margin-top:3px">${esc(x.who || "")}${x.who && x.scene ? " &middot; " : ""}${esc(x.scene || "")}${x.cat ? ` &middot; ${esc(x.cat)}` : ""}</div>
-                ${ls.map((u, i) => `<div style="margin-top:6px;font-size:13.5px;word-break:break-all"><a href="${esc(u)}" style="color:${GOLD};text-decoration:none">${ls.length > 1 ? `${i + 1}. ` : ""}${esc(u)}</a></div>`).join("")}
+                ${ls.map((L, i) => `<div style="margin-top:7px;font-size:13.5px;word-break:break-all"><a href="${esc(L.u)}" style="color:${GOLD};text-decoration:none">${ls.length > 1 ? `${i + 1}. ` : ""}${esc(L.u)}</a>${L.p ? `<div style="font-size:12.5px;color:#8a94a6;margin-top:2px">${linkPrice(L)}</div>` : `<div style="font-size:12.5px;color:#b0b6c0;margin-top:2px">no price entered</div>`}</div>`).join("")}
               </td>
               <td style="padding:11px 0;border-bottom:1px solid #eee8dd;text-align:right;vertical-align:top;white-space:nowrap;font-size:14px;color:#1a1a1a">
-                ${x.line_cents ? money(x.line_cents) : `<span style="color:#8a94a6">no price</span>`}
+                ${(linkSum(ls) || x.line_cents) ? money(linkSum(ls) || x.line_cents) : `<span style="color:#8a94a6">no price</span>`}
               </td>
             </tr>`;
           }).join("")}
@@ -347,8 +362,10 @@ export function buyText(r) {
     const sub = byVendor[v].reduce((a, x) => a + (x.line_cents || 0), 0);
     L.push(`${v.toUpperCase()}  (${money(sub)})`);
     byVendor[v].forEach((x) => {
-      L.push(`  - ${x.name}${x.qty > 1 ? ` x${x.qty}` : ""}${x.who ? `  (${x.who})` : ""}  ${x.line_cents ? money(x.line_cents) : "no price"}   [${x.scene || ""}${x.cat ? ` / ${x.cat}` : ""}]`);
-      linksOf(x).forEach((u) => L.push(`      ${u}`));
+      const ls = linksOf(x);
+      const line = linkSum(ls) || x.line_cents;
+      L.push(`  - ${x.name}${!linkSum(ls) && x.qty > 1 ? ` x${x.qty}` : ""}${x.who ? `  (${x.who})` : ""}  ${line ? money(line) : "no price"}   [${x.scene || ""}${x.cat ? ` / ${x.cat}` : ""}]`);
+      ls.forEach((L2) => L.push(`      ${L2.u}${linkPriceText(L2) || "   no price"}`));
     });
     L.push("");
   });
