@@ -75,6 +75,12 @@ export const SPECIAL_PLANS = {
     // Andrea Ansell, approved by Todd Aug 7 2026: standard installment
     // schedule, no 5% plan fee. Her 15% comes from the 2-show tier.
   },
+  "ANSELLO": {
+    email: "ajansell@gmail.com",
+    waivePlanFee: true,
+    // Same waiver, letter-O spelling — ANSELL0 ends in a zero that reads as
+    // the letter O in most fonts, and Andrea typed the O. Both work.
+  },
 };
 
 export const CLASS_PRICE_CENTS = 9000;
