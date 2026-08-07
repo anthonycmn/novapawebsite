@@ -69,6 +69,12 @@ export const SPECIAL_PLANS = {
     // show+camp combo now — this code only waives the plan fee and
     // stretches her schedule to 10 months.
   },
+  "ANSELL0": {
+    email: "ajansell@gmail.com",
+    waivePlanFee: true,
+    // Andrea Ansell, approved by Todd Aug 7 2026: standard installment
+    // schedule, no 5% plan fee. Her 15% comes from the 2-show tier.
+  },
 };
 
 export const CLASS_PRICE_CENTS = 9000;

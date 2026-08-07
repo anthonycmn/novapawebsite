@@ -199,6 +199,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);
 .test-name{font-size:14px;font-weight:500;color:#fff}
 .test-role{font-size:11.5px;color:rgba(255,255,255,0.38);margin-top:1px}
 .test-school{display:inline-block;margin-top:4px;font-size:10.5px;font-weight:600;color:var(--gold2);letter-spacing:0.06em}
+/* the parent's account of the same journey — runs full width under the
+   students, because it is longer and it is a different kind of proof */
+.testimonial.parentvoice{grid-column:1/-1;border-color:rgba(232,184,75,0.32);
+  background:linear-gradient(135deg,rgba(232,184,75,0.07),rgba(255,255,255,0.04))}
+.test-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--ink);background:var(--gold2);border-radius:100px;
+  padding:4px 12px;margin-bottom:14px}
+.testimonial.parentvoice .test-quote{font-size:18px}
 
 /* ── RESULTS COUNTER ── */
 .results-strip{background:var(--gold);padding:56px 48px}
@@ -1778,6 +1786,22 @@ html { overflow-x: clip; }
         </div>
       </div>
 
+      <!-- Yoko Jolly — Palmer's mother, on the same process he describes above.
+           Written by her as a review and sent to CJ on 26 July 2026. -->
+      <div class="testimonial parentvoice fade-up">
+        <div class="test-tag">A parent&rsquo;s view</div>
+        <div class="test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <div class="test-quote">NoVAPA&rsquo;s college coaching program has been critical to getting our son into one of the top performing arts programs on the east coast&hellip; Unlike other kids that we saw at college auditions, our son knew exactly what to expect and was extremely comfortable &mdash; breezing through auditions with grace and charisma, and connecting with so many recruiters and faculty at top performing arts schools&hellip; In the end he got admitted into 14 schools, including near full tuition offers from 2 schools and substantial partial scholarships from another 6&hellip; I&rsquo;d recommend the investment in a NoVAPA college coaching program 1000% if you have a child who is considering performing arts in their future!</div>
+        <div class="test-author">
+          <div class="test-av" style="background:var(--gold);color:var(--ink);font-weight:700;font-size:18px">Y</div>
+          <div>
+            <div class="test-name">Yoko Jolly</div>
+            <div class="test-role">Parent of Palmer, Class of 2026</div>
+            <div class="test-school">Norwalk Conservatory</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -1893,9 +1917,12 @@ html { overflow-x: clip; }
 </footer>
 
 <script>
-// Nav scroll effect
+// Nav scroll effect. #nav went away when this page moved to the shared header,
+// so this threw on every scroll event — dozens of exceptions per swipe. Guarded
+// rather than deleted in case the id comes back.
 window.addEventListener('scroll',()=>{
-  document.getElementById('nav').classList.toggle('scrolled',window.scrollY>20);
+  const n=document.getElementById('nav');
+  if(n)n.classList.toggle('scrolled',window.scrollY>20);
 });
 
 // FAQ toggle

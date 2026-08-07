@@ -1116,9 +1116,12 @@
   function bandsFor(age){
     if (age == null) return ['5-9','9-12','12-15','tech'];
     // bands overlap at the edges on purpose (CJ): grades don't map 1:1 to age,
-    // so a kid within a year of a band's floor may choose it — parent's call
+    // so a kid within a year of a band's floor may choose it — parent's call.
+    // Applies to the youngest band too: age is computed at the Jul 5 anchor,
+    // so a camper turning 5 mid-summer reads as 4 but may join 5-9 (Jason,
+    // Aug 7 2026, Rebecca Caro case).
     var b = [];
-    if (age >= 5 && age <= 9) b.push('5-9');
+    if (age >= 4 && age <= 9) b.push('5-9');
     if (age >= 8 && age <= 12) b.push('9-12');
     if (age >= 11 && age <= 15) b.push('12-15');
     if (age >= 9 && age <= 15) b.push('tech');

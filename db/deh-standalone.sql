@@ -73,7 +73,12 @@ create table if not exists deh_items (
   item_id     text primary key,
   status      text not null default 'todo',   -- todo | sourced | ordered | arrived | done
   vendor      text,                           -- Amazon, in stock, build in shop, Marketplace...
-  link        text,
+  link        text,                           -- the primary link; == links[1]
+  -- One object per link: {"u": url, "p": unit price in cents, "q": quantity}.
+  -- A costume look is often three shops, each with its own price.
+  links       jsonb not null default '[]',
+  sent_at     timestamptz,                    -- emailed to Todd; frozen once set
+  sent_by     text,
   price_cents int  not null default 0,        -- UNIT price; multiply by qty for the line
   qty         int  not null default 1,
   updated_by  text,
@@ -81,37 +86,83 @@ create table if not exists deh_items (
 );
 alter table deh_items enable row level security;
 
+-- Existing installs: add the column and seed it from the single link already
+-- stored, so nothing sourced before this change loses its source. This has to
+-- run BEFORE deh_item_set is (re)created — a `language sql` body is parsed at
+-- creation time, so a function naming a column that does not exist yet fails
+-- to create at all.
+alter table deh_items add column if not exists links jsonb not null default '[]';
+alter table deh_items add column if not exists sent_at timestamptz;
+alter table deh_items add column if not exists sent_by text;
+
+-- An install made against the first version of this file has `links` as
+-- text[] — a plain list of addresses with no prices on it. Convert it in
+-- place, giving every existing link a price of nothing and a count of one,
+-- which is exactly what it had.
+do $mig$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_name = 'deh_items' and column_name = 'links'
+               and data_type = 'ARRAY') then
+    alter table deh_items rename column links to links_txt;
+    alter table deh_items add column links jsonb not null default '[]';
+    update deh_items set links = coalesce(
+      (select jsonb_agg(jsonb_build_object('u', u, 'p', 0, 'q', 1))
+         from unnest(links_txt) u where u is not null and u <> ''), '[]');
+    alter table deh_items drop column links_txt;
+  end if;
+end
+$mig$;
+
+-- And anything still carrying only the single `link` column gets a one-link
+-- list, so nothing sourced before any of this loses its source.
+update deh_items
+   set links = jsonb_build_array(jsonb_build_object('u', link, 'p', price_cents, 'q', qty))
+ where link is not null and link <> '' and jsonb_array_length(links) = 0;
+
 create or replace function public.deh_items_list()
 returns setof deh_items
 language sql stable security definer set search_path = public as $fn$
   select * from deh_items;
 $fn$;
 
+-- Re-running this after the single-link version has to remove that signature
+-- first: `create or replace` with different arguments makes an overload, and
+-- two candidates would make the PostgREST call ambiguous.
+drop function if exists public.deh_item_set(text, text, text, text, int, int, text);
+drop function if exists public.deh_item_set(text, text, text, text, text[], int, int, text);
+drop function if exists public.deh_item_set(text, text, text, text, text[], int, int, timestamptz, text, text);
+
 create or replace function public.deh_item_set(
-  p_item_id text, p_status text, p_vendor text, p_link text,
-  p_price_cents int, p_qty int, p_by text)
+  p_item_id text, p_status text, p_vendor text, p_link text, p_links jsonb,
+  p_price_cents int, p_qty int, p_sent_at timestamptz, p_sent_by text, p_by text)
 returns void
 language sql volatile security definer set search_path = public as $fn$
-  insert into deh_items (item_id, status, vendor, link, price_cents, qty, updated_by, updated_at)
+  insert into deh_items (item_id, status, vendor, link, links, price_cents, qty, sent_at, sent_by, updated_by, updated_at)
   values (p_item_id,
           coalesce(nullif(trim(p_status), ''), 'todo'),
           nullif(trim(p_vendor), ''),
           nullif(trim(p_link), ''),
+          coalesce(p_links, '[]'::jsonb),
           greatest(coalesce(p_price_cents, 0), 0),
           greatest(coalesce(p_qty, 1), 1),
+          p_sent_at, nullif(trim(p_sent_by), ''),
           nullif(trim(p_by), ''), now())
   on conflict (item_id) do update set
     status      = excluded.status,
     vendor      = excluded.vendor,
     link        = excluded.link,
+    links       = excluded.links,
     price_cents = excluded.price_cents,
     qty         = excluded.qty,
+    sent_at     = excluded.sent_at,
+    sent_by     = excluded.sent_by,
     updated_by  = excluded.updated_by,
     updated_at  = now();
 $fn$;
 
 grant execute on function public.deh_items_list() to anon, authenticated;
-grant execute on function public.deh_item_set(text, text, text, text, int, int, text) to anon, authenticated;
+grant execute on function public.deh_item_set(text, text, text, text, jsonb, int, int, timestamptz, text, text) to anon, authenticated;
 
 -- ── Company roster ───────────────────────────────────────────────────────
 -- Who can be marked present. Editable in the dashboard because the cast list
@@ -185,13 +236,68 @@ $fn$;
 grant execute on function public.deh_attendance_list(date) to anon, authenticated;
 grant execute on function public.deh_attendance_set(date, text, text, text, text) to anon, authenticated;
 
+-- ── Strike ───────────────────────────────────────────────────────────────
+-- What has to happen after the last performance, and whose name is against
+-- each line. Shared, because the whole point is that everyone is looking at
+-- the same list on the night.
+create table if not exists deh_strike (
+  task_id    text primary key,          -- client-generated
+  area       text not null default 'set',  -- set|lighting|sound|projection|props|
+                                           -- costume|hair|house|backstage|load
+  body       text not null,
+  who        text,                      -- who is down to do it
+  done       boolean not null default false,
+  done_by    text,                      -- who actually struck it; often not `who`
+  sort       int not null default 0,
+  updated_at timestamptz not null default now()
+);
+alter table deh_strike enable row level security;
+
+create or replace function public.deh_strike_list()
+returns setof deh_strike
+language sql stable security definer set search_path = public as $fn$
+  select * from deh_strike order by sort, task_id;
+$fn$;
+
+create or replace function public.deh_strike_set(
+  p_task_id text, p_area text, p_body text, p_who text,
+  p_done boolean, p_done_by text, p_sort int)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  insert into deh_strike (task_id, area, body, who, done, done_by, sort, updated_at)
+  values (p_task_id,
+          coalesce(nullif(trim(p_area), ''), 'set'),
+          trim(p_body),
+          nullif(trim(p_who), ''),
+          coalesce(p_done, false),
+          nullif(trim(p_done_by), ''),
+          coalesce(p_sort, 0), now())
+  on conflict (task_id) do update set
+    area = excluded.area, body = excluded.body, who = excluded.who,
+    done = excluded.done, done_by = excluded.done_by, sort = excluded.sort,
+    updated_at = now();
+$fn$;
+
+create or replace function public.deh_strike_delete(p_task_id text)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  delete from deh_strike where task_id = p_task_id;
+$fn$;
+
+grant execute on function public.deh_strike_list() to anon, authenticated;
+grant execute on function public.deh_strike_set(text, text, text, text, boolean, text, int) to anon, authenticated;
+grant execute on function public.deh_strike_delete(text) to anon, authenticated;
+
 -- ── Rehearsal notes ──────────────────────────────────────────────────────
 -- Free text, filed against a day and a department, the way a stage manager
 -- files notes to each design head.
 create table if not exists deh_notes (
   note_id    text primary key,           -- client-generated, day|dept|counter
   day        date not null,
-  dept       text not null default 'general',  -- general|stage|music|costume|tech|props|safety
+  dept       text not null default 'general',
+  -- general|stage|music|scenic|lighting|sound|projection|sfx|props|costume|
+  -- hair|wigs|safety. 'tech' and the combined 'costume / H&M' predate the
+  -- split into separate design departments and are still read back.
   body       text not null,
   author     text,
   created_at timestamptz not null default now()

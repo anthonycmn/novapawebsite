@@ -14,10 +14,19 @@
   var D = window.DEH, S = window.DEHSCENES;
   var LS_DONE = 'deh.done.v1', LS_ITEM = 'deh.items.v1', LS_ME = 'deh.me.v1', LS_GATE = 'deh.gate.v1';
   var LS_ROSTER = 'deh.roster.v1', LS_ATT = 'deh.att.v1', LS_NOTE = 'deh.notes.v1', LS_REP = 'deh.rep.v1';
+  var LS_STRIKE = 'deh.strike.v1';
   var GATE_WORD = 'orchard';   // curtain, not a lock — change here and tell staff
 
   // Who can sign a block off. Anyone not listed picks "Someone else" and types.
   var STAFF = ['Danielle', 'Shelby', 'Ryyana', 'Colton', 'Tony', 'Stage Manager'];
+
+  // Where the two outgoing emails land. These are printed on the buttons so
+  // nobody sends one without knowing who reads it. The addresses themselves
+  // are fixed inside netlify/functions/deh-report.mjs — this page only names
+  // them, it cannot choose them.
+  var REPORT_TO = ['colton@novapa.org', 'ryyana@novapa.org', 'katieh@novapa.org', 'cj@novapa.org'];
+  var REPORT_WHO = 'Colton, Ryyana, Katie and CJ';
+  var BUY_TO = 'todd@novapa.org';
 
   // Attendance states, in the order a tap cycles through them.
   var ATT = [
@@ -36,21 +45,52 @@
   }
 
   // Departments a note can be filed against, the way a stage manager files to
-  // each design head. Keys match db/deh-progress.sql and deh-report.mjs.
+  // each design head. Keys match db/deh-progress.sql and deh-report.mjs, and
+  // this order is the order the report prints them in.
+  //
+  // The design departments were one line each ("Costume / H&M", "Set / LX /
+  // Sound") until CJ asked for them separately — a note for the wig head
+  // should not have to be read out of a paragraph addressed to costumes.
+  // The prompt is what the box says before anyone types in it. A stage manager
+  // filling this in while the director is still working needs to be reminded
+  // what this department wants to hear, not asked an open question.
   var DEPTS = [
-    { k: 'general', l: 'General' }, { k: 'stage', l: 'Stage' }, { k: 'music', l: 'Music' },
-    { k: 'costume', l: 'Costume / H&M' }, { k: 'tech', l: 'Set / LX / Sound' },
-    { k: 'props', l: 'Props' }, { k: 'safety', l: 'Safety' }
+    { k: 'general',    l: 'General',        p: 'Anything the whole team should know' },
+    { k: 'stage',      l: 'Stage',          p: 'Blocking changes, spacing, calls, running order' },
+    { k: 'music',      l: 'Music',          p: 'Cuts, tempi, harmony fixes, who needs a part call' },
+    { k: 'scenic',     l: 'Scenic',         p: 'Set pieces, shifts, tracking, what is standing in for what' },
+    { k: 'lighting',   l: 'Lighting',       p: 'Specials, cues, blackouts, anything the actor cannot find' },
+    { k: 'sound',      l: 'Sound',          p: 'Mics, balance, playback, cue placement' },
+    { k: 'projection', l: 'Projection',     p: 'Content, timing, surfaces, what is still a placeholder' },
+    { k: 'sfx',        l: 'Special FX',     p: 'Practicals, haze, breakaways, anything that fires' },
+    { k: 'props',      l: 'Props',          p: 'Adds, cuts, substitutions, what broke' },
+    { k: 'costume',    l: 'Costumes',       p: 'Fittings, quick changes, adds and cuts, what needs a double' },
+    { k: 'hair',       l: 'Hair & Make-Up', p: 'Looks, timing, what has to be done before the half' },
+    { k: 'wigs',       l: 'Wigs',           p: 'Fittings, prep, changes, who is in what' },
+    { k: 'safety',     l: 'Safety',         p: 'Injuries, near misses, anything that needs a spot or a rail' }
   ];
+  // Notes filed before the split still carry this key. It is not offered in
+  // the picker any more, but it has to keep rendering with a name on it.
+  var DEPTS_OLD = { tech: 'Set / LX / Sound' };
   function deptLabel(k) {
     for (var i = 0; i < DEPTS.length; i++) if (DEPTS[i].k === k) return DEPTS[i].l;
-    return k;
+    return DEPTS_OLD[k] || k;
+  }
+  function deptRank(k) {
+    for (var i = 0; i < DEPTS.length; i++) if (DEPTS[i].k === k) return i;
+    return DEPTS.length;   // anything retired sorts to the end
+  }
+  function deptPrompt(k) {
+    for (var i = 0; i < DEPTS.length; i++) if (DEPTS[i].k === k) return DEPTS[i].p;
+    return 'What happened, what is needed, what to watch';
   }
 
   var done = {}, item = {};
   // roster: [{person_id,name,role,kind,sort}]  att: { 'iso|person_id': {status,note,by} }
   // notes: [{note_id,day,dept,body,author,created_at}]  reports: { iso: {at,by} }
   var roster = [], att = {}, notes = [], reports = {};
+  // strike: [{task_id,area,body,who,done,done_by,sort}]
+  var strike = [];
   var loadedDays = {};   // iso -> true, so a day's attendance/notes fetch once
   var me = localStorage.getItem(LS_ME) || '';
   var remote = false;
@@ -101,7 +141,16 @@
 
   function gateWord() { try { return localStorage.getItem(LS_GATE) || ''; } catch (e) { return ''; } }
   function $(id) { return document.getElementById(id); }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+  // textContent -> innerHTML escapes &, < and >, but NOT quotes — and nearly
+  // every use of this lands inside an attribute. A pasted link is the one
+  // string on this page a person controls character by character, so the
+  // quotes have to go too or a URL can close the attribute it sits in.
+  // Escaping them costs nothing in text: &quot; still renders as ".
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
   function clock(ts) {
     var d = new Date(ts), h = d.getHours(), m = d.getMinutes();
     return ((h % 12) || 12) + ':' + (m < 10 ? '0' : '') + m + (h < 12 ? 'am' : 'pm');
@@ -131,7 +180,9 @@
     try { att = JSON.parse(localStorage.getItem(LS_ATT) || '{}'); } catch (e) { att = {}; }
     try { notes = JSON.parse(localStorage.getItem(LS_NOTE) || '[]'); } catch (e) { notes = []; }
     try { reports = JSON.parse(localStorage.getItem(LS_REP) || '{}'); } catch (e) { reports = {}; }
+    try { strike = JSON.parse(localStorage.getItem(LS_STRIKE) || '[]'); } catch (e) { strike = []; }
     if (!roster.length) roster = seedRoster();
+    if (!strike.length) strike = seedStrike();
   }
   function saveLocal() {
     try {
@@ -141,6 +192,7 @@
       localStorage.setItem(LS_ATT, JSON.stringify(att));
       localStorage.setItem(LS_NOTE, JSON.stringify(notes));
       localStorage.setItem(LS_REP, JSON.stringify(reports));
+      localStorage.setItem(LS_STRIKE, JSON.stringify(strike));
     } catch (e) {}
   }
 
@@ -212,8 +264,10 @@
       api('items_list').then(function (rows) {
         (rows || []).forEach(function (x) {
           item[x.item_id] = { st: x.status || 'todo', src: x.vendor || '', link: x.link || '',
+                              links: x.links || (x.link ? [x.link] : []),
                               price: x.price_cents || 0, qty: x.qty || 1, by: x.updated_by || '',
-                              at: x.updated_at || '' };
+                              at: x.updated_at || '',
+                              sent: x.sent_at || '', sentBy: x.sent_by || '' };
         });
       }).catch(function () {}),
       api('roster_list').then(function (rows) {
@@ -254,6 +308,25 @@
       }).catch(function () {}),
       api('reports_list').then(function (rows) {
         (rows || []).forEach(function (x) { reports[x.day] = { at: x.sent_at, by: x.sent_by || '' }; });
+      }).catch(function () {}),
+      api('strike_list').then(function (rows) {
+        rows = rows || [];
+        var real = rows.filter(function (x) { return x.task_id !== STRIKE_SEED_KEY; });
+        var seeded = rows.filter(function (x) { return x.task_id === STRIKE_SEED_KEY; }).length;
+        if (real.length || seeded) {
+          strike = real.map(function (x) {
+            return { task_id: x.task_id, area: x.area || 'set', body: x.body || '',
+                     who: x.who || '', done: !!x.done, done_by: x.done_by || '',
+                     sort: x.sort == null ? 0 : x.sort };
+          });
+          return;
+        }
+        // Nothing there and never seeded: publish the starter list once, and
+        // leave a marker so emptying the list later does not bring it back.
+        strike = seedStrike();
+        strike.forEach(function (t) { saveStrike(t); });
+        api('strike_set', { task_id: STRIKE_SEED_KEY, area: 'meta', body: 'seeded',
+                            who: '', done: false, done_by: '', sort: 0 }).catch(function () {});
       }).catch(function () {})
     ]).then(function () { saveLocal(); });
   }
@@ -306,11 +379,33 @@
     if (!remote) return;
     var s = item[id] || {};
     api('item_set', { item_id: id, status: s.st || 'todo', vendor: s.src || '',
-                      link: s.link || '', price_cents: s.price || 0, qty: s.qty || 1,
+                      link: s.link || '', links: linksOf(s),
+                      price_cents: s.price || 0, qty: s.qty || 1,
+                      sent_at: s.sent || '', sent_by: s.sentBy || '',
                       by: s.by || me || '' })
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function setSync(msg) { $('syncNote').textContent = msg; }
+
+  // The header is sticky and its height is not fixed — it changes with the
+  // width, with the day label, and with whichever sync line is showing. The
+  // scene stepper sticks directly beneath it, so it has to be told where that
+  // is rather than guessing.
+  function measureTopbar() {
+    var tb = document.querySelector('.topbar');
+    if (!tb) return;
+    var h = Math.round(tb.getBoundingClientRect().height);
+    if (h) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+  }
+  function watchTopbar() {
+    measureTopbar();
+    window.addEventListener('resize', measureTopbar);
+    window.addEventListener('orientationchange', measureTopbar);
+    if (window.ResizeObserver) {
+      var tb = document.querySelector('.topbar');
+      if (tb) new ResizeObserver(measureTopbar).observe(tb);
+    }
+  }
 
   // ---------- live sync ----------
   // connect() only ran at boot, so a phone showed whatever was true when it
@@ -322,9 +417,18 @@
 
   function editing() {
     var a = document.activeElement;
-    if (!a) return false;
-    var t = (a.tagName || '').toLowerCase();
-    return t === 'input' || t === 'select' || t === 'textarea';
+    var t = a && (a.tagName || '').toLowerCase();
+    if (t === 'input' || t === 'select' || t === 'textarea') return true;
+    // A department box can be holding a typed-but-not-yet-added note while the
+    // stage manager is looking at a different one. Focus has moved on; the
+    // words have not. A repaint here would throw them away.
+    return !!pendingNotes().length;
+  }
+  function pendingNotes() {
+    return Array.prototype.filter.call(
+      document.querySelectorAll('[data-ntbody]'),
+      function (x) { return (x.value || '').trim(); }
+    );
   }
   function sinceLabel(ts) {
     if (!ts) return '';
@@ -505,29 +609,111 @@
   }
 
   // ---------- rehearsal notes ----------
+  // One box per department, the way a paper rehearsal report is laid out, so
+  // the stage manager can work down it live while the director is still
+  // working rather than stopping to choose a category from a dropdown.
   function notesOf(iso) { return notes.filter(function (n) { return n.day === iso; }); }
-  function notesPanel(d) {
-    var mine = notesOf(d.iso);
-    var list = mine.length ? mine.map(function (n) {
-      return '<div class="nt"><div class="nt-h"><span class="nt-d">' + esc(deptLabel(n.dept)) + '</span>' +
-        (n.author ? '<span class="nt-a">' + esc(n.author) + '</span>' : '') +
+  function notesFor(iso, k) {
+    return notes.filter(function (n) { return n.day === iso && n.dept === k; });
+  }
+
+  // Every department gets a box; any retired one still carrying a note today
+  // gets one too, so an old note is never stranded somewhere nobody looks.
+  function deptKeys(iso) {
+    var keys = DEPTS.map(function (x) { return x.k; });
+    notesOf(iso).forEach(function (n) { if (keys.indexOf(n.dept) < 0) keys.push(n.dept); });
+    return keys;
+  }
+
+  function noteRow(n) {
+    return '<div class="nt">' +
+      '<div class="nt-h">' + (n.author ? '<span class="nt-a">' + esc(n.author) + '</span>' : '') +
         '<button class="nt-x" data-delnote="' + esc(n.note_id) + '" aria-label="Delete note">&times;</button></div>' +
-        '<div class="nt-b">' + esc(n.body) + '</div></div>';
-    }).join('') : '<p class="nt-none">No notes yet. Anything the report should carry goes here.</p>';
-    return '<div class="notes"><h3>Notes for ' + esc(d.date) + '</h3>' + list +
-      '<div class="nt-new">' +
-      '<select id="ntDept">' + DEPTS.map(function (x) {
-        return '<option value="' + x.k + '">' + esc(x.l) + '</option>';
-      }).join('') + '</select>' +
-      '<textarea id="ntBody" rows="2" placeholder="What happened, what is needed, what to watch"></textarea>' +
-      '<button class="btn" id="ntAdd" type="button">Add note</button></div></div>';
+      '<div class="nt-b">' + esc(n.body) + '</div></div>';
+  }
+
+  // Rendered on its own so adding or deleting a note repaints one department
+  // instead of the whole day — a full re-render would close every other box
+  // and throw away anything half-typed in them.
+  function deptBox(iso, k) {
+    var list = notesFor(iso, k);
+    return '<details class="dn' + (list.length ? ' has' : '') + '"' + (list.length ? ' open' : '') +
+        ' data-deptbox="' + esc(k) + '">' +
+      '<summary><span class="dn-n">' + esc(deptLabel(k)) + '</span>' +
+        (list.length ? '<span class="dn-c">' + list.length + '</span>'
+                     : '<span class="dn-c none">&ndash;</span>') + '</summary>' +
+      '<div class="dn-bd">' +
+        list.map(noteRow).join('') +
+        '<textarea data-ntbody="' + esc(k) + '" rows="2" placeholder="' + esc(deptPrompt(k)) + '"></textarea>' +
+        '<button class="btn dn-add" data-ntadd="' + esc(k) + '" type="button">Add to ' +
+          esc(deptLabel(k)) + '</button>' +
+      '</div></details>';
+  }
+
+  function notesPanel(d) {
+    var n = notesOf(d.iso).length;
+    return '<div class="notes"><h3>Rehearsal report notes</h3>' +
+      '<p class="nt-lead">' + (n
+        ? n + ' note' + (n === 1 ? '' : 's') + ' filed for ' + esc(d.date) +
+          '. They go out grouped by department when the report is sent.'
+        : 'Nothing filed for ' + esc(d.date) + ' yet. Open a department and type — ' +
+          'each one goes to its own head in the report.') + '</p>' +
+      '<div class="dnlist">' + deptKeys(d.iso).map(function (k) {
+        return deptBox(d.iso, k);
+      }).join('') + '</div></div>';
+  }
+
+  // File a note without going through the click handler. Used by the Add
+  // button and by the sweep below.
+  function addNote(iso, dept, body) {
+    var n = { note_id: iso + '|' + Date.now() + '|' + Math.floor(Math.random() * 1e4),
+              day: iso, dept: dept, body: body,
+              author: me || '', created_at: new Date().toISOString() };
+    notes.push(n); pushNote(n);
+    return n;
+  }
+
+  // Anything typed into a department box but never Added is still a note the
+  // stage manager wrote on the rehearsal report. Sending the report with it
+  // sitting on screen, unsent, is the one way this form could lose work — so
+  // sending files it first, and says how many it took.
+  function sweepPendingNotes(iso) {
+    var pending = pendingNotes(), depts = [];
+    pending.forEach(function (ta) {
+      var k = ta.dataset.ntbody;
+      addNote(iso, k, ta.value.trim());
+      ta.value = '';
+      if (depts.indexOf(k) < 0) depts.push(k);
+    });
+    if (pending.length) {
+      saveLocal();
+      depts.forEach(function (k) { refreshDeptBox(iso, k); });
+    }
+    return pending.length;
+  }
+
+  // Swap one department's box for a freshly rendered one, keeping it open.
+  function refreshDeptBox(iso, k) {
+    var el = document.querySelector('[data-deptbox="' + k.replace(/"/g, '') + '"]');
+    if (!el) { renderDay(); return; }
+    var open = el.open;
+    el.outerHTML = deptBox(iso, k);
+    var now = document.querySelector('[data-deptbox="' + k.replace(/"/g, '') + '"]');
+    if (now) now.open = open || !!notesFor(iso, k).length;
+    var lead = document.querySelector('.nt-lead');
+    if (lead) {
+      var n = notesOf(iso).length;
+      lead.textContent = n
+        ? n + ' note' + (n === 1 ? '' : 's') + ' filed. They go out grouped by department when the report is sent.'
+        : 'Nothing filed yet. Open a department and type — each one goes to its own head in the report.';
+    }
   }
 
   // ---------- end-of-day report ----------
   function reportBar(d) {
     var r = reports[d.iso];
     return '<div class="rep">' +
-      (r ? '<div class="rep-sent">Sent to cj@novapa.org' +
+      (r ? '<div class="rep-sent">Sent to ' + esc(REPORT_WHO) +
             (r.by ? ' by <b>' + esc(r.by) + '</b>' : '') +
             (r.at ? ' &middot; ' + esc(clock(+new Date(r.at))) : '') + '</div>' : '') +
       '<button class="rep-go" id="repSend" type="button">' +
@@ -542,12 +728,13 @@
   function sourcedOn(iso) {
     return S.allItems.filter(function (it) {
       var s = st(it.id);
-      return safeUrl(s.link) && String(s.at || '').slice(0, 10) === iso;
+      return linksOf(s).length && String(s.at || '').slice(0, 10) === iso;
     }).map(function (it) {
-      var s = st(it.id), q = qtyOf(it);
-      return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat,
-               vendor: s.src || '', link: safeUrl(s.link), status: s.st || 'todo',
-               qty: q, price_cents: s.price || 0, line_cents: s.price * q, by: s.by || '' };
+      var s = st(it.id), q = qtyOf(it), ls = linksOf(s);
+      return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
+               vendor: s.src || '', link: ls.length ? ls[0].u : '', links: ls,
+               status: s.st || 'todo', qty: q, price_cents: s.price || 0,
+               line_cents: lineCost(it), by: s.by || '' };
     });
   }
 
@@ -567,7 +754,11 @@
       showDone: all.filter(function (b) { return done[b.id]; }).length, showTotal: all.length,
       spentCents: spentTotal(), budgetCents: BUDGET_TOTAL, outstandingCents: outstandingTotal(),
       attendance: attendance,
-      notes: notesOf(d.iso).map(function (x) { return { dept: x.dept, body: x.body, author: x.author || '' }; }),
+      // Sorted the way the departments are listed, so the report reads down
+      // the design table rather than in the order notes happened to be typed.
+      notes: notesOf(d.iso).slice()
+        .sort(function (a, b) { return deptRank(a.dept) - deptRank(b.dept); })
+        .map(function (x) { return { dept: x.dept, body: x.body, author: x.author || '' }; }),
       completed: completed,
       sourcing: sourcedOn(d.iso)
     };
@@ -605,8 +796,12 @@
   function sendReport(d) {
     var note = $('repNote'), btn = $('repSend');
     if (!me) { note.textContent = 'Pick your name on any block first, so the report says who filed it.'; return; }
+    var swept = sweepPendingNotes(d.iso);
     var r = buildReport(d);
-    btn.disabled = true; note.textContent = 'Sending…';
+    btn.disabled = true;
+    note.textContent = swept
+      ? 'Filed ' + swept + ' note' + (swept === 1 ? '' : 's') + ' still in the boxes. Sending…'
+      : 'Sending…';
     fetch('/api/deh-report', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r)
     }).then(function (res) { return res.json().catch(function () { return { ok: res.ok }; }); })
@@ -616,7 +811,7 @@
         reports[d.iso] = { at: new Date().toISOString(), by: me };
         saveLocal();
         if (remote) {
-          api('report_log', { day: d.iso, by: me, to: 'cj@novapa.org',
+          api('report_log', { day: d.iso, by: me, to: REPORT_TO.join(', '),
                               summary: { done: r.blocksDone, of: r.blocksTotal } })
             .catch(function () {});
         }
@@ -625,7 +820,7 @@
       .catch(function (e) {
         btn.disabled = false;
         note.innerHTML = 'Could not send &mdash; ' + esc(String(e.message || e)) +
-          '. <a href="#" id="repCopy">Copy the report</a> and email it to cj@novapa.org.';
+          '. <a href="#" id="repCopy">Copy the report</a> and email it to ' + esc(REPORT_WHO) + '.';
         var c = $('repCopy');
         if (c) c.addEventListener('click', function (ev) {
           ev.preventDefault();
@@ -633,8 +828,10 @@
         });
       });
   }
-  function copyText(txt, noteEl) {
-    function done() { if (noteEl) noteEl.textContent = 'Copied. Paste it into an email to cj@novapa.org.'; }
+  function copyText(txt, noteEl, where) {
+    function done() {
+      if (noteEl) noteEl.textContent = 'Copied. Paste it into an email to ' + (where || REPORT_WHO) + '.';
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(done, function () { fallback(); });
     } else fallback();
@@ -705,10 +902,85 @@
 
   // ---------- scene breakdown + sourcing ----------
   function st(id) {
-    return item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
+    return item[id] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
   }
+
+  // Once an item has gone to Todd it is frozen: it drops off the next buy
+  // email, and its fields stop taking edits. Two people cannot both be
+  // changing the price of something already sitting in someone's basket.
+  // `sent` is the timestamp of the email that carried it.
+  function isSent(id) { return !!st(id).sent; }
+  function sentLabel(s) {
+    var d = s.sent ? new Date(s.sent) : null;
+    if (!d || !isFinite(+d)) return 'Sent to Todd';
+    return 'Sent to Todd ' + (d.getMonth() + 1) + '/' + d.getDate() +
+           (s.sentBy ? ' by ' + s.sentBy : '');
+  }
+
+  // One costume rarely comes from one page: a look is a top from one shop, a
+  // pair of shoes from another and a jacket off Marketplace. Everything below
+  // reads links through here, so an item saved back when there was a single
+  // `link` field keeps working with no migration.
+  var MAX_LINKS = 12;
+  // A link is a line of its own: where it comes from, what it costs, how many.
+  // A costume look bought across three shops has three prices, and one figure
+  // for the whole item could never say which of them went up.
+  //   { u: url, p: unit price in cents, q: quantity }
+  // Links saved before this were bare strings; they read back as a link with
+  // no price, which is exactly what they were.
+  function normLink(x) {
+    if (x == null) return null;
+    if (typeof x === 'string') return { u: safeUrl(x), p: 0, q: 1 };
+    var u = safeUrl(x.u || x.url || x.link);
+    if (!u) return null;
+    var p = parseInt(x.p, 10); if (!isFinite(p) || p < 0) p = 0;
+    var q = parseInt(x.q, 10); if (!isFinite(q) || q < 1) q = 1;
+    return { u: u, p: p, q: q };
+  }
+  function linksOf(s) {
+    var raw = (s && s.links && s.links.length) ? s.links : (s && s.link ? [s.link] : []);
+    var out = [], seen = {};
+    for (var i = 0; i < raw.length && out.length < MAX_LINKS; i++) {
+      var L = normLink(raw[i]);
+      if (!L || !L.u || seen[L.u]) continue;
+      seen[L.u] = true;
+      out.push(L);
+    }
+    return out;
+  }
+  function itemLinks(id) { return linksOf(st(id)); }
+  function linkTotal(ls) {
+    return ls.reduce(function (a, L) { return a + L.p * L.q; }, 0);
+  }
+  function anyPriced(ls) {
+    return ls.some(function (L) { return L.p > 0; });
+  }
+  // `link` stays in step with the head of the list so anything still reading
+  // the old single field — the store, the SQL column — sees the primary one.
+  function setLinks(s, arr) {
+    s.links = arr.slice(0, MAX_LINKS);
+    s.link = s.links.length ? s.links[0].u : '';
+    return s;
+  }
+  function shortLink(u) {
+    var s = String(u).replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+    return s.length > 46 ? s.slice(0, 44) + '…' : s;
+  }
+
   function qtyOf(it) { var s = st(it.id); return s.qty || it.qty || 1; }
-  function lineCost(it) { return st(it.id).price * qtyOf(it); }
+  // Priced links win: once any link on an item carries a price, that list is
+  // what the item costs. The item-level price stays untouched underneath and
+  // takes over again if every link price is cleared, so an item priced the old
+  // way keeps its figure until someone actually prices a link.
+  function lineCost(it) {
+    var s = st(it.id), ls = linksOf(s);
+    if (ls.length && anyPriced(ls)) return linkTotal(ls);
+    return (s.price || 0) * qtyOf(it);
+  }
+  function pricedByLinks(id) {
+    var ls = itemLinks(id);
+    return ls.length && anyPriced(ls);
+  }
   function sceneItems(sc) { return sc.items; }
   function sceneCost(sc) { return sceneItems(sc).reduce(function (a, it) { return a + lineCost(it); }, 0); }
   function sceneDone(sc) {
@@ -747,11 +1019,68 @@
     $('scenes').innerHTML = head + standing + list;
   }
 
+  // Saved links, then one empty field to add another. Deleting is keyed on the
+  // URL rather than its position: two people sourcing the same look at once
+  // would otherwise delete each other's row by index.
+  function linkBox(id, links) {
+    var locked = isSent(id);
+    var off = locked ? ' disabled' : '';
+    var rows = links.map(function (L, i) {
+      return '<li class="lkx' + (L.p ? ' priced' : '') + '" data-lkrow="' + esc(L.u) + '">' +
+        '<div class="lkx-top">' +
+          '<span class="lkx-i">' + (i + 1) + '</span>' +
+          '<a href="' + esc(L.u) + '" target="_blank" rel="noopener">' + esc(shortLink(L.u)) + '</a>' +
+          (locked ? '' :
+            '<button class="lkx-x" type="button" data-dellink="' + esc(L.u) + '" data-lkitem="' + esc(id) + '" ' +
+              'aria-label="Remove this link">&times;</button>') +
+        '</div>' +
+        // Each link is priced on its own line. One figure for the whole item
+        // could never say which of three shops put the cost up.
+        '<div class="lkx-n">' +
+          '<label>Price<input data-lp="' + esc(L.u) + '" data-lkitem="' + esc(id) + '" type="number" ' +
+            'inputmode="decimal" min="0" step="0.01" value="' + (L.p ? (L.p / 100).toFixed(2) : '') +
+            '" placeholder="0.00"' + off + '></label>' +
+          '<label>Qty<input data-lq="' + esc(L.u) + '" data-lkitem="' + esc(id) + '" type="number" ' +
+            'inputmode="numeric" min="1" step="1" value="' + L.q + '"' + off + '></label>' +
+          '<span class="lkx-c">' + (L.p ? money(L.p * L.q) : '&mdash;') + '</span>' +
+        '</div></li>';
+    }).join('');
+    var full = links.length >= MAX_LINKS;
+    var priced = anyPriced(links);
+    return '<div class="lks' + (links.length ? ' has' : '') + '">' +
+      // With nothing saved yet, "Links" above "Add a link" is two headings
+      // saying the same thing. The count is the only reason to print it.
+      (links.length ? '<div class="lks-h">Links <b>' + links.length + '</b>' +
+        (priced ? '<span class="lks-tot">' + money(linkTotal(links)) + '</span>' : '') + '</div>' : '') +
+      (rows ? '<ul class="lks-l">' + rows + '</ul>' : '') +
+      (priced ? '<p class="lks-note">This item costs what its links add up to. The unit price above ' +
+                'is ignored until every link price is cleared.</p>' : '') +
+      (locked
+        ? (links.length ? '' : '<p class="lks-none">No links were on this when it went out.</p>')
+        : full
+        ? '<p class="lks-none">That is ' + MAX_LINKS + ' links — remove one before adding another.</p>'
+        : '<div class="lk"><span class="lk-lab">' +
+            (links.length ? 'Add another' : 'Add a link') + '</span>' +
+            '<input data-nl type="url" inputmode="url" placeholder="https://&hellip;" ' +
+              'aria-label="Link address">' +
+            '<span class="lk-row lk-num">' +
+              '<input data-nlp type="number" inputmode="decimal" min="0" step="0.01" ' +
+                'placeholder="Price" aria-label="Price for this link">' +
+              '<input data-nlq type="number" inputmode="numeric" min="1" step="1" value="1" ' +
+                'aria-label="Quantity for this link">' +
+              '<button class="lk-go" data-addlink type="button" aria-label="Add this link">Add</button>' +
+            '</span></div>') +
+      '</div>';
+  }
+
   function itemRow(it) {
     var s = st(it.id);
     var q = qtyOf(it);
-    var link = safeUrl(s.link);
-    return '<div class="it it-' + esc(s.st) + '" data-item="' + esc(it.id) + '">' +
+    var links = linksOf(s);
+    var locked = !!s.sent;
+    var off = locked ? ' disabled' : '';
+    var byLinks = links.length && anyPriced(links);
+    return '<div class="it it-' + esc(s.st) + (locked ? ' sent' : '') + '" data-item="' + esc(it.id) + '">' +
       '<div class="it-h">' +
         '<span class="it-cat it-' + esc(it.cat) + '">' + esc(CATS[it.cat] || it.cat) + '</span>' +
         (it.who ? '<span class="it-who">' + esc(it.who) + '</span>' : '') +
@@ -760,24 +1089,26 @@
       '</div>' +
       '<div class="it-n">' + esc(it.name) + '</div>' +
       (it.note ? '<div class="it-note">' + esc(it.note) + '</div>' : '') +
+      (locked ? '<div class="it-lock">' + esc(sentLabel(s)) +
+                ' &middot; locked so it cannot be bought twice</div>' : '') +
       '<div class="it-ctl">' +
-        '<label>Status<select data-f="st">' + STATES.map(function (x) {
+        '<label>Status<select data-f="st"' + off + '>' + STATES.map(function (x) {
           return '<option value="' + x.k + '"' + (s.st === x.k ? ' selected' : '') + '>' + x.l + '</option>';
         }).join('') + '</select></label>' +
-        '<label>Where from<input list="vendorList" data-f="src" value="' + esc(s.src) + '" placeholder="Amazon, in stock, build&hellip;"></label>' +
-        '<label class="lk' + (safeUrl(s.link) ? ' saved' : '') + '">Link' +
-          '<span class="lk-row">' +
-            '<input data-f="link" type="url" inputmode="url" value="' + esc(s.link) + '" placeholder="https://&hellip;">' +
-            '<button class="lk-go" data-savelink type="button" aria-label="Save this link">' +
-              (safeUrl(s.link) ? '&#10003;' : 'Save') + '</button>' +
-          '</span></label>' +
-        '<label>Unit price<input data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' +
-          (s.price ? (s.price / 100).toFixed(2) : '') + '" placeholder="0.00"></label>' +
-        '<label>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"></label>' +
+        '<label>Where from<input list="vendorList" data-f="src" value="' + esc(s.src) + '" placeholder="Amazon, in stock, build&hellip;"' + off + '></label>' +
+        // Greyed, not hidden, once the links carry the price: the figure is
+        // still there and comes back if every link price is cleared.
+        '<label' + (byLinks ? ' class="muted"' : '') + '>Unit price<input data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' +
+          (s.price ? (s.price / 100).toFixed(2) : '') + '" placeholder="0.00"' + off + '></label>' +
+        '<label' + (byLinks ? ' class="muted"' : '') + '>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"' + off + '></label>' +
       '</div>' +
-      (link ? '<a class="it-link" href="' + esc(link) + '" target="_blank" rel="noopener">Open the source &rarr;</a>' : '') +
+      linkBox(it.id, links) +
       '<div class="it-foot">' +
-        '<button class="it-save" data-saveitem type="button">Save this item</button>' +
+        (locked
+          // Not a way round the lock — a way to correct a mistake. Sending the
+          // wrong price would otherwise freeze it into the record for good.
+          ? '<button class="it-unlock" data-unlock="' + esc(it.id) + '" type="button">Unlock to edit</button>'
+          : '<button class="it-save" data-saveitem type="button">Save this item</button>') +
         (s.by ? '<span class="it-by">Last touched by <b>' + esc(s.by) + '</b>' +
                 (s.at ? ' &middot; ' + esc(shortWhen(s.at)) : '') + '</span>' : '') +
       '</div>' +
@@ -908,30 +1239,157 @@
     var body = vendors.map(function (v) {
       var list = byVendor[v];
       var sub = list.reduce(function (a, it) { return a + lineCost(it); }, 0);
-      var links = list.map(function (it) { return safeUrl(st(it.id).link); }).filter(Boolean);
+      // Nothing already with Todd — reopening those tabs is how a thing gets
+      // ordered twice by two different people.
+      var links = list.reduce(function (a, it) {
+        return st(it.id).sent ? a : a.concat(itemLinks(it.id));
+      }, []);
       return '<div class="ven">' +
         '<div class="ven-h"><b>' + esc(v) + '</b><span>' + list.length + ' item' +
           (list.length === 1 ? '' : 's') + ' &middot; ' + money(sub) + '</span></div>' +
         list.map(function (it) {
-          var s = st(it.id), q = qtyOf(it), href = safeUrl(s.link);
-          return '<div class="ven-i">' +
+          var s = st(it.id), q = qtyOf(it), ls = linksOf(s);
+          return '<div class="ven-i' + (s.sent ? ' sent' : '') + '">' +
             '<button class="ven-tick" data-buytick="' + esc(it.id) + '" ' +
               'aria-label="Mark ' + esc(it.name) + ' arrived">&#10003;</button>' +
-            '<div class="ven-t">' + (href
-              ? '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(it.name) + '</a>'
+            '<div class="ven-t">' + (ls.length
+              ? '<a href="' + esc(ls[0].u) + '" target="_blank" rel="noopener">' + esc(it.name) + '</a>'
               : esc(it.name)) +
               '<span class="ven-s">' + esc(it.scene) + ' &middot; ' + esc(CATS[it.cat] || it.cat) +
-              (q > 1 ? ' &middot; &times;' + q : '') + '</span></div>' +
-            '<span class="ven-c">' + (s.price ? money(s.price * q) : '<i>no price</i>') + '</span></div>';
+              (!anyPriced(ls) && q > 1 ? ' &middot; &times;' + q : '') +
+              (s.sent ? ' &middot; <b class="ven-sent">' + esc(sentLabel(s)) + '</b>' : '') + '</span>' +
+              // Every link with its own price and count, so a look built from
+              // three shops can be bought in one pass without opening the item.
+              (ls.length > 1 ? '<span class="ven-more">' + ls.map(function (L, i) {
+                return '<a href="' + esc(L.u) + '" target="_blank" rel="noopener">' +
+                  (i + 1) + (L.p ? ' &middot; ' + money(L.p) : '') +
+                  (L.q > 1 ? ' &times;' + L.q : '') + '</a>';
+              }).join('') + '</span>' : '') +
+            '</div>' +
+            '<span class="ven-c">' + (lineCost(it) ? money(lineCost(it)) : '<i>no price</i>') + '</span></div>';
         }).join('') +
         (links.length ? '<button class="ven-open" data-openall="' + esc(v) + '" type="button">Open ' +
           links.length + ' link' + (links.length === 1 ? '' : 's') + '</button>' : '') +
         '</div>';
     }).join('');
 
+    var toBuy = buyLinkList();
+    var linked = toBuy.items.length;
+
     $('buy').innerHTML = head +
-      '<div class="buy-acts"><button class="btn" id="buyCopy" type="button">Copy the whole list</button>' +
-      '<span class="buy-hint">Tick an item when it arrives.</span></div>' + body;
+      '<div class="buy-acts">' +
+        '<button class="buy-send" id="buySend" type="button"' + (linked ? '' : ' disabled') + '>' +
+          'Send links to Todd to buy</button>' +
+        '<button class="btn buy-copy" id="buyCopy" type="button">Copy the whole list</button>' +
+        '<span class="buy-hint">' + (linked
+          ? linked + ' item' + (linked === 1 ? '' : 's') + ' with links, ' + money(toBuy.totalCents) +
+            ', straight to ' + esc(BUY_TO) + '.' +
+            (toBuy.missing ? ' ' + toBuy.missing + ' still ' + (toBuy.missing === 1 ? 'has' : 'have') +
+              ' no link — those are listed too, marked.' : '')
+          : toBuy.already.length
+            ? 'Nothing new to send. ' + toBuy.already.length + ' item' +
+              (toBuy.already.length === 1 ? ' is' : 's are') + ' already with ' + esc(BUY_TO) +
+              ' — struck through below. Add links to something else and this lights up again.'
+            : 'Nothing has a link yet. Add links on an item and this sends them to ' + esc(BUY_TO) + '.') +
+        '</span>' +
+        '<div class="buy-note" id="buyNote"></div>' +
+      '</div>' + body;
+  }
+
+  // What goes to Todd: everything still outstanding, links and all. Items with
+  // no link ride along at the bottom so he can see the list is not finished
+  // rather than buying two thirds of a show and assuming that was all of it.
+  function buyLinkList() {
+    var outstanding = S.allItems.filter(function (it) {
+      var k = st(it.id).st; return k !== 'done' && k !== 'arrived';
+    });
+    // Anything already emailed to Todd is off the list. He was asked once; a
+    // second copy of the same link is how a show ends up with two of a thing.
+    var open = outstanding.filter(function (it) { return !st(it.id).sent; });
+    var items = [], missing = 0, total = 0, ids = [];
+    open.forEach(function (it) {
+      var s = st(it.id), ls = linksOf(s), q = qtyOf(it);
+      if (!ls.length) { missing++; return; }
+      total += lineCost(it);
+      ids.push(it.id);
+      items.push({ name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
+                   vendor: s.src || '', links: ls, status: s.st || 'todo', qty: q,
+                   price_cents: s.price || 0, line_cents: lineCost(it), by: s.by || '' });
+    });
+    var unlinked = open.filter(function (it) { return !linksOf(st(it.id)).length; })
+      .map(function (it) {
+        return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat,
+                 vendor: st(it.id).src || '', qty: qtyOf(it) };
+      });
+    // Struck through in the email rather than dropped from it — a line Todd
+    // can see and skip beats a line that quietly is not there, when the
+    // previous email asking for it is still sitting in his inbox.
+    var already = outstanding.filter(function (it) { return st(it.id).sent; })
+      .map(function (it) {
+        var s = st(it.id);
+        return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
+                 vendor: s.src || '', qty: qtyOf(it), line_cents: lineCost(it),
+                 sent: s.sent, sentBy: s.sentBy || '' };
+      });
+    return { items: items, unlinked: unlinked, already: already,
+             ids: ids, missing: missing, totalCents: total };
+  }
+
+  // Freeze everything that just went out, so the next email cannot carry it
+  // again and nobody edits a price out from under an order in flight.
+  function markSent(ids) {
+    var now = new Date().toISOString();
+    ids.forEach(function (id) {
+      var s = item[id] || st(id);
+      s.sent = now;
+      s.sentBy = me || s.by || '';
+      item[id] = s;
+      pushItem(id);
+    });
+    if (ids.length) saveLocal();
+  }
+
+  function sendBuyList() {
+    var note = $('buyNote'), btn = $('buySend');
+    var d = D.days[cur];
+    var list = buyLinkList();
+    if (!list.items.length) { note.textContent = 'Nothing to send — no item has a link yet.'; return; }
+    var n = list.items.reduce(function (a, x) { return a + x.links.length; }, 0);
+    if (!window.confirm('Email ' + n + ' link' + (n === 1 ? '' : 's') + ' across ' +
+        list.items.length + ' item' + (list.items.length === 1 ? '' : 's') + ' to ' + BUY_TO + '?')) return;
+    btn.disabled = true; note.textContent = 'Sending…';
+    fetch('/api/deh-report', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'buy', dayLabel: (d && d.date) || 'Today', by: me || 'staff', at: clock(Date.now()),
+        items: list.items, unlinked: list.unlinked, already: list.already, missing: list.missing,
+        totalCents: list.totalCents, budgetCents: BUDGET_TOTAL, spentCents: spentTotal()
+      })
+    }).then(function (res) { return res.json().catch(function () { return { ok: res.ok }; }); })
+      .then(function (j) {
+        btn.disabled = false;
+        if (!j || !j.ok) throw new Error((j && j.error) || 'send failed');
+        // Only after the mail is away. Marking first would lock items off a
+        // send that never happened, and nothing would ever reach Todd.
+        markSent(list.ids);
+        renderBuy(); renderBudget();
+        var note2 = $('buyNote');
+        if (note2) {
+          note2.textContent = 'Sent to ' + BUY_TO + ' — ' + n + ' link' + (n === 1 ? '' : 's') +
+            ', ' + money(list.totalCents) + '. ' + list.ids.length +
+            ' item' + (list.ids.length === 1 ? '' : 's') + ' locked; they will not go again.';
+        }
+      })
+      .catch(function (e) {
+        btn.disabled = false;
+        note.innerHTML = 'Could not send &mdash; ' + esc(String(e.message || e)) +
+          '. <a href="#" id="buyCopy2">Copy the list</a> and email it to ' + esc(BUY_TO) + '.';
+        var c = $('buyCopy2');
+        if (c) c.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          copyText(buyListText(), note, BUY_TO);
+        });
+      });
   }
   function buyListText() {
     var open = S.allItems.filter(function (it) {
@@ -948,10 +1406,16 @@
       L.push(v.toUpperCase() + '  (' + money(sub) + ')');
       byVendor[v].forEach(function (it) {
         var s = st(it.id), q = qtyOf(it);
-        L.push('  - ' + it.name + (q > 1 ? ' x' + q : '') + '  ' +
-               (s.price ? money(s.price * q) : 'no price') +
+        var ls5 = linksOf(s);
+        L.push('  ' + (s.sent ? '[SENT] ' : '- ') + it.name +
+               (!anyPriced(ls5) && q > 1 ? ' x' + q : '') + '  ' +
+               (lineCost(it) ? money(lineCost(it)) : 'no price') +
                '   [' + it.scene + ' / ' + (CATS[it.cat] || it.cat) + ']' +
-               (safeUrl(s.link) ? '\n      ' + s.link : ''));
+               (s.sent ? '  ' + sentLabel(s) + ' — do not re-buy' : '') +
+               ls5.map(function (L2) {
+                 return '\n      ' + L2.u +
+                        (L2.p ? '   ' + money(L2.p) + (L2.q > 1 ? ' x' + L2.q + ' = ' + money(L2.p * L2.q) : '') : '');
+               }).join(''));
       });
       L.push('');
     });
@@ -1009,7 +1473,175 @@
       'item and every total here fills in on its own.</p>';
   }
 
-  function renderAll() { renderSchedule(); renderScenes(); renderBudget(); renderBuy(); }
+  function renderAll() { renderSchedule(); renderScenes(); renderBudget(); renderBuy(); renderStrike(); }
+
+  // ---------- strike ----------
+  // What has to happen after the last performance, and whose name is against
+  // each line. Strike is the part of a production that gets planned last and
+  // goes wrong most: people leave, things go home in the wrong bag, and the
+  // borrowed furniture is the thing nobody remembers. A name against a line
+  // is the whole point of this tab.
+  var STRIKE_AREAS = [
+    { k: 'set',       l: 'Set' },
+    { k: 'lighting',  l: 'Lighting' },
+    { k: 'sound',     l: 'Sound' },
+    { k: 'projection', l: 'Projection' },
+    { k: 'props',     l: 'Props' },
+    { k: 'costume',   l: 'Costumes' },
+    { k: 'hair',      l: 'Hair & Wigs' },
+    { k: 'house',     l: 'Front of house' },
+    { k: 'backstage', l: 'Backstage & dressing rooms' },
+    { k: 'load',      l: 'Load-out & returns' }
+  ];
+  function areaLabel(k) {
+    for (var i = 0; i < STRIKE_AREAS.length; i++) if (STRIKE_AREAS[i].k === k) return STRIKE_AREAS[i].l;
+    return k;
+  }
+
+  // A starting list, not a fixed one — every line can be edited or deleted,
+  // and the tab is just as usable emptied out. It exists because a blank page
+  // at 10pm on closing night is how the borrowed furniture gets forgotten.
+  var STRIKE_SEED = [
+    ['set', 'Unbolt and stack decking, screws out and boxed'],
+    ['set', 'Break down anything we are not keeping'],
+    ['set', 'Return borrowed furniture — check it against the list of who lent what'],
+    ['set', 'Sweep and mop the stage'],
+    ['lighting', 'Let the lamps cool before anyone touches the grid'],
+    ['lighting', 'Drop the specials, cap and coil every cable'],
+    ['lighting', 'Gel out of the frames, labelled and boxed'],
+    ['lighting', 'House plot back to rep'],
+    ['lighting', 'Ladders and lift away, floor clear'],
+    ['sound', 'Mics off, batteries out, packs back in the case'],
+    ['sound', 'Every scrap of mic tape off the deck and off the actors'],
+    ['sound', 'XLR coiled over-under and labelled'],
+    ['sound', 'Monitors and stands to storage'],
+    ['projection', 'Content off the machine'],
+    ['projection', 'Projector, cabling and surfaces down'],
+    ['props', 'Everything back to the props table for check-in'],
+    ['props', 'Check every prop against the running list before anything leaves'],
+    ['props', 'Borrowed props bagged with the owner’s name on the bag'],
+    ['props', 'Consumables binned'],
+    ['costume', 'Every costume on a hanger with the actor’s name — nothing goes home'],
+    ['costume', 'Wash pile kept separate from dry-clean'],
+    ['costume', 'Count the shoes'],
+    ['costume', 'Rentals bagged with their paperwork'],
+    ['hair', 'Wigs back on blocks'],
+    ['hair', 'Brushes and combs washed, kits sealed'],
+    ['hair', 'Bin every used applicator'],
+    ['house', 'Programmes and signage down'],
+    ['house', 'Lobby and concessions cleared and counted'],
+    ['house', 'Lost property bagged and labelled'],
+    ['backstage', 'Quick-change booths struck, glow tape up'],
+    ['backstage', 'Every dressing room emptied and walked'],
+    ['backstage', 'Bin bags out'],
+    ['load', 'Van loaded in the order it unloads'],
+    ['load', 'Collect every script and MTI material — none of it goes home with anyone'],
+    ['load', 'Count the scripts against the list before we leave'],
+    ['load', 'Final walk of the building with the venue rep']
+  ];
+  var STRIKE_SEED_KEY = '__seeded__';
+
+  function strikeRows() {
+    return strike.filter(function (t) { return t.task_id !== STRIKE_SEED_KEY; });
+  }
+  function strikeOf(area) {
+    return strikeRows().filter(function (t) { return t.area === area; })
+      .sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); });
+  }
+  function strikeAreas() {
+    var keys = STRIKE_AREAS.map(function (x) { return x.k; });
+    strikeRows().forEach(function (t) { if (keys.indexOf(t.area) < 0) keys.push(t.area); });
+    return keys;
+  }
+  function seedStrike() {
+    return STRIKE_SEED.map(function (row, i) {
+      return { task_id: 'seed-' + i, area: row[0], body: row[1], who: '',
+               done: false, done_by: '', sort: i };
+    });
+  }
+
+  function renderStrike() {
+    var dl = $('strikeWho');
+    if (dl) {
+      dl.innerHTML = people().filter(function (p) { return p.name; })
+        .map(function (p) { return '<option value="' + esc(p.name) + '">'; }).join('');
+    }
+    var all = strikeRows();
+    var done = all.filter(function (t) { return t.done; }).length;
+    var pct = all.length ? Math.round(done / all.length * 100) : 0;
+    var unassigned = all.filter(function (t) { return !(t.who || '').trim(); }).length;
+    var mine = me ? all.filter(function (t) {
+      return (t.who || '').trim().toLowerCase() === me.toLowerCase();
+    }).length : 0;
+
+    var head = '<div class="sc-summary">' +
+      '<div class="ss-row"><span>Struck</span><b>' + done + ' of ' + all.length + '</b></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="ss-row"><span>Nobody’s name on it</span><b class="' +
+        (unassigned ? 'over' : 'under') + '">' + unassigned + '</b></div>' +
+      (me ? '<div class="ss-row"><span>Yours, ' + esc(me) + '</span><b>' + mine + '</b></div>' : '') +
+      '<p class="ss-note">Put a name against every line before the last show. On the night, tap the box ' +
+      'as each one is finished — everyone sees the same list.</p></div>';
+
+    var body = strikeAreas().map(function (k) {
+      var list = strikeOf(k);
+      var d = list.filter(function (t) { return t.done; }).length;
+      return '<div class="stk' + (list.length && d === list.length ? ' full' : '') + '">' +
+        '<div class="stk-h"><b>' + esc(areaLabel(k)) + '</b>' +
+          '<span>' + d + '/' + list.length + '</span></div>' +
+        (list.length ? list.map(strikeRow).join('')
+                     : '<p class="stk-none">Nothing on this list yet.</p>') +
+        '<div class="stk-add">' +
+          '<input data-stknew="' + esc(k) + '" placeholder="Add a job" autocomplete="off">' +
+          '<button class="btn stk-go" data-stkadd="' + esc(k) + '" type="button">Add</button>' +
+        '</div></div>';
+    }).join('');
+
+    $('strike').innerHTML = head +
+      '<div class="buy-acts"><button class="btn buy-copy" id="stkCopy" type="button">Copy the list</button>' +
+      '<span class="buy-hint">Names save as you type. Anyone with the dashboard sees the same list.</span></div>' +
+      body;
+  }
+
+  function strikeRow(t) {
+    return '<div class="stk-i' + (t.done ? ' done' : '') + '" data-stk="' + esc(t.task_id) + '">' +
+      '<button class="stk-tick" data-stktick="' + esc(t.task_id) + '" aria-pressed="' + (t.done ? 'true' : 'false') +
+        '" aria-label="' + (t.done ? 'Mark not done' : 'Mark done') + '">' + (t.done ? '&#10003;' : '') + '</button>' +
+      '<div class="stk-t"><span class="stk-b">' + esc(t.body) + '</span>' +
+        (t.done && t.done_by ? '<span class="stk-by">struck by ' + esc(t.done_by) + '</span>' : '') + '</div>' +
+      '<input class="stk-who" list="strikeWho" data-stkwho="' + esc(t.task_id) + '" value="' + esc(t.who || '') +
+        '" placeholder="who" autocomplete="off" aria-label="Who is doing this">' +
+      '<button class="stk-x" data-stkdel="' + esc(t.task_id) + '" aria-label="Remove this job">&times;</button>' +
+    '</div>';
+  }
+
+  function strikeText() {
+    var L = ['DEAR EVAN HANSEN — STRIKE', ''];
+    strikeAreas().forEach(function (k) {
+      var list = strikeOf(k);
+      if (!list.length) return;
+      L.push(areaLabel(k).toUpperCase());
+      list.forEach(function (t) {
+        L.push('  [' + (t.done ? 'x' : ' ') + '] ' + t.body +
+               (t.who ? '   — ' + t.who : '   — UNASSIGNED'));
+      });
+      L.push('');
+    });
+    var all = strikeRows();
+    L.push(all.filter(function (t) { return t.done; }).length + ' of ' + all.length + ' done.');
+    return L.join('\n');
+  }
+
+  function saveStrike(t) {
+    saveLocal();
+    if (!remote) return;
+    api('strike_set', { task_id: t.task_id, area: t.area, body: t.body, who: t.who || '',
+                        done: !!t.done, done_by: t.done_by || '', sort: t.sort || 0 })
+      .catch(function () { setSync('offline — saved on this phone'); });
+  }
+  function strikeById(id) {
+    return strikeRows().filter(function (t) { return t.task_id === id; })[0];
+  }
 
   // ---------- reference tabs ----------
   function renderRef() {
@@ -1027,6 +1659,7 @@
     loadLocal();
     renderRef();
     renderAll();
+    watchTopbar();
 
     document.body.classList.add('on-day');
     var today = new Date().toISOString().slice(0, 10);
@@ -1062,22 +1695,29 @@
         roster.push(p); saveLocal(); pushRoster(p); renderDay();
         return;
       }
-      if (e.target.id === 'ntAdd') {
-        var body = ($('ntBody').value || '').trim();
-        if (!body) return;
-        var n = { note_id: d.iso + '|' + Date.now() + '|' + Math.floor(Math.random() * 1e4),
-                  day: d.iso, dept: $('ntDept').value || 'general', body: body,
-                  author: me || '', created_at: new Date().toISOString() };
-        notes.push(n); saveLocal(); pushNote(n); renderDay();
+      var na = e.target.closest('[data-ntadd]');
+      if (na) {
+        var dept = na.dataset.ntadd;
+        var ta = document.querySelector('[data-ntbody="' + dept.replace(/"/g, '') + '"]');
+        var body = ta ? (ta.value || '').trim() : '';
+        if (!body) { if (ta) ta.focus(); return; }
+        addNote(d.iso, dept, body);
+        saveLocal();
+        // Repaint this department only — the stage manager may have half a
+        // note typed into two others.
+        refreshDeptBox(d.iso, dept);
+        var again = document.querySelector('[data-ntbody="' + dept.replace(/"/g, '') + '"]');
+        if (again) again.focus();
         return;
       }
       var dn = e.target.closest('[data-delnote]');
       if (dn) {
         var nid = dn.dataset.delnote;
+        var gone = notes.filter(function (x) { return x.note_id === nid; })[0];
         notes = notes.filter(function (x) { return x.note_id !== nid; });
         saveLocal();
         if (remote) api('note_delete', { note_id: nid }).catch(function () {});
-        renderDay();
+        if (gone) refreshDeptBox(d.iso, gone.dept); else renderDay();
         return;
       }
       if (e.target.id === 'repSend') { sendReport(d); return; }
@@ -1094,6 +1734,14 @@
       }
       var blk = e.target.closest('.blk');
       if (blk) blk.classList.toggle('open');
+    });
+
+    // A box holding text nobody has pressed Add on gets marked, so an unsent
+    // note is visible from the closed summary rather than only from inside.
+    $('day').addEventListener('input', function (e) {
+      if (!(e.target.dataset && e.target.dataset.ntbody)) return;
+      var box = e.target.closest('[data-deptbox]');
+      if (box) box.classList.toggle('pending', !!e.target.value.trim());
     });
 
     // attendance notes and roster names save as they are typed
@@ -1116,6 +1764,7 @@
     });
 
     $('buy').addEventListener('click', function (e) {
+      if (e.target.id === 'buySend') { sendBuyList(); return; }
       if (e.target.id === 'buyCopy') {
         copyText(buyListText(), null);
         e.target.textContent = 'Copied';
@@ -1127,10 +1776,9 @@
         var v = oa.dataset.openall;
         S.allItems.forEach(function (it) {
           var s = st(it.id);
-          if (s.st === 'done' || s.st === 'arrived') return;
+          if (s.st === 'done' || s.st === 'arrived' || s.sent) return;
           if (((s.src || '').trim() || 'Not sourced yet') !== v) return;
-          var u = safeUrl(s.link);
-          if (u) window.open(u, '_blank', 'noopener');
+          linksOf(s).forEach(function (L) { window.open(L.u, '_blank', 'noopener'); });
         });
         return;
       }
@@ -1141,6 +1789,69 @@
         item[iid] = s2; saveLocal(); pushItem(iid);
         renderBuy(); renderBudget(); renderScenes();
       }
+    });
+
+    // ---------- strike ----------
+    $('strike').addEventListener('click', function (e) {
+      if (e.target.id === 'stkCopy') {
+        copyText(strikeText(), null, 'whoever needs it');
+        e.target.textContent = 'Copied';
+        setTimeout(function () { e.target.textContent = 'Copy the list'; }, 1800);
+        return;
+      }
+      var tk = e.target.closest('[data-stktick]');
+      if (tk) {
+        var t = strikeById(tk.dataset.stktick);
+        if (!t) return;
+        t.done = !t.done;
+        // Who struck it, not who is down to do it. On the night those differ
+        // more often than not, and the person who actually did it is the one
+        // worth having on the record.
+        t.done_by = t.done ? (me || '') : '';
+        saveStrike(t); renderStrike();
+        return;
+      }
+      var dx = e.target.closest('[data-stkdel]');
+      if (dx) {
+        var id = dx.dataset.stkdel;
+        strike = strike.filter(function (x) { return x.task_id !== id; });
+        saveLocal();
+        if (remote) api('strike_delete', { task_id: id }).catch(function () {});
+        renderStrike();
+        return;
+      }
+      var ad = e.target.closest('[data-stkadd]');
+      if (ad) {
+        var area = ad.dataset.stkadd;
+        var box = document.querySelector('[data-stknew="' + area.replace(/"/g, '') + '"]');
+        var body = box ? (box.value || '').trim() : '';
+        if (!body) { if (box) box.focus(); return; }
+        var next = { task_id: 'stk-' + Date.now() + '-' + Math.floor(Math.random() * 1e4),
+                     area: area, body: body, who: '', done: false, done_by: '',
+                     sort: strikeOf(area).length + 1000 };
+        strike.push(next);
+        saveStrike(next); renderStrike();
+        var again = document.querySelector('[data-stknew="' + area.replace(/"/g, '') + '"]');
+        if (again) again.focus();
+        return;
+      }
+    });
+    // A name saves as it is typed — nobody presses a button to claim a job.
+    $('strike').addEventListener('change', function (e) {
+      var w = e.target.closest('[data-stkwho]');
+      if (!w) return;
+      var t = strikeById(w.dataset.stkwho);
+      if (!t) return;
+      t.who = w.value.trim();
+      saveStrike(t);
+    });
+    $('strike').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var n = e.target.closest('[data-stknew]');
+      if (!n) return;
+      e.preventDefault();
+      var btn = document.querySelector('[data-stkadd="' + n.dataset.stknew.replace(/"/g, '') + '"]');
+      if (btn) btn.click();
     });
 
     $('scenes').addEventListener('click', function (e) {
@@ -1158,12 +1869,32 @@
     $('sceneDetail').addEventListener('click', function (e) {
       // Save the whole card. Fields already commit on blur, but on a phone that
       // is invisible — people want a button that says the row is stored.
+      // Deliberately reopen something already emailed to Todd. Confirmed,
+      // because the point of the lock is that it is not a stray tap, and it
+      // puts the item back on the next list — which is usually what you want
+      // after correcting a wrong price, and never what you want by accident.
+      var ul = e.target.closest('[data-unlock]');
+      if (ul) {
+        var uid = ul.dataset.unlock;
+        var us = item[uid] || st(uid);
+        if (!window.confirm('This already went to ' + BUY_TO + ' on ' +
+            (us.sent ? new Date(us.sent).toLocaleDateString() : 'an earlier day') +
+            '. Unlocking puts it back on the next email — Todd could buy it twice. Continue?')) return;
+        delete us.sent; delete us.sentBy;
+        us.by = me || us.by || '';
+        us.at = new Date().toISOString();
+        item[uid] = us;
+        saveLocal(); pushItem(uid);
+        renderSceneDetail(openScene); renderBuy(); renderBudget();
+        return;
+      }
+
       var si = e.target.closest('[data-saveitem]');
       if (si) {
         var ibox = si.closest('[data-item]');
         var iid = ibox.dataset.item;
-        var cur2 = item[iid] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
-        var badUrl = false;
+        if (isSent(iid)) return;   // the fields are disabled; belt and braces
+        var cur2 = item[iid] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
         ibox.querySelectorAll('[data-f]').forEach(function (el) {
           var g = el.dataset.f;
           if (g === 'price') {
@@ -1172,20 +1903,33 @@
           } else if (g === 'qty') {
             var qv = parseInt(el.value, 10);
             cur2.qty = isFinite(qv) && qv > 0 ? qv : 1;
-          } else if (g === 'link') {
-            var raw2 = el.value.trim();
-            if (raw2 && !safeUrl(raw2)) { badUrl = true; return; }
-            cur2.link = raw2;
           } else {
             cur2[g] = el.value;
           }
         });
-        if (badUrl) {
-          var lk = ibox.querySelector('.lk');
-          if (lk) { lk.classList.add('bad'); setTimeout(function () { lk.classList.remove('bad'); }, 1600); }
-          si.textContent = 'Check the link';
-          setTimeout(function () { si.textContent = 'Save this item'; }, 1600);
-          return;
+        // A link typed but not added yet would otherwise be lost by the
+        // re-render this save triggers. Take it along.
+        var pending = ibox.querySelector('[data-nl]');
+        if (pending && pending.value.trim()) {
+          var pu = safeUrl(pending.value);
+          if (!pu) {
+            var lk = ibox.querySelector('.lk');
+            if (lk) { lk.classList.add('bad'); setTimeout(function () { lk.classList.remove('bad'); }, 1600); }
+            si.textContent = 'Check the link';
+            setTimeout(function () { si.textContent = 'Save this item'; }, 1600);
+            return;
+          }
+          // …and so would the price and quantity typed beside it.
+          var pp = ibox.querySelector('[data-nlp]'), pq = ibox.querySelector('[data-nlq]');
+          var ppv = pp ? parseFloat(pp.value) : NaN, pqv = pq ? parseInt(pq.value, 10) : NaN;
+          setLinks(cur2, linksOf(cur2).concat([{
+            u: pu,
+            p: isFinite(ppv) && ppv >= 0 ? Math.round(ppv * 100) : 0,
+            q: isFinite(pqv) && pqv > 0 ? pqv : 1
+          }]));
+          pending.value = '';
+          if (pp) pp.value = '';
+          if (pq) pq.value = '1';
         }
         cur2.by = me || cur2.by || '';
         cur2.at = new Date().toISOString();
@@ -1193,12 +1937,8 @@
         saveLocal(); pushItem(iid);
         ibox.classList.add('just-saved');
         si.textContent = 'Saved \u2713';
-        var lk2 = ibox.querySelector('.lk');
-        if (lk2) {
-          lk2.classList.toggle('saved', !!safeUrl(cur2.link));
-          var g2 = lk2.querySelector('.lk-go');
-          if (g2) g2.innerHTML = safeUrl(cur2.link) ? '&#10003;' : 'Save';
-        }
+        var lkbox = ibox.querySelector('.lks');
+        if (lkbox) lkbox.outerHTML = linkBox(iid, itemLinks(iid));
         var costCell = ibox.querySelector('.it-cost');
         var itObj = S.allItems.filter(function (x) { return x.id === iid; })[0];
         if (costCell && itObj) costCell.textContent = money(lineCost(itObj));
@@ -1210,22 +1950,26 @@
         return;
       }
 
-      // Explicit save for a pasted link. The field still commits on blur, but
-      // on a phone "blur" is ambiguous — people paste and expect a button.
-      var sv = e.target.closest('[data-savelink]');
-      if (sv) {
-        var box = sv.closest('[data-item]');
-        var input = box.querySelector('[data-f="link"]');
-        var lab = sv.closest('.lk');
-        var url = safeUrl(input.value);
-        if (!url && input.value.trim()) {
-          lab.classList.add('bad');
-          setTimeout(function () { lab.classList.remove('bad'); }, 1600);
-          return;
-        }
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        lab.classList.toggle('saved', !!url);
-        sv.innerHTML = url ? '&#10003;' : 'Save';
+      // Add a link to the list. There is no "blur to commit" here on purpose:
+      // with several links per item, a field that silently swallows what was
+      // typed is worse than one that waits for the button.
+      var sv = e.target.closest('[data-addlink]');
+      if (sv) { addLinkFrom(sv.closest('[data-item]')); return; }
+
+      var dl = e.target.closest('[data-dellink]');
+      if (dl) {
+        var lid = dl.dataset.lkitem, gone = dl.dataset.dellink;
+        if (isSent(lid)) return;
+        var s3 = item[lid] || st(lid);
+        setLinks(s3, linksOf(s3).filter(function (L) { return L.u !== gone; }));
+        s3.by = me || s3.by || '';
+        s3.at = new Date().toISOString();
+        item[lid] = s3;
+        saveLocal(); pushItem(lid);
+        var lbox = dl.closest('.lks');
+        var lrow = dl.closest('[data-item]');
+        if (lbox) lbox.outerHTML = linkBox(lid, itemLinks(lid));
+        refreshItemMoney(lrow, lid);
         return;
       }
       // straight to the neighbouring scene, no trip back through the list
@@ -1249,33 +1993,154 @@
       else if (e.key === 'ArrowLeft') { e.preventDefault(); stepScene(-1); }
     });
 
+    // Take whatever is in a card's "add a link" field and put it on the item.
+    // Called by the Add button, by Enter, and by blurring the field, so there
+    // is no way to type a link and have it quietly disappear.
+    function addLinkFrom(box) {
+      if (!box) return false;
+      var input = box.querySelector('[data-nl]');
+      if (!input) return false;
+      var raw = input.value.trim();
+      var lab = input.closest('.lk');
+      if (!raw) return false;
+      var url = safeUrl(raw);
+      if (!url) {
+        if (lab) {
+          lab.classList.add('bad');
+          setTimeout(function () { lab.classList.remove('bad'); }, 1600);
+        }
+        return false;
+      }
+      var id = box.dataset.item;
+      if (isSent(id)) return false;
+      var s = item[id] || st(id);
+      var have = linksOf(s);
+      var pIn = box.querySelector('[data-nlp]'), qIn = box.querySelector('[data-nlq]');
+      var pv = pIn ? parseFloat(pIn.value) : NaN;
+      var qv = qIn ? parseInt(qIn.value, 10) : NaN;
+      var add = { u: url,
+                  p: isFinite(pv) && pv >= 0 ? Math.round(pv * 100) : 0,
+                  q: isFinite(qv) && qv > 0 ? qv : 1 };
+      var dup = have.filter(function (L) { return L.u === url; })[0];
+      if (dup) {
+        // Same link again with a price on it: take the numbers rather than
+        // silently dropping what was just typed.
+        if (add.p) dup.p = add.p;
+        if (qIn && isFinite(qv) && qv > 0) dup.q = add.q;
+        setLinks(s, have);
+      } else {
+        setLinks(s, have.concat([add]));
+      }
+      if (pIn) pIn.value = '';
+      if (qIn) qIn.value = '1';
+      s.by = me || s.by || '';
+      s.at = new Date().toISOString();
+      item[id] = s;
+      input.value = '';
+      saveLocal(); pushItem(id);
+      var lbox = box.querySelector('.lks');
+      if (lbox) lbox.outerHTML = linkBox(id, itemLinks(id));
+      // A link with a price on it changes what the item costs the moment it
+      // lands, so the card's figures have to move with it.
+      refreshItemMoney(box, id);
+      var again = box.querySelector('[data-nl]');
+      if (again) again.focus();
+      return true;
+    }
+
+    // Everything on a card that shows money, brought up to date in place.
+    // Adding, removing or repricing a link all move the same three numbers,
+    // and a re-render would take the caret out of whatever is being typed in.
+    function refreshItemMoney(box, id) {
+      if (!box) return;
+      var ls = itemLinks(id);
+      var it = S.allItems.filter(function (x) { return x.id === id; })[0];
+      var cost = box.querySelector('.it-cost');
+      if (cost && it) cost.textContent = money(lineCost(it));
+      box.querySelectorAll('.it-ctl label').forEach(function (lab) {
+        var f = lab.querySelector('[data-f]');
+        if (!f) return;
+        if (f.dataset.f === 'price' || f.dataset.f === 'qty') {
+          lab.classList.toggle('muted', anyPriced(ls));
+        }
+      });
+      var sc = openScene === 'ALL'
+        ? { items: S.standing }
+        : S.scenes.filter(function (x) { return x.id === openScene; })[0];
+      if (sc) {
+        var tot = $('sceneDetail').querySelector('.sc-total b');
+        if (tot) tot.textContent = money(sc.items.reduce(function (a, x) { return a + lineCost(x); }, 0));
+      }
+      renderBudget(); renderBuy();
+    }
+
+    // A price or quantity on one link. Repaints that row's figure and the
+    // item's total in place — a re-render would take the caret out of the
+    // field mid-number, which on a phone means retyping it.
+    function onLinkNum(e) {
+      var d = e.target.dataset;
+      if (!d || (!d.lp && !d.lq)) return false;
+      var id = d.lkitem, url = d.lp || d.lq;
+      if (!id || isSent(id)) return true;
+      var s = item[id] || st(id);
+      var ls = linksOf(s), hit = null;
+      ls.forEach(function (L) {
+        if (L.u !== url) return;
+        hit = L;
+        if (d.lp) {
+          var v = parseFloat(e.target.value);
+          L.p = isFinite(v) && v >= 0 ? Math.round(v * 100) : 0;
+        } else {
+          var q = parseInt(e.target.value, 10);
+          L.q = isFinite(q) && q > 0 ? q : 1;
+        }
+      });
+      if (!hit) return true;
+      setLinks(s, ls);
+      s.by = me || s.by || '';
+      s.at = new Date().toISOString();
+      item[id] = s;
+      saveLocal(); pushItem(id);
+
+      var row = e.target.closest('.lkx');
+      if (row) {
+        var cell = row.querySelector('.lkx-c');
+        if (cell) cell.innerHTML = hit.p ? esc(money(hit.p * hit.q)) : '&mdash;';
+        row.classList.toggle('priced', hit.p > 0);
+      }
+      var box = e.target.closest('[data-item]');
+      if (box) {
+        var tot = box.querySelector('.lks-tot');
+        var head = box.querySelector('.lks-h');
+        if (anyPriced(ls)) {
+          if (!tot && head) {
+            tot = document.createElement('span');
+            tot.className = 'lks-tot';
+            head.appendChild(tot);
+          }
+          if (tot) tot.textContent = money(linkTotal(ls));
+        } else if (tot) {
+          tot.remove();
+        }
+      }
+      refreshItemMoney(box, id);
+      return true;
+    }
+
     function onEdit(e) {
       var f = e.target.dataset && e.target.dataset.f;
       if (!f) return;
       var box = e.target.closest('[data-item]');
       if (!box) return;
       var id = box.dataset.item;
-      var s = item[id] || { st: 'todo', src: '', link: '', price: 0, qty: 0, by: '', at: '' };
+      if (isSent(id)) return;
+      var s = item[id] || { st: 'todo', src: '', link: '', links: [], price: 0, qty: 0, by: '', at: '' };
       if (f === 'price') {
         var v = parseFloat(e.target.value);
         s.price = isFinite(v) && v >= 0 ? Math.round(v * 100) : 0;
       } else if (f === 'qty') {
         var q = parseInt(e.target.value, 10);
         s.qty = isFinite(q) && q > 0 ? q : 1;
-      } else if (f === 'link') {
-        // Blur commits every other field, but a half-typed or pasted-wrong URL
-        // should not be stored at all. safeUrl already stops it rendering as a
-        // link; this stops it reaching the store and the rehearsal report.
-        var raw = e.target.value.trim();
-        if (raw && !safeUrl(raw)) {
-          var badLab = e.target.closest('.lk');
-          if (badLab) {
-            badLab.classList.add('bad');
-            setTimeout(function () { badLab.classList.remove('bad'); }, 1600);
-          }
-          return;
-        }
-        s.link = raw;
       } else {
         s[f] = e.target.value;
       }
@@ -1303,33 +2168,31 @@
       saveLocal(); pushItem(id);
       // repaint totals without losing the field the user is typing in
       var active = document.activeElement;
-      if (f === 'st') { renderSceneDetail(openScene); renderBudget(); return; }
+      // Marking one thing done used to re-render the whole scene, which threw
+      // the page back to the top — so working down a scene ticking items off
+      // meant scrolling back to your place after every single one. Nothing
+      // about a status change moves anything, so repaint the row and leave the
+      // page exactly where it is.
+      if (f === 'st') {
+        box.className = 'it it-' + esc(s.st) + (s.sent ? ' sent' : '');
+        renderBudget(); renderBuy();
+        var sc0 = openScene === 'ALL'
+          ? { items: S.standing }
+          : S.scenes.filter(function (x) { return x.id === openScene; })[0];
+        if (sc0) {
+          var tot0 = $('sceneDetail').querySelector('.sc-total b');
+          if (tot0) tot0.textContent = money(sc0.items.reduce(function (a, x) { return a + lineCost(x); }, 0));
+        }
+        var cell0 = box.querySelector('.it-cost');
+        var it0 = S.allItems.filter(function (x) { return x.id === id; })[0];
+        if (cell0 && it0) cell0.textContent = money(lineCost(it0));
+        if (active && active.focus) active.focus();
+        return;
+      }
       var it = S.allItems.filter(function (x) { return x.id === id; })[0];
       if (it) {
         var cell = box.querySelector('.it-cost');
         if (cell) cell.textContent = money(lineCost(it));
-      }
-      // Show or drop the source link as soon as it is entered, in place —
-      // a full re-render here would steal the caret mid-edit.
-      if (f === 'link') {
-        var url = safeUrl(s.link);
-        var lab2 = e.target.closest('.lk');
-        if (lab2) {
-          lab2.classList.toggle('saved', !!url);
-          var btn2 = lab2.querySelector('.lk-go');
-          if (btn2) btn2.innerHTML = url ? '&#10003;' : 'Save';
-        }
-        var a2 = box.querySelector('.it-link');
-        if (url && !a2) {
-          a2 = document.createElement('a');
-          a2.className = 'it-link'; a2.target = '_blank'; a2.rel = 'noopener';
-          a2.textContent = 'Open the source \u2192';
-          box.appendChild(a2);
-        }
-        if (a2) {
-          if (url) a2.setAttribute('href', url);
-          else a2.remove();
-        }
       }
       var sc = openScene === 'ALL'
         ? { items: S.standing }
@@ -1341,9 +2204,45 @@
       renderBudget();
       if (active && active.focus) active.focus();
     }
-    $('sceneDetail').addEventListener('change', onEdit);
+    $('sceneDetail').addEventListener('change', function (e) {
+      if (!onLinkNum(e)) onEdit(e);
+    });
     $('sceneDetail').addEventListener('input', function (e) {
-      if (e.target.dataset && (e.target.dataset.f === 'price' || e.target.dataset.f === 'qty')) onEdit(e);
+      var d = e.target.dataset;
+      if (!d) return;
+      if (d.lp || d.lq) { onLinkNum(e); return; }
+      if (d.f === 'price' || d.f === 'qty') onEdit(e);
+    });
+    // Enter adds the link too. Without this, pressing it inside a lone input
+    // would submit nothing and look like the paste was rejected.
+    $('sceneDetail').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var d = e.target.dataset;
+      if (!d || !('nl' in d || 'nlp' in d || 'nlq' in d)) return;
+      e.preventDefault();
+      addLinkFrom(e.target.closest('[data-item]'));
+    });
+    // And blurring a filled field commits it, so tapping straight from the
+    // link box to Save does not drop what was pasted.
+    $('sceneDetail').addEventListener('focusout', function (e) {
+      var d = e.target.dataset;
+      if (!d || !('nl' in d)) return;
+      if (!e.target.value.trim()) return;
+      // Moving from the address to the price or quantity for the same link is
+      // not finishing — committing here would file the link before its price
+      // had been typed, which is the whole thing this change is for.
+      var lk = e.target.closest('.lk');
+      if (lk && e.relatedTarget && lk.contains(e.relatedTarget)) return;
+      var box = e.target.closest('[data-item]');
+      // Let a tap on Add or Save run first — both handle the field themselves.
+      setTimeout(function () {
+        if (!box || !box.isConnected) return;
+        var still = box.querySelector('[data-nl]');
+        if (!still || !still.value.trim()) return;
+        var here = document.activeElement;
+        if (here && lk && lk.contains(here)) return;
+        addLinkFrom(box);
+      }, 220);
     });
 
     document.querySelectorAll('.navbtn').forEach(function (b) {
@@ -1375,6 +2274,7 @@
     if (v === 'scenes') { openScene = null; renderScenes(); }
     if (v === 'budget') renderBudget();
     if (v === 'buy') renderBuy();
+    if (v === 'strike') renderStrike();
     window.scrollTo({ top: 0 });
   }
 
