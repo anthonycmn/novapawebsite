@@ -19,35 +19,55 @@
   body {
     font-family:'DM Sans',sans-serif; color:var(--ink);
     background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%);
-    min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:40px 20px;
+    min-height:100vh;
   }
-  .wrap { width:100%; max-width:560px; }
-  .brand {
-    font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.18em; font-size:12px;
-    color:var(--gold2); text-align:center; margin-bottom:18px;
+  .topnav {
+    display:flex; align-items:center; gap:22px; padding:14px 22px;
+    background:rgba(8,17,31,0.72); border-bottom:1px solid var(--line);
+    backdrop-filter:blur(8px); position:sticky; top:0; z-index:5;
+    overflow-x:auto; white-space:nowrap;
   }
+  .topnav .logo { font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.2em; font-size:14px; color:#fff; text-decoration:none; }
+  .topnav .logo span { color:var(--gold2); }
+  .topnav a.lnk { color:var(--ink-dim); text-decoration:none; font-size:13.5px; }
+  .topnav a.lnk:hover { color:var(--gold2); }
+  .topnav .spacer { flex:1; }
+  .wrap { max-width:560px; margin:0 auto; padding:34px 20px 60px; }
   h1 {
     font-family:'Cormorant Garamond',serif; font-weight:700; font-size:32px;
     color:#fff; text-align:center; margin-bottom:6px;
   }
   h1 em { font-style:italic; color:var(--gold3); }
-  .sub { text-align:center; color:var(--ink-dim); font-size:15px; margin-bottom:26px; }
+  .sub { text-align:center; color:var(--ink-dim); font-size:15px; margin-bottom:22px; }
   .card {
     background:var(--card); border:1px solid var(--line); border-radius:16px;
     padding:26px; margin-bottom:16px;
   }
   input {
     width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--line);
-    background:rgba(8,17,31,0.6); color:#fff; font-family:inherit; font-size:16px; outline:none;
+    background:rgba(8,17,31,0.6); color:#fff; font-family:inherit; font-size:16px;
+    outline:none; margin-bottom:10px;
   }
   input:focus { border-color:var(--gold); }
-  button {
-    width:100%; margin-top:12px; padding:14px 20px; border:0; border-radius:12px;
+  .btn {
+    width:100%; margin-top:4px; padding:14px 20px; border:0; border-radius:12px;
     background:linear-gradient(180deg, var(--gold2), var(--gold));
     color:#1a1206; font-family:inherit; font-weight:700; font-size:16px; cursor:pointer;
   }
-  button:disabled { opacity:0.6; cursor:default; }
+  .btn[disabled] { opacity:0.6; cursor:default; }
+  .btn.google {
+    background:#fff; color:#1f1f1f; display:flex; align-items:center; justify-content:center; gap:10px;
+    margin-top:12px;
+  }
+  .minor { background:none; border:0; color:var(--ink-dim); font-size:13px; text-decoration:underline; cursor:pointer; display:block; margin:14px auto 0; font-family:inherit; }
   .err { color:var(--danger); font-size:13.5px; margin-top:10px; min-height:17px; }
+  .ok { color:#5BC98C; font-size:13.5px; margin-top:10px; }
+  .toggle { display:flex; justify-content:center; gap:8px; margin-bottom:18px; }
+  .toggle button {
+    background:var(--card); border:1px solid var(--line); border-radius:100px; color:var(--ink-dim);
+    font-family:inherit; font-size:13.5px; font-weight:500; padding:8px 20px; cursor:pointer;
+  }
+  .toggle button.on { background:linear-gradient(180deg, var(--gold2), var(--gold)); color:#1a1206; border-color:transparent; font-weight:700; }
   .camper {
     font-family:'Cormorant Garamond',serif; font-weight:700; font-size:24px; color:var(--gold3);
     margin-bottom:12px;
@@ -56,38 +76,51 @@
   .item:first-of-type { border-top:0; padding-top:0; }
   .item b { display:block; font-size:15.5px; color:#fff; font-weight:500; }
   .item span { font-size:13.5px; color:var(--ink-dim); }
+  .item.past { opacity:0.65; }
   .foot { text-align:center; font-size:13.5px; color:var(--ink-dim); margin-top:20px; line-height:1.7; }
   .foot a { color:var(--gold2); }
-  .signout { background:none; border:0; color:var(--ink-dim); font-size:13px; width:auto; margin:14px auto 0; display:block; text-decoration:underline; cursor:pointer; padding:0; }
+  .signout { background:none; border:0; color:var(--ink-dim); font-size:13px; width:auto; margin:14px auto 0; display:block; text-decoration:underline; cursor:pointer; padding:0; font-family:inherit; }
   .empty { text-align:center; color:var(--ink-dim); padding:10px 0; }
 </style>
 </head>
 <body>
+<nav class="topnav">
+  <a class="logo" href="/">NOVA<span>PA</span></a>
+  <span class="spacer"></span>
+  <a class="lnk" href="/broadway-bound.html">Shows</a>
+  <a class="lnk" href="/classes.html">Classes</a>
+  <a class="lnk" href="/day-camps.html">Day Camps</a>
+  <a class="lnk" href="/calendar.html">Calendar</a>
+  <a class="lnk" href="/register/" style="color:var(--gold2);font-weight:700">Register</a>
+</nav>
+
 <div class="wrap">
-  <div class="brand">NOVAPA</div>
   <h1>My <em>NOVAPA</em></h1>
   <p class="sub" id="subLine">Everything your family is registered for.</p>
 
-  <!-- Sign in -->
+  <!-- Login -->
   <div class="card" id="authCard" style="display:none">
-    <div id="emailStep">
-      <input type="email" id="email" placeholder="Email address" autocomplete="email">
-      <button id="sendBtn">EMAIL ME A SIGN-IN CODE</button>
-    </div>
-    <div id="codeStep" style="display:none">
-      <p style="font-size:13.5px;color:var(--ink-dim);margin-bottom:10px">We emailed you a sign-in code. Enter it below.</p>
-      <input inputmode="numeric" id="code" placeholder="Code from the email" maxlength="10" style="letter-spacing:0.3em;text-align:center">
-      <button id="verifyBtn">SIGN IN</button>
-    </div>
+    <input type="email" id="email" placeholder="Email address" autocomplete="email">
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <button class="btn" id="loginBtn">LOG IN</button>
+    <button class="btn google" id="googleBtn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C41.4 35.4 44 30.1 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      Sign in with Google
+    </button>
+    <button class="minor" id="firstTimeBtn">First time here? Set up your password</button>
     <div class="err" id="authErr"></div>
+    <div class="ok" id="authOk"></div>
   </div>
 
   <!-- Registrations -->
+  <div class="toggle" id="toggle" style="display:none">
+    <button id="tUpcoming" class="on">Upcoming</button>
+    <button id="tPast">Past</button>
+  </div>
   <div id="list"></div>
 
   <p class="foot" id="foot" style="display:none">
-    Something missing or look wrong? Email <a href="mailto:info@novapa.org">info@novapa.org</a> and we'll fix it fast.<br>
-    <a href="/register/">Register for something new</a>
+    Something missing or look wrong? Email <a href="mailto:info@novapa.org">info@novapa.org</a> and we'll fix it fast.
   </p>
   <button class="signout" id="signout" style="display:none">Sign out</button>
 </div>
@@ -95,8 +128,28 @@
 <script>
   var sb = window.supabase.createClient(window.NOVAREG.SUPABASE_URL, window.NOVAREG.SUPABASE_ANON_KEY);
   var $ = function(id){ return document.getElementById(id); };
+  var DATA = null, VIEW = 'upcoming';
 
   function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+  function render() {
+    if (!DATA) return;
+    var past = VIEW === 'past';
+    var cards = DATA.campers.map(function(c){
+      var items = c.items.filter(function(it){ return !!it.past === past; });
+      if (!items.length) return '';
+      return '<div class="card"><div class="camper">' + esc(c.name) + '</div>' +
+        items.map(function(it){
+          return '<div class="item' + (past ? ' past' : '') + '"><b>' + esc(it.title) + '</b>' +
+            (it.dates ? '<span>' + esc(it.dates) + '</span>' : '') + '</div>';
+        }).join('') + '</div>';
+    }).join('');
+    $('list').innerHTML = cards ||
+      '<div class="card"><div class="empty">' + (past ? 'No past programs yet.' : 'Nothing upcoming yet. Time to fix that!') + '</div></div>';
+  }
+
+  $('tUpcoming').onclick = function(){ VIEW = 'upcoming'; this.classList.add('on'); $('tPast').classList.remove('on'); render(); };
+  $('tPast').onclick = function(){ VIEW = 'past'; this.classList.add('on'); $('tUpcoming').classList.remove('on'); render(); };
 
   function load(token, portalToken) {
     $('authCard').style.display = 'none';
@@ -109,58 +162,68 @@
       .then(function(r){ return r.json(); })
       .then(function(d){
         if (d.error) { showAuth(d.error); return; }
+        DATA = d;
         $('subLine').textContent = d.family.parent_name
           ? 'Everything registered under ' + d.family.parent_name + "'s account."
           : 'Everything registered under ' + d.family.email + '.';
-        if (!d.campers.length) {
-          $('list').innerHTML = '<div class="card"><div class="empty">No registrations found under this email yet.</div></div>';
-        } else {
-          $('list').innerHTML = d.campers.map(function(c){
-            return '<div class="card"><div class="camper">' + esc(c.name) + '</div>' +
-              c.items.map(function(it){
-                return '<div class="item"><b>' + esc(it.title) + '</b>' +
-                  (it.dates ? '<span>' + esc(it.dates) + '</span>' : '') + '</div>';
-              }).join('') + '</div>';
-          }).join('');
-        }
+        $('toggle').style.display = 'flex';
+        render();
         $('foot').style.display = 'block';
-        $('signout').style.display = 'block';
+        $('signout').style.display = portalToken ? 'none' : 'block';
       })
       .catch(function(){ showAuth('Network hiccup, try again.'); });
   }
 
   function showAuth(msg) {
     $('list').innerHTML = '';
+    $('toggle').style.display = 'none';
     $('authCard').style.display = 'block';
     $('authErr').textContent = msg && msg !== 'sign in required' ? msg : '';
   }
 
-  $('sendBtn').onclick = function(){
-    var email = $('email').value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $('authErr').textContent = 'Enter a valid email.'; return; }
-    var b = this; b.disabled = true; b.textContent = 'SENDING…';
-    sb.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html') } }).then(function(res){
-      b.disabled = false; b.textContent = 'EMAIL ME A SIGN-IN CODE';
-      // Show the code box even on a rate-limit error: a code from the
-      // previous email is still valid and the parent already has it.
-      $('authErr').textContent = res.error ? res.error.message : '';
-      $('emailStep').style.display = 'none';
-      $('codeStep').style.display = 'block';
-      $('code').focus();
-    }).catch(function(){
-      b.disabled = false; b.textContent = 'EMAIL ME A SIGN-IN CODE';
-      $('authErr').textContent = 'Network hiccup, try again.';
+  function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+  $('loginBtn').onclick = function(){
+    var email = $('email').value.trim().toLowerCase(), pw = $('password').value;
+    $('authOk').textContent = '';
+    if (!validEmail(email)) { $('authErr').textContent = 'Enter a valid email.'; return; }
+    if (!pw) { $('authErr').textContent = 'Enter your password, or use "First time here" below.'; return; }
+    var b = this; b.disabled = true; b.textContent = 'LOGGING IN…';
+    sb.auth.signInWithPassword({ email: email, password: pw }).then(function(res){
+      b.disabled = false; b.textContent = 'LOG IN';
+      if (res.error) { $('authErr').textContent = 'That login didn\'t work. If you haven\'t set a password yet, use "First time here" below.'; return; }
+      load(res.data.session.access_token);
     });
   };
 
-  $('verifyBtn').onclick = function(){
-    var email = $('email').value.trim().toLowerCase();
-    var code = $('code').value.trim();
-    var b = this; b.disabled = true; b.textContent = 'CHECKING…';
-    sb.auth.verifyOtp({ email: email, token: code, type: 'email' }).then(function(res){
-      b.disabled = false; b.textContent = 'SIGN IN';
-      if (res.error || !res.data.session) { $('authErr').textContent = 'That code didn\'t work. Double check it or request a new one.'; return; }
-      load(res.data.session.access_token);
+  // First-time password setup: brand-new emails get an account immediately;
+  // families who already exist (OTP-era accounts) get a set-password email.
+  $('firstTimeBtn').onclick = function(){
+    var email = $('email').value.trim().toLowerCase(), pw = $('password').value;
+    $('authOk').textContent = ''; $('authErr').textContent = '';
+    if (!validEmail(email)) { $('authErr').textContent = 'Enter your email above first.'; return; }
+    if (!pw || pw.length < 8) { $('authErr').textContent = 'Type the password you want (8+ characters) above, then tap this again.'; return; }
+    var b = this; b.disabled = true;
+    sb.auth.signUp({ email: email, password: pw }).then(function(res){
+      if (!res.error && res.data.session) { b.disabled = false; load(res.data.session.access_token); return; }
+      // Existing account (or confirmation required): fall back to an emailed
+      // set-password link that lands back here.
+      sb.auth.resetPasswordForEmail(email, {
+        redirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html')
+      }).then(function(r2){
+        b.disabled = false;
+        if (r2.error) { $('authErr').textContent = r2.error.message; return; }
+        $('authOk').textContent = 'Check your email! Follow the link there once and your password will be active.';
+      });
+    });
+  };
+
+  $('googleBtn').onclick = function(){
+    sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + '/register/account.html' }
+    }).then(function(res){
+      if (res.error) $('authErr').textContent = 'Google sign-in isn\'t enabled yet.';
     });
   };
 
@@ -171,7 +234,6 @@
   var portalToken = new URLSearchParams(location.search).get('t');
   if (portalToken) {
     load(null, portalToken);
-    $('signout').style.display = 'none';
   } else {
     sb.auth.getSession().then(function(res){
       var s = res.data && res.data.session;

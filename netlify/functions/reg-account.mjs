@@ -25,6 +25,26 @@ const fmtDate = (iso) => {
   return `${MO[m - 1]} ${d}, ${y}`;
 };
 
+// Legacy `dates` strings are free text ("Wednesdays Sep 16 2026 - Jan 13 2027",
+// "Mon, 7/13/2026, Tue, ..."). An item is "past" when the LATEST date we can
+// find in the text is behind us; no parseable date = assume upcoming (safer).
+const MONTHS = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+function isPast(text) {
+  if (!text) return false;
+  let max = null;
+  for (const m of text.matchAll(/([A-Za-z]{3,9})\.?,? (\d{1,2}),? (\d{4})/g)) {
+    const mo = MONTHS[m[1].slice(0, 3).toLowerCase()];
+    if (mo == null) continue;
+    const d = new Date(Date.UTC(+m[3], mo, +m[2]));
+    if (!max || d > max) max = d;
+  }
+  for (const m of text.matchAll(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g)) {
+    const d = new Date(Date.UTC(+m[3], +m[1] - 1, +m[2]));
+    if (!max || d > max) max = d;
+  }
+  return max ? max < new Date() : false;
+}
+
 export default async (req) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
 
@@ -77,7 +97,8 @@ export default async (req) => {
     const add = (camper, title, dates) => {
       const key = camper || "Your family";
       byCamper[key] = byCamper[key] || [];
-      if (!byCamper[key].some((x) => x.title === title)) byCamper[key].push({ title, dates: dates || "" });
+      if (!byCamper[key].some((x) => x.title === title))
+        byCamper[key].push({ title, dates: dates || "", past: isPast(dates) });
     };
     for (const it of items) {
       if (it.show) {
