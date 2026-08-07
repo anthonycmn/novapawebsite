@@ -69,6 +69,44 @@ export default async (req) => {
   const m = pi.metadata || {};
   if (!m.hold_id || !m.plan) return new Response("no metadata", { status: 200 });
 
+  // Duplicate class-enrollment guard (Aug 7 2026): a parent who retried a
+  // broken checkout has several succeeded intents for the SAME enrollment,
+  // and Stripe auto-retries their failed events for days — confirm_order's
+  // per-payment-intent idempotency can't see across intents, so without this
+  // each retry would mint another monthly subscription (Anne Champlin: three
+  // $90 charges for one Triple Threat spot). Same kid + same class + a
+  // subscription order already on file = acknowledge and drop the event.
+  if (m.plan === "subscription") {
+    try {
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const hdrs = { apikey: key, Authorization: `Bearer ${key}` };
+      const hr = await fetch(`${SUPABASE_URL}/rest/v1/holds?id=eq.${encodeURIComponent(m.hold_id)}&select=items`, { headers: hdrs });
+      const holdRows = await hr.json();
+      const holdItems = (holdRows[0] && holdRows[0].items) || [];
+      const wanted = holdItems
+        .filter((it) => it.activity_id)
+        .map((it) => `${(it.camper || "").toLowerCase()}|${it.activity_id}`);
+      if (wanted.length) {
+        const or = await fetch(
+          `${SUPABASE_URL}/rest/v1/orders?email=ilike.${encodeURIComponent(m.email || "")}&plan=eq.subscription&status=in.(paid,confirmed,complete,succeeded)&select=id,stripe_payment_intent,order_items(camper_name,activity_id)`,
+          { headers: hdrs }
+        );
+        const prior = (await or.json()) || [];
+        const dupe = prior.find((o) =>
+          o.stripe_payment_intent !== pi.id &&
+          (o.order_items || []).some((oi) => wanted.includes(`${(oi.camper_name || "").toLowerCase()}|${oi.activity_id}`))
+        );
+        if (dupe) {
+          console.log(`duplicate class enrollment ignored: ${pi.id} matches order ${dupe.id}`);
+          return new Response("duplicate enrollment ignored", { status: 200 });
+        }
+      }
+    } catch (e) {
+      // Guard failure must never block a legitimate enrollment — fall through.
+      console.error("dupe guard failed:", e.message);
+    }
+  }
+
   try {
     const nItems = parseInt(m.n_items || "0", 10) || 0;
     let unitPrices;
@@ -284,6 +322,39 @@ export default async (req) => {
     return new Response("ok", { status: 200 });
   } catch (err) {
     console.error("reg-webhook error:", err.message);
+    // Money moved but the order didn't happen — that must never be silent
+    // again (the Jul 29-Aug 7 class-enrollment bug ran 9 days unseen because
+    // failures only showed in Stripe's retry log). Alert the admins with
+    // enough context to act; alert failure itself must not mask the 500.
+    try {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const ar = await fetch(`${SUPABASE_URL}/rest/v1/admin_emails?select=email`, {
+          headers: { apikey: key, Authorization: `Bearer ${key}` },
+        });
+        const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
+        if (admins.length) {
+          const { default: nodemailer } = await import("nodemailer");
+          const t = nodemailer.createTransport({
+            host: "smtp.gmail.com", port: 465, secure: true,
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+          });
+          const md = (pi && pi.metadata) || {};
+          await t.sendMail({
+            from: `NOVAPA Alerts <${process.env.SMTP_USER}>`,
+            to: admins.join(", "),
+            subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
+            html: [
+              `A Stripe event was received but order creation FAILED. The customer paid (or saved a card) and got nothing.`,
+              `<b>Error:</b> ${String(err.message || err).slice(0, 300)}`,
+              `<b>Customer:</b> ${md.email || "?"} · <b>plan:</b> ${md.plan || "?"} · <b>desc:</b> ${md.order_desc || "?"}`,
+              `<b>Payment intent:</b> ${pi ? pi.id : "?"} — <a href="https://dashboard.stripe.com/payments/${pi ? pi.id : ""}">open in Stripe</a>`,
+              `Stripe will auto-retry for up to 3 days; if this alert repeats for the same intent, the failure is persistent and needs a code/data fix before the retries run out.`,
+            ].join("<br><br>"),
+          });
+        }
+      }
+    } catch (mailErr) { console.error("failure alert email failed:", mailErr.message); }
     // 500 -> Stripe retries; confirm_order is idempotent on payment_intent id.
     return new Response("error", { status: 500 });
   }
