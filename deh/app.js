@@ -14,6 +14,7 @@
   var D = window.DEH, S = window.DEHSCENES;
   var LS_DONE = 'deh.done.v1', LS_ITEM = 'deh.items.v1', LS_ME = 'deh.me.v1', LS_GATE = 'deh.gate.v1';
   var LS_ROSTER = 'deh.roster.v1', LS_ATT = 'deh.att.v1', LS_NOTE = 'deh.notes.v1', LS_REP = 'deh.rep.v1';
+  var LS_STRIKE = 'deh.strike.v1';
   var GATE_WORD = 'orchard';   // curtain, not a lock — change here and tell staff
 
   // Who can sign a block off. Anyone not listed picks "Someone else" and types.
@@ -88,6 +89,8 @@
   // roster: [{person_id,name,role,kind,sort}]  att: { 'iso|person_id': {status,note,by} }
   // notes: [{note_id,day,dept,body,author,created_at}]  reports: { iso: {at,by} }
   var roster = [], att = {}, notes = [], reports = {};
+  // strike: [{task_id,area,body,who,done,done_by,sort}]
+  var strike = [];
   var loadedDays = {};   // iso -> true, so a day's attendance/notes fetch once
   var me = localStorage.getItem(LS_ME) || '';
   var remote = false;
@@ -177,7 +180,9 @@
     try { att = JSON.parse(localStorage.getItem(LS_ATT) || '{}'); } catch (e) { att = {}; }
     try { notes = JSON.parse(localStorage.getItem(LS_NOTE) || '[]'); } catch (e) { notes = []; }
     try { reports = JSON.parse(localStorage.getItem(LS_REP) || '{}'); } catch (e) { reports = {}; }
+    try { strike = JSON.parse(localStorage.getItem(LS_STRIKE) || '[]'); } catch (e) { strike = []; }
     if (!roster.length) roster = seedRoster();
+    if (!strike.length) strike = seedStrike();
   }
   function saveLocal() {
     try {
@@ -187,6 +192,7 @@
       localStorage.setItem(LS_ATT, JSON.stringify(att));
       localStorage.setItem(LS_NOTE, JSON.stringify(notes));
       localStorage.setItem(LS_REP, JSON.stringify(reports));
+      localStorage.setItem(LS_STRIKE, JSON.stringify(strike));
     } catch (e) {}
   }
 
@@ -302,6 +308,25 @@
       }).catch(function () {}),
       api('reports_list').then(function (rows) {
         (rows || []).forEach(function (x) { reports[x.day] = { at: x.sent_at, by: x.sent_by || '' }; });
+      }).catch(function () {}),
+      api('strike_list').then(function (rows) {
+        rows = rows || [];
+        var real = rows.filter(function (x) { return x.task_id !== STRIKE_SEED_KEY; });
+        var seeded = rows.filter(function (x) { return x.task_id === STRIKE_SEED_KEY; }).length;
+        if (real.length || seeded) {
+          strike = real.map(function (x) {
+            return { task_id: x.task_id, area: x.area || 'set', body: x.body || '',
+                     who: x.who || '', done: !!x.done, done_by: x.done_by || '',
+                     sort: x.sort == null ? 0 : x.sort };
+          });
+          return;
+        }
+        // Nothing there and never seeded: publish the starter list once, and
+        // leave a marker so emptying the list later does not bring it back.
+        strike = seedStrike();
+        strike.forEach(function (t) { saveStrike(t); });
+        api('strike_set', { task_id: STRIKE_SEED_KEY, area: 'meta', body: 'seeded',
+                            who: '', done: false, done_by: '', sort: 0 }).catch(function () {});
       }).catch(function () {})
     ]).then(function () { saveLocal(); });
   }
@@ -361,6 +386,26 @@
       .catch(function () { setSync('offline — saved on this phone'); });
   }
   function setSync(msg) { $('syncNote').textContent = msg; }
+
+  // The header is sticky and its height is not fixed — it changes with the
+  // width, with the day label, and with whichever sync line is showing. The
+  // scene stepper sticks directly beneath it, so it has to be told where that
+  // is rather than guessing.
+  function measureTopbar() {
+    var tb = document.querySelector('.topbar');
+    if (!tb) return;
+    var h = Math.round(tb.getBoundingClientRect().height);
+    if (h) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+  }
+  function watchTopbar() {
+    measureTopbar();
+    window.addEventListener('resize', measureTopbar);
+    window.addEventListener('orientationchange', measureTopbar);
+    if (window.ResizeObserver) {
+      var tb = document.querySelector('.topbar');
+      if (tb) new ResizeObserver(measureTopbar).observe(tb);
+    }
+  }
 
   // ---------- live sync ----------
   // connect() only ran at boot, so a phone showed whatever was true when it
@@ -1359,7 +1404,175 @@
       'item and every total here fills in on its own.</p>';
   }
 
-  function renderAll() { renderSchedule(); renderScenes(); renderBudget(); renderBuy(); }
+  function renderAll() { renderSchedule(); renderScenes(); renderBudget(); renderBuy(); renderStrike(); }
+
+  // ---------- strike ----------
+  // What has to happen after the last performance, and whose name is against
+  // each line. Strike is the part of a production that gets planned last and
+  // goes wrong most: people leave, things go home in the wrong bag, and the
+  // borrowed furniture is the thing nobody remembers. A name against a line
+  // is the whole point of this tab.
+  var STRIKE_AREAS = [
+    { k: 'set',       l: 'Set' },
+    { k: 'lighting',  l: 'Lighting' },
+    { k: 'sound',     l: 'Sound' },
+    { k: 'projection', l: 'Projection' },
+    { k: 'props',     l: 'Props' },
+    { k: 'costume',   l: 'Costumes' },
+    { k: 'hair',      l: 'Hair & Wigs' },
+    { k: 'house',     l: 'Front of house' },
+    { k: 'backstage', l: 'Backstage & dressing rooms' },
+    { k: 'load',      l: 'Load-out & returns' }
+  ];
+  function areaLabel(k) {
+    for (var i = 0; i < STRIKE_AREAS.length; i++) if (STRIKE_AREAS[i].k === k) return STRIKE_AREAS[i].l;
+    return k;
+  }
+
+  // A starting list, not a fixed one — every line can be edited or deleted,
+  // and the tab is just as usable emptied out. It exists because a blank page
+  // at 10pm on closing night is how the borrowed furniture gets forgotten.
+  var STRIKE_SEED = [
+    ['set', 'Unbolt and stack decking, screws out and boxed'],
+    ['set', 'Break down anything we are not keeping'],
+    ['set', 'Return borrowed furniture — check it against the list of who lent what'],
+    ['set', 'Sweep and mop the stage'],
+    ['lighting', 'Let the lamps cool before anyone touches the grid'],
+    ['lighting', 'Drop the specials, cap and coil every cable'],
+    ['lighting', 'Gel out of the frames, labelled and boxed'],
+    ['lighting', 'House plot back to rep'],
+    ['lighting', 'Ladders and lift away, floor clear'],
+    ['sound', 'Mics off, batteries out, packs back in the case'],
+    ['sound', 'Every scrap of mic tape off the deck and off the actors'],
+    ['sound', 'XLR coiled over-under and labelled'],
+    ['sound', 'Monitors and stands to storage'],
+    ['projection', 'Content off the machine'],
+    ['projection', 'Projector, cabling and surfaces down'],
+    ['props', 'Everything back to the props table for check-in'],
+    ['props', 'Check every prop against the running list before anything leaves'],
+    ['props', 'Borrowed props bagged with the owner’s name on the bag'],
+    ['props', 'Consumables binned'],
+    ['costume', 'Every costume on a hanger with the actor’s name — nothing goes home'],
+    ['costume', 'Wash pile kept separate from dry-clean'],
+    ['costume', 'Count the shoes'],
+    ['costume', 'Rentals bagged with their paperwork'],
+    ['hair', 'Wigs back on blocks'],
+    ['hair', 'Brushes and combs washed, kits sealed'],
+    ['hair', 'Bin every used applicator'],
+    ['house', 'Programmes and signage down'],
+    ['house', 'Lobby and concessions cleared and counted'],
+    ['house', 'Lost property bagged and labelled'],
+    ['backstage', 'Quick-change booths struck, glow tape up'],
+    ['backstage', 'Every dressing room emptied and walked'],
+    ['backstage', 'Bin bags out'],
+    ['load', 'Van loaded in the order it unloads'],
+    ['load', 'Collect every script and MTI material — none of it goes home with anyone'],
+    ['load', 'Count the scripts against the list before we leave'],
+    ['load', 'Final walk of the building with the venue rep']
+  ];
+  var STRIKE_SEED_KEY = '__seeded__';
+
+  function strikeRows() {
+    return strike.filter(function (t) { return t.task_id !== STRIKE_SEED_KEY; });
+  }
+  function strikeOf(area) {
+    return strikeRows().filter(function (t) { return t.area === area; })
+      .sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); });
+  }
+  function strikeAreas() {
+    var keys = STRIKE_AREAS.map(function (x) { return x.k; });
+    strikeRows().forEach(function (t) { if (keys.indexOf(t.area) < 0) keys.push(t.area); });
+    return keys;
+  }
+  function seedStrike() {
+    return STRIKE_SEED.map(function (row, i) {
+      return { task_id: 'seed-' + i, area: row[0], body: row[1], who: '',
+               done: false, done_by: '', sort: i };
+    });
+  }
+
+  function renderStrike() {
+    var dl = $('strikeWho');
+    if (dl) {
+      dl.innerHTML = people().filter(function (p) { return p.name; })
+        .map(function (p) { return '<option value="' + esc(p.name) + '">'; }).join('');
+    }
+    var all = strikeRows();
+    var done = all.filter(function (t) { return t.done; }).length;
+    var pct = all.length ? Math.round(done / all.length * 100) : 0;
+    var unassigned = all.filter(function (t) { return !(t.who || '').trim(); }).length;
+    var mine = me ? all.filter(function (t) {
+      return (t.who || '').trim().toLowerCase() === me.toLowerCase();
+    }).length : 0;
+
+    var head = '<div class="sc-summary">' +
+      '<div class="ss-row"><span>Struck</span><b>' + done + ' of ' + all.length + '</b></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="ss-row"><span>Nobody’s name on it</span><b class="' +
+        (unassigned ? 'over' : 'under') + '">' + unassigned + '</b></div>' +
+      (me ? '<div class="ss-row"><span>Yours, ' + esc(me) + '</span><b>' + mine + '</b></div>' : '') +
+      '<p class="ss-note">Put a name against every line before the last show. On the night, tap the box ' +
+      'as each one is finished — everyone sees the same list.</p></div>';
+
+    var body = strikeAreas().map(function (k) {
+      var list = strikeOf(k);
+      var d = list.filter(function (t) { return t.done; }).length;
+      return '<div class="stk' + (list.length && d === list.length ? ' full' : '') + '">' +
+        '<div class="stk-h"><b>' + esc(areaLabel(k)) + '</b>' +
+          '<span>' + d + '/' + list.length + '</span></div>' +
+        (list.length ? list.map(strikeRow).join('')
+                     : '<p class="stk-none">Nothing on this list yet.</p>') +
+        '<div class="stk-add">' +
+          '<input data-stknew="' + esc(k) + '" placeholder="Add a job" autocomplete="off">' +
+          '<button class="btn stk-go" data-stkadd="' + esc(k) + '" type="button">Add</button>' +
+        '</div></div>';
+    }).join('');
+
+    $('strike').innerHTML = head +
+      '<div class="buy-acts"><button class="btn buy-copy" id="stkCopy" type="button">Copy the list</button>' +
+      '<span class="buy-hint">Names save as you type. Anyone with the dashboard sees the same list.</span></div>' +
+      body;
+  }
+
+  function strikeRow(t) {
+    return '<div class="stk-i' + (t.done ? ' done' : '') + '" data-stk="' + esc(t.task_id) + '">' +
+      '<button class="stk-tick" data-stktick="' + esc(t.task_id) + '" aria-pressed="' + (t.done ? 'true' : 'false') +
+        '" aria-label="' + (t.done ? 'Mark not done' : 'Mark done') + '">' + (t.done ? '&#10003;' : '') + '</button>' +
+      '<div class="stk-t"><span class="stk-b">' + esc(t.body) + '</span>' +
+        (t.done && t.done_by ? '<span class="stk-by">struck by ' + esc(t.done_by) + '</span>' : '') + '</div>' +
+      '<input class="stk-who" list="strikeWho" data-stkwho="' + esc(t.task_id) + '" value="' + esc(t.who || '') +
+        '" placeholder="who" autocomplete="off" aria-label="Who is doing this">' +
+      '<button class="stk-x" data-stkdel="' + esc(t.task_id) + '" aria-label="Remove this job">&times;</button>' +
+    '</div>';
+  }
+
+  function strikeText() {
+    var L = ['DEAR EVAN HANSEN — STRIKE', ''];
+    strikeAreas().forEach(function (k) {
+      var list = strikeOf(k);
+      if (!list.length) return;
+      L.push(areaLabel(k).toUpperCase());
+      list.forEach(function (t) {
+        L.push('  [' + (t.done ? 'x' : ' ') + '] ' + t.body +
+               (t.who ? '   — ' + t.who : '   — UNASSIGNED'));
+      });
+      L.push('');
+    });
+    var all = strikeRows();
+    L.push(all.filter(function (t) { return t.done; }).length + ' of ' + all.length + ' done.');
+    return L.join('\n');
+  }
+
+  function saveStrike(t) {
+    saveLocal();
+    if (!remote) return;
+    api('strike_set', { task_id: t.task_id, area: t.area, body: t.body, who: t.who || '',
+                        done: !!t.done, done_by: t.done_by || '', sort: t.sort || 0 })
+      .catch(function () { setSync('offline — saved on this phone'); });
+  }
+  function strikeById(id) {
+    return strikeRows().filter(function (t) { return t.task_id === id; })[0];
+  }
 
   // ---------- reference tabs ----------
   function renderRef() {
@@ -1377,6 +1590,7 @@
     loadLocal();
     renderRef();
     renderAll();
+    watchTopbar();
 
     document.body.classList.add('on-day');
     var today = new Date().toISOString().slice(0, 10);
@@ -1506,6 +1720,69 @@
         item[iid] = s2; saveLocal(); pushItem(iid);
         renderBuy(); renderBudget(); renderScenes();
       }
+    });
+
+    // ---------- strike ----------
+    $('strike').addEventListener('click', function (e) {
+      if (e.target.id === 'stkCopy') {
+        copyText(strikeText(), null, 'whoever needs it');
+        e.target.textContent = 'Copied';
+        setTimeout(function () { e.target.textContent = 'Copy the list'; }, 1800);
+        return;
+      }
+      var tk = e.target.closest('[data-stktick]');
+      if (tk) {
+        var t = strikeById(tk.dataset.stktick);
+        if (!t) return;
+        t.done = !t.done;
+        // Who struck it, not who is down to do it. On the night those differ
+        // more often than not, and the person who actually did it is the one
+        // worth having on the record.
+        t.done_by = t.done ? (me || '') : '';
+        saveStrike(t); renderStrike();
+        return;
+      }
+      var dx = e.target.closest('[data-stkdel]');
+      if (dx) {
+        var id = dx.dataset.stkdel;
+        strike = strike.filter(function (x) { return x.task_id !== id; });
+        saveLocal();
+        if (remote) api('strike_delete', { task_id: id }).catch(function () {});
+        renderStrike();
+        return;
+      }
+      var ad = e.target.closest('[data-stkadd]');
+      if (ad) {
+        var area = ad.dataset.stkadd;
+        var box = document.querySelector('[data-stknew="' + area.replace(/"/g, '') + '"]');
+        var body = box ? (box.value || '').trim() : '';
+        if (!body) { if (box) box.focus(); return; }
+        var next = { task_id: 'stk-' + Date.now() + '-' + Math.floor(Math.random() * 1e4),
+                     area: area, body: body, who: '', done: false, done_by: '',
+                     sort: strikeOf(area).length + 1000 };
+        strike.push(next);
+        saveStrike(next); renderStrike();
+        var again = document.querySelector('[data-stknew="' + area.replace(/"/g, '') + '"]');
+        if (again) again.focus();
+        return;
+      }
+    });
+    // A name saves as it is typed — nobody presses a button to claim a job.
+    $('strike').addEventListener('change', function (e) {
+      var w = e.target.closest('[data-stkwho]');
+      if (!w) return;
+      var t = strikeById(w.dataset.stkwho);
+      if (!t) return;
+      t.who = w.value.trim();
+      saveStrike(t);
+    });
+    $('strike').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var n = e.target.closest('[data-stknew]');
+      if (!n) return;
+      e.preventDefault();
+      var btn = document.querySelector('[data-stkadd="' + n.dataset.stknew.replace(/"/g, '') + '"]');
+      if (btn) btn.click();
     });
 
     $('scenes').addEventListener('click', function (e) {
@@ -1714,7 +1991,27 @@
       saveLocal(); pushItem(id);
       // repaint totals without losing the field the user is typing in
       var active = document.activeElement;
-      if (f === 'st') { renderSceneDetail(openScene); renderBudget(); return; }
+      // Marking one thing done used to re-render the whole scene, which threw
+      // the page back to the top — so working down a scene ticking items off
+      // meant scrolling back to your place after every single one. Nothing
+      // about a status change moves anything, so repaint the row and leave the
+      // page exactly where it is.
+      if (f === 'st') {
+        box.className = 'it it-' + esc(s.st) + (s.sent ? ' sent' : '');
+        renderBudget(); renderBuy();
+        var sc0 = openScene === 'ALL'
+          ? { items: S.standing }
+          : S.scenes.filter(function (x) { return x.id === openScene; })[0];
+        if (sc0) {
+          var tot0 = $('sceneDetail').querySelector('.sc-total b');
+          if (tot0) tot0.textContent = money(sc0.items.reduce(function (a, x) { return a + lineCost(x); }, 0));
+        }
+        var cell0 = box.querySelector('.it-cost');
+        var it0 = S.allItems.filter(function (x) { return x.id === id; })[0];
+        if (cell0 && it0) cell0.textContent = money(lineCost(it0));
+        if (active && active.focus) active.focus();
+        return;
+      }
       var it = S.allItems.filter(function (x) { return x.id === id; })[0];
       if (it) {
         var cell = box.querySelector('.it-cost');
@@ -1783,6 +2080,7 @@
     if (v === 'scenes') { openScene = null; renderScenes(); }
     if (v === 'budget') renderBudget();
     if (v === 'buy') renderBuy();
+    if (v === 'strike') renderStrike();
     window.scrollTo({ top: 0 });
   }
 

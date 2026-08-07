@@ -239,6 +239,48 @@
   .ven-open{width:100%;margin-top:9px;background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.4);
     color:var(--gold2);border-radius:10px;padding:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 
+  /* ── strike ───────────────────────────────────────────────────────── */
+  /* A job, whose name is against it, and a box to tick on the night. The
+     name field is the reason this tab exists, so it gets real width rather
+     than being tucked under the text. */
+  .stk{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:11px}
+  .stk.full{border-color:rgba(120,220,160,0.42)}
+  .stk-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px;
+    padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .stk-h b{font-size:15px;color:#fff}
+  .stk-h span{font-size:12px;color:var(--gold2);white-space:nowrap}
+  .stk.full .stk-h span{color:#8FE3B4}
+  .stk-none{font-size:12.5px;color:var(--dim2);margin:0 0 9px}
+  /* Grid, not flex-wrap: the tick, the job, the name and the delete each own a
+     cell, so nothing can end up sitting on top of the tick button. */
+  .stk-i{display:grid;grid-template-columns:28px minmax(0,1fr) 116px auto;
+    align-items:start;gap:9px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .stk-i:last-of-type{border-bottom:0}
+  .stk-tick{flex:0 0 28px;height:28px;border-radius:8px;border:1px solid var(--line);cursor:pointer;
+    background:rgba(255,255,255,0.05);color:#8FE3B4;font-size:14px;line-height:1;padding:0}
+  .stk-tick:hover{border-color:rgba(120,220,160,0.5)}
+  .stk-i.done .stk-tick{background:rgba(120,220,160,0.18);border-color:rgba(120,220,160,0.55)}
+  .stk-t{flex:1 1 auto;min-width:0}
+  .stk-b{font-size:14px;line-height:1.45;color:var(--ink)}
+  .stk-i.done .stk-b{color:var(--dim2);text-decoration:line-through}
+  .stk-by{display:block;font-size:11px;color:var(--study);margin-top:2px}
+  .stk-who{width:100%;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.55);color:#fff;font:inherit;font-size:13px}
+  .stk-who::placeholder{color:var(--dim2)}
+  .stk-x{background:none;border:0;color:var(--dim2);font-size:19px;line-height:1;
+    cursor:pointer;padding:2px 3px}
+  .stk-x:hover{color:#FFB4B4}
+  .stk-add{display:flex;gap:7px;margin-top:10px}
+  .stk-add input{flex:1;min-width:0;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,0.05);color:#fff;font:inherit;font-size:14px}
+  .stk-go{flex:0 0 auto;font-size:13px;padding:9px 14px}
+  /* On a phone the name drops to its own row under the job, still inside its
+     own cell — it lines up with the text rather than with the tick. */
+  @media (max-width:520px){
+    .stk-i{grid-template-columns:28px minmax(0,1fr) auto;row-gap:7px}
+    .stk-who{grid-column:2 / 4;grid-row:2}
+  }
+
   /* ── blocks ───────────────────────────────────────────────────────── */
   .rest{display:flex;justify-content:center;gap:10px;padding:9px;margin:8px 0;
     font-size:12.5px;color:var(--dim2);letter-spacing:0.04em}
@@ -302,7 +344,18 @@
   .back:hover{color:var(--gold2);border-color:rgba(232,184,75,0.5)}
 
   /* step from scene to scene without going back to the list */
-  .scnav{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  /* The scene stepper stays put. Working down a long scene, the way back to
+     the previous scene or out to the list should never be a scroll away.
+     --topbar-h is measured in app.js, because the header's height changes
+     with the width and with how long the day label is. */
+  .scnav{display:flex;align-items:center;gap:8px;margin-bottom:6px;
+    position:sticky;top:var(--topbar-h,190px);z-index:30;
+    margin-left:-14px;margin-right:-14px;padding:8px 14px;
+    background:rgba(8,17,31,0.96);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line)}
+  /* The one at the foot is a full-width "next scene" button, not a bar. */
+  .scnav.foot{position:static;background:none;backdrop-filter:none;border-bottom:0;
+    margin-left:0;margin-right:0;padding:0}
   .scnav .back{margin-bottom:0;flex:0 0 auto;white-space:nowrap}
   .scstep{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
     background:rgba(232,184,75,0.07);border:1px solid var(--line);border-radius:99px;
@@ -313,7 +366,7 @@
   .scstep-ar{color:var(--gold2);font-weight:700}
   .scstep.empty{flex:1 1 0;border:0;background:none;pointer-events:none}
   .scpos{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim2);
-    text-align:center;margin-bottom:12px}
+    text-align:center;margin:10px 0 12px}
   .scnav.foot{margin:22px 0 4px}
   .scstep.wide{flex:1 1 100%;padding:12px 16px;font-size:14px}
   @media (max-width:520px){
@@ -552,6 +605,7 @@
     <button class="navbtn" data-v="buy" type="button">Buy</button>
     <button class="navbtn" data-v="budget" type="button">Cost</button>
     <button class="navbtn" data-v="crews" type="button">Crews</button>
+    <button class="navbtn" data-v="strike" type="button">Strike</button>
     <button class="navbtn" data-v="support" type="button">Support</button>
   </nav>
   </div>
@@ -564,6 +618,7 @@
   <section class="view" id="v-buy"><h3>Still to buy</h3><div id="buy"></div></section>
   <section class="view" id="v-budget"><h3>Cost analysis</h3><div id="budget"></div></section>
   <section class="view" id="v-crews"><div id="refCrews"></div></section>
+  <section class="view" id="v-strike"><h3>Strike</h3><div id="strike"></div></section>
   <section class="view" id="v-support">
 
     <div class="crisis">
@@ -668,6 +723,11 @@
     <option value="Facebook Marketplace"><option value="Thrift / consignment">
     <option value="Local store"><option value="Borrowed">
   </datalist>
+
+  <!-- Filled from the roster, so a strike job can be claimed by picking a name
+       rather than spelling it. Still a free field: parents and alumni turn up
+       to strike and none of them are on the company list. -->
+  <datalist id="strikeWho"></datalist>
 
 
 </div>

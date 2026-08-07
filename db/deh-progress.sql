@@ -192,6 +192,58 @@ $fn$;
 grant execute on function public.deh_attendance_list(date) to anon, authenticated;
 grant execute on function public.deh_attendance_set(date, text, text, text, text) to anon, authenticated;
 
+-- ── Strike ───────────────────────────────────────────────────────────────
+-- What has to happen after the last performance, and whose name is against
+-- each line. Shared, because the whole point is that everyone is looking at
+-- the same list on the night.
+create table if not exists deh_strike (
+  task_id    text primary key,          -- client-generated
+  area       text not null default 'set',  -- set|lighting|sound|projection|props|
+                                           -- costume|hair|house|backstage|load
+  body       text not null,
+  who        text,                      -- who is down to do it
+  done       boolean not null default false,
+  done_by    text,                      -- who actually struck it; often not `who`
+  sort       int not null default 0,
+  updated_at timestamptz not null default now()
+);
+alter table deh_strike enable row level security;
+
+create or replace function public.deh_strike_list()
+returns setof deh_strike
+language sql stable security definer set search_path = public as $fn$
+  select * from deh_strike order by sort, task_id;
+$fn$;
+
+create or replace function public.deh_strike_set(
+  p_task_id text, p_area text, p_body text, p_who text,
+  p_done boolean, p_done_by text, p_sort int)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  insert into deh_strike (task_id, area, body, who, done, done_by, sort, updated_at)
+  values (p_task_id,
+          coalesce(nullif(trim(p_area), ''), 'set'),
+          trim(p_body),
+          nullif(trim(p_who), ''),
+          coalesce(p_done, false),
+          nullif(trim(p_done_by), ''),
+          coalesce(p_sort, 0), now())
+  on conflict (task_id) do update set
+    area = excluded.area, body = excluded.body, who = excluded.who,
+    done = excluded.done, done_by = excluded.done_by, sort = excluded.sort,
+    updated_at = now();
+$fn$;
+
+create or replace function public.deh_strike_delete(p_task_id text)
+returns void
+language sql volatile security definer set search_path = public as $fn$
+  delete from deh_strike where task_id = p_task_id;
+$fn$;
+
+grant execute on function public.deh_strike_list() to anon, authenticated;
+grant execute on function public.deh_strike_set(text, text, text, text, boolean, text, int) to anon, authenticated;
+grant execute on function public.deh_strike_delete(text) to anon, authenticated;
+
 -- ── Rehearsal notes ──────────────────────────────────────────────────────
 -- Free text, filed against a day and a department, the way a stage manager
 -- files notes to each design head.

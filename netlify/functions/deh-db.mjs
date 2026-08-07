@@ -213,6 +213,22 @@ const BLOBS = {
     return mutate(`notes/${day}`, (d) => { delete d[id]; return d; });
   },
 
+  // Strike: one row per job, with whose name is against it. Shared, because
+  // the whole point is that everyone is looking at the same list on the night.
+  strike_list: async () => asRows(
+    (await readDoc("strike")).data,
+    (k, v) => ({ task_id: k, area: v.area || "set", body: v.body || "", who: v.who || "",
+                 done: !!v.done, done_by: v.done_by || "", sort: v.sort == null ? 0 : v.sort })
+  ).sort((x, y) => (x.sort - y.sort) || x.task_id.localeCompare(y.task_id)),
+
+  strike_set: async (a) => mutate("strike", (d) => {
+    d[S(a.task_id)] = { area: S(a.area) || "set", body: S(a.body), who: S(a.who),
+                        done: B(a.done), done_by: S(a.done_by), sort: I(a.sort) };
+    return d;
+  }),
+
+  strike_delete: async (a) => mutate("strike", (d) => { delete d[S(a.task_id)]; return d; }),
+
   reports_list: async () => asRows(
     (await readDoc("reports")).data,
     (k, v) => ({ day: k, sent_at: v.at || null, sent_by: v.by || "", sent_to: v.to || "" })
@@ -240,6 +256,9 @@ const RPC = {
   notes_list:      ["deh_notes_list",      (a) => ({ p_day: D(a.day) })],
   note_add:        ["deh_note_add",        (a) => ({ p_note_id: S(a.note_id), p_day: D(a.day), p_dept: S(a.dept) || "general", p_body: S(a.body), p_author: S(a.author) })],
   note_delete:     ["deh_note_delete",     (a) => ({ p_note_id: S(a.note_id) })],
+  strike_list:     ["deh_strike_list",     () => ({})],
+  strike_set:      ["deh_strike_set",      (a) => ({ p_task_id: S(a.task_id), p_area: S(a.area) || "set", p_body: S(a.body), p_who: S(a.who), p_done: B(a.done), p_done_by: S(a.done_by), p_sort: I(a.sort) })],
+  strike_delete:   ["deh_strike_delete",   (a) => ({ p_task_id: S(a.task_id) })],
   reports_list:    ["deh_reports_list",    () => ({})],
   report_log:      ["deh_report_log",      (a) => ({ p_day: D(a.day), p_by: S(a.by), p_to: S(a.to), p_summary: a.summary && typeof a.summary === "object" ? a.summary : {} })],
 };
