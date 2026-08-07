@@ -732,8 +732,9 @@
     }).map(function (it) {
       var s = st(it.id), q = qtyOf(it), ls = linksOf(s);
       return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
-               vendor: s.src || '', link: ls[0], links: ls, status: s.st || 'todo',
-               qty: q, price_cents: s.price || 0, line_cents: s.price * q, by: s.by || '' };
+               vendor: s.src || '', link: ls.length ? ls[0].u : '', links: ls,
+               status: s.st || 'todo', qty: q, price_cents: s.price || 0,
+               line_cents: lineCost(it), by: s.by || '' };
     });
   }
 
@@ -921,21 +922,44 @@
   // reads links through here, so an item saved back when there was a single
   // `link` field keeps working with no migration.
   var MAX_LINKS = 12;
+  // A link is a line of its own: where it comes from, what it costs, how many.
+  // A costume look bought across three shops has three prices, and one figure
+  // for the whole item could never say which of them went up.
+  //   { u: url, p: unit price in cents, q: quantity }
+  // Links saved before this were bare strings; they read back as a link with
+  // no price, which is exactly what they were.
+  function normLink(x) {
+    if (x == null) return null;
+    if (typeof x === 'string') return { u: safeUrl(x), p: 0, q: 1 };
+    var u = safeUrl(x.u || x.url || x.link);
+    if (!u) return null;
+    var p = parseInt(x.p, 10); if (!isFinite(p) || p < 0) p = 0;
+    var q = parseInt(x.q, 10); if (!isFinite(q) || q < 1) q = 1;
+    return { u: u, p: p, q: q };
+  }
   function linksOf(s) {
     var raw = (s && s.links && s.links.length) ? s.links : (s && s.link ? [s.link] : []);
-    var out = [];
+    var out = [], seen = {};
     for (var i = 0; i < raw.length && out.length < MAX_LINKS; i++) {
-      var u = safeUrl(raw[i]);
-      if (u && out.indexOf(u) < 0) out.push(u);
+      var L = normLink(raw[i]);
+      if (!L || !L.u || seen[L.u]) continue;
+      seen[L.u] = true;
+      out.push(L);
     }
     return out;
   }
   function itemLinks(id) { return linksOf(st(id)); }
+  function linkTotal(ls) {
+    return ls.reduce(function (a, L) { return a + L.p * L.q; }, 0);
+  }
+  function anyPriced(ls) {
+    return ls.some(function (L) { return L.p > 0; });
+  }
   // `link` stays in step with the head of the list so anything still reading
   // the old single field — the store, the SQL column — sees the primary one.
   function setLinks(s, arr) {
     s.links = arr.slice(0, MAX_LINKS);
-    s.link = s.links[0] || '';
+    s.link = s.links.length ? s.links[0].u : '';
     return s;
   }
   function shortLink(u) {
@@ -944,7 +968,19 @@
   }
 
   function qtyOf(it) { var s = st(it.id); return s.qty || it.qty || 1; }
-  function lineCost(it) { return st(it.id).price * qtyOf(it); }
+  // Priced links win: once any link on an item carries a price, that list is
+  // what the item costs. The item-level price stays untouched underneath and
+  // takes over again if every link price is cleared, so an item priced the old
+  // way keeps its figure until someone actually prices a link.
+  function lineCost(it) {
+    var s = st(it.id), ls = linksOf(s);
+    if (ls.length && anyPriced(ls)) return linkTotal(ls);
+    return (s.price || 0) * qtyOf(it);
+  }
+  function pricedByLinks(id) {
+    var ls = itemLinks(id);
+    return ls.length && anyPriced(ls);
+  }
   function sceneItems(sc) { return sc.items; }
   function sceneCost(sc) { return sceneItems(sc).reduce(function (a, it) { return a + lineCost(it); }, 0); }
   function sceneDone(sc) {
@@ -988,29 +1024,52 @@
   // would otherwise delete each other's row by index.
   function linkBox(id, links) {
     var locked = isSent(id);
-    var rows = links.map(function (u) {
-      return '<li class="lkx">' +
-        '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(shortLink(u)) + '</a>' +
-        (locked ? '' :
-          '<button class="lkx-x" type="button" data-dellink="' + esc(u) + '" data-lkitem="' + esc(id) + '" ' +
-            'aria-label="Remove this link">&times;</button>') + '</li>';
+    var off = locked ? ' disabled' : '';
+    var rows = links.map(function (L, i) {
+      return '<li class="lkx' + (L.p ? ' priced' : '') + '" data-lkrow="' + esc(L.u) + '">' +
+        '<div class="lkx-top">' +
+          '<span class="lkx-i">' + (i + 1) + '</span>' +
+          '<a href="' + esc(L.u) + '" target="_blank" rel="noopener">' + esc(shortLink(L.u)) + '</a>' +
+          (locked ? '' :
+            '<button class="lkx-x" type="button" data-dellink="' + esc(L.u) + '" data-lkitem="' + esc(id) + '" ' +
+              'aria-label="Remove this link">&times;</button>') +
+        '</div>' +
+        // Each link is priced on its own line. One figure for the whole item
+        // could never say which of three shops put the cost up.
+        '<div class="lkx-n">' +
+          '<label>Price<input data-lp="' + esc(L.u) + '" data-lkitem="' + esc(id) + '" type="number" ' +
+            'inputmode="decimal" min="0" step="0.01" value="' + (L.p ? (L.p / 100).toFixed(2) : '') +
+            '" placeholder="0.00"' + off + '></label>' +
+          '<label>Qty<input data-lq="' + esc(L.u) + '" data-lkitem="' + esc(id) + '" type="number" ' +
+            'inputmode="numeric" min="1" step="1" value="' + L.q + '"' + off + '></label>' +
+          '<span class="lkx-c">' + (L.p ? money(L.p * L.q) : '&mdash;') + '</span>' +
+        '</div></li>';
     }).join('');
     var full = links.length >= MAX_LINKS;
+    var priced = anyPriced(links);
     return '<div class="lks' + (links.length ? ' has' : '') + '">' +
       // With nothing saved yet, "Links" above "Add a link" is two headings
       // saying the same thing. The count is the only reason to print it.
-      (links.length ? '<div class="lks-h">Links <b>' + links.length + '</b></div>' : '') +
+      (links.length ? '<div class="lks-h">Links <b>' + links.length + '</b>' +
+        (priced ? '<span class="lks-tot">' + money(linkTotal(links)) + '</span>' : '') + '</div>' : '') +
       (rows ? '<ul class="lks-l">' + rows + '</ul>' : '') +
+      (priced ? '<p class="lks-note">This item costs what its links add up to. The unit price above ' +
+                'is ignored until every link price is cleared.</p>' : '') +
       (locked
         ? (links.length ? '' : '<p class="lks-none">No links were on this when it went out.</p>')
         : full
         ? '<p class="lks-none">That is ' + MAX_LINKS + ' links — remove one before adding another.</p>'
-        : '<label class="lk"><span class="lk-lab">' +
+        : '<div class="lk"><span class="lk-lab">' +
             (links.length ? 'Add another' : 'Add a link') + '</span>' +
-            '<span class="lk-row">' +
-              '<input data-nl type="url" inputmode="url" placeholder="https://&hellip;">' +
+            '<input data-nl type="url" inputmode="url" placeholder="https://&hellip;" ' +
+              'aria-label="Link address">' +
+            '<span class="lk-row lk-num">' +
+              '<input data-nlp type="number" inputmode="decimal" min="0" step="0.01" ' +
+                'placeholder="Price" aria-label="Price for this link">' +
+              '<input data-nlq type="number" inputmode="numeric" min="1" step="1" value="1" ' +
+                'aria-label="Quantity for this link">' +
               '<button class="lk-go" data-addlink type="button" aria-label="Add this link">Add</button>' +
-            '</span></label>') +
+            '</span></div>') +
       '</div>';
   }
 
@@ -1020,6 +1079,7 @@
     var links = linksOf(s);
     var locked = !!s.sent;
     var off = locked ? ' disabled' : '';
+    var byLinks = links.length && anyPriced(links);
     return '<div class="it it-' + esc(s.st) + (locked ? ' sent' : '') + '" data-item="' + esc(it.id) + '">' +
       '<div class="it-h">' +
         '<span class="it-cat it-' + esc(it.cat) + '">' + esc(CATS[it.cat] || it.cat) + '</span>' +
@@ -1036,9 +1096,11 @@
           return '<option value="' + x.k + '"' + (s.st === x.k ? ' selected' : '') + '>' + x.l + '</option>';
         }).join('') + '</select></label>' +
         '<label>Where from<input list="vendorList" data-f="src" value="' + esc(s.src) + '" placeholder="Amazon, in stock, build&hellip;"' + off + '></label>' +
-        '<label>Unit price<input data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' +
+        // Greyed, not hidden, once the links carry the price: the figure is
+        // still there and comes back if every link price is cleared.
+        '<label' + (byLinks ? ' class="muted"' : '') + '>Unit price<input data-f="price" type="number" inputmode="decimal" min="0" step="0.01" value="' +
           (s.price ? (s.price / 100).toFixed(2) : '') + '" placeholder="0.00"' + off + '></label>' +
-        '<label>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"' + off + '></label>' +
+        '<label' + (byLinks ? ' class="muted"' : '') + '>Qty<input data-f="qty" type="number" inputmode="numeric" min="1" step="1" value="' + q + '"' + off + '></label>' +
       '</div>' +
       linkBox(it.id, links) +
       '<div class="it-foot">' +
@@ -1191,18 +1253,20 @@
             '<button class="ven-tick" data-buytick="' + esc(it.id) + '" ' +
               'aria-label="Mark ' + esc(it.name) + ' arrived">&#10003;</button>' +
             '<div class="ven-t">' + (ls.length
-              ? '<a href="' + esc(ls[0]) + '" target="_blank" rel="noopener">' + esc(it.name) + '</a>'
+              ? '<a href="' + esc(ls[0].u) + '" target="_blank" rel="noopener">' + esc(it.name) + '</a>'
               : esc(it.name)) +
               '<span class="ven-s">' + esc(it.scene) + ' &middot; ' + esc(CATS[it.cat] || it.cat) +
-              (q > 1 ? ' &middot; &times;' + q : '') +
+              (!anyPriced(ls) && q > 1 ? ' &middot; &times;' + q : '') +
               (s.sent ? ' &middot; <b class="ven-sent">' + esc(sentLabel(s)) + '</b>' : '') + '</span>' +
-              // Everything after the first link, so a look built from three
-              // shops can be bought in one pass without opening the item.
-              (ls.length > 1 ? '<span class="ven-more">' + ls.slice(1).map(function (u, i) {
-                return '<a href="' + esc(u) + '" target="_blank" rel="noopener">Link ' + (i + 2) + '</a>';
+              // Every link with its own price and count, so a look built from
+              // three shops can be bought in one pass without opening the item.
+              (ls.length > 1 ? '<span class="ven-more">' + ls.map(function (L, i) {
+                return '<a href="' + esc(L.u) + '" target="_blank" rel="noopener">' +
+                  (i + 1) + (L.p ? ' &middot; ' + money(L.p) : '') +
+                  (L.q > 1 ? ' &times;' + L.q : '') + '</a>';
               }).join('') + '</span>' : '') +
             '</div>' +
-            '<span class="ven-c">' + (s.price ? money(s.price * q) : '<i>no price</i>') + '</span></div>';
+            '<span class="ven-c">' + (lineCost(it) ? money(lineCost(it)) : '<i>no price</i>') + '</span></div>';
         }).join('') +
         (links.length ? '<button class="ven-open" data-openall="' + esc(v) + '" type="button">Open ' +
           links.length + ' link' + (links.length === 1 ? '' : 's') + '</button>' : '') +
@@ -1246,11 +1310,11 @@
     open.forEach(function (it) {
       var s = st(it.id), ls = linksOf(s), q = qtyOf(it);
       if (!ls.length) { missing++; return; }
-      total += (s.price || 0) * q;
+      total += lineCost(it);
       ids.push(it.id);
       items.push({ name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
                    vendor: s.src || '', links: ls, status: s.st || 'todo', qty: q,
-                   price_cents: s.price || 0, line_cents: (s.price || 0) * q, by: s.by || '' });
+                   price_cents: s.price || 0, line_cents: lineCost(it), by: s.by || '' });
     });
     var unlinked = open.filter(function (it) { return !linksOf(st(it.id)).length; })
       .map(function (it) {
@@ -1264,7 +1328,7 @@
       .map(function (it) {
         var s = st(it.id);
         return { name: it.name, scene: it.scene, cat: CATS[it.cat] || it.cat, who: it.who || '',
-                 vendor: s.src || '', qty: qtyOf(it), line_cents: (s.price || 0) * qtyOf(it),
+                 vendor: s.src || '', qty: qtyOf(it), line_cents: lineCost(it),
                  sent: s.sent, sentBy: s.sentBy || '' };
       });
     return { items: items, unlinked: unlinked, already: already,
@@ -1342,11 +1406,16 @@
       L.push(v.toUpperCase() + '  (' + money(sub) + ')');
       byVendor[v].forEach(function (it) {
         var s = st(it.id), q = qtyOf(it);
-        L.push('  ' + (s.sent ? '[SENT] ' : '- ') + it.name + (q > 1 ? ' x' + q : '') + '  ' +
-               (s.price ? money(s.price * q) : 'no price') +
+        var ls5 = linksOf(s);
+        L.push('  ' + (s.sent ? '[SENT] ' : '- ') + it.name +
+               (!anyPriced(ls5) && q > 1 ? ' x' + q : '') + '  ' +
+               (lineCost(it) ? money(lineCost(it)) : 'no price') +
                '   [' + it.scene + ' / ' + (CATS[it.cat] || it.cat) + ']' +
                (s.sent ? '  ' + sentLabel(s) + ' — do not re-buy' : '') +
-               linksOf(s).map(function (u) { return '\n      ' + u; }).join(''));
+               ls5.map(function (L2) {
+                 return '\n      ' + L2.u +
+                        (L2.p ? '   ' + money(L2.p) + (L2.q > 1 ? ' x' + L2.q + ' = ' + money(L2.p * L2.q) : '') : '');
+               }).join(''));
       });
       L.push('');
     });
@@ -1709,7 +1778,7 @@
           var s = st(it.id);
           if (s.st === 'done' || s.st === 'arrived' || s.sent) return;
           if (((s.src || '').trim() || 'Not sourced yet') !== v) return;
-          linksOf(s).forEach(function (u) { window.open(u, '_blank', 'noopener'); });
+          linksOf(s).forEach(function (L) { window.open(L.u, '_blank', 'noopener'); });
         });
         return;
       }
@@ -1850,8 +1919,17 @@
             setTimeout(function () { si.textContent = 'Save this item'; }, 1600);
             return;
           }
-          setLinks(cur2, linksOf(cur2).concat([pu]));
+          // …and so would the price and quantity typed beside it.
+          var pp = ibox.querySelector('[data-nlp]'), pq = ibox.querySelector('[data-nlq]');
+          var ppv = pp ? parseFloat(pp.value) : NaN, pqv = pq ? parseInt(pq.value, 10) : NaN;
+          setLinks(cur2, linksOf(cur2).concat([{
+            u: pu,
+            p: isFinite(ppv) && ppv >= 0 ? Math.round(ppv * 100) : 0,
+            q: isFinite(pqv) && pqv > 0 ? pqv : 1
+          }]));
           pending.value = '';
+          if (pp) pp.value = '';
+          if (pq) pq.value = '1';
         }
         cur2.by = me || cur2.by || '';
         cur2.at = new Date().toISOString();
@@ -1883,14 +1961,15 @@
         var lid = dl.dataset.lkitem, gone = dl.dataset.dellink;
         if (isSent(lid)) return;
         var s3 = item[lid] || st(lid);
-        setLinks(s3, linksOf(s3).filter(function (u) { return u !== gone; }));
+        setLinks(s3, linksOf(s3).filter(function (L) { return L.u !== gone; }));
         s3.by = me || s3.by || '';
         s3.at = new Date().toISOString();
         item[lid] = s3;
         saveLocal(); pushItem(lid);
         var lbox = dl.closest('.lks');
+        var lrow = dl.closest('[data-item]');
         if (lbox) lbox.outerHTML = linkBox(lid, itemLinks(lid));
-        renderBuy();
+        refreshItemMoney(lrow, lid);
         return;
       }
       // straight to the neighbouring scene, no trip back through the list
@@ -1936,7 +2015,24 @@
       if (isSent(id)) return false;
       var s = item[id] || st(id);
       var have = linksOf(s);
-      if (have.indexOf(url) < 0) setLinks(s, have.concat([url]));
+      var pIn = box.querySelector('[data-nlp]'), qIn = box.querySelector('[data-nlq]');
+      var pv = pIn ? parseFloat(pIn.value) : NaN;
+      var qv = qIn ? parseInt(qIn.value, 10) : NaN;
+      var add = { u: url,
+                  p: isFinite(pv) && pv >= 0 ? Math.round(pv * 100) : 0,
+                  q: isFinite(qv) && qv > 0 ? qv : 1 };
+      var dup = have.filter(function (L) { return L.u === url; })[0];
+      if (dup) {
+        // Same link again with a price on it: take the numbers rather than
+        // silently dropping what was just typed.
+        if (add.p) dup.p = add.p;
+        if (qIn && isFinite(qv) && qv > 0) dup.q = add.q;
+        setLinks(s, have);
+      } else {
+        setLinks(s, have.concat([add]));
+      }
+      if (pIn) pIn.value = '';
+      if (qIn) qIn.value = '1';
       s.by = me || s.by || '';
       s.at = new Date().toISOString();
       item[id] = s;
@@ -1944,9 +2040,90 @@
       saveLocal(); pushItem(id);
       var lbox = box.querySelector('.lks');
       if (lbox) lbox.outerHTML = linkBox(id, itemLinks(id));
+      // A link with a price on it changes what the item costs the moment it
+      // lands, so the card's figures have to move with it.
+      refreshItemMoney(box, id);
       var again = box.querySelector('[data-nl]');
       if (again) again.focus();
-      renderBuy();
+      return true;
+    }
+
+    // Everything on a card that shows money, brought up to date in place.
+    // Adding, removing or repricing a link all move the same three numbers,
+    // and a re-render would take the caret out of whatever is being typed in.
+    function refreshItemMoney(box, id) {
+      if (!box) return;
+      var ls = itemLinks(id);
+      var it = S.allItems.filter(function (x) { return x.id === id; })[0];
+      var cost = box.querySelector('.it-cost');
+      if (cost && it) cost.textContent = money(lineCost(it));
+      box.querySelectorAll('.it-ctl label').forEach(function (lab) {
+        var f = lab.querySelector('[data-f]');
+        if (!f) return;
+        if (f.dataset.f === 'price' || f.dataset.f === 'qty') {
+          lab.classList.toggle('muted', anyPriced(ls));
+        }
+      });
+      var sc = openScene === 'ALL'
+        ? { items: S.standing }
+        : S.scenes.filter(function (x) { return x.id === openScene; })[0];
+      if (sc) {
+        var tot = $('sceneDetail').querySelector('.sc-total b');
+        if (tot) tot.textContent = money(sc.items.reduce(function (a, x) { return a + lineCost(x); }, 0));
+      }
+      renderBudget(); renderBuy();
+    }
+
+    // A price or quantity on one link. Repaints that row's figure and the
+    // item's total in place — a re-render would take the caret out of the
+    // field mid-number, which on a phone means retyping it.
+    function onLinkNum(e) {
+      var d = e.target.dataset;
+      if (!d || (!d.lp && !d.lq)) return false;
+      var id = d.lkitem, url = d.lp || d.lq;
+      if (!id || isSent(id)) return true;
+      var s = item[id] || st(id);
+      var ls = linksOf(s), hit = null;
+      ls.forEach(function (L) {
+        if (L.u !== url) return;
+        hit = L;
+        if (d.lp) {
+          var v = parseFloat(e.target.value);
+          L.p = isFinite(v) && v >= 0 ? Math.round(v * 100) : 0;
+        } else {
+          var q = parseInt(e.target.value, 10);
+          L.q = isFinite(q) && q > 0 ? q : 1;
+        }
+      });
+      if (!hit) return true;
+      setLinks(s, ls);
+      s.by = me || s.by || '';
+      s.at = new Date().toISOString();
+      item[id] = s;
+      saveLocal(); pushItem(id);
+
+      var row = e.target.closest('.lkx');
+      if (row) {
+        var cell = row.querySelector('.lkx-c');
+        if (cell) cell.innerHTML = hit.p ? esc(money(hit.p * hit.q)) : '&mdash;';
+        row.classList.toggle('priced', hit.p > 0);
+      }
+      var box = e.target.closest('[data-item]');
+      if (box) {
+        var tot = box.querySelector('.lks-tot');
+        var head = box.querySelector('.lks-h');
+        if (anyPriced(ls)) {
+          if (!tot && head) {
+            tot = document.createElement('span');
+            tot.className = 'lks-tot';
+            head.appendChild(tot);
+          }
+          if (tot) tot.textContent = money(linkTotal(ls));
+        } else if (tot) {
+          tot.remove();
+        }
+      }
+      refreshItemMoney(box, id);
       return true;
     }
 
@@ -2027,28 +2204,45 @@
       renderBudget();
       if (active && active.focus) active.focus();
     }
-    $('sceneDetail').addEventListener('change', onEdit);
+    $('sceneDetail').addEventListener('change', function (e) {
+      if (!onLinkNum(e)) onEdit(e);
+    });
     $('sceneDetail').addEventListener('input', function (e) {
-      if (e.target.dataset && (e.target.dataset.f === 'price' || e.target.dataset.f === 'qty')) onEdit(e);
+      var d = e.target.dataset;
+      if (!d) return;
+      if (d.lp || d.lq) { onLinkNum(e); return; }
+      if (d.f === 'price' || d.f === 'qty') onEdit(e);
     });
     // Enter adds the link too. Without this, pressing it inside a lone input
     // would submit nothing and look like the paste was rejected.
     $('sceneDetail').addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
-      if (!(e.target.dataset && 'nl' in e.target.dataset)) return;
+      var d = e.target.dataset;
+      if (!d || !('nl' in d || 'nlp' in d || 'nlq' in d)) return;
       e.preventDefault();
       addLinkFrom(e.target.closest('[data-item]'));
     });
     // And blurring a filled field commits it, so tapping straight from the
     // link box to Save does not drop what was pasted.
     $('sceneDetail').addEventListener('focusout', function (e) {
-      if (!(e.target.dataset && 'nl' in e.target.dataset)) return;
+      var d = e.target.dataset;
+      if (!d || !('nl' in d)) return;
       if (!e.target.value.trim()) return;
+      // Moving from the address to the price or quantity for the same link is
+      // not finishing — committing here would file the link before its price
+      // had been typed, which is the whole thing this change is for.
+      var lk = e.target.closest('.lk');
+      if (lk && e.relatedTarget && lk.contains(e.relatedTarget)) return;
       var box = e.target.closest('[data-item]');
       // Let a tap on Add or Save run first — both handle the field themselves.
       setTimeout(function () {
-        if (box && box.isConnected && box.querySelector('[data-nl]')) addLinkFrom(box);
-      }, 180);
+        if (!box || !box.isConnected) return;
+        var still = box.querySelector('[data-nl]');
+        if (!still || !still.value.trim()) return;
+        var here = document.activeElement;
+        if (here && lk && lk.contains(here)) return;
+        addLinkFrom(box);
+      }, 220);
     });
 
     document.querySelectorAll('.navbtn').forEach(function (b) {
