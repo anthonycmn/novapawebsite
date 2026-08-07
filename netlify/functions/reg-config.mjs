@@ -71,9 +71,16 @@ export const SPECIAL_PLANS = {
   },
   "ANSELL0": {
     email: "ajansell@gmail.com",
-    waivePlanFee: true,
-    // Andrea Ansell, approved by Todd Aug 7 2026: standard installment
-    // schedule, no 5% plan fee. Her 15% comes from the 2-show tier.
+    waivePlanFee: true, months: 5,
+    // Andrea Ansell, approved by Todd Aug 7 2026: no 5% plan fee. months: 5
+    // spreads her Frozen+Mermaid cart Sep-Jan instead of the 1-payment
+    // collapse the Sep-15 Frozen start forces (Jason, Aug 7).
+  },
+  "ANSELLO": {
+    email: "ajansell@gmail.com",
+    waivePlanFee: true, months: 5,
+    // Same waiver, letter-O spelling — ANSELL0 ends in a zero that reads as
+    // the letter O in most fonts, and Andrea typed the O. Both work.
   },
 };
 
