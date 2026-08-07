@@ -81,12 +81,16 @@ export default async (req) => {
   let couponPct = 0, couponFixedCents = 0, special = null;
   if (couponCode) {
     const c = await anonRpc("check_coupon", { p_code: couponCode });
-    if (!c || (!c.pct && !c.amount_cents)) return Response.json({ error: "bad_coupon" }, { status: 400 });
+    // account-locked one-off adjustments (Todd/CJ approvals) — the coupons row
+    // gates existence/uses, the SPECIAL_PLANS entry carries the actual terms.
+    // A special code is valid with a bare row (its pct is display-only, often
+    // absent); ordinary coupons must actually carry a discount.
+    special = SPECIAL_PLANS[couponCode.toUpperCase()] || null;
+    if (!c || (!special && !c.pct && !c.amount_cents)) {
+      return Response.json({ error: "bad_coupon" }, { status: 400 });
+    }
     couponPct = c.pct || 0;
     couponFixedCents = c.amount_cents || 0;
-    // account-locked one-off adjustments (Todd/CJ approvals) — the coupons row
-    // gates existence/uses, the SPECIAL_PLANS entry carries the actual terms
-    special = SPECIAL_PLANS[couponCode.toUpperCase()] || null;
     if (special && special.email.toLowerCase() !== email) {
       return Response.json({ error: "bad_coupon" }, { status: 400 });
     }
