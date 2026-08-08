@@ -18,7 +18,7 @@
 <style>
   :root {
     --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
-    --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+    --gold:#F7D98F; --gold2:#F7D98F; --gold3:#F7D98F;
     --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
     --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45);
     --danger:#E8654B; --ok:#5BC98C;
@@ -44,7 +44,7 @@
     display:none; position:fixed; top:12px; left:14px; z-index:60;
     align-items:center; gap:8px;
     background:rgba(8,17,31,0.35); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    border:1px solid rgba(232,184,75,0.45); border-radius:999px; padding:7px 14px;
+    border:1px solid rgba(247,217,143,0.45); border-radius:999px; padding:7px 14px;
     font-weight:700; font-size:13.5px; color:var(--gold3); white-space:nowrap;
   }
   #holdChip.on { display:flex; }
@@ -74,7 +74,7 @@
     background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206;
     font-family:'DM Sans',sans-serif; font-weight:700; font-size:16.5px;
     padding:15px 22px; border-radius:12px; margin-top:14px;
-    box-shadow:0 8px 30px rgba(200,137,42,0.35); transition:transform .15s;
+    box-shadow:0 8px 30px rgba(247,217,143,0.35); transition:transform .15s;
   }
   .btn:hover { transform:translateY(-1px); }
   .btn[disabled] { opacity:0.5; cursor:default; transform:none; }
@@ -97,11 +97,11 @@
   .show-card .t { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:700; color:#fff; line-height:1.15; }
   .show-card .d { font-size:13px; color:var(--ink-dim); margin-top:3px; }
   .show-card .tick { margin-left:auto; width:26px; height:26px; border-radius:50%; border:2px solid var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; color:#1a1206; }
-  .show-card.sel { border-color:var(--gold2); background:rgba(232,184,75,0.08); }
+  .show-card.sel { border-color:var(--gold2); background:rgba(247,217,143,0.08); }
   .show-card.sel .tick { background:var(--gold2); border-color:var(--gold2); }
   .ticker {
     margin-top:16px; text-align:center; font-weight:700; font-size:15px; color:var(--gold3);
-    background:rgba(232,184,75,0.08); border:1px dashed rgba(232,184,75,0.45);
+    background:rgba(247,217,143,0.08); border:1px dashed rgba(247,217,143,0.45);
     border-radius:12px; padding:13px 16px;
   }
 
@@ -132,12 +132,12 @@
   .savings { color:var(--ok); font-weight:700; }
   .plan-toggle { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
   .plan-opt { border:2px solid var(--line); border-radius:14px; padding:15px; cursor:pointer; text-align:center; }
-  .plan-opt.sel { border-color:var(--gold2); background:rgba(232,184,75,0.08); }
+  .plan-opt.sel { border-color:var(--gold2); background:rgba(247,217,143,0.08); }
   .plan-opt .p1 { font-weight:700; font-size:15.5px; color:#fff; }
   .plan-opt .p2 { font-size:12.5px; color:var(--ink-dim); margin-top:4px; line-height:1.45; }
   .plan-opt .perk { font-size:11.5px; color:var(--ok); font-weight:700; margin-top:5px; }
   .upsell {
-    border:1px solid rgba(232,184,75,0.5); background:linear-gradient(135deg, rgba(200,137,42,0.14), rgba(22,43,82,0.4));
+    border:1px solid rgba(247,217,143,0.5); background:linear-gradient(135deg, rgba(200,137,42,0.14), rgba(22,43,82,0.4));
     border-radius:14px; padding:16px; margin-bottom:14px;
   }
   .upsell b { color:var(--gold3); }
@@ -148,7 +148,7 @@
   .bday-lbl .req { color:var(--gold3); }
   .bday-row input[type=date] { width:auto; flex:1; padding:9px 12px; font-size:14px; color-scheme:dark; }
   .agewarn { margin-left:29px; font-size:12.5px; color:var(--gold3); line-height:1.45;
-    background:rgba(232,184,75,0.08); border:1px solid rgba(232,184,75,0.3); border-radius:9px; padding:8px 11px; }
+    background:rgba(247,217,143,0.08); border:1px solid rgba(247,217,143,0.3); border-radius:9px; padding:8px 11px; }
   .agewarn b { color:#fff; }
   #expressCheckout { margin:4px 0 6px; }
   .pay-or { display:flex; align-items:center; gap:12px; color:var(--ink-dim); font-size:12.5px; margin:14px 0 4px; }
@@ -157,7 +157,7 @@
 
   .modal-back { display:none; position:fixed; inset:0; background:rgba(4,9,17,0.8); z-index:99; align-items:center; justify-content:center; padding:20px; }
   .modal-back.on { display:flex; }
-  .modal { background:var(--navy1); border:1px solid rgba(232,184,75,0.4); border-radius:18px; padding:28px; max-width:420px; text-align:center; }
+  .modal { background:var(--navy1); border:1px solid rgba(247,217,143,0.4); border-radius:18px; padding:28px; max-width:420px; text-align:center; }
   .modal h3 { font-family:'Cormorant Garamond',serif; font-size:26px; color:#fff; margin-bottom:8px; }
 
   .conf-art { font-size:52px; text-align:center; margin-bottom:8px; }
@@ -170,7 +170,7 @@
     border:2px solid var(--line); border-radius:16px; padding:26px 20px; cursor:pointer;
     background:var(--card); text-align:center; transition:border-color .15s, background .15s;
   }
-  .choice-card:hover { border-color:var(--gold2); background:rgba(232,184,75,0.08); }
+  .choice-card:hover { border-color:var(--gold2); background:rgba(247,217,143,0.08); }
   .choice-card .c1 { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#fff; }
   .choice-card .c2 { font-size:13px; color:var(--ink-dim); margin-top:6px; line-height:1.4; }
 
@@ -192,7 +192,7 @@
     font-size:12.5px; font-weight:700; letter-spacing:0.04em; cursor:pointer; transition:all .15s;
     white-space:nowrap; }
   @media (max-width:480px) { .schip { padding:7px 13px; font-size:12px; } }
-  .schip.sel { background:rgba(232,184,75,0.14); border-color:var(--gold3); color:var(--gold3); }
+  .schip.sel { background:rgba(247,217,143,0.14); border-color:var(--gold3); color:var(--gold3); }
   /* add-camper date field */
   #sKidBday{ color-scheme:dark; width:100%; padding:14px 46px 14px 16px; font-size:16px; min-height:52px;
     -webkit-appearance:none; appearance:none; display:flex; align-items:center;
@@ -205,7 +205,7 @@
   #toast {
     display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:80;
     width:min(480px, calc(100vw - 32px)); background:var(--navy1);
-    border:1px solid rgba(232,184,75,0.55); border-radius:14px; padding:14px 16px;
+    border:1px solid rgba(247,217,143,0.55); border-radius:14px; padding:14px 16px;
     box-shadow:0 12px 40px rgba(0,0,0,0.5); font-size:14.5px; line-height:1.45;
   }
   #toast .tmsg { flex:1; }
@@ -223,10 +223,10 @@
      flow on Jul 31 2026. The link sits in the top bar so it is reachable
      from any step, and each service hands off to the ordinary catalog
      checkout at /register/?activity=<id>. */
-  #coachLink { margin-left:auto; flex-shrink:0; background:none; border:1px solid rgba(232,184,75,0.4);
+  #coachLink { margin-left:auto; flex-shrink:0; background:none; border:1px solid rgba(247,217,143,0.4);
     border-radius:999px; padding:6px 15px; color:var(--gold2); font-family:inherit; font-size:13px;
     font-weight:700; letter-spacing:0.04em; cursor:pointer; }
-  #coachLink:hover { background:rgba(232,184,75,0.12); border-color:var(--gold2); }
+  #coachLink:hover { background:rgba(247,217,143,0.12); border-color:var(--gold2); }
   #st-coaching { max-width:960px; }
   .coach-grp { margin-top:34px; }
   .coach-grp > h2 { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold3);
@@ -247,7 +247,7 @@
   .coach-card .cc-btn { display:inline-block; border-radius:10px; padding:10px 18px; font-weight:700; font-size:13.5px;
     text-decoration:none; background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206; }
   .coach-card .cc-more { font-size:12.5px; color:var(--gold3); text-decoration:none; border-bottom:1px solid rgba(247,217,143,0.35); }
-  .coach-note { background:rgba(232,184,75,0.08); border:1px dashed rgba(232,184,75,0.45); border-radius:12px;
+  .coach-note { background:rgba(247,217,143,0.08); border:1px dashed rgba(247,217,143,0.45); border-radius:12px;
     padding:13px 16px; font-size:13.5px; color:var(--gold3); line-height:1.55; margin-top:18px; }
   .coach-note a { color:var(--gold2); }
 </style>
@@ -255,6 +255,7 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
 <style>html{background:#08111F}</style>
+<link rel="stylesheet" href="/brand.css">
 </head>
 <body>
 
@@ -2137,7 +2138,7 @@
 
   function squeezeNote(sq, actualN){
     var n = actualN != null ? actualN : sq.now;
-    return '<p class="tiny" style="text-align:left;margin-top:8px;padding:9px 11px;border:1px solid rgba(232,184,75,0.35);border-radius:9px;background:rgba(232,184,75,0.07)">' +
+    return '<p class="tiny" style="text-align:left;margin-top:8px;padding:9px 11px;border:1px solid rgba(247,217,143,0.35);border-radius:9px;background:rgba(247,217,143,0.07)">' +
       '<b>' + esc(sq.names) + '</b> begins ' + sq.starts + ', and a payment plan has to finish before your first program starts \u2014 ' +
       'so this cart is ' + n + ' payment' + (n === 1 ? '' : 's') + ' instead of ' + sq.could + '. ' +
       'Checking out ' + esc(sq.names) + ' separately would let your other programs spread over ' + sq.could + ' months.</p>';
@@ -2565,7 +2566,7 @@
       state.stripe = Stripe(C.STRIPE_PUBLISHABLE_KEY);
       state.elements = state.stripe.elements({
         clientSecret: state.clientSecret,
-        appearance: { theme: 'night', variables: { colorPrimary: '#E8B84B', fontFamily: 'DM Sans, sans-serif' } }
+        appearance: { theme: 'night', variables: { colorPrimary: '#F7D98F', fontFamily: 'DM Sans, sans-serif' } }
       });
       // Apple Pay / Google Pay / Link buttons — handled by Express Checkout,
       // so suppress the duplicate wallet row inside the card element.
@@ -2750,7 +2751,7 @@
     var ctx = cv.getContext('2d');
     var W = cv.width = innerWidth * (devicePixelRatio || 1);
     var H = cv.height = innerHeight * (devicePixelRatio || 1);
-    var COLORS = ['#E8B84B','#C8892A','#F7D98F','#FFF3D6','#B8860B'];
+    var COLORS = ['#F7D98F','#F7D98F','#F7D98F','#FFF3D6','#B8860B'];
     var parts = [];
     for (var i = 0; i < 140; i++) {
       parts.push({
