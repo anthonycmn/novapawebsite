@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>NOVAPA Branding Brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  /* ══ THE TOKENS — this block IS the brand. Tweak here, then we ship it
+     sitewide as brand.css. Every name below is referenceable in feedback. ══ */
+  :root {
+    /* surfaces */
+    --navy-0:#08111F;   /* page background, darkest */
+    --navy-1:#0F1E36;   /* raised surface */
+    --navy-2:#162B52;   /* highlight surface */
+    --card:rgba(22,43,82,0.45);       /* glass card fill */
+    --line:rgba(255,255,255,0.14);    /* hairline borders on dark */
+    --cream:#F5F2EC;    /* light page background (emails, print) */
+    /* golds */
+    --gold-1:#C8892A;   /* base gold — buttons, accents */
+    --gold-2:#E8B84B;   /* bright gold — hovers, links, active */
+    --gold-3:#F7D98F;   /* pale gold — italics, camper names */
+    /* ink on dark */
+    --ink:rgba(255,255,255,0.88);     /* body text */
+    --ink-dim:rgba(255,255,255,0.62); /* secondary text */
+    --ink-faint:rgba(255,255,255,0.44);
+    /* ink on light */
+    --ink-navy:#0F1E36; --ink-slate:#414b5c;
+    /* semantic */
+    --ok:#5BC98C; --danger:#E8654B;
+    /* shape */
+    --r-card:16px; --r-btn:12px; --r-pill:100px; --r-chip:12px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'DM Sans',sans-serif; color:var(--ink); background:var(--navy-0);
+    line-height:1.6;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:56px 28px 120px; }
+  .brainhead { text-align:center; margin-bottom:64px; }
+  .eyebrow {
+    font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.22em; font-size:12px;
+    color:var(--gold-2); text-transform:uppercase;
+  }
+  h1 { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:52px; color:#fff; line-height:1.1; margin:10px 0 8px; }
+  h1 em { font-style:italic; color:var(--gold-3); }
+  .lede { color:var(--ink-dim); font-size:16px; max-width:560px; margin:0 auto; }
+  section { margin-bottom:72px; }
+  h2 {
+    font-family:'Cormorant Garamond',serif; font-weight:700; font-size:32px; color:#fff;
+    border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:8px;
+  }
+  h2 em { font-style:italic; color:var(--gold-2); }
+  .secnote { color:var(--ink-dim); font-size:14px; margin-bottom:26px; max-width:720px; }
+  .tok { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--gold-2); background:rgba(200,137,42,0.1); padding:2px 7px; border-radius:6px; }
+
+  /* audit table */
+  table.audit { width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.audit th { text-align:left; color:var(--ink-faint); font-weight:500; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:8px 12px; border-bottom:1px solid var(--line); }
+  table.audit td { padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .bad { color:var(--danger); font-weight:700; }
+  .good { color:var(--ok); }
+
+  /* swatches */
+  .swatches { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+  .sw { border-radius:var(--r-card); overflow:hidden; border:1px solid var(--line); }
+  .sw .chip { height:74px; }
+  .sw .meta { padding:10px 12px; background:var(--navy-1); font-size:12px; }
+  .sw .meta b { display:block; color:#fff; font-size:12.5px; }
+  .sw .meta span { color:var(--ink-dim); font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+
+  /* type specimens */
+  .spec { border:1px solid var(--line); border-radius:var(--r-card); padding:26px 30px; margin-bottom:14px; background:var(--card); }
+  .spec .label { font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:10px; }
+  .spec .label .tok { text-transform:none; letter-spacing:0; }
+  .t-display { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:48px; line-height:1.08; color:#fff; }
+  .t-display em { font-style:italic; color:var(--gold-3); }
+  .t-h2 { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:30px; color:#fff; }
+  .t-h2 em { font-style:italic; color:var(--gold-2); }
+  .t-eyebrow { font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.22em; font-size:12px; color:var(--gold-2); text-transform:uppercase; }
+  .t-cardtitle { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:21px; color:var(--gold-3); }
+  .t-body { font-size:15px; color:var(--ink); max-width:620px; }
+  .t-sub { font-size:13.5px; color:var(--ink-dim); max-width:620px; }
+  .t-mono { font-family:ui-monospace,Menlo,monospace; font-size:14px; color:var(--gold-2); letter-spacing:0.15em; }
+
+  /* components */
+  .comps { display:flex; flex-wrap:wrap; gap:18px; align-items:center; }
+  .btn-primary {
+    display:inline-flex; align-items:center; gap:8px; border:0; cursor:pointer;
+    background:linear-gradient(180deg, var(--gold-2), var(--gold-1)); color:#1a1206;
+    font-family:'DM Sans',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.04em;
+    padding:14px 28px; border-radius:var(--r-btn);
+  }
+  .btn-cta {
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer; text-decoration:none;
+    background:rgba(201,146,42,0.15); border:1px solid rgba(201,146,42,0.35); color:var(--gold-2);
+    font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    padding:10px 22px; border-radius:var(--r-pill);
+  }
+  .btn-ghost { background:none; border:0; color:var(--ink-dim); font-size:14px; text-decoration:underline; cursor:pointer; font-family:inherit; }
+  .link { color:var(--gold-2); font-weight:600; text-decoration:none; border-bottom:1px solid rgba(232,184,75,0.35); }
+  .democard {
+    background:var(--card); border:1px solid var(--line); border-radius:var(--r-card);
+    padding:22px 24px; max-width:340px; backdrop-filter:blur(6px);
+  }
+  .democard p { font-size:13.5px; color:var(--ink-dim); margin-top:6px; }
+  details.demoq { background:var(--card); border:1px solid var(--line); border-radius:13px; max-width:420px; }
+  details.demoq summary { cursor:pointer; list-style:none; position:relative; padding:15px 44px 15px 18px; font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:700; color:#fff; }
+  details.demoq summary em { font-style:italic; color:var(--gold-2); }
+  details.demoq summary::-webkit-details-marker { display:none; }
+  details.demoq summary::after { content:'+'; position:absolute; right:18px; top:50%; margin-top:-13px; color:var(--gold-2); font-family:'DM Sans',sans-serif; font-size:20px; transition:transform .2s; }
+  details.demoq[open] summary::after { transform:rotate(45deg); }
+  details.demoq div { padding:0 18px 15px; font-size:13.5px; color:var(--ink-dim); }
+  .input-demo {
+    background:rgba(8,17,31,0.6); border:1px solid var(--line); border-radius:var(--r-btn);
+    color:#fff; font-family:inherit; font-size:15px; padding:13px 16px; width:260px; outline:none;
+  }
+  .input-demo:focus { border-color:var(--gold-1); }
+  .tag-demo { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:rgba(200,137,42,0.18); border:1px solid rgba(232,184,75,0.4); color:var(--gold-3); border-radius:var(--r-pill); padding:5px 13px; }
+  .stat-demo { background:var(--navy-1); border:1px solid var(--line); border-radius:var(--r-card); padding:18px 24px; text-align:center; }
+  .stat-demo .v { font-size:28px; font-weight:700; color:#fff; }
+  .stat-demo .v.gold { color:var(--gold-2); }
+  .stat-demo .l { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); }
+
+  /* light-surface sample */
+  .light-sample { background:var(--cream); border-radius:var(--r-card); padding:30px; color:var(--ink-slate); }
+  .light-sample h3 { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:26px; color:var(--ink-navy); margin-bottom:6px; }
+  .light-sample h3 em { font-style:italic; color:var(--gold-1); }
+  .light-sample p { font-size:14px; max-width:560px; }
+  .light-sample a { color:#7A5010; font-weight:600; }
+
+  .rules { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+  .rule { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:16px 20px; font-size:13.5px; color:var(--ink-dim); }
+  .rule b { color:#fff; display:block; margin-bottom:4px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brainhead">
+    <div class="eyebrow">NOVAPA</div>
+    <h1>The Branding <em>Brain</em></h1>
+    <p class="lede">One page that defines the whole look. Tweak anything here by name — when you sign off, this becomes <span class="tok">brand.css</span> and every page inherits it.</p>
+  </div>
+
+  <section>
+    <h2>The current <em>mess</em></h2>
+    <p class="secnote">What's actually shipping today. Three fonts are the brand; three more snuck in. Goal: the strays go to zero.</p>
+    <table class="audit">
+      <tr><th>font</th><th>where it leaks</th><th>verdict</th></tr>
+      <tr><td><b style="font-family:'Cinzel',serif">Cinzel</b></td><td>everywhere</td><td class="good">KEEP — brand marks &amp; eyebrows only</td></tr>
+      <tr><td><b style="font-family:'Cormorant Garamond',serif">Cormorant Garamond</b></td><td>everywhere</td><td class="good">KEEP — all display headings</td></tr>
+      <tr><td><b>DM Sans</b></td><td>everywhere</td><td class="good">KEEP — all UI &amp; body text</td></tr>
+      <tr><td><b style="font-family:Georgia,serif">Playfair Display</b></td><td>homepage, broadway-bound, teen-conservatory, coaching</td><td class="bad">REMOVE → Cormorant Garamond</td></tr>
+      <tr><td><b>Inter</b></td><td>classes, day-camps, calendar, faculty</td><td class="bad">REMOVE → DM Sans</td></tr>
+      <tr><td><b style="font-family:Georgia,serif">Georgia</b></td><td>register flow fallbacks</td><td class="bad">REMOVE → DM Sans (keep only in HTML emails)</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Typography — <em>three fonts, five voices</em></h2>
+    <p class="secnote">Every piece of text on the site is one of these. If a design needs a sixth voice, the design is wrong.</p>
+    <div class="spec"><div class="label">DISPLAY · Cormorant Garamond 700 · 44-56px · gold italic on the money words · <span class="tok">t-display</span></div>
+      <div class="t-display">Performing arts for <em>every stage</em> of the journey.</div></div>
+    <div class="spec"><div class="label">SECTION HEADING · Cormorant Garamond 700 · 28-36px · <span class="tok">t-h2</span></div>
+      <div class="t-h2">Questions parents <em>actually ask</em></div></div>
+    <div class="spec"><div class="label">EYEBROW / BRAND MARK · Cinzel 700 · 11-13px · letterspaced caps · gold · <span class="tok">t-eyebrow</span></div>
+      <div class="t-eyebrow">Broadway Bound Summer Camp</div></div>
+    <div class="spec"><div class="label">CARD TITLE · Cormorant Garamond 700 · 18-24px · pale gold for names, white for content · <span class="tok">t-cardtitle</span></div>
+      <div class="t-cardtitle">Leila Simeon</div></div>
+    <div class="spec"><div class="label">BODY · DM Sans 400 · 14-15px / 1.6-1.7 · never pure white · <span class="tok">t-body</span> + <span class="tok">t-sub</span></div>
+      <div class="t-body">Camp runs Monday to Friday, 8:30 AM to 4:15 PM. Free early drop-off and late pick-up are included at no extra charge.</div>
+      <div class="t-sub" style="margin-top:8px">Secondary text steps down to 62% white, never smaller than 12px.</div></div>
+    <div class="spec"><div class="label">CODE / NUMBERS · ui-monospace · coupon codes, order ids · <span class="tok">t-mono</span></div>
+      <div class="t-mono">FEE25-SIMEON</div></div>
+  </section>
+
+  <section>
+    <h2>Color — <em>navy stage, gold spotlight</em></h2>
+    <p class="secnote">Navy is the theatre, gold is what the light touches. Gold never exceeds ~10% of any screen — it marks what matters: actions, names, emphasis.</p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#08111F"></div><div class="meta"><b>navy-0</b><span>#08111F · page bg</span></div></div>
+      <div class="sw"><div class="chip" style="background:#0F1E36"></div><div class="meta"><b>navy-1</b><span>#0F1E36 · raised surface</span></div></div>
+      <div class="sw"><div class="chip" style="background:#162B52"></div><div class="meta"><b>navy-2</b><span>#162B52 · highlight</span></div></div>
+      <div class="sw"><div class="chip" style="background:rgba(22,43,82,0.45);backdrop-filter:blur(4px)"></div><div class="meta"><b>card</b><span>navy-2 @ 45% · glass</span></div></div>
+      <div class="sw"><div class="chip" style="background:#C8892A"></div><div class="meta"><b>gold-1</b><span>#C8892A · base / buttons</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E8B84B"></div><div class="meta"><b>gold-2</b><span>#E8B84B · bright / links</span></div></div>
+      <div class="sw"><div class="chip" style="background:#F7D98F"></div><div class="meta"><b>gold-3</b><span>#F7D98F · pale / italics</span></div></div>
+      <div class="sw"><div class="chip" style="background:#F5F2EC"></div><div class="meta"><b>cream</b><span>#F5F2EC · light pages, email</span></div></div>
+      <div class="sw"><div class="chip" style="background:#5BC98C"></div><div class="meta"><b>ok</b><span>#5BC98C · success</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E8654B"></div><div class="meta"><b>danger</b><span>#E8654B · errors</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Components — <em>the kit</em></h2>
+    <p class="secnote">Built from the tokens above. Radii: cards 16, buttons 12, pills 100. One shadow style. No component invents its own colors.</p>
+    <div class="comps" style="margin-bottom:26px">
+      <button class="btn-primary">REGISTER NOW →</button>
+      <a class="btn-cta" href="#">Register →</a>
+      <button class="btn-ghost">I'll do this later</button>
+      <a class="link" href="#">policies page</a>
+      <span class="tag-demo">Returning Family</span>
+    </div>
+    <div class="comps" style="margin-bottom:26px">
+      <div class="democard">
+        <div class="t-cardtitle">Glass card</div>
+        <p>The default container everywhere: <span class="tok">card</span> fill, <span class="tok">line</span> border, 16px radius, 6px blur.</p>
+      </div>
+      <details class="demoq"><summary>Accordion — white with <em>gold</em> key words</summary><div>Opens with the + rotating to ×. Used for FAQs sitewide.</div></details>
+    </div>
+    <div class="comps">
+      <input class="input-demo" placeholder="Email address">
+      <div class="stat-demo"><div class="v gold">24 / 25</div><div class="l">registered</div></div>
+      <div class="stat-demo"><div class="v">$124,733</div><div class="l">collected</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Light surfaces — <em>the cream pages</em></h2>
+    <p class="secnote">Emails and any light page flip to cream with navy ink. Gold darkens one step for links (<span class="tok">#7A5010</span>) so contrast holds.</p>
+    <div class="light-sample">
+      <h3>Your registration is <em>confirmed</em></h3>
+      <p>On cream: headings in <span style="font-family:ui-monospace,Menlo,monospace;font-size:12px">ink-navy</span>, body in <span style="font-family:ui-monospace,Menlo,monospace;font-size:12px">ink-slate</span>, links in dark gold like the <a href="#">policies page</a>.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>House <em>rules</em></h2>
+    <div class="rules">
+      <div class="rule"><b>Gold italics carry the emphasis</b>One italic gold phrase per heading, on the word that sells. Never two.</div>
+      <div class="rule"><b>Never pure white body text</b>Body is 88% white, secondary 62%. Pure #fff is reserved for headings.</div>
+      <div class="rule"><b>Dark text never sits on dark</b>Every component defines its own text colors explicitly — no inherited surprises (the FAQ card bug, never again).</div>
+      <div class="rule"><b>Counts are plain numbers</b>"24 / 25" — no "left", no "filled", no words.</div>
+      <div class="rule"><b>One CTA per view</b>The gold gradient button appears once per screen. Everything else is the pill or a text link.</div>
+      <div class="rule"><b>Playfair and Inter are banned</b>Cormorant Garamond and DM Sans do their jobs. Georgia lives only inside HTML emails.</div>
+      <div class="rule"><b>Emoji-free UI</b>Copy stays clean; icons are line SVGs in gold or ink.</div>
+      <div class="rule"><b>Photography over decoration</b>Real kids on real stages beats gradients. Overlay navy at 60-80% for text legibility.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Rollout <em>plan</em></h2>
+    <p class="secnote">When you sign off: (1) these tokens become <span class="tok">brand.css</span> loaded on every page like nav.js, (2) a sweep replaces every Playfair/Inter/Georgia reference and hard-coded off-palette hex with tokens, page by page on staging, (3) you review staging, then one push. Estimated blast radius: ~27 pages, no content changes.</p>
+  </section>
+</div>
+</body>
+</html>
