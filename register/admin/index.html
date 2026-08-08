@@ -358,58 +358,128 @@
   });
   $('signOut').addEventListener('click', function(e){ e.preventDefault(); sb.auth.signOut().then(function(){ location.reload(); }); });
 
-  // ---- nav ----
+  // ---- data loading: every tab refetches on visit, every failure is
+  // visible and retryable. The old boot fired six RPCs in one burst and
+  // dropped any that errored (the heavy admin_inventory lost that race
+  // routinely) — a blank tab with no message was the result.
+  var INV = null;
+  var lastLoad = {};   // tab -> ms timestamp of last successful load
+
+  function loadErr(tab, msg){
+    var el = $('loadErr');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'loadErr';
+      el.style.cssText = 'position:fixed;top:14px;right:14px;z-index:99;background:#3a1620;' +
+        'border:1px solid #E8654B;color:#fff;border-radius:10px;padding:12px 16px;font-size:13px;max-width:320px';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = esc(tab) + ' failed to load: ' + esc(msg || 'error') +
+      ' <a href="#" id="loadRetry" style="color:#E8B84B;font-weight:700">Retry</a>' +
+      ' <a href="#" id="loadDismiss" style="color:rgba(255,255,255,0.6);margin-left:8px">×</a>';
+    el.style.display = 'block';
+    $('loadRetry').onclick = function(e){ e.preventDefault(); el.style.display = 'none'; runLoader(tab); };
+    $('loadDismiss').onclick = function(e){ e.preventDefault(); el.style.display = 'none'; };
+  }
+
+  // rpc with one automatic retry (1.5s) before surfacing the failure
+  function rload(tab, rpc, render){
+    function attempt(n){
+      sb.rpc(rpc).then(function(r){
+        if (r.error) {
+          if (n < 1) return setTimeout(function(){ attempt(n + 1); }, 1500);
+          console.error(rpc, r.error);
+          return loadErr(tab, r.error.message);
+        }
+        lastLoad[tab] = Date.now();
+        try { render(r.data); } catch (e) { console.error(rpc, e); loadErr(tab, 'render: ' + e.message); }
+      });
+    }
+    attempt(0);
+  }
+
+  function loadInventory(){
+    // the whole shop: admin_inventory covers capacity rows, catalog_list covers
+    // what a family can buy (coaching has no capacity row on purpose, #66) —
+    // show the union so a missing row reads as missing, not as silence
+    Promise.all([
+      sb.rpc('admin_inventory'),
+      sb.rpc('catalog_list', { p_ids: [] }).catch(function(){ return { data: [] }; })
+    ]).then(function(res){
+      var r = res[0];
+      if (!r || r.error || !r.data) {
+        console.error('admin_inventory', r && r.error);
+        return loadErr('inventory', (r && r.error && r.error.message) || 'no data');
+      }
+      lastLoad.inventory = Date.now();
+      INV = r.data;
+      INV.catalog = (res[1] && res[1].data) || [];
+      try { renderInventory(INV); buildCal(); }
+      catch (e) { console.error(e); loadErr('inventory', 'render: ' + e.message); }
+    });
+  }
+
+  var LOADERS = {
+    overview: function(){
+      rload('overview', 'admin_stats', function(d){ if (d) renderStats(d); });
+      rload('overview', 'admin_offering_fill', function(d){ renderFill(d || []); });
+    },
+    orders:    function(){ rload('orders', 'admin_orders', function(d){ renderOrders(d || []); }); },
+    balances:  function(){ rload('balances', 'admin_balances', function(d){ renderBalances(d || []); }); },
+    inventory: loadInventory,
+    calendar:  function(){ if (INV) buildCal(); else loadInventory(); },
+    campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
+    cashflow:  function(){ loadCashflow(); },
+    starpages: function(){ loadStars(); },
+    referrals: function(){ loadRefs(); },
+    credits:   function(){
+      if (!$('crExp').value) $('crExp').value = '2027-07-31';
+      loadCredits();
+    },
+    hiring:    function(){ loadHiring(); },
+    // insurance renders from the orders payload
+    insurance: function(){ rload('insurance', 'admin_orders', function(d){ renderOrders(d || []); }); }
+  };
+  function runLoader(tab){
+    var fn = LOADERS[tab];
+    if (fn) try { fn(); } catch (e) { console.error(tab, e); loadErr(tab, e.message); }
+  }
+  function activeTab(){
+    var a = document.querySelector('#nav a.on');
+    return a ? a.dataset.s : 'overview';
+  }
+
   document.querySelectorAll('#nav a').forEach(function(a){
     a.addEventListener('click', function(){
       document.querySelectorAll('#nav a').forEach(function(x){ x.classList.remove('on'); });
       document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
       a.classList.add('on'); $('s-' + a.dataset.s).classList.add('on');
-      // the forecast is cheap and always wanted — fetch it the first time the
-      // tab is opened rather than making Todd hunt for a Load button
-      if (a.dataset.s === 'cashflow' && !CF) loadCashflow();
-      if (a.dataset.s === 'starpages') loadStars();
-      if (a.dataset.s === 'referrals') loadRefs();
-      if (a.dataset.s === 'credits') {
-        // default the expiry to the end of the current season, which is what
-        // Todd has picked every time so far
-        if (!$('crExp').value) $('crExp').value = '2027-07-31';
-        // refetch on every visit — codes get minted outside this page too,
-        // and a once-per-load cache made those invisible until a hard refresh
-        loadCredits();
-      }
+      runLoader(a.dataset.s);
     });
   });
 
   var INV = null;
   // The hiring block below is its own IIFE, so the loader it defines is not in
-  // scope here. boot() called it anyway, which threw a ReferenceError on every
-  // single page load and meant the Hiring tab never populated. The block hands
-  // its loader out through this instead.
+  // scope here — boot() calling it directly threw a ReferenceError on every
+  // page load (#66). The block hands its loader out through this instead.
   var loadHiring = function(){};
+
+  // returning to a backgrounded dashboard reloads the tab you're looking at
+  // when the numbers are more than two minutes old
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState !== 'visible') return;
+    var t = activeTab();
+    if (!lastLoad[t] || Date.now() - lastLoad[t] > 120000) runLoader(t);
+  });
+
   function boot(){
-    sb.rpc('admin_stats').then(function(r){ if (r.data) renderStats(r.data); });
-    sb.rpc('admin_offering_fill').then(function(r){ renderFill(r.data || []); });
-    sb.rpc('admin_orders').then(function(r){ renderOrders(r.data || []); });
-    sb.rpc('admin_balances').then(function(r){ renderBalances(r.data || []); });
-    // The inventory page is meant to be the whole shop. `admin_inventory`
-    // reports what has an inventory row; `catalog_list` reports what a family
-    // can actually buy. Anything in the second and not the first used to just
-    // not appear here — coaching being the obvious case, since those rows are
-    // deliberately created with no capacity. Pull both and show the union, so
-    // a missing row is visible as a missing row rather than as silence.
-    Promise.all([
-      sb.rpc('admin_inventory'),
-      sb.rpc('catalog_list', { p_ids: [] }).catch(function(){ return { data: [] }; })
-    ]).then(function(res){
-      var inv = res[0] && res[0].data;
-      if (!inv) return;
-      INV = inv;
-      INV.catalog = (res[1] && res[1].data) || [];
-      renderInventory(INV);
-      buildCal();
-    });
-    sb.rpc('admin_campers').then(function(r){ CAMPERS = r.data || []; renderCampers(); });
-    loadHiring();
+    // stagger the startup so the heavy calls are not all racing one another
+    runLoader('overview');
+    setTimeout(function(){ runLoader('orders'); }, 200);
+    setTimeout(function(){ runLoader('balances'); }, 400);
+    setTimeout(function(){ runLoader('inventory'); }, 600);
+    setTimeout(function(){ runLoader('campers'); }, 900);
+    setTimeout(function(){ runLoader('hiring'); }, 1200);
   }
 
   var CAMPERS = [];
