@@ -1378,7 +1378,7 @@
           if (!r || r.cap == null) return '<td><span class="sub">not offered</span></td>';
           var taken = (r.booked||0) + (r.held||0);
           var pct = r.cap ? Math.round(taken/r.cap*100) : 0;
-          return '<td><b>' + Math.max(0, r.cap - taken) + '</b> <span class="sub">left / ' + r.cap + '</span>' +
+          return '<td><b>' + taken + '</b> <span class="sub">/ ' + r.cap + '</span>' +
             '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div></td>';
         }).join('') + '</tr>';
       }).join('');
@@ -1388,7 +1388,7 @@
 
     function bar(left, cap, taken){
       var pct = cap ? Math.round(taken/cap*100) : 0;
-      return '<b>' + left + '</b> <span class="sub">left / ' + cap + '</span>' +
+      return '<b>' + taken + '</b> <span class="sub">/ ' + cap + '</span>' +
         '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div>';
     }
 
