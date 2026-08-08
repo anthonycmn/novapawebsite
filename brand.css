@@ -48,6 +48,21 @@ h1 em, h2 em, h3 em, h4 em, .sc-h1 em, .pb-h em, .c1 em { font-style:normal !imp
 /* …and true code/number surfaces keep monospace */
 code, pre, .tok { font-family:ui-monospace,Menlo,monospace !important; }
 
-/* ── SHAPE LAW: buttons are pills, inputs are not */
+/* ── SHAPE LAW (Jason, Aug 8): buttons AND text fields are pills.
+   Rounded rectangles are reserved for the bigger cards. Textareas are
+   the one exception — a capsule around multi-line text reads wrong. */
 button, [class*="btn"], [class*="cta"] { border-radius:var(--r-pill) !important; }
-input, textarea, select { border-radius:var(--r-input) !important; }
+input, select { border-radius:var(--r-pill) !important; }
+textarea { border-radius:var(--r-input) !important; }
+
+/* ── NO GLOW, NO PULSE (Jason, Aug 8): gold halos, pulsing shadows, and
+   sheen sweeps are off-brand everywhere. Static gradients only. */
+.u-nav a.u-nav-cta, .u-nav-cta { animation:none !important; box-shadow:none !important; }
+.u-nav a.u-nav-cta::after, .u-nav-cta::after { animation:none !important; content:none !important; }
+.audition-banner, .audition-banner::after,
+.audition-banner-icon, .audition-banner-cta { animation:none !important; }
+.audition-banner, .audition-banner-cta { box-shadow:none !important; }
+.ab-pulse, .pulse, .cs-tag .pulse, .livepill .pulse { animation:none !important; box-shadow:none !important; }
+.nv-bot-pulse { display:none !important; }
+.audition-banner-title, .audition-banner-title span,
+h1, h2, h3, .t-hero, .t-header { text-shadow:none !important; }

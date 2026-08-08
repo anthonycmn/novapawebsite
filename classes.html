@@ -736,13 +736,18 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 </footer>
 
 <script>
+// Discipline filter has no visible control — it's set only by deep links
+// from other pages (?disc=dance|theatre|voice|musicaltheatre) and cleared
+// by the Clear button.
+var discFilter = '';
+
 function applyFilters() {
   var age = document.getElementById('fAge').value;
   var day = document.getElementById('fDay').value;
   var q = document.getElementById('searchInput').value.trim().toLowerCase();
   document.getElementById('fAge').classList.toggle('active', !!age);
   document.getElementById('fDay').classList.toggle('active', !!day);
-  document.getElementById('fClear').hidden = !(age || day || q);
+  document.getElementById('fClear').hidden = !(age || day || q || discFilter);
   document.getElementById('age-notice').classList.toggle('visible', !!age);
   document.querySelectorAll('.day-block').forEach(function(block) {
     var dayOk = !day || block.dataset.day === day;
@@ -751,6 +756,7 @@ function applyFilters() {
       var ages = (c.dataset.ages || '').split(' ');
       var ok = dayOk
         && (!age || ages.indexOf(age) !== -1)
+        && (!discFilter || (c.dataset.disc || '') === discFilter)
         && (!q || c.textContent.toLowerCase().indexOf(q) !== -1);
       c.classList.toggle('hidden', !ok);
       if (ok) any = true;
@@ -761,6 +767,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
+  discFilter = '';
   document.getElementById('fAge').value = '';
   document.getElementById('fDay').value = '';
   document.getElementById('searchInput').value = '';
@@ -783,11 +790,13 @@ function checkEmpty() {
     if (['mon','tue','wed','thu','sat'].indexOf(legacy) !== -1) day = legacy;
     else age = {ages5:'ages8', ages8:'ages8', ages12:'ages12', ages17:'ages17', 'adults-tab':'adult', adult:'adult'}[legacy] || '';
   }
+  var disc = params.get('disc') || '';
+  if (['dance','theatre','voice','musicaltheatre'].indexOf(disc) !== -1) discFilter = disc;
   var valid = function(sel, v) { return !!sel.querySelector('option[value="' + v + '"]'); };
   var fAge = document.getElementById('fAge'), fDay = document.getElementById('fDay');
   if (age && valid(fAge, age)) fAge.value = age;
   if (day && valid(fDay, day)) fDay.value = day;
-  if (fAge.value || fDay.value) {
+  if (fAge.value || fDay.value || discFilter) {
     applyFilters();
     setTimeout(function() {
       document.getElementById('classlist').scrollIntoView({ behavior: 'smooth', block: 'start' });

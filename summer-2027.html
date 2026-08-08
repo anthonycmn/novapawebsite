@@ -41,7 +41,6 @@
     .sc-tiles { gap: 2px; }
     .sc-tile { font-size: 19px; padding: 9px 5px; border-radius: 5px; }
     .sc-colon { font-size: 19px; padding-top: 9px; }
-    .sc-quote { font-size: 16px; }
   }
   @media (max-width: 385px) {
     .sc-tile { font-size: 16px; padding: 8px 4px; }
@@ -56,10 +55,11 @@
 
   .sc-reviews { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 60px 24px 34px; max-width: 860px; margin: 0 auto; }
   @media (max-width: 700px) { .sc-reviews { grid-template-columns: 1fr; } }
-  .sc-review { text-align: center; }
-  .sc-quote { font-size: 17px; font-weight: 500; color: rgba(255,255,255,0.88); line-height: 1.55; margin: 0 0 12px; }
-  .sc-stars { color: var(--gold3); font-size: 20px; letter-spacing: 4px; }
-  .sc-attr { font-size: 11.5px; font-weight: 600; color: var(--gold3); margin-top: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .sc-review { display: flex; flex-direction: column; text-align: left; background: rgba(22,43,82,0.45);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 20px 22px; box-shadow: 0 12px 32px rgba(0,0,0,0.32); }
+  .sc-quote { font-size: 13.5px; font-weight: 400; color: rgba(255,255,255,0.88); line-height: 1.62; margin: 0 0 15px; }
+  .sc-stars { order: -1; color: #F7D98F; font-size: 13px; letter-spacing: 3px; margin-bottom: 10px; }
+  .sc-attr { font-size: 13px; font-weight: 700; color: #fff; margin-top: auto; }
 
   .sc-photo { margin: 34px 0 0; }
   .sc-photo img { display: block; width: 100%; height: auto; }
@@ -193,13 +193,10 @@
 
 /* testimonials */
 .pb-quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
-.pb-quote{background:rgba(22,43,82,0.45);border:1px solid rgba(255,255,255,0.14);border-radius:13px;padding:22px 24px 20px;
-  position:relative;display:flex;flex-direction:column}
-.pb-quote::before{content:'\201C';position:absolute;top:6px;right:18px;
-  font-size:64px;line-height:1;color:rgba(247,217,143,0.16)}
-.pb-quote p{font-size:14px;line-height:1.76;color:rgba(255,255,255,0.88);position:relative;margin-bottom:14px}
-.pb-who{margin-top:auto;font-size:11.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
-  color:#F7D98F}
+.pb-quote{background:rgba(22,43,82,0.45);border:1px solid rgba(255,255,255,0.14);border-radius:16px;padding:20px 22px;
+  position:relative;display:flex;flex-direction:column;box-shadow:0 12px 32px rgba(0,0,0,0.32)}
+.pb-quote p{font-size:13.5px;line-height:1.62;color:rgba(255,255,255,0.88);position:relative;margin-bottom:15px}
+.pb-who{margin-top:auto;font-size:11.5px;color:rgba(255,255,255,0.6)}
 
 /* payment schedule */
 .pb-pay{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
@@ -291,9 +288,12 @@
   <h2 style="font-size:34px;margin:0 0 12px;color:#fff;">Broadway Bound Teens</h2>
   <p style="max-width:620px;margin:0 auto 32px;font-size:15px;font-weight:500;line-height:1.6;color:rgba(255,255,255,0.62);">A summer intensive for teens ages 13&ndash;18 &mdash; audition, rehearse, and open a full production of <em style="font-style:normal;color:#F7D98F;font-weight:600;">Mean Girls</em> on the mainstage, with four public performances.</p>
   <div style="max-width:640px;margin:0 auto;text-align:left;position:relative;overflow:hidden;border-radius:16px;border:1px solid rgba(255,255,255,0.14);background:rgba(22,43,82,0.45);">
-    <div style="background:#162B52;border-bottom:1px solid rgba(255,255,255,0.14);padding:26px 30px;text-align:center;">
+    <div style="aspect-ratio:1450/1030;overflow:hidden;background:#000;border-bottom:1px solid rgba(255,255,255,0.14);">
+      <img src="/register/img/meangirls.jpg" alt="Mean Girls &mdash; Broadway Bound Teens, Summer 2027" style="width:100%;height:100%;object-fit:cover;display:block;">
+    </div>
+    <div style="padding:22px 30px 0;text-align:center;">
       <div style="font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#F7D98F;margin-bottom:6px;">Broadway Bound Teens &middot; Summer 2027</div>
-      <div style="font-family:'Protest Strike',sans-serif;font-weight:400;font-size:44px;line-height:1;background:linear-gradient(135deg,#E8B84B,#F7D98F);-webkit-background-clip:text;background-clip:text;color:transparent;">Mean Girls</div>
+      <div style="font-family:'Protest Strike',sans-serif;font-weight:400;font-size:38px;line-height:1;color:#fff;">Mean Girls</div>
       <div style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.62);margin-top:8px;">Ages 13&ndash;18 &middot; Four Performances</div>
     </div>
     <div style="padding:26px 30px;">

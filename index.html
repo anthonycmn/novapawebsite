@@ -41,44 +41,8 @@
  background: var(--navy);
  color: #fff;
  overflow-x: hidden;
- cursor: none
  }
 
- .cursor {
- position: fixed;
- width: 13px;
- height: 13px;
- border-radius: 50%;
- background: var(--gold2);
- pointer-events: none;
- z-index: 9999;
- transform: translate(-50%, -50%);
- mix-blend-mode: difference
- }
-
- .cursor-ring {
- position: fixed;
- width: 38px;
- height: 38px;
- border-radius: 50%;
- border: 1.5px solid rgba(247,217,143, 0.4);
- pointer-events: none;
- z-index: 9998;
- transform: translate(-50%, -50%);
- transition: width 0.2s, height 0.2s
- }
-
- /* TOUCH-DEVICE CURSOR FIX
- Hide the custom cursor and restore the native one on devices without a
- fine pointer (phones and most tablets). The (hover: none) and
- (pointer: coarse) checks together cover the touch case reliably. */
- @media (hover: none), (pointer: coarse) {
- .cursor, .cursor-ring { display: none !important; }
- body, html, a, button, input, select, textarea, [role="button"],
- .scard, .pcard, .disc-card, .age-band, .btnp, .btns {
- cursor: auto !important;
- }
- }
 
 
  /* ── PRESS SUBMIT PROMO BANNER ── */
@@ -135,12 +99,6 @@
  height: 6px;
  border-radius: 50%;
  background: #F7D98F;
- box-shadow: 0 0 8px #F7D98F;
- animation: ps-promo-pulse 1.8s ease-in-out infinite
- }
- @keyframes ps-promo-pulse {
- 0%, 100% { opacity: 1; transform: scale(1) }
- 50% { opacity: 0.5; transform: scale(0.85) }
  }
  .ps-promo-title {
  font-family: 'DM Sans', sans-serif;
@@ -332,35 +290,33 @@
  .htestimonials:hover .htesti-track { animation-play-state: paused; }
  @keyframes htestiScroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
  .htesti-card {
- background: rgba(15, 30, 54, 0.55);
- -webkit-backdrop-filter: blur(12px);
- backdrop-filter: blur(12px);
- border: 1px solid rgba(247,217,143, 0.28);
+ background: rgba(22, 43, 82, 0.45);
+ border: 1px solid rgba(255, 255, 255, 0.14);
  border-radius: 16px;
- padding: 22px 24px;
+ padding: 20px 22px;
  margin-bottom: 18px;
  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
  }
- .htesti-stars { color: #F7D98F; font-size: 13px; letter-spacing: 3px; margin-bottom: 11px; }
+ .htesti-stars { color: #F7D98F; font-size: 13px; letter-spacing: 3px; margin-bottom: 10px; }
  .htesti-card blockquote {
- margin: 0 0 16px;
- font-size: 14px;
- line-height: 1.55;
- color: rgba(255, 255, 255, 0.92);
+ margin: 0 0 15px;
+ font-size: 13.5px;
+ line-height: 1.62;
+ color: rgba(255, 255, 255, 0.88);
  font-style: normal;
  }
- .htesti-card figcaption { display: flex; align-items: center; gap: 12px; }
+ .htesti-card figcaption { display: flex; align-items: center; gap: 11px; }
  .htesti-av {
- width: 40px; height: 40px;
+ width: 38px; height: 38px;
  border-radius: 50%;
- background: linear-gradient(180deg, #E8B84B, #C8892A);
- color: #1a1206;
- font-weight: 800; font-size: 13px;
+ background: #F7D98F;
+ color: #08111F;
+ font-weight: 700; font-size: 12.5px;
  display: flex; align-items: center; justify-content: center;
  flex-shrink: 0;
  }
- .htesti-who { display: flex; flex-direction: column; line-height: 1.35; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
- .htesti-who b { color: #fff; font-size: 13.5px; font-weight: 700; }
+ .htesti-who { display: flex; flex-direction: column; line-height: 1.35; font-size: 11.5px; color: rgba(255, 255, 255, 0.6); }
+ .htesti-who b { color: #fff; font-size: 13px; font-weight: 700; }
  @media (max-width: 1080px) {
  .hcontent { display: block; }
  .htestimonials { display: none; }
@@ -371,7 +327,7 @@
  display: inline-flex;
  align-items: center;
  gap: 10px;
- margin-bottom: 22px;
+ margin-bottom: 14px;
  animation: fadeUp 0.8s ease both
  }
 
@@ -394,9 +350,9 @@
  font-family: 'Protest Strike', sans-serif;
  font-size: clamp(38px, 5.4vw, 70px);
  font-weight: 400;
- line-height: 1.14;
+ line-height: 1.02;
  letter-spacing: -0.015em;
- margin-bottom: 20px;
+ margin-bottom: 16px;
  max-width: 16em;
  animation: fadeUp 0.8s 0.1s ease both
  }
@@ -420,7 +376,8 @@
  font-style: normal;
  font-size: 0.42em;
  letter-spacing: 0.04em;
- margin-top: 10px
+ line-height: 1.3;
+ margin-top: 8px
  }
 
  .htagline {
@@ -463,9 +420,9 @@
  font-size: 16px;
  font-weight: 300;
  color: rgba(255, 255, 255, 0.55);
- line-height: 1.8;
+ line-height: 1.7;
  max-width: 500px;
- margin-bottom: 40px;
+ margin-bottom: 28px;
  animation: fadeUp 0.8s 0.2s ease both
  }
 
@@ -565,20 +522,9 @@
  /* ── TICKER ── */
  .ticker {
  background: linear-gradient(90deg, var(--gold), var(--gold2) 50%, var(--gold));
- background-size: 200%;
- animation: shimmer 4s linear infinite;
  overflow: hidden
  }
 
- @keyframes shimmer {
- 0% {
- background-position: 200% 0
- }
-
- 100% {
- background-position: -200% 0
- }
- }
 
  .ticker-inner {
  display: flex;
@@ -720,7 +666,7 @@
  border: 1px solid rgba(255, 255, 255, 0.14);
  border-radius: 16px;
  overflow: hidden;
- cursor: none;
+ cursor: pointer;
  transition: transform 0.35s, box-shadow 0.35s;
  text-decoration: none;
  display: block;
@@ -730,7 +676,7 @@
 
  .scard:hover {
  transform: translateY(-10px) scale(1.02);
- box-shadow: 0 28px 64px rgba(247,217,143, 0.28)
+ box-shadow: 0 28px 64px rgba(0, 0, 0, 0.5)
  }
 
  .sposter {
@@ -858,7 +804,7 @@
  border: 1.5px solid rgba(247,217,143, 0.3);
  background: transparent;
  color: var(--gold2);
- cursor: none;
+ cursor: pointer;
  display: flex;
  align-items: center;
  justify-content: center;
@@ -893,7 +839,7 @@
  border-radius: 50%;
  background: rgba(255, 255, 255, 0.15);
  transition: width 0.3s, background 0.3s;
- cursor: none
+ cursor: pointer;
  }
 
  .dot.on {
@@ -947,7 +893,7 @@
  padding: 20px 18px;
  text-align: center;
  transition: background 0.2s, border-color 0.2s, transform 0.2s;
- cursor: none;
+ cursor: pointer;
  text-decoration: none;
  display: block;
  color: inherit
@@ -994,7 +940,7 @@
  text-decoration: none;
  color: inherit;
  transition: background 0.2s, border-color 0.2s;
- cursor: none
+ cursor: pointer;
  }
 
  .age-band:hover {
@@ -1071,7 +1017,7 @@
  overflow: hidden;
  border: 1px solid rgba(255, 255, 255, 0.14);
  text-decoration: none;
- cursor: none;
+ cursor: pointer;
  transition: border-color 0.3s ease, transform 0.3s ease
  }
 
@@ -1146,26 +1092,27 @@
  background: rgba(22, 43, 82, 0.45);
  border: 1px solid rgba(255, 255, 255, 0.14);
  border-radius: 16px;
- padding: 28px 24px;
+ padding: 20px 22px;
+ box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
  position: relative
  }
 
  .stars {
  display: flex;
  gap: 3px;
- margin-bottom: 13px
+ margin-bottom: 10px
  }
 
  .stars span {
- color: var(--gold2);
+ color: #F7D98F;
  font-size: 13px
  }
 
  .prt {
- font-size: 13px;
+ font-size: 13.5px;
  color: rgba(255, 255, 255, 0.88);
- line-height: 1.8;
- margin-bottom: 18px
+ line-height: 1.62;
+ margin-bottom: 15px
  }
 
  .pra {
@@ -1175,28 +1122,28 @@
  }
 
  .prav {
- width: 36px;
- height: 36px;
+ width: 38px;
+ height: 38px;
  border-radius: 50%;
- background: linear-gradient(180deg, #E8B84B, #C8892A);
+ background: #F7D98F;
  display: flex;
  align-items: center;
  justify-content: center;
- font-size: 12px;
+ font-size: 12.5px;
  font-weight: 700;
- color: #1a1206;
+ color: #08111F;
  flex-shrink: 0
  }
 
  .prn {
- font-size: 12.5px;
- font-weight: 600;
+ font-size: 13px;
+ font-weight: 700;
  color: #fff
  }
 
  .prr {
- font-size: 10.5px;
- color: rgba(255, 255, 255, 0.28);
+ font-size: 11.5px;
+ color: rgba(255, 255, 255, 0.6);
  margin-top: 1px
  }
 
@@ -1346,21 +1293,9 @@
  height: 7px;
  border-radius: 50%;
  background: var(--gold2);
- animation: pulse 1.8s ease-in-out infinite
+
  }
 
- @keyframes pulse {
-
- 0%,
- 100% {
- opacity: 1;
- transform: scale(1)
- }
-
- 50% {
- opacity: 0.3;
- transform: scale(0.6)
- }
  }
 
  .ctaacts {
@@ -1380,7 +1315,7 @@
  /* ── SECTION BACKGROUNDS ── */
  /* Shows: cream light surface (brand light pages) */
  .shows {
- background: #F5F2EC
+ background: linear-gradient(180deg, #08111F 0%, #0F1E36 100%)
  }
 
  /* Classes: rich midnight teal */
@@ -1420,62 +1355,13 @@
  z-index: 2
  }
 
- /* Shows on white: dark text overrides */
- .shows .sectag {
- color: #08111F
- }
-
- .shows .sectitle {
- color: #08111F
- }
-
- .shows .secdesc {
- color: #414b5c
- }
-
- .shows .heline {
- background: #7A5010
- }
-
- .shows .seceye .sectag {
- color: #08111F
- }
-
- .shows-hdr .seceye .sectag {
- color: #7A5010
- }
-
- .shows-hdr .sectitle {
- color: #0F1E36
- }
-
- .shows-hdr .secdesc {
- color: #414b5c
- }
-
- .shows .carbtn {
- border-color: rgba(8, 17, 31, 0.2);
- color: #08111F
- }
-
- .shows .carbtn:hover {
- background: rgba(8, 17, 31, 0.08)
- }
-
- .shows .dot {
- background: rgba(8, 17, 31, 0.15)
- }
-
- .shows .dot.on {
- background: var(--gold)
- }
 
  .shows .track-outer::before {
- background: linear-gradient(90deg, #F5F2EC, transparent)
+ background: linear-gradient(90deg, rgba(8,17,31,0.96), transparent)
  }
 
  .shows .track-outer::after {
- background: linear-gradient(-90deg, #F5F2EC, transparent)
+ background: linear-gradient(-90deg, rgba(8,17,31,0.96), transparent)
  }
 
  /* Programs on cream: dark text overrides */
@@ -1563,11 +1449,11 @@
 
  .contact-left .contact-tag {
  font-family: 'DM Sans', sans-serif;
- font-size: 10px;
+ font-size: 11px;
  font-weight: 700;
- letter-spacing: 0.3em;
+ letter-spacing: 0.22em;
  text-transform: uppercase;
- color: var(--gold2);
+ color: #7A5010;
  display: flex;
  align-items: center;
  gap: 10px;
@@ -1578,7 +1464,7 @@
  content: '';
  width: 28px;
  height: 1.5px;
- background: var(--gold);
+ background: #7A5010;
  flex-shrink: 0
  }
 
@@ -1588,18 +1474,18 @@
  font-weight: 400;
  line-height: 1.05;
  letter-spacing: 0.01em;
- color: #fff;
+ color: #0F1E36;
  margin-bottom: 18px
  }
 
  .contact-left h2 em {
  font-style: normal;
- color: var(--gold2)
+ color: #7A5010
  }
 
  .contact-left p {
  font-size: 15px;
- color: rgba(255, 255, 255, 0.45);
+ color: #414b5c;
  line-height: 1.8;
  font-weight: 300;
  margin-bottom: 40px;
@@ -1648,13 +1534,13 @@
  font-size: 9px;
  letter-spacing: 0.2em;
  text-transform: uppercase;
- color: rgba(255, 255, 255, 0.3);
+ color: rgba(15, 30, 54, 0.55);
  margin-bottom: 3px
  }
 
  .cii-value {
  font-size: 14px;
- color: rgba(255, 255, 255, 0.75);
+ color: #0F1E36;
  font-weight: 400;
  transition: color 0.2s
  }
@@ -2795,10 +2681,8 @@
  border-radius: 50%;
  background: var(--gold2);
  box-shadow: 0 0 0 0 rgba(247,217,143,0.7);
- animation: csPulse 2s infinite;
+
  }
- @keyframes csPulse {
- 0% { box-shadow: 0 0 0 0 rgba(247,217,143,0.7); }
  70% { box-shadow: 0 0 0 12px rgba(247,217,143,0); }
  100% { box-shadow: 0 0 0 0 rgba(247,217,143,0); }
  }
@@ -2931,7 +2815,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
  padding: 8px 18px !important;
  border-radius: 100px !important;
  transition: transform 0.2s ease, border-color 0.2s ease;
- animation: uctaShift 5s linear infinite, uctaPulse 2.6s ease-in-out infinite;
+
 }
 .u-nav a.u-nav-cta::after{
  content:"";
@@ -2939,7 +2823,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
  width:45%; height:100%;
  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.8), transparent);
  transform: skewX(-20deg);
- animation: uctaSheen 3.4s ease-in-out infinite;
+ display:none;
  pointer-events:none;
 }
 .u-nav a.u-nav-cta:hover{
@@ -2948,8 +2832,6 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
  border-color:#FFFFFF !important;
 }
 @keyframes uctaShift{ 0%{background-position:0 0} 100%{background-position:260% 0} }
-@keyframes uctaPulse{
- 0%,100%{ box-shadow:0 0 0 0 rgba(247,217,143,0.50) }
  50%{ box-shadow:0 0 20px 5px rgba(247,217,143,0.32) }
 }
 @keyframes uctaSheen{ 0%{left:-70%} 55%,100%{left:140%} }
@@ -2993,6 +2875,14 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
 .heyebrow .hetext { font-weight:700 !important; letter-spacing:0.22em !important; color:#F7D98F !important; font-size:11px !important; text-transform:uppercase; }
 .htagline .tw { font-weight:700 !important; letter-spacing:0.22em !important; font-size:12px !important; color:rgba(255,255,255,0.44) !important; text-transform:uppercase; }
 .htagline .tw.b { color:#F7D98F !important; }
+/* Font Law for div-based titles: brand.css only imposes Protest Strike on
+ h1-h5/.t-title, and its universal DM Sans rule would win over the page
+ styles above it. These display titles speak Protest Strike too. */
+.pname, .stitle, .disc-name, .age-band-label, .form-title,
+.audition-banner-title, .loccard strong {
+ font-family:'Protest Strike',sans-serif !important;
+ font-weight:400 !important;
+}
 </style>
 </head>
  <body class="has-u-nav">
@@ -3019,10 +2909,6 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  </div>
  </div>
  </a>
- <div class="cursor" id="cur">
- </div>
- <div class="cursor-ring" id="curRing">
- </div>
  <!-- ── HERO ── -->
  <section class="hero">
  <div class="hphoto">
@@ -3102,11 +2988,9 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  background: linear-gradient(135deg, rgba(22,43,82,0.94) 0%, rgba(15,30,54,0.94) 100%);
  border: 1.5px solid rgba(247,217,143,0.5);
  overflow: hidden;
- animation: fadeUp 0.8s 0.25s ease both, auditionGlow 3.2s ease-in-out infinite;
+ animation: fadeUp 0.8s 0.25s ease both;
  transition: transform 0.25s ease, border-color 0.25s ease;
  }
- @keyframes auditionGlow {
- 0%, 100% { box-shadow: 0 0 0 1px rgba(247,217,143,0.12), 0 18px 50px rgba(0,0,0,0.45), 0 0 46px rgba(247,217,143,0.14); }
  50% { box-shadow: 0 0 0 1px rgba(247,217,143,0.30), 0 18px 50px rgba(0,0,0,0.45), 0 0 84px rgba(247,217,143,0.34); }
  }
  .hero-audition:hover {
@@ -3138,7 +3022,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  height: 9px;
  border-radius: 50%;
  background: var(--gold2);
- animation: pulse 2s infinite;
+
  }
  .hero-audition-main {
  display: flex;
@@ -3327,10 +3211,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  background: linear-gradient(135deg, #0F1E36 0%, #1a3a6b 45%, #0F1E36 100%);
  border-top: 2px solid rgba(247,217,143,0.55);
  border-bottom: 2px solid rgba(247,217,143,0.55);
- animation: abGlow 3s ease-in-out infinite;
  }
- @keyframes abGlow {
- 0%, 100% { box-shadow: inset 0 0 0 rgba(247,217,143,0), 0 4px 18px rgba(247,217,143,0.10); }
  50% { box-shadow: inset 0 0 40px rgba(247,217,143,0.22), 0 8px 34px rgba(247,217,143,0.28); }
  }
  .audition-banner::after {
@@ -3342,7 +3223,6 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  height: 100%;
  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.20), transparent);
  transform: skewX(-20deg);
- animation: abShimmer 4.5s ease-in-out infinite;
  pointer-events: none;
  z-index: 1;
  }
@@ -3361,10 +3241,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  border-radius: 50%;
  background: #F7D98F;
  flex-shrink: 0;
- animation: abPulse 1.4s ease-out infinite;
  }
- @keyframes abPulse {
- 0% { box-shadow: 0 0 0 0 rgba(247,217,143,0.75); }
  70% { box-shadow: 0 0 0 11px rgba(247,217,143,0); }
  100% { box-shadow: 0 0 0 0 rgba(247,217,143,0); }
  }
@@ -3387,14 +3264,11 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  .audition-banner-cta {
  font-size: 14px;
  padding: 14px 30px;
- animation: abCta 2.2s ease-in-out infinite;
+
  }
- @keyframes abCta {
- 0%, 100% { box-shadow: 0 4px 14px rgba(247,217,143,0.35); }
  50% { box-shadow: 0 6px 28px rgba(247,217,143,0.7); }
  }
  .audition-banner-icon {
- animation: abFloat 3s ease-in-out infinite;
  }
  @keyframes abFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
  @media (max-width: 640px) {
@@ -3638,7 +3512,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  </div>
  <h2 class="sectitle reveal rd1">
  Upcoming
- <em style="font-style:normal;color:#7A5010">
+ <em style="font-style:normal;color:#F7D98F">
  Shows
  </em>
  </h2>
@@ -4032,7 +3906,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  .promo-band .secdesc { color: rgba(255,255,255,0.6); max-width: 640px; }
  .promo-band-dot {
  width: 9px; height: 9px; border-radius: 50%;
- background: var(--gold2); animation: pulse 2s infinite;
+ background: var(--gold2);
  }
  .promo-band-cta { flex-shrink: 0; }
  @media (max-width: 760px) {
@@ -4728,41 +4602,6 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  </div>
 </footer>
  <script>
- // CURSOR — skip on touch devices (no mouse pointer)
- const isTouchDevice = window.matchMedia('(hover: none), (pointer: coarse)').matches;
- const cur = document.getElementById('cur'),
- ring = document.getElementById('curRing');
- if (isTouchDevice) {
- // Touch device: remove the floating cursor elements entirely
- if (cur) cur.remove();
- if (ring) ring.remove();
- } else {
- let mx = 0, my = 0, rx = 0, ry = 0;
- document.addEventListener('mousemove', e => {
- mx = e.clientX;
- my = e.clientY;
- cur.style.left = mx + 'px';
- cur.style.top = my + 'px';
- });
- (function loop() {
- rx += (mx - rx) * 0.14;
- ry += (my - ry) * 0.14;
- ring.style.left = rx + 'px';
- ring.style.top = ry + 'px';
- requestAnimationFrame(loop);
- })();
- document.querySelectorAll('a,button').forEach(el => {
- el.addEventListener('mouseenter', () => {
- ring.style.width = '58px';
- ring.style.height = '58px';
- });
- el.addEventListener('mouseleave', () => {
- ring.style.width = '38px';
- ring.style.height = '38px';
- });
- });
- }
-
  // NAV: handled by .u-nav fixed background
 
  // PARTICLES
@@ -4933,11 +4772,8 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  inset: -4px;
  border-radius: 50%;
  border: 2px solid rgba(247,217,143, 0.5);
- animation: nvBotPulse 2.2s ease-out infinite;
  pointer-events: none;
  }
- @keyframes nvBotPulse {
- 0% { transform: scale(0.95); opacity: 0.7; }
  100% { transform: scale(1.35); opacity: 0; }
  }
  /* Notification dot for first-time visitors */
