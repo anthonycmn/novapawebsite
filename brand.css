@@ -22,7 +22,8 @@
 *, *::before, *::after { font-family:'DM Sans',sans-serif !important; }
 
 /* …except headers, which are Protest Strike (single weight, no italic) */
-h1, h2, h3, .sc-h1, .pb-h, .t-hero, .t-header {
+h1, h2, h3, .sc-h1, .pb-h, .t-hero, .t-header,
+h1 *, h2 *, h3 *, .sc-h1 *, .pb-h *, .t-hero *, .t-header * {
   font-family:'Protest Strike',sans-serif !important;
   font-weight:400 !important;
   letter-spacing:0.01em;
