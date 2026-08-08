@@ -43,8 +43,8 @@
 .audition-banner-text{ flex:1; min-width:0; }
 .audition-banner-eyebrow{
   display:inline-flex; align-items:center; gap:9px;
-  font-family:'Cinzel',serif; font-size:12px; letter-spacing:2px;
-  text-transform:uppercase; color:#F7D98F; margin-bottom:4px; font-weight:600;
+  font-family:'DM Sans',sans-serif; font-size:11px; letter-spacing:0.22em;
+  text-transform:uppercase; color:#F7D98F; margin-bottom:4px; font-weight:700;
 }
 .ab-pulse{
   width:9px; height:9px; border-radius:50%; background:#ff4d4d; flex-shrink:0;
@@ -56,16 +56,16 @@
   100%{ box-shadow:0 0 0 0 rgba(255,77,77,0); }
 }
 .audition-banner-title{
-  font-family:'Playfair Display',serif; font-size:29px; font-weight:800; color:#fff;
-  line-height:1.25; margin-bottom:4px; text-shadow:0 2px 12px rgba(0,0,0,0.35);
+  font-family:'Protest Strike',sans-serif; font-size:29px; font-weight:400; color:#fff;
+  line-height:1.25; margin-bottom:4px; letter-spacing:0.01em;
 }
-.audition-banner-title span{ color:#F7D98F; font-style:italic; text-shadow:0 0 18px rgba(247,217,143,0.55); }
+.audition-banner-title span{ color:#F7D98F; font-style:normal; }
 .audition-banner-sub{ font-size:14.5px; color:rgba(255,255,255,0.82); line-height:1.4; font-weight:500; margin-top:3px; }
 .audition-banner-cta{
   flex-shrink:0; display:inline-flex; align-items:center; gap:10px; padding:14px 30px;
-  background:linear-gradient(135deg,#C8892A 0%,#E8B84B 100%); color:#08111F;
-  font-family:'Cinzel',serif; font-weight:700; font-size:14px; letter-spacing:1.5px;
-  text-transform:uppercase; border-radius:6px;
+  background:linear-gradient(180deg,#E8B84B,#C8892A); color:#08111F;
+  font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.1em;
+  text-transform:uppercase; border-radius:100px;
   transition:transform 0.25s ease, box-shadow 0.25s ease;
   box-shadow:0 4px 14px rgba(200,137,42,0.3); animation:abCta 2.2s ease-in-out infinite;
 }

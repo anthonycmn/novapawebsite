@@ -65,6 +65,7 @@
   .t-hero { font-family:'Protest Strike',sans-serif; font-weight:400; font-size:46px; line-height:1.06; color:#fff; }
   .t-hero .g { background:var(--gold-grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .t-header { font-family:'Protest Strike',sans-serif; font-weight:400; font-size:28px; color:#fff; }
+  .t-title { font-family:'Protest Strike',sans-serif; font-weight:400; font-size:21px; letter-spacing:0.02em; color:rgba(255,255,255,0.92); }
   .t-header .g { color:var(--gold-3); }
   .t-subheader { font-size:15px; font-weight:500; color:var(--ink-dim); }
   .t-subheader .g { color:var(--gold-3); }
@@ -118,7 +119,7 @@
     <p class="secnote">Two fonts. Each has exactly one job. A third font is a bug.</p>
     <table class="audit">
       <tr><th>font</th><th>its one job</th><th>verdict</th></tr>
-      <tr><td><b style="font-family:\'Protest Strike\',sans-serif;font-size:16px">Protest Strike</b></td><td>ALL headers &mdash; heroes, section titles, anything that shouts</td><td class="good">THE VOICE</td></tr>
+      <tr><td><b style="font-family:\'Protest Strike\',sans-serif;font-size:16px">Protest Strike</b></td><td>ALL display text &mdash; heroes, section titles, card and option titles. If it names a thing, it speaks Protest Strike. Bold DM Sans is never a title.</td><td class="good">THE VOICE</td></tr>
       <tr><td><b>DM Sans</b></td><td>everything else &mdash; subheaders, body, buttons, labels, nav, numbers</td><td class="good">EVERYTHING ELSE</td></tr>
       <tr><td><b style="opacity:.55">Cormorant Garamond &middot; Cinzel &middot; Playfair &middot; Inter &middot; Georgia</b></td><td>the old guard, across ~27 pages</td><td class="bad">ALL REMOVED (Georgia survives only inside HTML emails)</td></tr>
     </table>
@@ -130,6 +131,11 @@
       <div class="t-hero">PERFORMING ARTS FOR <span class="g">EVERY STAGE</span> OF THE JOURNEY</div></div>
     <div class="spec"><div class="label">SECTION HEADER &middot; Protest Strike &middot; 26-32px &middot; gold-3 accent, no gradient &middot; <span class="tok">t-header</span></div>
       <div class="t-header">QUESTIONS PARENTS <span class="g">ACTUALLY ASK</span></div></div>
+    <div class="spec"><div class="label">CARD TITLE &middot; Protest Strike &middot; 18-24px &middot; 92% white, one step quieter than headers &middot; <span class="tok">t-title</span></div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px"><div class="t-title">RETURNING</div><div class="t-sub" style="margin-top:4px">We have your family on file</div></div>
+        <div style="flex:1;min-width:160px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px"><div class="t-title">NEW</div><div class="t-sub" style="margin-top:4px">First summer with us</div></div>
+      </div></div>
     <div class="spec" style="border-color:rgba(247,217,143,0.35)"><div class="label">SUBHEADER &middot; DM Sans 500 &middot; 14-16px sentence case &middot; ink-dim with max ONE gold-3 phrase &middot; <span class="tok">t-subheader</span></div>
       <div class="t-header" style="margin-bottom:4px">BROADWAY BOUND <span class="g">2027</span></div>
       <div class="t-subheader">Three shows, one unforgettable summer &mdash; <span class="g">ages 5 to 15</span></div></div>

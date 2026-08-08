@@ -21,14 +21,29 @@
 /* ── THE FONT LAW: two fonts, imposed. DM Sans everywhere… */
 *, *::before, *::after { font-family:'DM Sans',sans-serif !important; }
 
-/* …except headers, which are Protest Strike (single weight, no italic) */
-h1, h2, h3, .sc-h1, .pb-h, .t-hero, .t-header,
-h1 *, h2 *, h3 *, .sc-h1 *, .pb-h *, .t-hero *, .t-header * {
+/* …except display text, which is Protest Strike (single weight, no italic).
+   Rule (Jason, Aug 8): anything that is not a subheader/body/button speaks
+   Protest Strike — page headers AND card/option titles alike. */
+h1, h2, h3, .sc-h1, .pb-h, .t-hero, .t-header, .audition-banner-title,
+h1 *, h2 *, h3 *, .sc-h1 *, .pb-h *, .t-hero *, .t-header *, .audition-banner-title * {
   font-family:'Protest Strike',sans-serif !important;
   font-weight:400 !important;
   letter-spacing:0.01em;
 }
-h1 em, h2 em, h3 em, .sc-h1 em, .pb-h em { font-style:normal !important; }
+/* mid-level titles: same voice, one step quieter than pure white.
+   .t-title is the go-forward utility; the rest are legacy title classes
+   (register flow card/show/coach titles) swept under the same law. */
+h4, h5, .t-title, .c1, .show-card .t, .showb .t, .cc-nm,
+h4 *, h5 *, .t-title *, .c1 * {
+  font-family:'Protest Strike',sans-serif !important;
+  font-weight:400 !important;
+  letter-spacing:0.02em;
+}
+/* color on the element only (never descendants) so gold accents survive */
+h4, h5, .t-title, .c1, .show-card .t, .showb .t, .cc-nm {
+  color:rgba(255,255,255,0.92) !important;
+}
+h1 em, h2 em, h3 em, h4 em, .sc-h1 em, .pb-h em, .c1 em { font-style:normal !important; }
 
 /* …and true code/number surfaces keep monospace */
 code, pre, .tok { font-family:ui-monospace,Menlo,monospace !important; }
