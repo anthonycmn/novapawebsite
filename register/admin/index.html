@@ -403,8 +403,10 @@
     // what a family can buy (coaching has no capacity row on purpose, #66) —
     // show the union so a missing row reads as missing, not as silence
     Promise.all([
-      sb.rpc('admin_inventory'),
-      sb.rpc('catalog_list', { p_ids: [] }).catch(function(){ return { data: [] }; })
+      Promise.resolve(sb.rpc('admin_inventory')),
+      // rpc() returns a thenable builder, not a Promise — .catch does not
+      // exist on it until it is wrapped (this crashed #66's version)
+      Promise.resolve(sb.rpc('catalog_list', { p_ids: [] })).catch(function(){ return { data: [] }; })
     ]).then(function(res){
       var r = res[0];
       if (!r || r.error || !r.data) {
