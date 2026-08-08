@@ -29,7 +29,7 @@
     --ink-faint:rgba(255,255,255,0.44);
     --ink-navy:#0F1E36; --ink-slate:#414b5c;
     --ok:#5BC98C; --danger:#E8654B;
-    --r-card:16px; --r-btn:12px; --r-pill:100px;
+    --r-card:16px; --r-input:12px; --r-pill:100px;  /* ALL buttons are pills; only inputs keep the 12px soft rect */
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'DM Sans',sans-serif; color:var(--ink); background:var(--navy-0); line-height:1.6; }
@@ -73,7 +73,7 @@
   .t-sub { font-size:13.5px; color:var(--ink-dim); max-width:620px; }
 
   .comps { display:flex; flex-wrap:wrap; gap:18px; align-items:center; }
-  .btn-primary { display:inline-flex; align-items:center; gap:8px; border:0; cursor:pointer; background:var(--gold-grad-deep); color:#1a1206; font-family:'DM Sans',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.04em; padding:14px 28px; border-radius:var(--r-btn); }
+  .btn-primary { display:inline-flex; align-items:center; gap:8px; border:0; cursor:pointer; background:var(--gold-grad-deep); color:#1a1206; font-family:'DM Sans',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.04em; padding:14px 30px; border-radius:var(--r-pill); }
   .btn-cta { display:inline-flex; align-items:center; gap:8px; cursor:pointer; text-decoration:none; background:rgba(247,217,143,0.12); border:1px solid rgba(247,217,143,0.4); color:var(--gold-3); font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:10px 22px; border-radius:var(--r-pill); }
   .btn-ghost { background:none; border:0; color:var(--ink-dim); font-size:14px; text-decoration:underline; cursor:pointer; font-family:inherit; }
   .link { color:var(--gold-3); font-weight:600; text-decoration:none; border-bottom:1px solid rgba(247,217,143,0.35); }
@@ -86,7 +86,7 @@
   details.demoq summary::after { content:'+'; position:absolute; right:18px; top:50%; margin-top:-13px; color:var(--gold-3); font-size:20px; transition:transform .2s; }
   details.demoq[open] summary::after { transform:rotate(45deg); }
   details.demoq div { padding:0 18px 15px; font-size:13.5px; color:var(--ink-dim); }
-  .input-demo { background:rgba(8,17,31,0.6); border:1px solid var(--line); border-radius:var(--r-btn); color:#fff; font-family:inherit; font-size:15px; padding:13px 16px; width:260px; outline:none; }
+  .input-demo { background:rgba(8,17,31,0.6); border:1px solid var(--line); border-radius:var(--r-input); color:#fff; font-family:inherit; font-size:15px; padding:13px 16px; width:260px; outline:none; }
   .input-demo:focus { border-color:var(--gold-3); }
   .tag-demo { font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; background:rgba(247,217,143,0.1); border:1px solid rgba(247,217,143,0.4); color:var(--gold-3); border-radius:var(--r-pill); padding:5px 13px; }
   .stat-demo { background:var(--navy-1); border:1px solid var(--line); border-radius:var(--r-card); padding:18px 24px; text-align:center; }
@@ -234,6 +234,7 @@
       <div class="rule"><b>Never pure white body text</b>Body 88% white, secondary 62%. Pure #fff belongs to headers.</div>
       <div class="rule"><b>Dark text never sits on dark</b>Every component declares its own colors &mdash; no inherited surprises.</div>
       <div class="rule"><b>Counts are plain numbers</b>"24 / 25" &mdash; no words.</div>
+      <div class="rule"><b>Buttons are pills, inputs are not</b>Every button is fully rounded (r-pill). Text inputs keep the 12px soft rect &mdash; the shape difference separates "type here" from "press here".</div>
       <div class="rule"><b>Emoji-free UI, photography over decoration</b>Line icons in gold-3 or ink. Navy overlay 60-80% over photos.</div>
     </div>
   </section>
