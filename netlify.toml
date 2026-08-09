@@ -84,3 +84,23 @@
   to = "/register/"
   status = 301
   force = true
+
+# The Teen Conservatory audition page advertised in-person auditions on
+# June 13 & 14 2026 in the present tense — "sign up for your time slot",
+# "submit a video by June 14". Those dates are two months gone and the
+# season's casts are set. Nothing on the site linked to it, but it stayed
+# live and indexable, so a family searching "novapa auditions" landed on a
+# call that had already closed. Send them to the programme page instead.
+# The file itself is kept, unlinked, as the template for next season's
+# audition call (CJ, 9 Aug 2026).
+[[redirects]]
+  from = "/teen_conservatory_auditions"
+  to = "/teen-conservatory.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/teen_conservatory_auditions.html"
+  to = "/teen-conservatory.html"
+  status = 301
+  force = true
