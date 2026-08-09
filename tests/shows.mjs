@@ -183,7 +183,12 @@ for (const [file, keys] of Object.entries(PAGE_BLOCKS)) {
     (JSON.stringify(onPage) === JSON.stringify(want) ? ''
       : '\n        page: ' + onPage.join(' · ') + '\n        want: ' + want.join(' · ')));
   A(html.includes(S.houseOpensNote), file + ' carries the house-opens note');
-  A(!/Doors open 30 minutes/.test(html), file + ' has no stale doors-open line');
+  // Case-insensitive on purpose: this check used to be anchored on a capital
+  // D and sailed straight past hadestown.html's lowercase "doors open 30
+  // minutes", which sat under a full list of curtain times for weeks.
+  A(!/doors open \d+ minutes/i.test(html), file + ' has no stale doors-open line');
+  A(!/[Cc]urtain times are released when tickets go on sale/.test(html),
+    file + ' does not claim its curtain times are unknown while printing them');
 }
 
 // The run we publish is how long the audience sits, which is not the slot we
@@ -274,33 +279,35 @@ for (const [band, text] of [['5-9', 'FRI 5:00 PM &middot; SAT 11:00 AM'],
 A(/replace\(\/SAT\/g/.test(regJs),
   'the SAT swap is global, so the 12–15 band does not print a literal "SAT"');
 
-// Every index card carries its curtain days AND its curtain times. A card that
-// prints only the dates sends a family to the box office on the right day at
-// the wrong hour, so the times are not decoration.
+// A show card says when the show is, in months — "October – November 2026" —
+// and nothing finer. The dates and curtain times live on the show's own page,
+// where someone buying a ticket is actually looking. (CJ, 9 Aug 2026.)
 console.log('\nINDEX CARDS');
 const idx = plain(read('index.html'));
 const P = (k) => S.byKey(k).performances;
-const part = (label, k) => ({ label, performances: P(k) });
 const CARDS = [
   ['Dear Evan Hansen', P('deh')],
   ['Sweeney Todd', P('sweeney')],
   ['A Christmas Carol', P('carol')],
   ['Frozen Kids', P('frozen-kids')],
-  ['Frozen', [part('JR.', 'frozen-jr'), part('Teen', 'frozen-teen')]],
+  ['Frozen', [...P('frozen-jr'), ...P('frozen-teen')]],
   ['Hadestown', P('hadestown')],
-  ['The Little Mermaid',
-    [part('KIDS', 'mermaid-kids'), part('JR.', 'mermaid-jr'), part('Teen', 'mermaid-teen')]],
+  ['The Little Mermaid', [...P('mermaid-kids'), ...P('mermaid-jr'), ...P('mermaid-teen')]],
   ['Mean Girls', P('mean-girls')],
   ['How to Train Your Dragon Jr.', P('httyd')],
   ['Charlie and the Chocolate Factory', P('charlie')],
   ['Trolls Jr.', P('trolls')],
 ];
-A((read('index.html').match(/class="sperf"/g) || []).length === CARDS.length,
-  'all eleven show cards carry a performance line');
-for (const [title, parts] of CARDS) {
-  const line = S.cardLine(parts);
-  A(idx.includes(line), 'the ' + title + ' card reads "' + line + '"');
-}
+A(!/class="sperf"/.test(read('index.html')),
+  'no show card lists individual performances any more');
+const chips = [...read('index.html').matchAll(/<div class="sdate">\s*([\s\S]*?)\s*<\/div>/g)]
+  .map((m) => plain(m[1]).trim());
+A(chips.length === CARDS.length, 'all eleven show cards carry a date chip');
+CARDS.forEach(([title, perfs], i) => {
+  const want = S.monthRange(perfs);
+  A(chips[i] === want, 'the ' + title + ' card reads "' + want + '"' +
+    (chips[i] === want ? '' : ' — got "' + chips[i] + '"'));
+});
 // The bleed the cards used to have was structural: .sbody was absolutely
 // positioned over a fixed-height poster inside overflow:hidden, so a longer
 // line rode up over the artwork and then got clipped. The card is a column now.
@@ -312,6 +319,14 @@ A(!/position:\s*absolute/.test(read('index.html').match(/\.sbody \{[\s\S]*?\}/)[
 // ── nothing anywhere still says the old dates ───────────────────────────
 console.log('\nNO STALE DATES');
 const STALE = [
+  // written out in full month names too — the short forms below were the only
+  // ones checked, and "February 5-7" sat in frozen-jr.html's prose untouched
+  ['February 5&ndash;7', 'the dropped Frozen Teen Sunday, spelled out'],
+  ['January 22&ndash;24', 'the dropped Frozen KIDS Sunday, spelled out'],
+  ['January 29&ndash;31', 'the dropped Frozen JR. Sunday, spelled out'],
+  ['May 14&ndash;16', 'the dropped Mermaid KIDS Sunday, spelled out'],
+  ['May 21&ndash;23', 'the dropped Mermaid JR. Sunday, spelled out'],
+  ['June 4&ndash;6', 'the dropped Mermaid Teen Sunday, spelled out'],
   ['Sun Jan 24', 'the dropped Frozen KIDS Sunday'],
   ['Sun Jan 31', 'the dropped Frozen JR. Sunday'],
   ['Sun Feb 7', 'the dropped Frozen Teen Sunday'],
