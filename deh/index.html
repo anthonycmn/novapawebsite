@@ -47,8 +47,8 @@
   .eyebrow{font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold2);font-weight:700}
   header h1{font-family:'Cormorant Garamond',serif;font-size:23px;color:#fff;line-height:1.15;margin:2px 0 10px}
   .showbar{display:flex;align-items:center;gap:11px}
-  .bar{flex:1;height:9px;border-radius:99px;background:rgba(255,255,255,0.11);overflow:hidden}
-  .bar i{display:block;height:100%;border-radius:99px;
+  .bar{flex:1;height:9px;border-radius:4px;background:rgba(255,255,255,0.11);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:4px;
     background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .3s ease}
   #showPct{font-weight:700;color:var(--gold2);font-size:15px;min-width:44px;text-align:right}
   .showsub{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--dim2);margin-top:6px}
@@ -107,7 +107,7 @@
   .at summary::after{content:'▾';margin-left:auto;color:var(--dim2)}
   .at[open] summary::after{content:'▴'}
   .at-pill{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
-    padding:3px 9px;border-radius:99px}
+    padding:3px 9px;border-radius:8px}
   .at-pill.out{background:rgba(255,140,140,0.16);color:#FFB4B4}
   .at-pill.late{background:rgba(232,184,75,0.16);color:var(--gold2)}
   .at-pill.todo{background:rgba(255,255,255,0.07);color:var(--dim2)}
@@ -152,7 +152,7 @@
   .dn>summary::after{content:'+';margin-left:auto;color:var(--dim2);font-size:17px;line-height:1}
   .dn[open]>summary::after{content:'\2212'}
   .dn-n{font-size:14px;font-weight:700;color:var(--ink)}
-  .dn-c{min-width:21px;height:21px;border-radius:99px;display:inline-flex;align-items:center;
+  .dn-c{min-width:21px;height:21px;border-radius:8px;display:inline-flex;align-items:center;
     justify-content:center;font-size:11.5px;font-weight:700;padding:0 6px;
     background:rgba(232,184,75,0.16);color:var(--gold2)}
   .dn-c.none{background:none;color:var(--dim2);font-weight:400}
@@ -163,7 +163,7 @@
   .dn.pending{border-color:rgba(232,184,75,0.75)}
   .dn.pending>summary::before{content:'unsent';font-size:9.5px;letter-spacing:0.1em;
     text-transform:uppercase;font-weight:700;color:#1a1206;background:var(--gold2);
-    border-radius:99px;padding:2px 7px;order:3}
+    border-radius:8px;padding:2px 7px;order:3}
   .dn-bd{padding:0 14px 13px;display:flex;flex-direction:column;gap:8px}
   .dn-bd textarea{background:rgba(255,255,255,0.05);border:1px solid var(--line);
     border-radius:10px;padding:10px 11px;color:#fff;font:inherit;font-size:14px;width:100%;
@@ -227,7 +227,7 @@
   .ven-more{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
   .ven-more a{font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--gold2);
     text-decoration:none;background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.32);
-    border-radius:99px;padding:2px 9px}
+    border-radius:12px;padding:2px 9px}
   .ven-more a:hover{color:#fff;border-color:rgba(232,184,75,0.7)}
   /* Already with Todd. The line through it is the whole point. */
   .ven-i.sent .ven-t a,.ven-i.sent .ven-t{color:var(--dim2);text-decoration:line-through}
@@ -299,7 +299,7 @@
   .blk-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px}
   .time{font-size:15px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
   .tag{font-size:9.5px;letter-spacing:0.09em;text-transform:uppercase;font-weight:700;
-    padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.09);color:var(--dim)}
+    padding:3px 8px;border-radius:8px;background:rgba(255,255,255,0.09);color:var(--dim)}
   .blk.stage .tag{background:rgba(232,184,75,0.16);color:var(--stage)}
   .blk.music .tag{background:rgba(180,140,232,0.16);color:var(--music)}
   .blk.costume .tag{background:rgba(232,120,140,0.16);color:var(--costume)}
@@ -339,7 +339,7 @@
   .blk.run .act{font-weight:700}
 
   /* back button (scene detail) */
-  .back{background:none;border:1px solid var(--line);border-radius:99px;padding:7px 15px;
+  .back{background:none;border:1px solid var(--line);border-radius:12px;padding:7px 15px;
     color:var(--dim);font:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px}
   .back:hover{color:var(--gold2);border-color:rgba(232,184,75,0.5)}
 
@@ -358,7 +358,7 @@
     margin-left:0;margin-right:0;padding:0}
   .scnav .back{margin-bottom:0;flex:0 0 auto;white-space:nowrap}
   .scstep{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
-    background:rgba(232,184,75,0.07);border:1px solid var(--line);border-radius:99px;
+    background:rgba(232,184,75,0.07);border:1px solid var(--line);border-radius:12px;
     padding:7px 12px;color:var(--gold3);font:inherit;font-size:12.5px;font-weight:700;
     cursor:pointer;white-space:nowrap;overflow:hidden}
   .scstep:hover{background:rgba(232,184,75,0.16);border-color:rgba(232,184,75,0.5);color:var(--gold2)}
@@ -413,7 +413,7 @@
   .sc-song{font-size:14px;color:var(--music);font-style:italic;margin-bottom:12px}
   .sc-cast{margin-bottom:12px}
   .sc-cast .mk{display:block;margin-bottom:6px}
-  .castpill{display:inline-block;font-size:12px;padding:5px 11px;border-radius:99px;margin:0 5px 5px 0;
+  .castpill{display:inline-block;font-size:12px;padding:5px 11px;border-radius:8px;margin:0 5px 5px 0;
     background:rgba(255,255,255,0.07);border:1px solid var(--line);color:var(--ink)}
   .sc-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
     padding:13px 15px;border-radius:12px;margin:14px 0 18px;
@@ -431,12 +431,12 @@
   .it.it-arrived{border-color:rgba(79,195,217,0.35)}
   .it-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px}
   .it-cat{font-size:9.5px;letter-spacing:0.09em;text-transform:uppercase;font-weight:700;
-    padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.09);color:var(--dim)}
+    padding:3px 8px;border-radius:8px;background:rgba(255,255,255,0.09);color:var(--dim)}
   .it-cat.it-set{background:rgba(79,195,217,0.16);color:var(--tech)}
   .it-cat.it-prop{background:rgba(232,184,75,0.16);color:var(--stage)}
   .it-cat.it-costume{background:rgba(232,120,140,0.16);color:var(--costume)}
   .it-who{font-size:11.5px;font-weight:700;color:#fff}
-  .pv{font-size:9px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;padding:3px 7px;border-radius:99px}
+  .pv{font-size:9px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;padding:3px 7px;border-radius:8px}
   .pv-script{background:rgba(143,207,154,0.16);color:var(--study)}
   .pv-proposed{background:rgba(255,155,74,0.16);color:var(--perf)}
   .it-cost{margin-left:auto;font-weight:700;color:var(--gold2);font-size:14px;white-space:nowrap}

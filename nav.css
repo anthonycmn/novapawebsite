@@ -96,7 +96,7 @@
      background: rgba(201, 146, 42, 0.15) !important;
      border: 1px solid rgba(201, 146, 42, 0.35) !important;
      color: #E8B84B !important;
-     border-radius: 100px !important;
+     border-radius: 12px !important;
      padding: 7px 16px !important;
    }
    .u-nav-cta:hover {
