@@ -17,7 +17,7 @@
   --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62); --ink-faint:rgba(255,255,255,0.44);
   --ink-navy:#0F1E36; --ink-slate:#414b5c;
   --ok:#5BC98C; --danger:#E8654B;
-  --r-card:16px; --r-input:12px; --r-pill:100px;
+  --r-card:16px; --r-input:12px; --r-pill:12px; /* r-pill retired Aug 9 — resolves to rect so stragglers conform */
 }
 
 /* ── THE FONT LAW: two fonts, imposed. DM Sans everywhere… */
@@ -50,12 +50,10 @@ h1 em, h2 em, h3 em, h4 em, .sc-h1 em, .pb-h em, .c1 em { font-style:normal !imp
 /* …and true code/number surfaces keep monospace */
 code, pre, .tok { font-family:ui-monospace,Menlo,monospace !important; }
 
-/* ── SHAPE LAW (Jason, Aug 8): buttons AND text fields are pills.
-   Rounded rectangles are reserved for the bigger cards. Textareas are
-   the one exception — a capsule around multi-line text reads wrong. */
-button, [class*="btn"], [class*="cta"] { border-radius:var(--r-pill) !important; }
-input, select { border-radius:var(--r-pill) !important; }
-textarea { border-radius:var(--r-input) !important; }
+/* ── SHAPE LAW v3 (Jason, Aug 9): rounded rectangles everywhere — buttons,
+   inputs, selects at 12px; cards at 16px. Pills are retired. */
+button, [class*="btn"], [class*="cta"] { border-radius:var(--r-input) !important; }
+input, select, textarea { border-radius:var(--r-input) !important; }
 
 /* ── NO GLOW, NO PULSE (Jason, Aug 8): gold halos, pulsing shadows, and
    sheen sweeps are off-brand everywhere. Static gradients only. */
