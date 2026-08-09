@@ -93,28 +93,25 @@
   <button class="back" id="back" aria-label="Back">&#8249;</button>
   <div class="dots" id="dots"><i class="on"></i><i></i><i></i></div>
 
-  <!-- Step 1: track -->
+  <!-- Step 1: age -->
   <div class="step on" data-step="0">
-    <h1>What lights them up?</h1>
-    <p class="sub">30 seconds. Something free at the end.</p>
-    <div class="opt" role="button" tabindex="0" data-track="performance">Performance<small>Acting, singing, dancing, the spotlight</small></div>
-    <div class="opt" role="button" tabindex="0" data-track="tech">Tech &amp; Backstage<small>Sets, lights, sound, stage crew</small></div>
-  </div>
-
-  <!-- Step 2: age -->
-  <div class="step" data-step="1">
-    <h1>What age?</h1>
-    <p class="sub">We&rsquo;ll match the right group.</p>
+    <h1>What age is your camper?</h1>
     <div class="opt" role="button" tabindex="0" data-age="5-9">5 to 9 years</div>
     <div class="opt" role="button" tabindex="0" data-age="9-12">9 to 12 years</div>
     <div class="opt" role="button" tabindex="0" data-age="12-19">12 to 19 years</div>
     <div class="opt" role="button" tabindex="0" data-age="adult">Adult</div>
   </div>
 
+  <!-- Step 2: performer or tech -->
+  <div class="step" data-step="1">
+    <h1>Performer or tech?</h1>
+    <div class="opt" role="button" tabindex="0" data-track="performance">Performer</div>
+    <div class="opt" role="button" tabindex="0" data-track="tech">Tech</div>
+  </div>
+
   <!-- Step 3: experience -->
   <div class="step" data-step="2">
-    <h1>How much experience?</h1>
-    <p class="sub">No wrong answers here.</p>
+    <h1>Experience level?</h1>
     <div class="opt" role="button" tabindex="0" data-exp="first-show">First show ever</div>
     <div class="opt" role="button" tabindex="0" data-exp="few-productions">A few productions</div>
     <div class="opt" role="button" tabindex="0" data-exp="seasoned">Seasoned performer</div>
@@ -203,11 +200,11 @@
   }
   document.getElementById('back').onclick = function(){ if (cur >= 1 && cur <= 2) show(cur - 1); };
 
-  document.querySelectorAll('[data-track]').forEach(function(b){
-    b.onclick = function(){ state.track = b.dataset.track; show(1); };
-  });
   document.querySelectorAll('[data-age]').forEach(function(b){
-    b.onclick = function(){ state.age = b.dataset.age; show(2); };
+    b.onclick = function(){ state.age = b.dataset.age; show(1); };
+  });
+  document.querySelectorAll('[data-track]').forEach(function(b){
+    b.onclick = function(){ state.track = b.dataset.track; show(2); };
   });
   document.querySelectorAll('[data-exp]').forEach(function(b){
     b.onclick = function(){ state.exp = b.dataset.exp; prep(); show(3); };
