@@ -13,7 +13,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#0B1424;--navy2:#132040;--gold:#C9922A;--gold2:#F7D98F;--gold-pale:#FBF3E2;
+  --navy:#0B1424;--navy2:#132040;--gold:#C9922A;--gold2:#E8B84B;--gold-pale:#FBF3E2;
   --cream:#FDFAF3;--white:#fff;--text:#0B1424;--text2:#3A4668;--text3:#7080A0;
   --border:rgba(11,20,36,0.10);--border2:rgba(11,20,36,0.06);
   --c-class:#2563EB;--c-summer:#D97706;--c-community:#16A34A;
@@ -238,6 +238,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 
 
 <script src="/nav.js"></script>
+<script src="/shows.js"></script>
   <!-- reg-banner-sitewide -->
   <a href="summer-2027.html" class="audition-banner" aria-label="Private registration for Summer 2027 now open &mdash; register now">
    <div class="audition-banner-inner">
@@ -443,42 +444,26 @@ const RAW_EVENTS = [
 // Tech Sweeney Todd Oct 12-15
 [2026,9,12,'Tech – Sweeney Todd','tech','Conservatory'],[2026,9,13,'Tech – Sweeney Todd','tech',''],[2026,9,14,'Tech – Sweeney Todd','tech',''],[2026,9,15,'Tech – Sweeney Todd','tech',''],
 // Sweeney Todd Oct 23-25, 29-31 + Nov 1
-[2026,9,23,'Sweeney Todd','conservatory','Conservatory Production'],[2026,9,24,'Sweeney Todd','conservatory',''],[2026,9,25,'Sweeney Todd','conservatory',''],
-[2026,9,29,'Sweeney Todd','conservatory',''],[2026,9,30,'Sweeney Todd','conservatory',''],[2026,9,31,'Sweeney Todd','conservatory',''],[2026,10,1,'Sweeney Todd','conservatory',''],
 // Thanksgiving
 ...[22,23,24,25,26,27,28].map(d=>[2026,10,d,'Thanksgiving Break','break','No classes']),
 // Tech Christmas Carol Nov 30 – Dec 3
 [2026,10,30,'Tech – A Christmas Carol','tech','Community'],[2026,11,1,'Tech – A Christmas Carol','tech',''],[2026,11,2,'Tech – A Christmas Carol','tech',''],[2026,11,3,'Tech – A Christmas Carol','tech',''],
 // A Christmas Carol Dec 4-5, 10-13, 17-19
-[2026,11,4,'A Christmas Carol','community',''],[2026,11,5,'A Christmas Carol','community',''],
-[2026,11,10,'A Christmas Carol','community',''],[2026,11,11,'A Christmas Carol','community',''],[2026,11,12,'A Christmas Carol','community',''],[2026,11,13,'A Christmas Carol','community',''],
-[2026,11,17,'A Christmas Carol','community',''],[2026,11,18,'A Christmas Carol','community',''],[2026,11,19,'A Christmas Carol','community',''],
 // Winter Break
 ...[20,21,22,23,24,25,26,27,28,29,30,31].map(d=>[2026,11,d,'Winter Break','break','']),
 ...[1,2,3].map(d=>[2027,0,d,'Winter Break','break','']),
 // Tech Frozen Kids Jan 18-21
 [2027,0,18,'Tech – Frozen Kids','tech','Broadway Bound Kids'],[2027,0,19,'Tech – Frozen Kids','tech',''],[2027,0,20,'Tech – Frozen Kids','tech',''],[2027,0,21,'Tech – Frozen Kids','tech',''],
-[2027,0,22,'Frozen Kids','bbound','Broadway Bound Kids'],[2027,0,23,'Frozen Kids','bbound',''],[2027,0,24,'Frozen Kids','bbound',''],
 [2027,0,25,'Tech – Frozen Jr.','tech','Broadway Bound Jr.'],[2027,0,26,'Tech – Frozen Jr.','tech',''],[2027,0,27,'Tech – Frozen Jr.','tech',''],[2027,0,28,'Tech – Frozen Jr.','tech',''],
-[2027,0,29,'Frozen Jr.','bbound','Broadway Bound Jr.'],[2027,0,30,'Frozen Jr.','bbound',''],[2027,0,31,'Frozen Jr.','bbound',''],
-[2027,1,1,'Tech – Frozen Jr.','tech','Broadway Bound Teen'],[2027,1,2,'Tech – Frozen Jr.','tech',''],[2027,1,3,'Tech – Frozen Jr.','tech',''],[2027,1,4,'Tech – Frozen Jr.','tech',''],
-[2027,1,5,'Frozen Jr.','bbound',''],[2027,1,6,'Frozen Jr.','bbound',''],
-[2027,1,12,'Frozen Jr.','bbound',''],[2027,1,13,'Frozen Jr.','bbound',''],
+[2027,1,1,'Tech – Frozen (Teen Edition)','tech','Broadway Bound Teen'],[2027,1,2,'Tech – Frozen (Teen Edition)','tech',''],[2027,1,3,'Tech – Frozen (Teen Edition)','tech',''],[2027,1,4,'Tech – Frozen (Teen Edition)','tech',''],
 // Tech Teen Conservatory Spring Title Mar 1-4
-[2027,2,1,'Tech – Teen Conservatory Spring Title Coming Soon','tech','Conservatory'],[2027,2,2,'Tech – Teen Conservatory Spring Title Coming Soon','tech',''],[2027,2,3,'Tech – Teen Conservatory Spring Title Coming Soon','tech',''],[2027,2,4,'Tech – Teen Conservatory Spring Title Coming Soon','tech',''],
-[2027,2,5,'Teen Conservatory Spring Title Coming Soon','conservatory',''],[2027,2,6,'Teen Conservatory Spring Title Coming Soon','conservatory',''],[2027,2,7,'Teen Conservatory Spring Title Coming Soon','conservatory',''],
-[2027,2,11,'Teen Conservatory Spring Title Coming Soon','conservatory',''],[2027,2,12,'Teen Conservatory Spring Title Coming Soon','conservatory',''],[2027,2,13,'Teen Conservatory Spring Title Coming Soon','conservatory',''],
-[2027,2,19,'Teen Conservatory Spring Title Coming Soon','conservatory',''],[2027,2,20,'Teen Conservatory Spring Title Coming Soon','conservatory',''],
+[2027,2,1,'Tech – Hadestown','tech','Conservatory'],[2027,2,2,'Tech – Hadestown','tech',''],[2027,2,3,'Tech – Hadestown','tech',''],[2027,2,4,'Tech – Hadestown','tech',''],
 // Spring Break
 ...[22,23,24,25,26].map(d=>[2027,2,d,'Spring Break','break','']),
 // Tech LM Kids May 10-13
-[2027,4,10,'Tech – LM Kids','tech','Broadway Bound Kids'],[2027,4,11,'Tech – LM Kids','tech',''],[2027,4,12,'Tech – LM Kids','tech',''],[2027,4,13,'Tech – LM Kids','tech',''],
-[2027,4,14,'Little Mermaid Jr.','bbound',''],[2027,4,15,'Little Mermaid Jr.','bbound',''],[2027,4,16,'Little Mermaid Jr.','bbound',''],
-[2027,4,17,'Tech – LM Jr.','tech',''],[2027,4,18,'Tech – LM Jr.','tech',''],[2027,4,19,'Tech – LM Jr.','tech',''],
-[2027,4,20,'Little Mermaid Jr.','bbound',''],[2027,4,21,'Little Mermaid Jr.','bbound',''],[2027,4,22,'Little Mermaid Jr.','bbound',''],
-[2027,4,24,'Tech – LM Jr.','tech',''],[2027,4,25,'Tech – LM Jr.','tech',''],[2027,4,26,'Tech – LM Jr.','tech',''],
-[2027,4,27,'Little Mermaid Jr.','bbound',''],[2027,4,28,'Little Mermaid Jr.','bbound',''],[2027,4,29,'Little Mermaid Jr.','bbound',''],
-[2027,5,3,'Little Mermaid Jr.','bbound',''],[2027,5,4,'Little Mermaid Jr.','bbound',''],[2027,5,5,'Little Mermaid Jr.','bbound',''],
+[2027,4,10,'Tech – Little Mermaid KIDS','tech','Broadway Bound Kids'],[2027,4,11,'Tech – Little Mermaid KIDS','tech',''],[2027,4,12,'Tech – Little Mermaid KIDS','tech',''],[2027,4,13,'Tech – Little Mermaid KIDS','tech',''],
+[2027,4,17,'Tech – Little Mermaid JR.','tech','Broadway Bound Jr.'],[2027,4,18,'Tech – Little Mermaid JR.','tech',''],[2027,4,19,'Tech – Little Mermaid JR.','tech',''],
+[2027,5,1,'Tech – Little Mermaid (Teen Edition)','tech','Broadway Bound Teen'],[2027,5,2,'Tech – Little Mermaid (Teen Edition)','tech',''],[2027,5,3,'Tech – Little Mermaid (Teen Edition)','tech',''],
 [2027,5,7,'Tech – Year-End Recital','tech',''],[2027,5,8,'Tech – Year-End Recital','tech',''],[2027,5,9,'Tech – Year-End Recital','tech',''],[2027,5,10,'Tech – Year-End Recital','tech',''],
 [2027,5,11,'Year-End Recital','recital','Year-End Recital'],
 [2027,5,14,'Tech – End-of-Year Gala','tech',''],[2027,5,15,'Tech – End-of-Year Gala','tech',''],[2027,5,16,'Tech – End-of-Year Gala','tech',''],[2027,5,17,'Tech – End-of-Year Gala','tech',''],
@@ -488,6 +473,37 @@ const RAW_EVENTS = [
 ...[...Array(12)].map((_,i)=>{const d=new Date(2027,6,19+i);if(d.getDay()===0||d.getDay()===6)return null;return[d.getFullYear(),d.getMonth(),d.getDate(),'Charlie & the Choc. Factory','summer','Summer 2027 · Jul 19–30 · Grades K–9 · $995']}).filter(Boolean),
 ...[...Array(12)].map((_,i)=>{const d=new Date(2027,7,2+i);if(d.getDay()===0||d.getDay()===6)return null;return[d.getFullYear(),d.getMonth(),d.getDate(),'Trolls Jr.','summer','Summer 2027 · Aug 2–13 · Grades K–9 · $995']}).filter(Boolean),
 ];
+
+// ── PERFORMANCES ─────────────────────────────────────────────────────────
+// Not written out here. Every curtain comes from /shows.js, which is the one
+// place the schedule lives — the show pages are checked against the same file
+// by tests/shows.mjs. Adding a performance there puts it on this calendar.
+const CAT_FOR_SEASON = {
+  'Broadway Bound': 'bbound',
+  'Teen Conservatory': 'conservatory',
+  'Summer Day Camps': 'summer'
+};
+function performanceEvents(){
+  const S = window.NOVAPA_SHOWS;
+  if (!S) return [];
+  const byDay = {};
+  S.shows.forEach(show => {
+    show.performances.forEach(p => {
+      const d = S.parse(p.at);
+      if (!d) return;
+      const k = show.key + '|' + d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+      (byDay[k] = byDay[k] || { show, d, times: [] }).times.push(
+        S.clock(p.at) + (p.ages ? ' (ages ' + p.ages + ')' : ''));
+    });
+  });
+  return Object.keys(byDay).map(k => {
+    const e = byDay[k];
+    return [e.d.getFullYear(), e.d.getMonth(), e.d.getDate(), e.show.title,
+            CAT_FOR_SEASON[e.show.season] || 'community',
+            e.times.join(' \u00b7 ') + ' \u00b7 ' + S.houseOpensNote];
+  });
+}
+RAW_EVENTS.push(...performanceEvents());
 
 // ─── BUILD EVENT MAP ──────────────────────────────────────────────────────────
 const evtMap = {};
