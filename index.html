@@ -689,7 +689,7 @@
  }
 
  .sposter {
- height: 380px;
+ height: 330px;
  position: relative;
  display: flex;
  align-items: center;
@@ -718,7 +718,7 @@
  .spov {
  position: absolute;
  inset: 0;
- background: linear-gradient(0deg, rgba(8, 17, 31, 0.92) 0%, rgba(8, 17, 31, 0.1) 50%, transparent 100%)
+ background: linear-gradient(0deg, rgba(8, 17, 31, 0.25) 0%, transparent 30%)
  }
 
  .sbadge {
@@ -738,11 +738,10 @@
  }
 
  .sbody {
- position: absolute;
- bottom: 0;
- left: 0;
- right: 0;
- padding: 20px 20px 22px;
+ position: relative;
+ padding: 16px 20px 20px;
+ background: rgba(8, 17, 31, 0.94);
+ border-top: 1px solid rgba(255, 255, 255, 0.08);
  z-index: 2
  }
 
@@ -1052,7 +1051,7 @@
  .pcard-scrim {
  position: absolute;
  inset: 0;
- background: linear-gradient(180deg, rgba(8, 17, 31, 0.35) 0%, rgba(8, 17, 31, 0.62) 55%, rgba(8, 17, 31, 0.88) 100%)
+ background: linear-gradient(180deg, rgba(8, 17, 31, 0.0) 60%, rgba(8, 17, 31, 0.35) 100%)
  }
 
  .pcard:hover {
@@ -1068,7 +1067,10 @@
  position: relative;
  z-index: 1;
  display: block;
- padding: 22px 24px
+ width: 100%;
+ padding: 18px 24px 20px;
+ background: rgba(8, 17, 31, 0.94);
+ border-top: 1px solid rgba(255, 255, 255, 0.1)
  }
 
  .pname {
