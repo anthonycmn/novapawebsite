@@ -59,7 +59,7 @@
     },
     {
       key: 'frozen-jr', season: 'Broadway Bound', title: 'Frozen JR.',
-      company: 'Frozen JR.', ages: '9–12', runMinutes: 90, page: 'frozen-jr.html',
+      company: 'Frozen JR. (Ages 9–12)', ages: '9–12', runMinutes: 90, page: 'frozen-jr.html',
       performances: [
         { at: '2027-01-29 19:00' },
         { at: '2027-01-30 14:00' },
@@ -67,8 +67,13 @@
       ]
     },
     {
-      key: 'frozen-teen', season: 'Broadway Bound', title: 'Frozen (Teen Edition)',
-      company: 'Frozen (Teen Edition)', ages: '13–18', runMinutes: 90, page: 'frozen-jr.html',
+      // There is no teen edition of Frozen. MTI licenses KIDS and JR. and
+      // nothing else, so this cast performs Frozen JR. exactly like the 9–12
+      // cast does — the only difference is who is in it. "Broadway Bound Teen"
+      // is our age band, never a version of the show. (CJ, 9 Aug 2026.)
+      key: 'frozen-teen', season: 'Broadway Bound', title: 'Frozen JR.',
+      company: 'Frozen JR. (Broadway Bound Teen)', ages: '12–15', runMinutes: 90,
+      page: 'frozen-jr.html',
       performances: [
         { at: '2027-02-05 19:00' },
         { at: '2027-02-06 14:00' },
@@ -88,7 +93,8 @@
     },
     {
       key: 'mermaid-jr', season: 'Broadway Bound', title: 'Little Mermaid JR.',
-      company: 'Little Mermaid JR.', ages: '9–12', runMinutes: 90, page: 'little-mermaid-jr.html',
+      company: 'Little Mermaid JR. (Ages 9–12)', ages: '9–12', runMinutes: 90,
+      page: 'little-mermaid-jr.html',
       performances: [
         { at: '2027-05-21 19:00' },
         { at: '2027-05-22 14:00' },
@@ -96,8 +102,10 @@
       ]
     },
     {
-      key: 'mermaid-teen', season: 'Broadway Bound', title: 'Little Mermaid (Teen Edition)',
-      company: 'Little Mermaid (Teen Edition)', ages: '13–18', runMinutes: 90,
+      // Same as Frozen: no teen edition exists. This is Little Mermaid JR.
+      // played by the Broadway Bound Teen band.
+      key: 'mermaid-teen', season: 'Broadway Bound', title: 'Little Mermaid JR.',
+      company: 'Little Mermaid JR. (Broadway Bound Teen)', ages: '12–15', runMinutes: 90,
       page: 'little-mermaid-jr.html',
       performances: [
         { at: '2027-06-04 19:00' },

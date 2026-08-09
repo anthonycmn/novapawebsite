@@ -55,6 +55,35 @@ for (const show of S.shows) {
     show.key + ' falls on ' + EXPECT_DAY[show.key].join('/') + ' — got ' + got.join('/'));
 }
 
+// ── licensed titles ─────────────────────────────────────────────────────
+// We license Frozen KIDS, Frozen JR., Little Mermaid KIDS and Little Mermaid
+// JR. There is no teen edition of either title. Our teen band performs the JR.
+// script, and "Broadway Bound Teen" names the band, never the show. Printing a
+// version that does not exist is a licensing problem, not a wording one, so it
+// is checked here. (CJ, 9 Aug 2026.)
+console.log('\nLICENSED TITLES');
+const LICENSED = {
+  'frozen-kids': 'Frozen KIDS', 'frozen-jr': 'Frozen JR.', 'frozen-teen': 'Frozen JR.',
+  'mermaid-kids': 'Little Mermaid KIDS', 'mermaid-jr': 'Little Mermaid JR.',
+  'mermaid-teen': 'Little Mermaid JR.',
+};
+for (const [key, title] of Object.entries(LICENSED)) {
+  A(S.byKey(key).title === title,
+    key + ' is billed as "' + title + '" — got "' + S.byKey(key).title + '"');
+}
+for (const key of ['frozen-teen', 'mermaid-teen']) {
+  A(S.byKey(key).ages === '12–15', key + ' is the 12–15 band');
+  A(/Broadway Bound Teen/.test(S.byKey(key).company),
+    key + ' names the band, not an edition: ' + S.byKey(key).company);
+}
+// Hadestown: Teen Edition is a real licensed edition and stays.
+const INVENTED = /(Frozen|Little Mermaid|Mermaid)[^<>]{0,30}Teen Edition|Teen Edition[^<>]{0,30}(Frozen|Mermaid)/;
+for (const file of ['index.html', 'calendar.html', 'broadway-bound.html', 'frozen-jr.html',
+  'frozen-kids.html', 'little-mermaid-jr.html', 'register/index.html', 'shows.js',
+  'netlify/functions/chat.mjs']) {
+  A(!INVENTED.test(read(file)), file + ' claims no teen edition of Frozen or The Little Mermaid');
+}
+
 // ── the NOVAPA ADMIN calendar ───────────────────────────────────────────
 // Read off the NOVAPA ADMIN Google calendar (cj@novapa.org, America/New_York)
 // on 9 Aug 2026 and written down here, curtain by curtain, so the website can
@@ -170,10 +199,9 @@ const RANGES = [
   ['summer-2027.html', 'httyd', 'Jul 16 – 17, 2027'],
   ['summer-2027.html', 'charlie', 'Jul 30 – 31, 2027'],
   ['summer-2027.html', 'trolls', 'Aug 13 – 14, 2027'],
-  ['register/index.html', 'httyd', 'Performances Jul 16–17'],
-  ['register/index.html', 'charlie', 'Performances Jul 30–31'],
-  ['register/index.html', 'trolls', 'Performances Aug 13–14'],
 ];
+// (the registration cards moved from a bare range to the full curtain list —
+// they are checked in CURTAIN TIMES below)
 for (const [file, key, text] of RANGES) {
   const html = plain(read(file));
   A(html.includes(text), file + ' shows ' + key + ' as "' + text + '"');
@@ -182,6 +210,41 @@ for (const [file, key, text] of RANGES) {
   A(text.includes(f) && text.includes(l),
     '  …which is the real first (' + first(key) + ') and last (' + last(key) + ') day');
 }
+
+// A date with no time sends a family to Leesburg on the right day and the
+// wrong hour. Every page that names a run has to name its curtains too.
+console.log('\nCURTAIN TIMES');
+const CURTAINS = [
+  ['broadway-bound.html', ['frozen-kids']], ['broadway-bound.html', ['frozen-jr']],
+  ['broadway-bound.html', ['frozen-teen']], ['broadway-bound.html', ['mermaid-kids']],
+  ['broadway-bound.html', ['mermaid-jr']], ['broadway-bound.html', ['mermaid-teen']],
+  ['broadway-bound.html', ['mean-girls']], ['broadway-bound.html', ['httyd']],
+  ['broadway-bound.html', ['charlie']], ['broadway-bound.html', ['trolls']],
+  ['summer-2027.html', ['httyd']], ['summer-2027.html', ['charlie']],
+  ['summer-2027.html', ['trolls']],
+  ['teen-conservatory.html', ['sweeney']], ['teen-conservatory.html', ['hadestown']],
+  ['register/index.html', ['httyd']], ['register/index.html', ['charlie']],
+  ['register/index.html', ['trolls']], ['register/index.html', ['mean-girls']],
+];
+for (const [file, keys] of CURTAINS) {
+  const want = S.dayTimes(keys.flatMap((k) => S.byKey(k).performances)).join(' · ');
+  A(plain(read(file)).includes(want), file + ' prints ' + keys.join('+') + ' curtains: ' + want);
+}
+// The camp performance times are typed out separately in the registration
+// flow, keyed by age band. They have to be the same curtains.
+const regJs = read('register/index.html');
+for (const [band, text] of [['5-9', 'FRI 5:00 PM &middot; SAT 11:00 AM'],
+  ['9-12', 'FRI 7:00 PM &middot; SAT 1:00 PM'], ['12-15', 'SAT 4:00 PM &middot; SAT 7:00 PM']]) {
+  A(regJs.includes("'" + band + "':"), 'the registration flow still has a ' + band + ' band');
+  A(regJs.includes(text), '  …booking ' + band + ' as ' + plain(text));
+  const want = S.byKey('httyd').performances.filter((p) => p.ages.replace('–', '-') === band)
+    .map((p) => S.dayName(p.at) + ' ' + S.clock(p.at));
+  const got = plain(text).replace(/FRI/g, 'Fri').replace(/SAT/g, 'Sat').split(' · ');
+  A(JSON.stringify(got) === JSON.stringify(want),
+    '  …which is what shows.js holds for that band (' + want.join(' · ') + ')');
+}
+A(/replace\(\/SAT\/g/.test(regJs),
+  'the SAT swap is global, so the 12–15 band does not print a literal "SAT"');
 
 // Every index card carries its curtain days AND its curtain times. A card that
 // prints only the dates sends a family to the box office on the right day at

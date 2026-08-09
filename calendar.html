@@ -455,7 +455,7 @@ const RAW_EVENTS = [
 // Tech Frozen Kids Jan 18-21
 [2027,0,18,'Tech – Frozen Kids','tech','Broadway Bound Kids'],[2027,0,19,'Tech – Frozen Kids','tech',''],[2027,0,20,'Tech – Frozen Kids','tech',''],[2027,0,21,'Tech – Frozen Kids','tech',''],
 [2027,0,25,'Tech – Frozen Jr.','tech','Broadway Bound Jr.'],[2027,0,26,'Tech – Frozen Jr.','tech',''],[2027,0,27,'Tech – Frozen Jr.','tech',''],[2027,0,28,'Tech – Frozen Jr.','tech',''],
-[2027,1,1,'Tech – Frozen (Teen Edition)','tech','Broadway Bound Teen'],[2027,1,2,'Tech – Frozen (Teen Edition)','tech',''],[2027,1,3,'Tech – Frozen (Teen Edition)','tech',''],[2027,1,4,'Tech – Frozen (Teen Edition)','tech',''],
+[2027,1,1,'Tech – Frozen JR. (Broadway Bound Teen)','tech','Broadway Bound Teen'],[2027,1,2,'Tech – Frozen JR. (Broadway Bound Teen)','tech',''],[2027,1,3,'Tech – Frozen JR. (Broadway Bound Teen)','tech',''],[2027,1,4,'Tech – Frozen JR. (Broadway Bound Teen)','tech',''],
 // Tech Teen Conservatory Spring Title Mar 1-4
 [2027,2,1,'Tech – Hadestown','tech','Conservatory'],[2027,2,2,'Tech – Hadestown','tech',''],[2027,2,3,'Tech – Hadestown','tech',''],[2027,2,4,'Tech – Hadestown','tech',''],
 // Spring Break
@@ -463,7 +463,7 @@ const RAW_EVENTS = [
 // Tech LM Kids May 10-13
 [2027,4,10,'Tech – Little Mermaid KIDS','tech','Broadway Bound Kids'],[2027,4,11,'Tech – Little Mermaid KIDS','tech',''],[2027,4,12,'Tech – Little Mermaid KIDS','tech',''],[2027,4,13,'Tech – Little Mermaid KIDS','tech',''],
 [2027,4,17,'Tech – Little Mermaid JR.','tech','Broadway Bound Jr.'],[2027,4,18,'Tech – Little Mermaid JR.','tech',''],[2027,4,19,'Tech – Little Mermaid JR.','tech',''],
-[2027,5,1,'Tech – Little Mermaid (Teen Edition)','tech','Broadway Bound Teen'],[2027,5,2,'Tech – Little Mermaid (Teen Edition)','tech',''],[2027,5,3,'Tech – Little Mermaid (Teen Edition)','tech',''],
+[2027,5,1,'Tech – Little Mermaid JR. (Broadway Bound Teen)','tech','Broadway Bound Teen'],[2027,5,2,'Tech – Little Mermaid JR. (Broadway Bound Teen)','tech',''],[2027,5,3,'Tech – Little Mermaid JR. (Broadway Bound Teen)','tech',''],
 [2027,5,7,'Tech – Year-End Recital','tech',''],[2027,5,8,'Tech – Year-End Recital','tech',''],[2027,5,9,'Tech – Year-End Recital','tech',''],[2027,5,10,'Tech – Year-End Recital','tech',''],
 [2027,5,11,'Year-End Recital','recital','Year-End Recital'],
 [2027,5,14,'Tech – End-of-Year Gala','tech',''],[2027,5,15,'Tech – End-of-Year Gala','tech',''],[2027,5,16,'Tech – End-of-Year Gala','tech',''],[2027,5,17,'Tech – End-of-Year Gala','tech',''],
@@ -498,7 +498,9 @@ function performanceEvents(){
   });
   return Object.keys(byDay).map(k => {
     const e = byDay[k];
-    return [e.d.getFullYear(), e.d.getMonth(), e.d.getDate(), e.show.title,
+    // The label is the company, not the title: two casts of Frozen JR. play
+    // two different weekends, and "Frozen JR." twice tells nobody which.
+    return [e.d.getFullYear(), e.d.getMonth(), e.d.getDate(), e.show.company || e.show.title,
             CAT_FOR_SEASON[e.show.season] || 'community',
             e.times.join(' \u00b7 ') + ' \u00b7 ' + S.houseOpensNote];
   });
@@ -1175,7 +1177,7 @@ buildList();
     // === Teen Conservatory ===
     teenConservatory: {
       keywords: ['teen conservatory', 'conservatory', 'teen', 'audition', 'auditions', 'teen audition', 'tryout', 'try out', 'audition based'],
-      response: `<strong>Broadway Bound Teen 🌟</strong><br><br>Our audition-based teen track (formerly Teen Conservatory) is the next step for Broadway Bound graduates, ages 13\u201318. This season's casts are already set \u2014 cast members register through their NoVAPA account.<br><br>Teens who want to perform this season: check out <strong>Frozen Teens</strong> and <strong>The Little Mermaid Teens</strong>!<br><br>👉 <a href="/register/?season=fall">Register for teen shows \u2192</a>`
+      response: `<strong>Broadway Bound Teen 🌟</strong><br><br>Our audition-based teen track (formerly Teen Conservatory) is the next step for Broadway Bound graduates, ages 13\u201318. This season's casts are already set \u2014 cast members register through their NoVAPA account.<br><br>Teens who want to perform this season: check out the <strong>Broadway Bound Teen</strong> casts of Frozen JR. and The Little Mermaid JR.!<br><br>👉 <a href="/register/?season=fall">Register for teen shows \u2192</a>`
     },
 
     // === College Audition Coaching ===
@@ -1205,7 +1207,7 @@ buildList();
     // === Shows / Productions ===
     shows: {
       keywords: ['shows', 'show', 'productions', 'production', 'season', 'performances', 'plays', 'musicals', 'shrek', 'sweeney', 'frozen', 'mermaid', 'christmas carol', 'dear evan', 'dragon', 'charlie chocolate', 'trolls'],
-      response: `<strong>2026–2027 Productions ✦ Nine shows across the season!</strong><br><br>• ☀️ <strong>Shrek Jr.</strong> — Summer 2026 (Kids & Jr)<br>• 🗓 <strong>Dear Evan Hansen</strong> (HS Version) — August 2026 (Teen Conservatory)<br>• 🎃 <strong>Sweeney Todd</strong> (School Ed.) — October 2026 (Teen Conservatory)<br>• ❄️ <strong>A Christmas Carol</strong> — December 2026 (Kids & Teens)<br>• ❄️ <strong>Disney Frozen</strong> — Jan–Feb 2027 (Kids · Jr · Teens — our biggest multi-cast event!)<br>• 🌊 <strong>The Little Mermaid Jr.</strong> — May 2027 (Jr & Teens)<br>• ☀️ <strong>How to Train Your Dragon Jr.</strong> — July 2027<br>• ☀️ <strong>Charlie and the Chocolate Factory Jr.</strong> — July 2027<br>• ☀️ <strong>Trolls Jr.</strong> — August 2027<br><br>👉 <a href="https://novapa.booktix.com">Box Office & Tickets →</a>`
+      response: `<strong>2026–2027 Productions ✦ Nine shows across the season!</strong><br><br>• ☀️ <strong>Shrek Jr.</strong> — Summer 2026 (Kids & Jr)<br>• 🗓 <strong>Dear Evan Hansen</strong> (HS Version) — August 2026 (Teen Conservatory)<br>• 🎃 <strong>Sweeney Todd</strong> (School Ed.) — October 2026 (Teen Conservatory)<br>• ❄️ <strong>A Christmas Carol</strong> — December 2026 (Kids & Teens)<br>• ❄️ <strong>Disney’s Frozen KIDS &amp; Frozen JR.</strong> — Jan–Feb 2027 (a KIDS cast, a 9–12 JR. cast and a Broadway Bound Teen JR. cast — our biggest multi-cast event!)<br>• 🌊 <strong>Disney’s The Little Mermaid KIDS &amp; JR.</strong> — May–June 2027 (KIDS, 9–12 JR. and Broadway Bound Teen JR. casts)<br>• ☀️ <strong>How to Train Your Dragon Jr.</strong> — July 2027<br>• ☀️ <strong>Charlie and the Chocolate Factory Jr.</strong> — July 2027<br>• ☀️ <strong>Trolls Jr.</strong> — August 2027<br><br>👉 <a href="https://novapa.booktix.com">Box Office & Tickets →</a>`
     },
 
     // === Ages / Who can join ===
