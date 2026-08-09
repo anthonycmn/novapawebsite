@@ -232,6 +232,45 @@
     return null;
   }
 
+  // A short curtain time for the home-page cards: 7pm, not 7:00 PM. The cards
+  // are 300px wide and carry up to thirteen curtains, so every character of
+  // "7:00 PM" that isn't load-bearing is a character that wraps the line.
+  function shortClock(at) {
+    var d = parse(at);
+    if (!d) return '';
+    var h = d.getHours(), mi = d.getMinutes();
+    return ((h % 12) || 12) + (mi ? ':' + (mi < 10 ? '0' : '') + mi : '') + (h < 12 ? 'am' : 'pm');
+  }
+  function joinTimes(list) {
+    if (list.length < 2) return list.join('');
+    return list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1];
+  }
+  // "Aug 14 7pm · Aug 15 2pm & 7pm · Aug 16 2pm" — one entry per day, however
+  // many curtains that day holds.
+  function dayTimes(perfs) {
+    var order = [], byDay = {};
+    for (var i = 0; i < perfs.length; i++) {
+      var day = monthDay(perfs[i].at);
+      if (!byDay[day]) { byDay[day] = []; order.push(day); }
+      byDay[day].push(shortClock(perfs[i].at));
+    }
+    return order.map(function (day) { return day + ' ' + joinTimes(byDay[day]); });
+  }
+  // The whole line a show card prints. `parts` is either a company's
+  // performances or, for the cards that carry two or three companies,
+  // [{label, performances}, …].
+  function cardLine(parts) {
+    var groups = Array.isArray(parts) && parts.length && parts[0].performances
+      ? parts : [{ label: '', performances: parts }];
+    var n = 0, out = [];
+    for (var i = 0; i < groups.length; i++) {
+      n += groups[i].performances.length;
+      out.push((groups[i].label ? groups[i].label + ' ' : '') +
+        dayTimes(groups[i].performances).join(' · '));
+    }
+    return n + ' performance' + (n === 1 ? '' : 's') + ' — ' + out.join(' | ');
+  }
+
   root.NOVAPA_SHOWS = {
     houseOpensMinutes: HOUSE_OPENS_MINUTES,
     houseOpensNote: 'House opens ' + HOUSE_OPENS_MINUTES + ' minutes before every curtain.',
@@ -241,6 +280,9 @@
     dayName: dayName,
     monthDay: monthDay,
     clock: clock,
+    shortClock: shortClock,
+    dayTimes: dayTimes,
+    cardLine: cardLine,
     runLabel: runLabel,
     byKey: byKey
   };

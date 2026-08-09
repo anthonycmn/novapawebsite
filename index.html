@@ -669,7 +669,12 @@
  cursor: pointer;
  transition: transform 0.35s, box-shadow 0.35s;
  text-decoration: none;
- display: block;
+ /* A column, not a fixed box. The text used to sit absolutely positioned
+    over a 380px poster: add a line and it rode up over the artwork, and
+    overflow:hidden cut off whatever no longer fitted. Now the art has its
+    height and the words take whatever they need underneath. */
+ display: flex;
+ flex-direction: column;
  color: inherit;
  position: relative
  }
@@ -680,7 +685,8 @@
  }
 
  .sposter {
- height: 380px;
+ height: 300px;
+ flex: 0 0 auto;
  position: relative;
  display: flex;
  align-items: center;
@@ -729,11 +735,12 @@
  }
 
  .sbody {
- position: absolute;
- bottom: 0;
- left: 0;
- right: 0;
- padding: 20px 20px 22px;
+ position: relative;
+ flex: 1 1 auto;
+ display: flex;
+ flex-direction: column;
+ background: var(--navy, #08111F);
+ padding: 16px 20px 20px;
  z-index: 2
  }
 
@@ -783,7 +790,12 @@
  .stags {
  display: flex;
  gap: 5px;
- flex-wrap: wrap
+ flex-wrap: wrap;
+ /* Cards in a row stretch to the tallest, and A Christmas Carol's thirteen
+    curtains make it the tallest. Push the tags down so the row still lines
+    up across the rail instead of stopping wherever the dates happen to end. */
+ margin-top: auto;
+ padding-top: 4px
  }
 
  .stag {
@@ -3567,7 +3579,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  High School Version — a powerful story of connection, identity, and finding where you belong.
  </div>
- <div class="sperf">4 performances &mdash; Aug 14 &middot; Aug 15 &middot; Aug 16</div>
+ <div class="sperf">4 performances &mdash; Aug 14 7pm &middot; Aug 15 2pm &amp; 7pm &middot; Aug 16 2pm</div>
  <div class="stags">
  <span class="stag te">
  Broadway Bound Teen
@@ -3598,7 +3610,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  The Demon Barber of Fleet Street — Sondheim's darkly brilliant masterpiece.
  </div>
- <div class="sperf">7 performances &mdash; Oct 23 &middot; Oct 24 &middot; Oct 25 &middot; Oct 30 &middot; Oct 31 &middot; Nov 1</div>
+ <div class="sperf">7 performances &mdash; Oct 23 7pm &middot; Oct 24 2pm &amp; 7pm &middot; Oct 25 2pm &middot; Oct 30 7pm &middot; Oct 31 2pm &middot; Nov 1 2pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3629,7 +3641,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Dickens' timeless tale of redemption and holiday magic brought to life on stage.
  </div>
- <div class="sperf">13 performances &mdash; Dec 4 &middot; Dec 5 &middot; Dec 6 &middot; Dec 10 &middot; Dec 11 &middot; Dec 12 &middot; Dec 13 &middot; Dec 18 &middot; Dec 19 &middot; Dec 20</div>
+ <div class="sperf">13 performances &mdash; Dec 4 7pm &middot; Dec 5 2pm &amp; 7pm &middot; Dec 6 2pm &middot; Dec 10 7pm &middot; Dec 11 7pm &middot; Dec 12 2pm &amp; 7pm &middot; Dec 13 2pm &middot; Dec 18 7pm &middot; Dec 19 2pm &amp; 7pm &middot; Dec 20 2pm</div>
  <div class="stags">
  <span class="stag th">
  Theatre
@@ -3660,7 +3672,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  A frosty, fun-filled adventure for our youngest performers — the magic of Arendelle, scaled just for kids.
  </div>
- <div class="sperf">3 performances &mdash; Jan 22 &middot; Jan 23</div>
+ <div class="sperf">3 performances &mdash; Jan 22 7pm &middot; Jan 23 2pm &amp; 7pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3691,7 +3703,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Two casts — Frozen Jr. and Frozen Teens — part of our biggest multi-cast event of the season.
  </div>
- <div class="sperf">6 performances &mdash; JR. Jan 29 &middot; Jan 30 &nbsp;|&nbsp; Teen Edition Feb 5 &middot; Feb 6</div>
+ <div class="sperf">6 performances &mdash; JR. Jan 29 7pm &middot; Jan 30 2pm &amp; 7pm &nbsp;|&nbsp; Teen Feb 5 7pm &middot; Feb 6 2pm &amp; 7pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3722,7 +3734,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Teen Edition — a hauntingly beautiful folk-opera retelling of the myth of Orpheus and Eurydice.
  </div>
- <div class="sperf">12 performances &mdash; Mar 5 &middot; Mar 6 &middot; Mar 7 &middot; Mar 11 &middot; Mar 12 &middot; Mar 13 &middot; Mar 14 &middot; Mar 19 &middot; Mar 20</div>
+ <div class="sperf">12 performances &mdash; Mar 5 7pm &middot; Mar 6 2pm &amp; 7pm &middot; Mar 7 2pm &middot; Mar 11 7pm &middot; Mar 12 7pm &middot; Mar 13 2pm &amp; 7pm &middot; Mar 14 2pm &middot; Mar 19 7pm &middot; Mar 20 2pm &amp; 7pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3753,7 +3765,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Ariel's undersea world dazzles on stage — Kids, Junior, and Teen casts in this beloved Disney musical, February through June.
  </div>
- <div class="sperf">9 performances &mdash; KIDS May 14 &middot; May 15 &nbsp;|&nbsp; JR. May 21 &middot; May 22 &nbsp;|&nbsp; Teen Edition Jun 4 &middot; Jun 5</div>
+ <div class="sperf">9 performances &mdash; KIDS May 14 7pm &middot; May 15 2pm &amp; 7pm &nbsp;|&nbsp; JR. May 21 7pm &middot; May 22 2pm &amp; 7pm &nbsp;|&nbsp; Teen Jun 4 7pm &middot; Jun 5 2pm &amp; 7pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3787,7 +3799,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Our Broadway Bound Teens summer intensive, ages 13&ndash;18. Two weeks of rehearsal, June 14&ndash;24, then four performances June 25&ndash;27.
  </div>
- <div class="sperf">4 performances &mdash; Jun 25 &middot; Jun 26 &middot; Jun 27</div>
+ <div class="sperf">4 performances &mdash; Jun 25 7pm &middot; Jun 26 2pm &amp; 7pm &middot; Jun 27 2pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3821,7 +3833,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Hiccup and Toothless soar to the stage in this epic summer adventure musical.
  </div>
- <div class="sperf">6 performances &mdash; Jul 16 &middot; Jul 17</div>
+ <div class="sperf">6 performances &mdash; Jul 16 5pm &amp; 7pm &middot; Jul 17 11am, 1pm, 4pm &amp; 7pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3852,7 +3864,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Pure imagination on stage — Roald Dahl's golden-ticket world comes to glorious life.
  </div>
- <div class="sperf">6 performances &mdash; Jul 30 &middot; Jul 31</div>
+ <div class="sperf">6 performances &mdash; Jul 30 5pm &amp; 7pm &middot; Jul 31 11am, 1pm, 4pm &amp; 7pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
@@ -3883,7 +3895,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <div class="ssub">
  Bursting with color, music, and joy — the perfect way to close out an incredible summer season.
  </div>
- <div class="sperf">6 performances &mdash; Aug 13 &middot; Aug 14</div>
+ <div class="sperf">6 performances &mdash; Aug 13 5pm &amp; 7pm &middot; Aug 14 11am, 1pm, 4pm &amp; 7pm</div>
  <div class="stags">
  <span class="stag mu">
  Musical
