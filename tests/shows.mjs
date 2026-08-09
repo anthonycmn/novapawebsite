@@ -8,7 +8,7 @@
 //
 // Run: node tests/shows.mjs        (needs a static server on :8899 for the
 //                                   calendar check; skipped without one)
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -104,6 +104,31 @@ for (const file of ['index.html', 'calendar.html', 'broadway-bound.html', 'summe
 A(!/formerly Teen Conservatory/.test(read('index.html')),
   'nothing still calls the Teen Conservatory a former name');
 
+// Shrek Jr. closed in July 2026 and its card and page were removed, but the
+// chat widget kept selling it as part of the current season on every page.
+for (const file of ['index.html', 'broadway-bound.html', 'calendar.html', 'classes.html',
+  'teen-conservatory.html', 'netlify/functions/chat.mjs']) {
+  A(!/<strong>Shrek Jr\.<\/strong> &mdash; Summer 2026|Shrek Jr\.<\/strong> — Summer 2026/.test(read(file)),
+    file + ' no longer sells Shrek Jr. as a current production');
+}
+// Registration went public on 1 August 2026. A script flipped the banner on
+// four pages; the other twenty-one were never given it and still read "Private
+// Registration Now Open" eight days later. The copy is static and public now,
+// and the script sets the same words.
+import { readdirSync } from 'node:fs';
+for (const file of readdirSync(ROOT).filter((f) => f.endsWith('.html'))) {
+  const html = read(file).replace(/<script[\s\S]*?<\/script>/g, ' ');
+  A(!/Private [Rr]egistration/.test(html),
+    file + ' does not still advertise private registration');
+}
+
+// The audition call closed in June. The page is unlinked but still on disk as
+// next season's template, so it has to be redirected, not merely orphaned.
+const toml = read('netlify.toml');
+A(/from = "\/teen_conservatory_auditions\.html"/.test(toml) &&
+  /from = "\/teen_conservatory_auditions"/.test(toml),
+  'the closed audition call redirects to the Teen Conservatory page');
+
 // Hadestown: Teen Edition is a real licensed edition and stays.
 const INVENTED = /(Frozen|Little Mermaid|Mermaid)[^<>]{0,30}Teen Edition|Teen Edition[^<>]{0,30}(Frozen|Mermaid)/;
 for (const file of ['index.html', 'calendar.html', 'broadway-bound.html', 'frozen-jr.html',
@@ -165,6 +190,7 @@ const PAGE_BLOCKS = {
   'little-mermaid-jr.html': ['mermaid-kids', 'mermaid-jr', 'mermaid-teen'],
   'dear-evan-hansen.html': ['deh'],
   'sweeney-todd.html': ['sweeney'],
+  'christmas-carol.html': ['carol'],
   // three weekend blocks that together are the whole run
   'hadestown.html': ['hadestown'],
 };
@@ -300,6 +326,32 @@ const CARDS = [
 ];
 A(!/class="sperf"/.test(read('index.html')),
   'no show card lists individual performances any more');
+
+// Where each card goes. Four of them used to land on classes.html, which says
+// nothing about the show a family just clicked. A card's link has to be a page
+// that actually names it.
+const CARD_LINKS = {
+  'Dear Evan Hansen': 'dear-evan-hansen.html', 'Sweeney Todd': 'sweeney-todd.html',
+  'A Christmas Carol': 'christmas-carol.html',
+  'Frozen Kids': 'frozen-kids.html', Frozen: 'frozen-jr.html',
+  Hadestown: 'hadestown.html', 'The Little Mermaid': 'little-mermaid-jr.html',
+  'How to Train Your Dragon Jr.': 'summer-2027.html',
+  'Charlie and the Chocolate Factory': 'summer-2027.html',
+  'Trolls Jr.': 'summer-2027.html',
+};
+const cards = read('index.html').split('<a class="scard"').slice(1);
+for (const card of cards) {
+  const title = (card.match(/<div class="stitle">\s*([\s\S]*?)\s*<\/div>/) || [])[1];
+  const href = (card.match(/^\s*href="([^"]*)"/) || [])[1];
+  if (!title) continue;
+  const want = CARD_LINKS[plain(title).trim()];
+  if (!want) continue;                       // linked into the registration flow
+  A(href === want, 'the ' + plain(title).trim() + ' card links to ' + want +
+    (href === want ? '' : ' — got ' + href));
+  A(existsSync(join(ROOT, want)), '  …and ' + want + ' exists');
+}
+A(!cards.some((c) => /^\s*href="classes\.html"/.test(c)),
+  'no show card dumps a family on the classes page');
 const chips = [...read('index.html').matchAll(/<div class="sdate">\s*([\s\S]*?)\s*<\/div>/g)]
   .map((m) => plain(m[1]).trim());
 A(chips.length === CARDS.length, 'all eleven show cards carry a date chip');
