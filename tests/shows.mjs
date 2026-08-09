@@ -86,6 +86,28 @@ for (const [file, keys] of Object.entries(PAGE_BLOCKS)) {
   A(!/Doors open 30 minutes/.test(html), file + ' has no stale doors-open line');
 }
 
+// The run we publish is how long the audience sits, which is not the slot we
+// hold: a Disney KIDS show is a 30-minute script in a 60-minute room. Both
+// numbers exist on purpose, and the pages must print the run.
+console.log('\nRUN TIMES');
+const RUNS = [
+  ['frozen-kids.html', 'frozen-kids', 30, 'Each performance runs about 30 minutes'],
+  ['little-mermaid-jr.html', 'mermaid-kids', 30, 'The Kids run is about 30 minutes'],
+  ['frozen-jr.html', 'frozen-jr', 90, 'Each performance runs about 90 minutes'],
+  ['sweeney-todd.html', 'sweeney', 150, 'about 2 hours 30 minutes'],
+  ['hadestown.html', 'hadestown', 150, 'about 2 hours 30 minutes'],
+  ['dear-evan-hansen.html', 'deh', 150, 'about 2 hours 30 minutes'],
+];
+for (const [file, key, minutes, text] of RUNS) {
+  A(S.byKey(key).runMinutes === minutes, key + ' publishes a ' + minutes + '-minute run');
+  A(plain(read(file)).includes(text), file + ' prints "' + text + '"');
+}
+for (const key of ['frozen-kids', 'mermaid-kids']) {
+  A(S.byKey(key).slotMinutes === 60, key + ' still holds the 60-minute slot');
+}
+A(!/runs about 60 minutes/.test(plain(read('frozen-kids.html'))),
+  'frozen-kids.html no longer publishes the slot as the run');
+
 // ── season pages and cards ──────────────────────────────────────────────
 console.log('\nSEASON PAGES AND CARDS');
 // Each entry: the page, the text that must be on it, and why.

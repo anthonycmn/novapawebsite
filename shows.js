@@ -22,6 +22,13 @@
  *
  * HOUSE
  *   The house opens 15 minutes before every curtain, for every production.
+ *
+ * RUN VS SLOT
+ *   `runMinutes` is what we publish: how long the audience is in their seats.
+ *   `slotMinutes` is how much of the room we hold, which is longer when the
+ *   licensed edition is short — a Disney KIDS show is a 30-minute script in a
+ *   60-minute slot. Only the run is ever printed on the site; the slot is here
+ *   so the two numbers cannot be taken for each other again (CJ, Aug 9).
  */
 (function (root) {
   var HOUSE_OPENS_MINUTES = 15;
@@ -43,7 +50,7 @@
     // ── Broadway Bound · Frozen ──────────────────────────────────────────
     {
       key: 'frozen-kids', season: 'Broadway Bound', title: 'Frozen KIDS',
-      company: 'Frozen KIDS', ages: '5–9', runMinutes: 60, page: 'frozen-kids.html',
+      company: 'Frozen KIDS', ages: '5–9', runMinutes: 30, slotMinutes: 60, page: 'frozen-kids.html',
       performances: [
         { at: '2027-01-22 19:00' },
         { at: '2027-01-23 14:00' },
@@ -72,7 +79,7 @@
     // ── Broadway Bound · The Little Mermaid ──────────────────────────────
     {
       key: 'mermaid-kids', season: 'Broadway Bound', title: 'Little Mermaid KIDS',
-      company: 'Little Mermaid KIDS', ages: '5–9', runMinutes: 60, page: 'little-mermaid-jr.html',
+      company: 'Little Mermaid KIDS', ages: '5–9', runMinutes: 30, slotMinutes: 60, page: 'little-mermaid-jr.html',
       performances: [
         { at: '2027-05-14 19:00' },
         { at: '2027-05-15 14:00' },
