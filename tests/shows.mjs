@@ -76,6 +76,34 @@ for (const key of ['frozen-teen', 'mermaid-teen']) {
   A(/Broadway Bound Teen/.test(S.byKey(key).company),
     key + ' names the band, not an edition: ' + S.byKey(key).company);
 }
+// Two names, two programs, and they are not interchangeable (CJ, 9 Aug 2026):
+//   Teen Conservatory     — the audition-based track, ages 13–18: Dear Evan
+//                           Hansen, Sweeney Todd, A Christmas Carol, Hadestown,
+//                           Mean Girls.
+//   Broadway Bound Teen   — the 12–15 cast inside the Broadway Bound JR. shows,
+//                           Frozen JR. and The Little Mermaid JR.
+// The site briefly used "Broadway Bound Teen" for both, which put a 13–18
+// audition track and a 12–15 junior cast under one name.
+for (const key of ['deh', 'sweeney', 'carol', 'hadestown', 'mean-girls']) {
+  A(S.byKey(key).season === 'Teen Conservatory',
+    key + ' belongs to the Teen Conservatory — got "' + S.byKey(key).season + '"');
+}
+for (const key of ['frozen-kids', 'frozen-jr', 'frozen-teen', 'mermaid-kids', 'mermaid-jr',
+  'mermaid-teen']) {
+  A(S.byKey(key).season === 'Broadway Bound', key + ' belongs to Broadway Bound');
+}
+// "Broadway Bound Teen" may only ever appear next to a JR. show.
+const TEEN_BAND = /.{0,80}Broadway Bound Teen.{0,80}/gs;
+for (const file of ['index.html', 'calendar.html', 'broadway-bound.html', 'summer-2027.html',
+  'teen-conservatory.html', 'register/index.html', 'netlify/functions/chat.mjs']) {
+  const stray = (read(file).replace(/"data:[^"]*"/g, '""').match(TEEN_BAND) || [])
+    .filter((t) => !/Frozen|Mermaid|JR\./.test(t));
+  A(stray.length === 0, file + ' only uses "Broadway Bound Teen" for a JR. show cast' +
+    (stray.length ? '\n        stray: ' + stray[0].replace(/\s+/g, ' ').slice(0, 140) : ''));
+}
+A(!/formerly Teen Conservatory/.test(read('index.html')),
+  'nothing still calls the Teen Conservatory a former name');
+
 // Hadestown: Teen Edition is a real licensed edition and stays.
 const INVENTED = /(Frozen|Little Mermaid|Mermaid)[^<>]{0,30}Teen Edition|Teen Edition[^<>]{0,30}(Frozen|Mermaid)/;
 for (const file of ['index.html', 'calendar.html', 'broadway-bound.html', 'frozen-jr.html',
