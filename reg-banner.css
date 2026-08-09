@@ -30,7 +30,7 @@
 .audition-banner-eyebrow{
   display:inline-flex; align-items:center; gap:9px;
   font-family:'DM Sans',sans-serif; font-size:11px; letter-spacing:0.22em;
-  text-transform:uppercase; color:#F7D98F; margin-bottom:4px; font-weight:700;
+  text-transform:uppercase; color:#E8B84B; margin-bottom:4px; font-weight:700;
 }
 .ab-pulse{
   width:9px; height:9px; border-radius:50%; background:#ff4d4d; flex-shrink:0;
@@ -39,7 +39,7 @@
   font-family:'Protest Strike',sans-serif; font-size:29px; font-weight:400; color:#fff;
   line-height:1.25; margin-bottom:4px; letter-spacing:0.01em;
 }
-.audition-banner-title span{ color:#F7D98F; font-style:normal; }
+.audition-banner-title span{ color:#E8B84B; font-style:normal; }
 .audition-banner-sub{ font-size:14.5px; color:rgba(255,255,255,0.82); line-height:1.4; font-weight:500; margin-top:3px; }
 .audition-banner-cta{
   flex-shrink:0; display:inline-flex; align-items:center; gap:10px; padding:14px 30px;

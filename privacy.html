@@ -17,7 +17,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --navy:#08111F; --navy2:#0F1E36; --navy3:#162B52;
-  --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+  --gold:#C8892A; --gold2:#E8B84B; --gold3:#E8B84B;
   --crimson:#8B1A2F;
   --paper:#F7F1E4;
   --ink:#0B1424; --ink2:#3A4668; --ink3:#7080A0;
@@ -36,7 +36,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);o
   color:#fff;
   padding:88px 40px 72px;
   overflow:hidden;
-  border-bottom:1px solid rgba(247,217,143,0.25);
+  border-bottom:1px solid rgba(232,184,75,0.25);
 }
 .p-hero::before{
   content:'';
@@ -179,7 +179,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);o
   line-height:1.78;
 }
 .p-content p strong{color:var(--navy);font-weight:600}
-.p-content a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(247,217,143,0.3);transition:border-color 0.2s}
+.p-content a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(232,184,75,0.3);transition:border-color 0.2s}
 .p-content a:hover{border-bottom-color:var(--gold)}
 .p-content ul, .p-content ol{
   margin:14px 0 18px 0;
@@ -285,7 +285,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);o
 .p-contact-card a{
   color:var(--gold2);
   text-decoration:none;
-  border-bottom:1px solid rgba(247,217,143,0.3);
+  border-bottom:1px solid rgba(232,184,75,0.3);
 }
 .p-contact-card a:hover{border-bottom-color:var(--gold2)}
 
@@ -409,8 +409,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 }
 @keyframes uctaShift{ 0%{background-position:0 0} 100%{background-position:260% 0} }
 @keyframes uctaPulse{
-  0%,100%{ box-shadow:0 0 0 0 rgba(247,217,143,0.50) }
-  50%{ box-shadow:0 0 20px 5px rgba(247,217,143,0.32) }
+  0%,100%{ box-shadow:0 0 0 0 rgba(232,184,75,0.50) }
+  50%{ box-shadow:0 0 20px 5px rgba(232,184,75,0.32) }
 }
 @keyframes uctaSheen{ 0%{left:-70%} 55%,100%{left:140%} }
 @media(max-width:900px){
@@ -655,7 +655,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <div class="footer-brand">
       <a class="footer-brand-logo" href="index.html">
         <div class="footer-brand-mark">
-          <svg viewBox="0 0 24 24"><path d="M12 3C8 3 5 6 5 10c0 2.5 1.2 4.7 3 6.1V20h8v-3.9c1.8-1.4 3-3.6 3-6.1 0-4-3-7-7-7z" fill="#08111F"></path><circle cx="12" cy="10" fill="#F7D98F" r="2.5"></circle></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 3C8 3 5 6 5 10c0 2.5 1.2 4.7 3 6.1V20h8v-3.9c1.8-1.4 3-3.6 3-6.1 0-4-3-7-7-7z" fill="#08111F"></path><circle cx="12" cy="10" fill="#E8B84B" r="2.5"></circle></svg>
         </div>
         <div class="footer-brand-name">Northern Virginia<br/>Performing Arts<span>NoVAPA &middot; Leesburg, VA</span></div>
       </a>
@@ -728,8 +728,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     height: 62px;
     border-radius: 50%;
     background: linear-gradient(135deg, #E8B84B 0%, #C8892A 100%);
-    border: 1.5px solid rgba(247, 217, 143, 0.6);
-    box-shadow: 0 8px 26px rgba(247,217,143, 0.45), 0 2px 8px rgba(0,0,0,0.3);
+    border: 1.5px solid rgba(232, 184, 75, 0.6);
+    box-shadow: 0 8px 26px rgba(232,184,75, 0.45), 0 2px 8px rgba(0,0,0,0.3);
     z-index: 9000;
     display: flex;
     align-items: center;
@@ -739,14 +739,14 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
   .nv-bot-launcher:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 12px 34px rgba(247,217,143, 0.6), 0 4px 12px rgba(0,0,0,0.35);
+    box-shadow: 0 12px 34px rgba(232,184,75, 0.6), 0 4px 12px rgba(0,0,0,0.35);
   }
   .nv-bot-launcher svg { width: 28px; height: 28px; color: #08111F; }
   .nv-bot-launcher .nv-bot-pulse {
     position: absolute;
     inset: -4px;
     border-radius: 50%;
-    border: 2px solid rgba(247,217,143, 0.5);
+    border: 2px solid rgba(232,184,75, 0.5);
     animation: nvBotPulse 2.2s ease-out infinite;
     pointer-events: none;
   }
@@ -763,7 +763,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     height: 12px;
     border-radius: 50%;
     background: #8B1A2F;
-    border: 2px solid #F7D98F;
+    border: 2px solid #E8B84B;
     box-shadow: 0 0 6px rgba(139, 26, 47, 0.7);
   }
 
@@ -777,9 +777,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     height: 560px;
     max-height: calc(100vh - 130px);
     background: linear-gradient(180deg, #0F1E36 0%, #08111F 100%);
-    border: 1px solid rgba(247,217,143, 0.35);
+    border: 1px solid rgba(232,184,75, 0.35);
     border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(247,217,143, 0.08);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(232,184,75, 0.08);
     z-index: 9001;
     display: none;
     flex-direction: column;
@@ -798,7 +798,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   .nv-bot-header {
     background: linear-gradient(90deg, #08111F 0%, #162B52 100%);
     padding: 16px 18px;
-    border-bottom: 1px solid rgba(247,217,143, 0.25);
+    border-bottom: 1px solid rgba(232,184,75, 0.25);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -821,7 +821,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     font-family: 'Cormorant Garamond', serif;
     font-size: 17px;
     font-weight: 700;
-    color: #F7D98F;
+    color: #E8B84B;
     letter-spacing: 0.01em;
     line-height: 1.2;
   }
@@ -856,9 +856,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     padding: 0;
   }
   .nv-bot-close:hover {
-    background: rgba(247,217,143, 0.15);
-    color: #F7D98F;
-    border-color: rgba(247,217,143, 0.4);
+    background: rgba(232,184,75, 0.15);
+    color: #E8B84B;
+    border-color: rgba(232,184,75, 0.4);
   }
   .nv-bot-close svg { width: 14px; height: 14px; }
 
@@ -874,7 +874,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   .nv-bot-messages::-webkit-scrollbar { width: 6px; }
   .nv-bot-messages::-webkit-scrollbar-track { background: transparent; }
   .nv-bot-messages::-webkit-scrollbar-thumb {
-    background: rgba(247,217,143, 0.25);
+    background: rgba(232,184,75, 0.25);
     border-radius: 3px;
   }
 
@@ -898,8 +898,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     word-wrap: break-word;
   }
   .nv-bot-msg.bot .nv-bot-bubble {
-    background: rgba(247,217,143, 0.1);
-    border: 1px solid rgba(247,217,143, 0.25);
+    background: rgba(232,184,75, 0.1);
+    border: 1px solid rgba(232,184,75, 0.25);
     color: #fff;
     border-bottom-left-radius: 4px;
   }
@@ -910,13 +910,13 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     font-weight: 500;
   }
   .nv-bot-bubble a {
-    color: #F7D98F;
+    color: #E8B84B;
     text-decoration: underline;
     font-weight: 600;
   }
-  .nv-bot-bubble a:hover { color: #F7D98F; }
-  .nv-bot-bubble strong { color: #F7D98F; font-weight: 700; }
-  .nv-bot-bubble em { color: #F7D98F; font-style: italic; }
+  .nv-bot-bubble a:hover { color: #E8B84B; }
+  .nv-bot-bubble strong { color: #E8B84B; font-weight: 700; }
+  .nv-bot-bubble em { color: #E8B84B; font-style: italic; }
 
   /* Quick reply buttons */
   .nv-bot-choices {
@@ -928,8 +928,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
   .nv-bot-choice {
     background: rgba(15, 30, 54, 0.6);
-    border: 1px solid rgba(247,217,143, 0.4);
-    color: #F7D98F;
+    border: 1px solid rgba(232,184,75, 0.4);
+    color: #E8B84B;
     padding: 10px 14px;
     border-radius: 100px;
     font-size: 13px;
@@ -939,8 +939,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     font-family: 'DM Sans', sans-serif;
   }
   .nv-bot-choice:hover {
-    background: rgba(247,217,143, 0.15);
-    border-color: #F7D98F;
+    background: rgba(232,184,75, 0.15);
+    border-color: #E8B84B;
     transform: translateX(2px);
   }
 
@@ -954,7 +954,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: rgba(247,217,143, 0.6);
+    background: rgba(232,184,75, 0.6);
     animation: nvBotTyping 1.3s ease-in-out infinite;
   }
   .nv-bot-typing span:nth-child(2) { animation-delay: 0.15s; }
@@ -967,7 +967,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   /* Lead-capture form (inline in chat) */
   .nv-bot-leadform {
     background: rgba(15, 30, 54, 0.6);
-    border: 1px solid rgba(247,217,143, 0.3);
+    border: 1px solid rgba(232,184,75, 0.3);
     border-radius: 14px;
     padding: 14px;
     margin: 6px 0 14px;
@@ -977,7 +977,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   .nv-bot-leadform textarea {
     width: 100%;
     background: rgba(8, 17, 31, 0.7);
-    border: 1px solid rgba(247,217,143, 0.2);
+    border: 1px solid rgba(232,184,75, 0.2);
     border-radius: 8px;
     padding: 9px 11px;
     color: #fff;
@@ -989,7 +989,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   .nv-bot-leadform input:focus,
   .nv-bot-leadform textarea:focus {
     outline: none;
-    border-color: #F7D98F;
+    border-color: #E8B84B;
   }
   .nv-bot-leadform textarea { resize: vertical; min-height: 56px; }
   .nv-bot-leadform input::placeholder,
@@ -1009,7 +1009,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
   .nv-bot-leadform-submit:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(247,217,143, 0.4);
+    box-shadow: 0 4px 12px rgba(232,184,75, 0.4);
   }
   .nv-bot-leadform-submit:disabled {
     opacity: 0.5;
@@ -1022,13 +1022,13 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     display: flex;
     gap: 8px;
     padding: 12px 14px;
-    border-top: 1px solid rgba(247,217,143, 0.2);
+    border-top: 1px solid rgba(232,184,75, 0.2);
     background: rgba(8, 17, 31, 0.5);
   }
   .nv-bot-input {
     flex: 1;
     background: rgba(15, 30, 54, 0.7);
-    border: 1px solid rgba(247,217,143, 0.25);
+    border: 1px solid rgba(232,184,75, 0.25);
     border-radius: 100px;
     padding: 10px 16px;
     color: #fff;
@@ -1039,7 +1039,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
   .nv-bot-input:focus {
     outline: none;
-    border-color: #F7D98F;
+    border-color: #E8B84B;
     background: rgba(15, 30, 54, 0.9);
   }
   .nv-bot-input::placeholder { color: rgba(255,255,255,0.4); }
@@ -1059,7 +1059,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
   .nv-bot-send:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(247,217,143, 0.4);
+    box-shadow: 0 4px 12px rgba(232,184,75, 0.4);
   }
   .nv-bot-send:disabled { opacity: 0.4; cursor: not-allowed; }
   .nv-bot-send svg { width: 16px; height: 16px; color: #08111F; }
@@ -1067,7 +1067,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   /* Footer */
   .nv-bot-footer {
     padding: 10px 18px;
-    border-top: 1px solid rgba(247,217,143, 0.15);
+    border-top: 1px solid rgba(232,184,75, 0.15);
     text-align: center;
     font-size: 10.5px;
     color: rgba(255,255,255,0.45);
@@ -1078,13 +1078,13 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   .nv-bot-footer-restart {
     background: none;
     border: none;
-    color: rgba(247, 217, 143, 0.7);
+    color: rgba(232, 184, 75, 0.7);
     text-decoration: underline;
     font-size: 10.5px;
     padding: 0;
     font-family: inherit;
   }
-  .nv-bot-footer-restart:hover { color: #F7D98F; }
+  .nv-bot-footer-restart:hover { color: #E8B84B; }
 
   /* Mobile tweaks */
   @media (max-width: 480px) {
@@ -1147,7 +1147,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     </div>
     <div class="nv-bot-footer">
       <button class="nv-bot-footer-restart" id="nvBotRestart">Start over</button>
-      &nbsp;·&nbsp; Prefer to talk? <a href="mailto:info@novapa.org" style="color:rgba(247,217,143,0.7);">info@novapa.org</a>
+      &nbsp;·&nbsp; Prefer to talk? <a href="mailto:info@novapa.org" style="color:rgba(232,184,75,0.7);">info@novapa.org</a>
     </div>
   </div>
 </div>
