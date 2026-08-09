@@ -133,7 +133,7 @@ export function showStartFor(name) {
   return null;
 }
 
-// Broadway Bound Teens summer intensive (Mean Girls). Its discount is its own
+// Teen Conservatory summer intensive (Mean Girls). Its discount is its own
 // rule: flat 10% through Aug 1 (the private-registration window — everyone in
 // the gate is a returning family), full price once registration opens to the
 // public. It never joins the camp tier or the fall-show bundle.
