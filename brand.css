@@ -9,6 +9,7 @@
   --navy-0:#08111F; --navy-1:#0F1E36; --navy-2:#162B52;
   --card:rgba(22,43,82,0.45); --line:rgba(255,255,255,0.14);
   --cream:#F5F2EC;
+  /* gold law v2 (CJ, Aug 9): gold-2 is THE solo accent; gold-3 only inside gradients */
   --gold-1:#C8892A; --gold-2:#E8B84B; --gold-3:#F7D98F;
   --gold-grad:linear-gradient(135deg,#E8B84B,#F7D98F);
   --gold-grad-deep:linear-gradient(180deg,#E8B84B,#C8892A);

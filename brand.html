@@ -19,9 +19,9 @@
     --card:rgba(22,43,82,0.45);
     --line:rgba(255,255,255,0.14);
     --cream:#F5F2EC;
-    --gold-1:#C8892A;   /* gradient ingredient only */
-    --gold-2:#E8B84B;   /* gradient ingredient only */
-    --gold-3:#F7D98F;   /* THE gold */
+    --gold-1:#C8892A;   /* gradient ingredient / hover depth */
+    --gold-2:#E8B84B;   /* THE gold — rich amber, every solo accent */
+    --gold-3:#F7D98F;   /* gradient highlight only — never solo (CJ: reads soft/childish) */
     --gold-grad:linear-gradient(135deg, #E8B84B, #F7D98F);
     --gold-grad-deep:linear-gradient(180deg, #E8B84B, #C8892A);
     --ink:rgba(255,255,255,0.88);
@@ -38,11 +38,11 @@
   h1 { font-family:'Protest Strike',sans-serif; font-weight:400; font-size:54px; color:#fff; line-height:1.05; margin:0 0 8px; }
   h1 .g { background:var(--gold-grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .subhead { font-size:15px; font-weight:500; color:var(--ink-dim); }
-  .subhead .g { color:var(--gold-3); }
+  .subhead .g { color:var(--gold-2); }
   .lede { color:var(--ink-dim); font-size:14px; max-width:560px; margin:12px auto 0; }
   section { margin-bottom:72px; }
   h2 { font-family:'Protest Strike',sans-serif; font-weight:400; font-size:30px; color:#fff; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:6px; }
-  h2 .g { color:var(--gold-3); }
+  h2 .g { color:var(--gold-2); }
   .secnote { color:var(--ink-dim); font-size:14px; margin-bottom:26px; max-width:720px; }
   .tok { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--gold-3); background:rgba(247,217,143,0.09); padding:2px 7px; border-radius:6px; }
 
@@ -148,13 +148,14 @@
 
   <section>
     <h2>COLOR &mdash; <span class="g">ONE GOLD</span></h2>
-    <p class="secnote">Three gold tokens exist, two uses are legal: <b style="color:var(--ink)">gold-3 alone</b> for every accent, link, and label &mdash; or <b style="color:var(--ink)">a gradient</b> where the eye should land first (hero money-words, the primary button). Solo gold-1 or gold-2 never appears.</p>
+    <p class="secnote">Three gold tokens exist, two uses are legal: <b style="color:var(--ink)">gold-2 alone</b> &mdash; the rich amber &mdash; for every accent, link, and label, or <b style="color:var(--ink)">a gradient</b> where the eye should land first (hero money-words, the primary button). Solo gold-1 never appears, and solo gold-3 is banned (CJ, Aug 9: the soft yellow reads childish against the navy &mdash; it lives only as the light end of a gradient).</p>
     <div class="swatches">
       <div class="sw"><div class="chip" style="background:#08111F"></div><div class="meta"><b>navy-0</b><span>#08111F &middot; page bg</span></div></div>
       <div class="sw"><div class="chip" style="background:#0F1E36"></div><div class="meta"><b>navy-1</b><span>#0F1E36 &middot; raised</span></div></div>
       <div class="sw"><div class="chip" style="background:#162B52"></div><div class="meta"><b>navy-2</b><span>#162B52 &middot; highlight</span></div></div>
       <div class="sw"><div class="chip" style="background:rgba(22,43,82,0.45)"></div><div class="meta"><b>card</b><span>navy-2 @ 45% &middot; glass</span></div></div>
-      <div class="sw"><div class="chip" style="background:#F7D98F"></div><div class="meta"><b>gold-3 &starf;</b><span>#F7D98F &middot; the only solo gold</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E8B84B"></div><div class="meta"><b>gold-2 &starf;</b><span>#E8B84B &middot; the only solo gold</span></div></div>
+      <div class="sw"><div class="chip" style="background:#F7D98F"></div><div class="meta"><b>gold-3</b><span>#F7D98F &middot; gradient highlight only</span></div></div>
       <div class="sw"><div class="chip" style="background:linear-gradient(135deg,#E8B84B,#F7D98F)"></div><div class="meta"><b>gold-grad &starf;</b><span>gold-2 &rarr; gold-3 &middot; spotlight</span></div></div>
       <div class="sw"><div class="chip" style="background:linear-gradient(180deg,#E8B84B,#C8892A)"></div><div class="meta"><b>gold-grad-deep</b><span>gold-2 &rarr; gold-1 &middot; buttons</span></div></div>
       <div class="sw"><div class="chip" style="background:#F5F2EC"></div><div class="meta"><b>cream</b><span>#F5F2EC &middot; light pages</span></div></div>

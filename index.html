@@ -190,6 +190,15 @@
  overflow: hidden
  }
 
+ /* phones: size the hero to its content — full-vh centering leaves a
+    screen's worth of empty navy above and below (CJ, Aug 9) */
+ @media (max-width: 760px) {
+ .hero {
+ min-height: auto;
+ padding: 40px 0 44px;
+ }
+ }
+
  .hphoto {
  position: absolute;
  inset: 0;
