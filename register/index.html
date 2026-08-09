@@ -367,7 +367,7 @@
         <div class="poster" style="background-image:url('/register/img/httyd.jpg')"></div>
         <div class="bd">
           <div class="t">How to Train Your Dragon JR.</div>
-          <div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Jul 16–17</span></div>
+          <div class="d">July 5–16, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Jul 16 5pm &amp; 7pm · Jul 17 11am, 1pm, 4pm &amp; 7pm</span></div>
           <div class="kids" data-show="httyd"></div>
         </div>
       </div>
@@ -375,7 +375,7 @@
         <div class="poster" style="background-image:url('/register/img/charlie.jpg')"></div>
         <div class="bd">
           <div class="t">Charlie and the Chocolate Factory JR.</div>
-          <div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Jul 30–31</span></div>
+          <div class="d">July 19–30, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Jul 30 5pm &amp; 7pm · Jul 31 11am, 1pm, 4pm &amp; 7pm</span></div>
           <div class="kids" data-show="charlie"></div>
         </div>
       </div>
@@ -383,7 +383,7 @@
         <div class="poster" style="background-image:url('/register/img/trolls.jpg')"></div>
         <div class="bd">
           <div class="t">Trolls The Musical JR.</div>
-          <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Aug 13–14</span></div>
+          <div class="d">August 2–13, 2027 · Mon–Fri 8:30–4:15 · $995<br><span style="color:var(--gold3)">Performances Aug 13 5pm &amp; 7pm · Aug 14 11am, 1pm, 4pm &amp; 7pm</span></div>
           <div class="kids" data-show="trolls"></div>
         </div>
       </div>
@@ -410,7 +410,7 @@
         <div class="poster mg-poster" style="background-image:url('/register/img/meangirls.jpg'), linear-gradient(135deg,#E31C79 0%,#ff5ea8 100%)"></div>
         <div class="bd">
           <div class="t">Mean Girls &mdash; Teens</div>
-          <div class="d">Ages 13–18 · June 14–24, 2027 · Performances Jun 25–27 · $995</div>
+          <div class="d">Ages 13–18 · June 14–24, 2027 · $995<br><span style="color:var(--gold3)">Performances Jun 25 7pm · Jun 26 2pm &amp; 7pm · Jun 27 2pm</span></div>
           <div class="kids" data-fallshow="meangirls"></div>
         </div>
       </div>
@@ -589,7 +589,7 @@
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
     }
   })();
-  var MG_ID = 990001; // Broadway Bound Teens | Mean Girls (performers)
+  var MG_ID = 990001; // Teen Conservatory | Mean Girls (performers)
   var MG_IDS = [990001, 990002]; // + 990002 tech crew — same program, same flat-10% rule
   function isMG(id){ return MG_IDS.indexOf(id) !== -1; }
   var TI_IDS = [1805731]; // Dear Evan Hansen teen intensive — counts in the show ladder (CJ, Jul 31)
@@ -1210,7 +1210,10 @@
         // grandparents book travel around these
         var showT = (a.on && !already && a.band && SHOWTIMES[a.band] && PERF_DAYS[show])
           ? '<div class="tiny" style="text-align:left;margin:4px 0 0;opacity:.75">Performances: ' +
-            SHOWTIMES[a.band].replace('FRI', PERF_DAYS[show][0]).replace('SAT', PERF_DAYS[show][1]) + '</div>'
+            // /g, not a bare string: the 12–15 band plays twice on the Saturday,
+            // and a plain .replace() only swapped the first one, so the card
+            // read "Sat Aug 14 4:00 PM · SAT 7:00 PM".
+            SHOWTIMES[a.band].replace(/FRI/g, PERF_DAYS[show][0]).replace(/SAT/g, PERF_DAYS[show][1]) + '</div>'
           : '';
         return '<div class="kid-row">' +
           '<label class="kid-check"><input type="checkbox" data-key="' + esc(key) + '" ' + (a.on ? 'checked' : '') + ((already || noBand) ? ' disabled' : '') + '> <span>' + esc(k.name) + '</span>' +
