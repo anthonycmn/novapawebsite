@@ -55,6 +55,78 @@ for (const show of S.shows) {
     show.key + ' falls on ' + EXPECT_DAY[show.key].join('/') + ' — got ' + got.join('/'));
 }
 
+// ── licensed titles ─────────────────────────────────────────────────────
+// We license Frozen KIDS, Frozen JR., Little Mermaid KIDS and Little Mermaid
+// JR. There is no teen edition of either title. Our teen band performs the JR.
+// script, and "Broadway Bound Teen" names the band, never the show. Printing a
+// version that does not exist is a licensing problem, not a wording one, so it
+// is checked here. (CJ, 9 Aug 2026.)
+console.log('\nLICENSED TITLES');
+const LICENSED = {
+  'frozen-kids': 'Frozen KIDS', 'frozen-jr': 'Frozen JR.', 'frozen-teen': 'Frozen JR.',
+  'mermaid-kids': 'Little Mermaid KIDS', 'mermaid-jr': 'Little Mermaid JR.',
+  'mermaid-teen': 'Little Mermaid JR.',
+};
+for (const [key, title] of Object.entries(LICENSED)) {
+  A(S.byKey(key).title === title,
+    key + ' is billed as "' + title + '" — got "' + S.byKey(key).title + '"');
+}
+for (const key of ['frozen-teen', 'mermaid-teen']) {
+  A(S.byKey(key).ages === '12–15', key + ' is the 12–15 band');
+  A(/Broadway Bound Teen/.test(S.byKey(key).company),
+    key + ' names the band, not an edition: ' + S.byKey(key).company);
+}
+// Hadestown: Teen Edition is a real licensed edition and stays.
+const INVENTED = /(Frozen|Little Mermaid|Mermaid)[^<>]{0,30}Teen Edition|Teen Edition[^<>]{0,30}(Frozen|Mermaid)/;
+for (const file of ['index.html', 'calendar.html', 'broadway-bound.html', 'frozen-jr.html',
+  'frozen-kids.html', 'little-mermaid-jr.html', 'register/index.html', 'shows.js',
+  'netlify/functions/chat.mjs']) {
+  A(!INVENTED.test(read(file)), file + ' claims no teen edition of Frozen or The Little Mermaid');
+}
+
+// ── the NOVAPA ADMIN calendar ───────────────────────────────────────────
+// Read off the NOVAPA ADMIN Google calendar (cj@novapa.org, America/New_York)
+// on 9 Aug 2026 and written down here, curtain by curtain, so the website can
+// never quietly drift away from the calendar the company actually runs on.
+// If CJ moves a curtain in Google, change it here first — this block is the
+// calendar's word, and shows.js has to answer to it, not the other way round.
+console.log('\nNOVAPA ADMIN CALENDAR');
+const ADMIN_CALENDAR = {
+  deh: ['2026-08-14 19:00', '2026-08-15 14:00', '2026-08-15 19:00', '2026-08-16 14:00'],
+  sweeney: ['2026-10-23 19:00', '2026-10-24 14:00', '2026-10-24 19:00', '2026-10-25 14:00',
+    '2026-10-30 19:00', '2026-10-31 14:00', '2026-11-01 14:00'],
+  carol: ['2026-12-04 19:00', '2026-12-05 14:00', '2026-12-05 19:00', '2026-12-06 14:00',
+    '2026-12-10 19:00', '2026-12-11 19:00', '2026-12-12 14:00', '2026-12-12 19:00',
+    '2026-12-13 14:00', '2026-12-18 19:00', '2026-12-19 14:00', '2026-12-19 19:00',
+    '2026-12-20 14:00'],
+  'frozen-kids': ['2027-01-22 19:00', '2027-01-23 14:00', '2027-01-23 19:00'],
+  'frozen-jr': ['2027-01-29 19:00', '2027-01-30 14:00', '2027-01-30 19:00'],
+  'frozen-teen': ['2027-02-05 19:00', '2027-02-06 14:00', '2027-02-06 19:00'],
+  hadestown: ['2027-03-05 19:00', '2027-03-06 14:00', '2027-03-06 19:00', '2027-03-07 14:00',
+    '2027-03-11 19:00', '2027-03-12 19:00', '2027-03-13 14:00', '2027-03-13 19:00',
+    '2027-03-14 14:00', '2027-03-19 19:00', '2027-03-20 14:00', '2027-03-20 19:00'],
+  'mermaid-kids': ['2027-05-14 19:00', '2027-05-15 14:00', '2027-05-15 19:00'],
+  'mermaid-jr': ['2027-05-21 19:00', '2027-05-22 14:00', '2027-05-22 19:00'],
+  'mermaid-teen': ['2027-06-04 19:00', '2027-06-05 14:00', '2027-06-05 19:00'],
+  'mean-girls': ['2027-06-25 19:00', '2027-06-26 14:00', '2027-06-26 19:00', '2027-06-27 14:00'],
+  httyd: ['2027-07-16 17:00', '2027-07-16 19:00', '2027-07-17 11:00', '2027-07-17 13:00',
+    '2027-07-17 16:00', '2027-07-17 19:00'],
+  charlie: ['2027-07-30 17:00', '2027-07-30 19:00', '2027-07-31 11:00', '2027-07-31 13:00',
+    '2027-07-31 16:00', '2027-07-31 19:00'],
+  trolls: ['2027-08-13 17:00', '2027-08-13 19:00', '2027-08-14 11:00', '2027-08-14 13:00',
+    '2027-08-14 16:00', '2027-08-14 19:00'],
+};
+A(Object.keys(ADMIN_CALENDAR).length === S.shows.length,
+  'the calendar covers every company on the season');
+for (const show of S.shows) {
+  const want = ADMIN_CALENDAR[show.key] || [];
+  const got = show.performances.map((p) => p.at);
+  A(JSON.stringify(got) === JSON.stringify(want),
+    show.key + ' matches the admin calendar, curtain for curtain' +
+    (JSON.stringify(got) === JSON.stringify(want) ? ''
+      : '\n        calendar: ' + want.join(' · ') + '\n        site:     ' + got.join(' · ')));
+}
+
 // ── show pages ──────────────────────────────────────────────────────────
 // Each cast block on a page must be exactly the performances of its company,
 // in order, with the same times.
@@ -127,10 +199,9 @@ const RANGES = [
   ['summer-2027.html', 'httyd', 'Jul 16 – 17, 2027'],
   ['summer-2027.html', 'charlie', 'Jul 30 – 31, 2027'],
   ['summer-2027.html', 'trolls', 'Aug 13 – 14, 2027'],
-  ['register/index.html', 'httyd', 'Performances Jul 16–17'],
-  ['register/index.html', 'charlie', 'Performances Jul 30–31'],
-  ['register/index.html', 'trolls', 'Performances Aug 13–14'],
 ];
+// (the registration cards moved from a bare range to the full curtain list —
+// they are checked in CURTAIN TIMES below)
 for (const [file, key, text] of RANGES) {
   const html = plain(read(file));
   A(html.includes(text), file + ' shows ' + key + ' as "' + text + '"');
@@ -140,24 +211,75 @@ for (const [file, key, text] of RANGES) {
     '  …which is the real first (' + first(key) + ') and last (' + last(key) + ') day');
 }
 
-// every index card carries its curtain days
+// A date with no time sends a family to Leesburg on the right day and the
+// wrong hour. Every page that names a run has to name its curtains too.
+console.log('\nCURTAIN TIMES');
+const CURTAINS = [
+  ['broadway-bound.html', ['frozen-kids']], ['broadway-bound.html', ['frozen-jr']],
+  ['broadway-bound.html', ['frozen-teen']], ['broadway-bound.html', ['mermaid-kids']],
+  ['broadway-bound.html', ['mermaid-jr']], ['broadway-bound.html', ['mermaid-teen']],
+  ['broadway-bound.html', ['mean-girls']], ['broadway-bound.html', ['httyd']],
+  ['broadway-bound.html', ['charlie']], ['broadway-bound.html', ['trolls']],
+  ['summer-2027.html', ['httyd']], ['summer-2027.html', ['charlie']],
+  ['summer-2027.html', ['trolls']],
+  ['teen-conservatory.html', ['sweeney']], ['teen-conservatory.html', ['hadestown']],
+  ['register/index.html', ['httyd']], ['register/index.html', ['charlie']],
+  ['register/index.html', ['trolls']], ['register/index.html', ['mean-girls']],
+];
+for (const [file, keys] of CURTAINS) {
+  const want = S.dayTimes(keys.flatMap((k) => S.byKey(k).performances)).join(' · ');
+  A(plain(read(file)).includes(want), file + ' prints ' + keys.join('+') + ' curtains: ' + want);
+}
+// The camp performance times are typed out separately in the registration
+// flow, keyed by age band. They have to be the same curtains.
+const regJs = read('register/index.html');
+for (const [band, text] of [['5-9', 'FRI 5:00 PM &middot; SAT 11:00 AM'],
+  ['9-12', 'FRI 7:00 PM &middot; SAT 1:00 PM'], ['12-15', 'SAT 4:00 PM &middot; SAT 7:00 PM']]) {
+  A(regJs.includes("'" + band + "':"), 'the registration flow still has a ' + band + ' band');
+  A(regJs.includes(text), '  …booking ' + band + ' as ' + plain(text));
+  const want = S.byKey('httyd').performances.filter((p) => p.ages.replace('–', '-') === band)
+    .map((p) => S.dayName(p.at) + ' ' + S.clock(p.at));
+  const got = plain(text).replace(/FRI/g, 'Fri').replace(/SAT/g, 'Sat').split(' · ');
+  A(JSON.stringify(got) === JSON.stringify(want),
+    '  …which is what shows.js holds for that band (' + want.join(' · ') + ')');
+}
+A(/replace\(\/SAT\/g/.test(regJs),
+  'the SAT swap is global, so the 12–15 band does not print a literal "SAT"');
+
+// Every index card carries its curtain days AND its curtain times. A card that
+// prints only the dates sends a family to the box office on the right day at
+// the wrong hour, so the times are not decoration.
 console.log('\nINDEX CARDS');
 const idx = plain(read('index.html'));
-const CARDS = {
-  'Dear Evan Hansen': 'deh', 'Sweeney Todd': 'sweeney', 'A Christmas Carol': 'carol',
-  'Frozen Kids': 'frozen-kids', Hadestown: 'hadestown', 'Mean Girls': 'mean-girls',
-  'How to Train Your Dragon Jr.': 'httyd',
-  'Charlie and the Chocolate Factory': 'charlie', 'Trolls Jr.': 'trolls',
-};
-A((read('index.html').match(/class="sperf"/g) || []).length === 11,
+const P = (k) => S.byKey(k).performances;
+const part = (label, k) => ({ label, performances: P(k) });
+const CARDS = [
+  ['Dear Evan Hansen', P('deh')],
+  ['Sweeney Todd', P('sweeney')],
+  ['A Christmas Carol', P('carol')],
+  ['Frozen Kids', P('frozen-kids')],
+  ['Frozen', [part('JR.', 'frozen-jr'), part('Teen', 'frozen-teen')]],
+  ['Hadestown', P('hadestown')],
+  ['The Little Mermaid',
+    [part('KIDS', 'mermaid-kids'), part('JR.', 'mermaid-jr'), part('Teen', 'mermaid-teen')]],
+  ['Mean Girls', P('mean-girls')],
+  ['How to Train Your Dragon Jr.', P('httyd')],
+  ['Charlie and the Chocolate Factory', P('charlie')],
+  ['Trolls Jr.', P('trolls')],
+];
+A((read('index.html').match(/class="sperf"/g) || []).length === CARDS.length,
   'all eleven show cards carry a performance line');
-for (const [title, key] of Object.entries(CARDS)) {
-  const show = S.byKey(key);
-  const days = [...new Set(show.performances.map((p) => S.monthDay(p.at)))];
-  const n = show.performances.length;
-  A(idx.includes(n + ' performance' + (n === 1 ? '' : 's') + ' — ' + days.join(' · ')),
-    'the ' + title + ' card lists ' + n + ' performances on ' + days.join(', '));
+for (const [title, parts] of CARDS) {
+  const line = S.cardLine(parts);
+  A(idx.includes(line), 'the ' + title + ' card reads "' + line + '"');
 }
+// The bleed the cards used to have was structural: .sbody was absolutely
+// positioned over a fixed-height poster inside overflow:hidden, so a longer
+// line rode up over the artwork and then got clipped. The card is a column now.
+const cardCss = read('index.html').match(/\.scard \{[\s\S]*?\}/)[0];
+A(/flex-direction:\s*column/.test(cardCss), '.scard is a column, so text can never overlap the poster');
+A(!/position:\s*absolute/.test(read('index.html').match(/\.sbody \{[\s\S]*?\}/)[0]),
+  '.sbody is in flow, so a longer performance line grows the card instead of bleeding out');
 
 // ── nothing anywhere still says the old dates ───────────────────────────
 console.log('\nNO STALE DATES');

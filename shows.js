@@ -59,7 +59,7 @@
     },
     {
       key: 'frozen-jr', season: 'Broadway Bound', title: 'Frozen JR.',
-      company: 'Frozen JR.', ages: '9–12', runMinutes: 90, page: 'frozen-jr.html',
+      company: 'Frozen JR. (Ages 9–12)', ages: '9–12', runMinutes: 90, page: 'frozen-jr.html',
       performances: [
         { at: '2027-01-29 19:00' },
         { at: '2027-01-30 14:00' },
@@ -67,8 +67,13 @@
       ]
     },
     {
-      key: 'frozen-teen', season: 'Broadway Bound', title: 'Frozen (Teen Edition)',
-      company: 'Frozen (Teen Edition)', ages: '13–18', runMinutes: 90, page: 'frozen-jr.html',
+      // There is no teen edition of Frozen. MTI licenses KIDS and JR. and
+      // nothing else, so this cast performs Frozen JR. exactly like the 9–12
+      // cast does — the only difference is who is in it. "Broadway Bound Teen"
+      // is our age band, never a version of the show. (CJ, 9 Aug 2026.)
+      key: 'frozen-teen', season: 'Broadway Bound', title: 'Frozen JR.',
+      company: 'Frozen JR. (Broadway Bound Teen)', ages: '12–15', runMinutes: 90,
+      page: 'frozen-jr.html',
       performances: [
         { at: '2027-02-05 19:00' },
         { at: '2027-02-06 14:00' },
@@ -88,7 +93,8 @@
     },
     {
       key: 'mermaid-jr', season: 'Broadway Bound', title: 'Little Mermaid JR.',
-      company: 'Little Mermaid JR.', ages: '9–12', runMinutes: 90, page: 'little-mermaid-jr.html',
+      company: 'Little Mermaid JR. (Ages 9–12)', ages: '9–12', runMinutes: 90,
+      page: 'little-mermaid-jr.html',
       performances: [
         { at: '2027-05-21 19:00' },
         { at: '2027-05-22 14:00' },
@@ -96,8 +102,10 @@
       ]
     },
     {
-      key: 'mermaid-teen', season: 'Broadway Bound', title: 'Little Mermaid (Teen Edition)',
-      company: 'Little Mermaid (Teen Edition)', ages: '13–18', runMinutes: 90,
+      // Same as Frozen: no teen edition exists. This is Little Mermaid JR.
+      // played by the Broadway Bound Teen band.
+      key: 'mermaid-teen', season: 'Broadway Bound', title: 'Little Mermaid JR.',
+      company: 'Little Mermaid JR. (Broadway Bound Teen)', ages: '12–15', runMinutes: 90,
       page: 'little-mermaid-jr.html',
       performances: [
         { at: '2027-06-04 19:00' },
@@ -232,6 +240,45 @@
     return null;
   }
 
+  // A short curtain time for the home-page cards: 7pm, not 7:00 PM. The cards
+  // are 300px wide and carry up to thirteen curtains, so every character of
+  // "7:00 PM" that isn't load-bearing is a character that wraps the line.
+  function shortClock(at) {
+    var d = parse(at);
+    if (!d) return '';
+    var h = d.getHours(), mi = d.getMinutes();
+    return ((h % 12) || 12) + (mi ? ':' + (mi < 10 ? '0' : '') + mi : '') + (h < 12 ? 'am' : 'pm');
+  }
+  function joinTimes(list) {
+    if (list.length < 2) return list.join('');
+    return list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1];
+  }
+  // "Aug 14 7pm · Aug 15 2pm & 7pm · Aug 16 2pm" — one entry per day, however
+  // many curtains that day holds.
+  function dayTimes(perfs) {
+    var order = [], byDay = {};
+    for (var i = 0; i < perfs.length; i++) {
+      var day = monthDay(perfs[i].at);
+      if (!byDay[day]) { byDay[day] = []; order.push(day); }
+      byDay[day].push(shortClock(perfs[i].at));
+    }
+    return order.map(function (day) { return day + ' ' + joinTimes(byDay[day]); });
+  }
+  // The whole line a show card prints. `parts` is either a company's
+  // performances or, for the cards that carry two or three companies,
+  // [{label, performances}, …].
+  function cardLine(parts) {
+    var groups = Array.isArray(parts) && parts.length && parts[0].performances
+      ? parts : [{ label: '', performances: parts }];
+    var n = 0, out = [];
+    for (var i = 0; i < groups.length; i++) {
+      n += groups[i].performances.length;
+      out.push((groups[i].label ? groups[i].label + ' ' : '') +
+        dayTimes(groups[i].performances).join(' · '));
+    }
+    return n + ' performance' + (n === 1 ? '' : 's') + ' — ' + out.join(' | ');
+  }
+
   root.NOVAPA_SHOWS = {
     houseOpensMinutes: HOUSE_OPENS_MINUTES,
     houseOpensNote: 'House opens ' + HOUSE_OPENS_MINUTES + ' minutes before every curtain.',
@@ -241,6 +288,9 @@
     dayName: dayName,
     monthDay: monthDay,
     clock: clock,
+    shortClock: shortClock,
+    dayTimes: dayTimes,
+    cardLine: cardLine,
     runLabel: runLabel,
     byKey: byKey
   };
