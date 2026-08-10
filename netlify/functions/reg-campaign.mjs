@@ -42,6 +42,10 @@ export function unsubUrl(email) {
 // a display-text/href mismatch (its phishing wrapper).
 export function renderEmail(rawBody, vars) {
   let body = rawBody;
+  // '[plain]' as the first line = personal mode: no logo, no background,
+  // no button styling — reads like an email a person typed (Jason, Aug 10)
+  const personal = body.startsWith("[plain]\n");
+  if (personal) body = body.slice("[plain]\n".length);
   for (const [k, v] of Object.entries(vars)) body = body.replaceAll(`{${k}}`, v);
   const LINK = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
   const text = body.replace(LINK, (_, t, u) => `${t}: ${u}`);
@@ -53,7 +57,7 @@ export function renderEmail(rawBody, vars) {
     if (lines[0] === "--") { footer = true; lines = lines.slice(1); }
     if (!lines.length) return "";
     const base = footer ? "font-size:13px;color:#8a93a3" : "font-size:16px;color:#1a2233";
-    const btn = lines.length === 1 && lines[0].match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
+    const btn = !personal && lines.length === 1 && lines[0].match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
     if (btn) {
       return `<p style="text-align:center;margin:28px 0"><a href="${esc(btn[2])}" style="display:inline-block;background:#f2c94c;color:#0b1b33;font-weight:700;font-size:16px;padding:13px 30px;border-radius:8px;text-decoration:none">${esc(btn[1])}</a></p>`;
     }
@@ -64,7 +68,11 @@ export function renderEmail(rawBody, vars) {
     const bold = lines.length === 1 && lines[0].endsWith(":") && lines[0].length < 40;
     return `<p style="margin:0 0 18px;${base}${bold ? ";font-weight:700" : ""}">${lines.map(inline).join("<br>")}</p>`;
   }).filter(Boolean).join("\n");
-  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f6f7f9"><div style="max-width:560px;margin:0 auto;padding:32px 20px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55">
+  const html = personal
+    ? `<!doctype html><html><body style="margin:0;padding:0"><div style="max-width:560px;padding:8px 4px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55">
+${blocks}
+</div></body></html>`
+    : `<!doctype html><html><body style="margin:0;padding:0;background:#f6f7f9"><div style="max-width:560px;margin:0 auto;padding:32px 20px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55">
 <p style="text-align:center;margin:0 0 22px"><img src="https://www.northernvirginiaperformingarts.org/favicon.png" width="56" height="56" alt="NOVAPA" style="display:inline-block"></p>
 ${blocks}
 </div></body></html>`;
