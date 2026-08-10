@@ -16,7 +16,7 @@ const BATCH_SIZE = 25; // ~18s of SMTP at ~0.7s/send, inside the fn limit
 // never touches the root domain that receipts and sign-in links depend on.
 // Replies go to Jason's real inbox.
 export const FROM = "Broadway Bound <hello@mail.novapa.org>";
-export const REPLY_TO = "jason@novapa.org";
+export const REPLY_TO = "info@novapa.org";
 export async function mailer() {
   const { default: nodemailer } = await import("nodemailer");
   return nodemailer.createTransport({
@@ -128,6 +128,23 @@ async function audienceFor(campaign) {
     const list = contacts.filter((c) => !out.has(c.email.toLowerCase())).map((c) => ({
       email: c.email.toLowerCase(),
       first: (c.first_name || "").trim().split(" ")[0] || "there",
+    }));
+    return [...TEAM.filter((t) => !out.has(t.email)), ...list];
+  }
+  const seg = (campaign.audience || "").match(/^seg_([a-z0-9_]+)$/);
+  if (seg) {
+    const [rows, supp, sent] = await Promise.all([
+      svcAll(`campaign_segments?segment=eq.${seg[1]}&select=email,first_name&order=email`),
+      svcAll("email_suppressions?scope=eq.marketing&select=email&order=email"),
+      svcAll(`campaign_sends?campaign_id=eq.${campaign.id}&select=email&order=email`),
+    ]);
+    const out = new Set([
+      ...supp.map((s) => s.email.toLowerCase()),
+      ...sent.map((s) => s.email.toLowerCase()),
+    ]);
+    const list = rows.filter((r) => !out.has(r.email.toLowerCase())).map((r) => ({
+      email: r.email.toLowerCase(),
+      first: (r.first_name || "").trim().split(" ")[0] || "there",
     }));
     return [...TEAM.filter((t) => !out.has(t.email)), ...list];
   }
