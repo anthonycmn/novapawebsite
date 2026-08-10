@@ -228,7 +228,7 @@
 
 <section class="sc-hero sc-wrap">
   <div class="sc-eyebrow">Broadway Bound Summer Camp</div>
-  <h1 class="sc-h1">Private registration for Summer 2027 <em>now open.</em></h1>
+  <h1 class="sc-h1">Registration for the 2027 season is <em>now open.</em></h1>
   <p class="sc-promo">Get <span>up to 20% off</span> through August 15.</p>
   <div class="sc-count" id="scCount" data-deadline="2026-08-01T10:00:00-04:00">
     <div class="sc-cell"><div class="sc-tiles" id="scDays"></div><div class="sc-unit">Days</div></div>
@@ -384,7 +384,7 @@
 (function(){
   if (Date.now() < new Date('2026-08-01T10:00:00-04:00').getTime()) return;
   var h1 = document.querySelector('.sc-h1');
-  if (h1) h1.innerHTML = 'Summer 2027 registration <em>open to everyone.</em>';
+  if (h1) h1.innerHTML = 'Registration for the 2027 season is <em>now open.</em>';
   var cd = document.getElementById('scCount');
   if (cd) cd.dataset.deadline = '2026-08-15T23:59:59-04:00';
   var promo = document.querySelector('.sc-promo');
