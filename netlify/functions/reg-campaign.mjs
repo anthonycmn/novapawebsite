@@ -207,6 +207,17 @@ export default async () => {
     const unsub = unsubUrl(r.email);
     const { text, html } = renderEmail(c.body, { first_name: r.first, unsub_url: unsub, email: encodeURIComponent(r.email) });
     try {
+      // CLAIM before send (Aug 10 duplicate-test incident): Netlify scheduled
+      // ticks are at-least-once, so two invocations can race. The stamp insert
+      // is the atomic claim — an empty ignore-duplicates result means another
+      // runner owns this recipient, so we skip instead of double-sending.
+      // Same pattern as the drip's stage claim from the Aug 4-5 incident.
+      const claim = await svc("campaign_sends?select=email", {
+        method: "POST",
+        headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
+        body: JSON.stringify({ campaign_id: c.id, email: r.email }),
+      });
+      if (!Array.isArray(claim) || !claim.length) continue;
       await transporter.sendMail({
         from: FROM, replyTo: REPLY_TO,
         to: r.email,
@@ -216,10 +227,6 @@ export default async () => {
           "List-Unsubscribe": `<${unsub}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
-      });
-      await svc("campaign_sends", {
-        method: "POST", headers: { Prefer: "resolution=ignore-duplicates" },
-        body: JSON.stringify({ campaign_id: c.id, email: r.email }),
       });
       sent++;
     } catch (e) { console.error(`campaign send failed ${r.email}:`, e.message); }
