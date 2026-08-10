@@ -18,6 +18,14 @@
   status = 301
   force = true
 
+# Printed on the back of playbills — short, typeable, and tagged so we can
+# see exactly how many registrations the print piece drives.
+[[redirects]]
+  from = "/frozen"
+  to = "/register/?season=fall&utm_source=playbill&utm_medium=print&utm_campaign=frozen-playbill"
+  status = 302
+  force = true
+
 [[redirects]]
   from = "/summer.html"
   to = "/summer-2027.html"
