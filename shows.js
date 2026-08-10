@@ -214,6 +214,8 @@
   var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December'];
 
   // Parsed as local wall-clock, never UTC: `new Date('2027-01-22')` is
   // midnight UTC and lands on the 21st in Virginia.
@@ -264,6 +266,19 @@
     }
     return order.map(function (day) { return day + ' ' + joinTimes(byDay[day]); });
   }
+  // What a home-page card says instead of a date list: the month (or months)
+  // the run falls in, and the year. "October 2026", "January – February 2027".
+  // A run that crosses a new year prints both.
+  function monthRange(perfs) {
+    var a = parse(perfs[0].at), b = parse(perfs[perfs.length - 1].at);
+    if (!a || !b) return '';
+    var first = MONTHS_LONG[a.getMonth()], last = MONTHS_LONG[b.getMonth()];
+    if (a.getFullYear() !== b.getFullYear()) {
+      return first + ' ' + a.getFullYear() + ' – ' + last + ' ' + b.getFullYear();
+    }
+    return (first === last ? first : first + ' – ' + last) + ' ' + a.getFullYear();
+  }
+
   // The whole line a show card prints. `parts` is either a company's
   // performances or, for the cards that carry two or three companies,
   // [{label, performances}, …].
@@ -291,6 +306,7 @@
     shortClock: shortClock,
     dayTimes: dayTimes,
     cardLine: cardLine,
+    monthRange: monthRange,
     runLabel: runLabel,
     byKey: byKey
   };
