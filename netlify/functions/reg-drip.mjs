@@ -75,7 +75,8 @@ async function sendMail({ to, subject, html, refs }) {
     headers["References"] = refs.join(" ");
   }
   const info = await transporter.sendMail({
-    from: `Jason from Broadway Bound <${process.env.SMTP_USER}>`,
+    from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+    replyTo: "info@novapa.org",
     to, subject, headers,
     html: html.replace(/\n/g, "<br>"),
   });

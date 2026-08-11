@@ -359,6 +359,109 @@ try {
     fails.map((l) => l.replace(/^\s*FAIL\s*/, '')).join('\n      '), ['tests/shows.mjs']);
 }
 
+// ── 10. prices on pages vs the catalog ──────────────────────────────────
+// The DB (activities.price_cents) is what checkout charges. Marketing pages
+// hand-write dollar amounts next to their register links, and nothing else
+// compares the two — this is how a page advertised $1,695 while three other
+// sources said $1,950. Any register link with dollar amounts nearby must
+// have at least one amount that matches the catalog price for that id.
+// Needs the network; when the catalog is unreachable the section skips
+// rather than crying wolf.
+await (async () => {
+  const url = constOf(serverCfg, 'SUPABASE_URL');
+  const anon = constOf(serverCfg, 'SUPABASE_ANON_KEY');
+  if (!url || !anon) return;
+  let catalog;
+  try {
+    const res = await fetch(url + '/rest/v1/rpc/catalog_list', {
+      method: 'POST',
+      headers: { apikey: anon, Authorization: 'Bearer ' + anon, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_ids: [] }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return;
+    catalog = await res.json();
+  } catch { return; }   // offline run — the scheduled run will catch it
+  const priceOf = new Map(catalog.map((a) => [String(a.id), a.price_cents]));
+  const nameOf = new Map(catalog.map((a) => [String(a.id), a.name]));
+  // hidden activities (teen shows, DEH) are absent from the bulk list but
+  // resolve when asked for by id — that is the direct-link sales design
+  const askCatalog = async (ids) => {
+    try {
+      const res = await fetch(url + '/rest/v1/rpc/catalog_list', {
+        method: 'POST',
+        headers: { apikey: anon, Authorization: 'Bearer ' + anon, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_ids: ids.map(Number) }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.ok) for (const a of await res.json()) {
+        priceOf.set(String(a.id), a.price_cents);
+        nameOf.set(String(a.id), a.name);
+      }
+    } catch { /* leave them missing; the finding below stands */ }
+  };
+  const linkedIds = new Set();
+  for (const f of htmlFiles()) {
+    for (const m of read(f).matchAll(/\/register\/\?activity=(\d+)/g)) linkedIds.add(m[1]);
+  }
+  const missing = [...linkedIds].filter((id) => !priceOf.has(id));
+  if (missing.length) await askCatalog(missing);
+  const asDollars = (cents) => {
+    const d = cents / 100;
+    return Number.isInteger(d) ? d.toLocaleString('en-US') : d.toLocaleString('en-US', { minimumFractionDigits: 2 });
+  };
+  for (const f of htmlFiles()) {
+    if (FROZEN_IN_TIME.has(basename(f))) continue;
+    const src = read(f);
+    // Judged per page, per activity: a page passes if ANY of its register
+    // links for that id states the right price nearby. Per-link judgement
+    // flagged the value-comparison table above a correct price card.
+    const pages = new Map();   // id -> {stated:boolean, amounts:Set}
+    for (const m of src.matchAll(/\/register\/\?activity=(\d+)/g)) {
+      const id = m[1];
+      const cents = priceOf.get(id);
+      if (cents == null) {
+        add('ask', 'price', `links to activity ${id} which is not in the catalog — the link ` +
+          'dead-ends at "unknown activity"', [f]);
+        continue;
+      }
+      const windowTxt = visible(src.slice(Math.max(0, m.index - 1200), m.index + 400));
+      // "$2,570 à la carte" / "save $875" are comparisons, not the price.
+      // Direction matters: the compare-word AFTER an amount belongs to that
+      // amount ("$2,570 à la carte"), but a trailing compare-word from the
+      // PREVIOUS amount often sits right before the real price — so leading
+      // words only disqualify when they directly govern it ("save $875").
+      const AFTER = /^.{0,30}?(à la carte|a la carte|piece by piece|value|savings|per month|\/mo)/i;
+      const BEFORE = /(save|don'?t pay|instead of|was|worth)\s*$/i;
+      const amounts = [...windowTxt.matchAll(/\$\s?([\d,]+(?:\.\d\d)?)/g)]
+        .filter((a) => !AFTER.test(windowTxt.slice(a.index + a[0].length)) &&
+                       !BEFORE.test(windowTxt.slice(Math.max(0, a.index - 15), a.index)))
+        .map((a) => a[1].replace(/,/g, ''));
+      const want = asDollars(cents).replace(/,/g, '');
+      const rec = pages.get(id) || { stated: false, sawAmounts: new Set(), cents };
+      if (amounts.includes(want)) rec.stated = true;
+      amounts.forEach((a) => rec.sawAmounts.add(a));
+      pages.set(id, rec);
+    }
+    for (const [id, rec] of pages) {
+      if (rec.stated || !rec.sawAmounts.size) continue;
+      add('ask', 'price', `advertises ${[...rec.sawAmounts].map((a) => '$' + a).join('/')} near ` +
+        `register link(s) for "${nameOf.get(id)}" (${id}) but the catalog — what checkout charges — ` +
+        `says $${asDollars(rec.cents)}`, [f]);
+    }
+  }
+  // register/coaching.js is a hand-kept display mirror of the same rows
+  const co = readFileSync(join(ROOT, 'register/coaching.js'), 'utf8');
+  for (const m of co.matchAll(/id:\s*(9\d{5}),[\s\S]{0,200}?price:\s*(\d+)/g)) {
+    const cents = priceOf.get(m[1]);
+    if (cents != null && Number(m[2]) !== cents) {
+      add('ask', 'price', `register/coaching.js says ${m[1]} costs $${asDollars(Number(m[2]))} but the ` +
+        `catalog says $${asDollars(cents)} — the page shows the catalog price, fix the mirror`,
+        ['register/coaching.js']);
+    }
+  }
+})();
+
 // ── report ──────────────────────────────────────────────────────────────
 // The same sentence lives on twenty pages, so the same problem is found
 // twenty times. One row per problem, with the pages listed under it — a

@@ -69,6 +69,20 @@ export default async (req) => {
     const customer = oldSched.customer;
     if (!customer || !pm) return Response.json({ error: "no_payment_method" }, { status: 400 });
 
+    // dry_run: every validation above has passed — report the exact plan
+    // without touching Stripe, so nobody runs this blind from curl again
+    if (body.dry_run) {
+      const remaining = (oldSched.phases || [])
+        .filter((p) => p.end_date > Date.now() / 1000)
+        .map((p) => ({ start: p.start_date, end: p.end_date }));
+      return Response.json({
+        ok: true, dry_run: true,
+        would_cancel: o.stripe_schedule, schedule_status: oldSched.status,
+        customer, payment_method: pm,
+        current_remaining_phases: remaining, would_create: schedules,
+      });
+    }
+
     await stripe.subscriptionSchedules.cancel(o.stripe_schedule);
 
     const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments"; // same product the webhook bills installments on
