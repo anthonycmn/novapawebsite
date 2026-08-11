@@ -88,6 +88,7 @@ export async function sendConfirmationEmail(m, pi) {
   const cc = await ccFor(m.email);
   await transporter.sendMail({
     from: `NOVAPA <${process.env.SMTP_USER}>`,
+    replyTo: "info@novapa.org",
     to: m.email,
     ...(cc ? { cc } : {}),
     subject: "You're in — NOVAPA registration confirmed",

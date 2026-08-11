@@ -23,7 +23,7 @@ One more thing, because you're already registered: your first month of classes i
 Add any weekly class (dance, acting, voice, musical theatre) and pay $0 today, with tuition starting Oct 1. It applies automatically at checkout: https://www.northernvirginiaperformingarts.org/register/?season=classes
 
 See you at the theatre,
-Jason from Broadway Bound`;
+CJ from Broadway Bound`;
 
 async function isAdmin(userToken) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
@@ -71,7 +71,8 @@ export default async (req) => {
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     });
     await t.sendMail({
-      from: `Jason from Broadway Bound <${process.env.SMTP_USER}>`,
+      from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+      replyTo: "info@novapa.org",
       to: String(body.test_to), subject: SUBJECT, text: BODY(first, link),
     });
     return Response.json({ ok: true, test: true, to: body.test_to, link });
@@ -95,7 +96,8 @@ export default async (req) => {
   for (const r of batch) {
     try {
       await transporter.sendMail({
-        from: `Jason from Broadway Bound <${process.env.SMTP_USER}>`,
+        from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+        replyTo: "info@novapa.org",
         to: r.email,
         subject: SUBJECT,
         text: BODY(r.first, r.link),
