@@ -318,8 +318,8 @@
   <section class="step" id="st-waitlist">
     <button class="back" data-back="st-gate">← Back</button>
     <div class="eyebrow" id="wlEyebrow">Summer 2027</div>
-    <h1 id="wlH1">Registration opens <em>August 1.</em></h1>
-    <p class="sub" id="wlSub">The waitlist gets the registration link one hour before the public.</p>
+    <h1 id="wlH1">Registration is <em>open to everyone.</em></h1>
+    <p class="sub" id="wlSub">Leave your email and we'll send you the registration link.</p>
     <div class="card" id="wlCard">
       <input type="email" id="wlEmail" placeholder="parent@email.com" autocomplete="email">
       <button class="btn" id="wlJoin">Join the Waitlist</button>
@@ -328,7 +328,7 @@
     </div>
     <div class="card center" id="wlDone" style="display:none">
       <p style="font-weight:700; color:#fff; font-size:18px">You're on the list.</p>
-      <p class="tiny">Watch your inbox the morning of August 1.</p>
+      <p class="tiny">Your registration link is on the way.</p>
     </div>
     <p class="tiny" id="wlOpenNow" style="margin-top:14px">Don't want to wait? <a href="/classes" style="color:var(--gold3)">Classes and day camps</a> are open to everyone right now — no waitlist.</p>
   </section>
@@ -2971,15 +2971,21 @@
   (function(){
     var CO = window.NOVACOACHING;
     if (!CO) return;
-    var coachReturn = 'st-gate', live = null;
+    var coachReturn = 'st-gate', live = null, livePrice = {};
 
+    // the DB price is what checkout charges — coaching.js is display fallback
+    function coPrice(it){
+      var pc = livePrice[it.id];
+      if (pc && pc !== it.price) console.warn('coaching price drift: activity', it.id, 'coaching.js says', it.price, 'catalog says', pc);
+      return pc || it.price;
+    }
     function bookHref(it){
       // live === null means the catalog has not answered yet; assume bookable
       // rather than flashing a mailto and then swapping it for a button
       if (live && !live[it.id]) {
         return 'mailto:info@novapa.org?subject=' +
           encodeURIComponent('Booking: ' + it.name) +
-          '&body=' + encodeURIComponent("I'd like to book " + it.name + ' (' + money(it.price) + ').');
+          '&body=' + encodeURIComponent("I'd like to book " + it.name + ' (' + money(coPrice(it)) + ').');
       }
       return '/register/?activity=' + it.id;
     }
@@ -2993,7 +2999,7 @@
           '<div class="coach-cards">' + g.items.map(function(it){
             return '<div class="coach-card">' +
               '<div class="cc-top"><span class="cc-nm">' + esc(it.name) + '</span>' +
-              '<span class="cc-pr">' + money(it.price) + '</span></div>' +
+              '<span class="cc-pr">' + money(coPrice(it)) + '</span></div>' +
               '<div class="cc-note">' + esc(it.note) + '</div>' +
               '<div class="cc-desc">' + esc(it.desc) + '</div>' +
               '<ul>' + (it.feats || []).map(function(f){ return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' +
@@ -3023,7 +3029,10 @@
     // which coaching services are actually sellable right now
     sb.rpc('catalog_list', { p_ids: CO.ids }).then(function(res){
       var m = {};
-      (res.data || []).forEach(function(a){ if (a.bookable) m[a.id] = true; });
+      (res.data || []).forEach(function(a){
+        if (a.bookable) m[a.id] = true;
+        if (a.price_cents) livePrice[a.id] = a.price_cents;
+      });
       live = m;
       if (document.querySelector('#st-coaching.on')) renderCoaching();
     }).catch(function(){ /* catalog unreachable: leave every service linked */ });

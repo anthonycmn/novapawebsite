@@ -41,7 +41,7 @@ window.NOVACOACHING = {
         {
           id: 970102,
           name: 'Press Submit Weekend',
-          price: 195000,
+          price: 169500,
           note: 'Final weekend of August · Leesburg, VA · 12 students',
           desc: 'Three days that take a student from nothing submitted to one application fully in. We film pre-screens for every school on the list, shoot professional headshots, coach essays and artistic statements, finish the resume and audition book, and run a parent workshop. Seats are capped at twelve and registration closes when it fills.',
           feats: [
