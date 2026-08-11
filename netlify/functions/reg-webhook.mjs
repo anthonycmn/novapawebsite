@@ -133,7 +133,7 @@ export default async (req) => {
     if (m.parent_name && m.email) {
       try {
         const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(m.email)}`, {
+        await fetch(`${SUPABASE_URL}/rest/v1/families?or=(email.ilike.${encodeURIComponent(m.email)},cc_email.ilike.${encodeURIComponent(m.email)})`, {
           method: "PATCH",
           headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
           body: JSON.stringify({ parent_name: m.parent_name }),

@@ -28,6 +28,17 @@ function fsaUnder13(bday, startISO) {
   return age < 13;
 }
 
+// A family may have a second sign-in address in cc_email (alias — see
+// dedupe_20260811.sql). Resolve by either, preferring the exact primary match.
+async function familyIdByEmail(email, hdrs) {
+  const e = encodeURIComponent(email);
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/families?or=(email.ilike.${e},cc_email.ilike.${e})&select=id,email`, { headers: hdrs });
+  const rows = await r.json();
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const exact = rows.find((f) => String(f.email || "").toLowerCase() === String(email || "").toLowerCase());
+  return (exact || rows[0]).id;
+}
+
 async function anonRpc(fn, args, jwt) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: "POST",
@@ -107,12 +118,9 @@ export default async (req) => {
   const SUMMER_SLUGS = new Set(["httyd", "charlie", "trolls"]);
   try {
     const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const fr = await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}&select=id`, {
-      headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` },
-    });
-    const fams = await fr.json();
-    if (Array.isArray(fams) && fams.length) {
-      const cr = await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fams[0].id}&select=name,already_registered,birthdate,day_camp_credits,snow_day_credits`, {
+    const famId = await familyIdByEmail(email, { apikey: svcKey, Authorization: `Bearer ${svcKey}` });
+    if (famId) {
+      const cr = await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${famId}&select=name,already_registered,birthdate,day_camp_credits,snow_day_credits`, {
         headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` },
       });
       const camps = await cr.json();
@@ -187,9 +195,9 @@ export default async (req) => {
     try {
       const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const hdrs = { apikey: svcKey, Authorization: `Bearer ${svcKey}` };
-      const fam = await (await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}&select=id`, { headers: hdrs })).json();
-      if (fam.length) {
-        const kids = await (await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fam[0].id}&select=already_registered`, { headers: hdrs })).json();
+      const famId = await familyIdByEmail(email, hdrs);
+      if (famId) {
+        const kids = await (await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${famId}&select=already_registered`, { headers: hdrs })).json();
         firstMonthFree = kids.some((c) => Array.isArray(c.already_registered) && c.already_registered.length);
       }
       if (!firstMonthFree) {
@@ -323,7 +331,8 @@ export default async (req) => {
     } catch (e) { console.error("free order: credit events failed:", e.message); }
     if (parent_name && email) {
       try {
-        await fetch(`${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(email)}`, {
+        const famId = await familyIdByEmail(email, { apikey: key, Authorization: `Bearer ${key}` });
+        if (famId) await fetch(`${SUPABASE_URL}/rest/v1/families?id=eq.${famId}`, {
           method: "PATCH",
           headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
           body: JSON.stringify({ parent_name }),
