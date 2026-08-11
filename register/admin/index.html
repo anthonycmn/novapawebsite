@@ -353,7 +353,7 @@
   $('lgGo').addEventListener('click', function(){
     var em = $('lgEmail').value.trim();
     if (!em) return;
-    sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + '/register/admin/', shouldCreateUser: true } })
+    sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + '/register/admin/', shouldCreateUser: false } })
       .then(function(r){ $('lgMsg').textContent = r.error ? r.error.message : 'Link sent — check email.'; });
   });
   $('signOut').addEventListener('click', function(e){ e.preventDefault(); sb.auth.signOut().then(function(){ location.reload(); }); });
