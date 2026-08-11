@@ -314,7 +314,7 @@
     </div>
   </section>
 
-  <!-- STEP: new family (waitlist pre-open / signup after) -->
+  <!-- STEP: new family email signup -->
   <section class="step" id="st-waitlist">
     <button class="back" data-back="st-gate">← Back</button>
     <div class="eyebrow" id="wlEyebrow">Summer 2027</div>
@@ -326,11 +326,6 @@
       <div class="err" id="wlErr"></div>
       <p class="tiny" id="wlTiny">No password needed.</p>
     </div>
-    <div class="card center" id="wlDone" style="display:none">
-      <p style="font-weight:700; color:#fff; font-size:18px">You're on the list.</p>
-      <p class="tiny">Watch your inbox — we'll email you when registration opens.</p>
-    </div>
-    <p class="tiny" id="wlOpenNow" style="margin-top:14px">Don't want to wait? <a href="/classes" style="color:var(--gold3)">Classes and day camps</a> are open to everyone right now — no waitlist.</p>
   </section>
 
   <!-- STEP: family -->
@@ -745,7 +740,6 @@
     })[0];
     return hit || acts[0];
   }
-  function isPublicOpen(){ return new Date() >= new Date(C.PUBLIC_OPEN_AT); }
 
   // ---------- boot: returning from magic link? ----------
   // A spent or expired token comes back as #error=...&error_code=otp_expired.
@@ -879,13 +873,7 @@
   });
   function openEmailSignup(){
     if (state.email) return; // already signed in via magic link
-    state.wlSignup = true;
     if (state.catIds.length) $('wlEyebrow').textContent = 'NOVAPA Registration';
-    $('wlH1').innerHTML = "What's your <em>email?</em>";
-    $('wlSub').textContent = "We'll send you a sign-in link to get started.";
-    $('wlOpenNow').style.display = 'none';
-    $('wlJoin').textContent = 'Continue';
-    $('wlTiny').textContent = 'No password needed.';
     // campaign links carry ?pe= so families from an email blast never retype
     // the address we just sent to
     try {
@@ -896,7 +884,6 @@
   }
   $('choiceNew').addEventListener('click', function(){
     ev('reg_choice', { returning: false });
-    if (!isCatMode() && !state.catIds.length && !isPublicOpen()) { ev('reg_waitlist_shown'); go('st-waitlist'); $('wlEmail').focus(); return; }
     openEmailSignup();
   });
   // classes and non-BB camps are open registration — no new/returning gate at all
@@ -953,18 +940,14 @@
   $('resendBtn').addEventListener('click', sendLink);
   $('restartLink').addEventListener('click', function(e){ e.preventDefault(); openEmailSignup(); });
 
-  // ---------- step: new family (waitlist pre-open, signup after) ----------
+  // ---------- step: new family email signup ----------
   function wlGo(){
     var errEl = $('wlErr'); errEl.classList.remove('on');
     var email = $('wlEmail').value.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent='Please enter a valid email.'; errEl.classList.add('on'); return; }
     state.email = email.toLowerCase();
-    if (state.wlSignup) { $('emailGo').disabled = false; sendLinkNew(); return; }
-    sb.rpc('join_waitlist', { p_email: state.email, p_source: 'register-flow' }).then(function(res){
-      if (res.error) { errEl.textContent='Could not save — email info@novapa.org and we\'ll add you.'; errEl.classList.add('on'); return; }
-      $('wlCard').style.display='none'; $('wlDone').style.display='block';
-      ev('reg_waitlist_joined');
-    });
+    $('emailGo').disabled = false;
+    sendLinkNew();
   }
   function sendLinkNew(){
     rememberIntent();
