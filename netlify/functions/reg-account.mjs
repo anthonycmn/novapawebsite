@@ -19,6 +19,47 @@ async function svc(path) {
   return r.json();
 }
 
+async function svcPatch(path, body) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    method: "PATCH",
+    headers: {
+      apikey: key, Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json", Prefer: "return=representation",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`db ${r.status}`);
+  return r.json();
+}
+
+// Referral tickets for this family: every earned reward where they are the
+// referrer or the referred side, one entry per side they own.
+async function rewardsFor(email) {
+  const enc = encodeURIComponent(email);
+  const rows = await svc(
+    `referral_rewards?select=*&status=eq.earned&or=(referrer_email.ilike.${enc},referred_email.ilike.${enc})&order=created_at.desc`
+  );
+  const others = [...new Set(rows.map((r) =>
+    r.referrer_email.toLowerCase() === email ? r.referred_email : r.referrer_email
+  ))];
+  const fams = others.length
+    ? await svc(`families?select=email,parent_name&email=in.(${others.map(encodeURIComponent).join(",")})`)
+    : [];
+  const nameOf = Object.fromEntries(fams.map((f) => [f.email.toLowerCase(), f.parent_name]));
+  return rows.map((r) => {
+    const side = r.referrer_email.toLowerCase() === email ? "referrer" : "referred";
+    const other = side === "referrer" ? r.referred_email : r.referrer_email;
+    return {
+      id: r.id,
+      side,
+      other_name: nameOf[other.toLowerCase()] || other,
+      redeemed_at: side === "referrer" ? r.referrer_redeemed_at : r.referred_redeemed_at,
+      created_at: r.created_at,
+    };
+  });
+}
+
 const fmtDate = (iso) => {
   const [y, m, d] = iso.split("-").map(Number);
   const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -68,6 +109,32 @@ export default async (req) => {
     if (!email) return Response.json({ error: "sign in required" }, { status: 401 });
   }
 
+  // Self-serve redemption: the parent taps Redeem at the box office. Only the
+  // side belonging to the signed-in email can be stamped, only once — the
+  // is.null filter makes a double-tap (or a race) a no-op, not a re-stamp.
+  if (body.action === "redeem_referral") {
+    const id = String(body.reward_id || "");
+    if (!/^[0-9a-f-]{36}$/.test(id)) return Response.json({ error: "bad reward" }, { status: 400 });
+    try {
+      const rw = (await svc(`referral_rewards?select=*&id=eq.${id}&limit=1`))[0];
+      if (!rw) return Response.json({ error: "reward not found" }, { status: 404 });
+      const side = rw.referrer_email.toLowerCase() === email ? "referrer"
+        : rw.referred_email.toLowerCase() === email ? "referred" : null;
+      if (!side) return Response.json({ error: "not your reward" }, { status: 403 });
+      const col = side === "referrer" ? "referrer_redeemed_at" : "referred_redeemed_at";
+      if (rw[col]) return Response.json({ error: "already redeemed" }, { status: 409 });
+      const upd = await svcPatch(
+        `referral_rewards?id=eq.${id}&${col}=is.null`,
+        { [col]: new Date().toISOString() }
+      );
+      if (!upd.length) return Response.json({ error: "already redeemed" }, { status: 409 });
+      return Response.json({ ok: true, redeemed_at: upd[0][col] });
+    } catch (e) {
+      console.error("reg-account redeem", e);
+      return Response.json({ error: "server error" }, { status: 500 });
+    }
+  }
+
   try {
     const fam = (await svc(`families?select=id,parent_name,email&email=eq.${encodeURIComponent(email)}&limit=1`))[0] || null;
     const campers = fam
@@ -113,6 +180,7 @@ export default async (req) => {
     return Response.json({
       family: fam ? { parent_name: fam.parent_name, email: fam.email } : { email },
       campers: Object.entries(byCamper).map(([name, its]) => ({ name, items: its })),
+      rewards: await rewardsFor(email),
     });
   } catch (e) {
     console.error("reg-account", e);

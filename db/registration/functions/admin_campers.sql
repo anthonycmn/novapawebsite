@@ -1,5 +1,6 @@
 -- Exported from live DB (tlkuqwsqicxcjdmumkje) on 2026-08-11.
--- ACL at export: =X/postgres | postgres=X/postgres | anon=X/postgres | authenticated=X/postgres | service_role=X/postgres
+-- Aug 12 2026: excludes is_test families so preview/test kids never show in
+-- the Campers tab or global search.
 
 CREATE OR REPLACE FUNCTION public.admin_campers()
  RETURNS jsonb
@@ -20,8 +21,8 @@ AS $function$
         'registered', (array_agg(to_jsonb(coalesce(c.already_registered,'{}'::text[])) order by coalesce(array_length(c.already_registered,1),0) desc))[1]
       ) j
       from campers c join families f on f.id = c.family_id
+      where not f.is_test
       group by lower(btrim(c.name)), c.birthdate
     ) t
   ) end;
 $function$
-

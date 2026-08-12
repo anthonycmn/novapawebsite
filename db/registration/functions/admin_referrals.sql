@@ -1,5 +1,6 @@
 -- Exported from live DB (tlkuqwsqicxcjdmumkje) on 2026-08-11.
--- ACL at export: =X/postgres | postgres=X/postgres | anon=X/postgres | authenticated=X/postgres | service_role=X/postgres
+-- Aug 12 2026: rewards involving an is_test family (either side) are hidden —
+-- test rewards exist only so Jason can preview the My NOVAPA tracker.
 
 CREATE OR REPLACE FUNCTION public.admin_referrals()
  RETURNS jsonb
@@ -17,6 +18,9 @@ begin
     'status', r.status,
     'referrer_redeemed_at', r.referrer_redeemed_at,
     'referred_redeemed_at', r.referred_redeemed_at,
-    'created_at', r.created_at) order by r.created_at desc) from referral_rewards r), '[]'::jsonb);
+    'created_at', r.created_at) order by r.created_at desc)
+    from referral_rewards r
+    where not exists (select 1 from families tf where tf.is_test
+      and lower(tf.email) in (lower(r.referrer_email), lower(r.referred_email)))
+  ), '[]'::jsonb);
 end $function$
-

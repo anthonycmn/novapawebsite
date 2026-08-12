@@ -32,6 +32,11 @@ link in `migration_plans` (or its successor tracker) with terms spelled out.
 
 - Only build what Jason says Todd or CJ approved; name the approver and date in
   the code comment / coupon note.
+- Coupon notes are READ BY STAFF in the admin Credits tab — write them in plain
+  English (who, what the code does, whose email it's locked to, approver, date).
+  No file names, constant names, or implementation asides ("SPECIAL_PLANS",
+  "reg-config.mjs", "pct display-only") — put technical breadcrumbs in code
+  comments next to the implementation instead. Jason flagged this Aug 12 2026.
 - Never reprice an old registration at today's discounts unless the family asks.
 - Platform is truth: never touch Sawyer or Regpack.
 - A new recurring charge always needs the parent to click something — never

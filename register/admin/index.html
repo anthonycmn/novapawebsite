@@ -28,6 +28,60 @@
   .nav a { display:block; padding:10px 20px; color:var(--dim); font-weight:500; border-left:2px solid transparent; }
   .nav a.on { color:#fff; border-left-color:var(--gold); background:rgba(232,184,75,0.06); }
   .side .who { margin-top:auto; padding:14px 20px 0; font-size:11px; color:var(--dim); border-top:1px solid var(--line); word-break:break-all; }
+  .gsearch { padding:0 14px 12px; }
+  .gsearch input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-family:inherit; font-size:12.5px; }
+  .gres { position:fixed; left:190px; top:14px; z-index:60; width:min(440px, 70vw); max-height:70vh; overflow:auto;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px; display:none;
+    box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+  .gres.on { display:block; }
+  .gres a { display:block; padding:8px 10px; border-radius:8px; color:#fff; font-size:13px; }
+  .gres a:hover { background:rgba(232,184,75,0.1); }
+  .gres .gt { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); padding:8px 10px 2px; }
+  tr.drill { cursor:pointer; }
+  tr.drill:hover td { background:rgba(232,184,75,0.05); }
+  td.drill { cursor:pointer; }
+  td.drill:hover { background:rgba(232,184,75,0.08); }
+  .roster td { background:rgba(8,17,31,0.5); }
+  .roster table { margin:6px 0 10px; }
+  .roster th { font-size:10.5px; }
+
+  /* overview drill-down: group donut expands into a panel of program donuts */
+  .ovcard { cursor:pointer; border-radius:12px; padding:6px 4px; transition:background .15s, transform .15s; }
+  .ovcard:hover { background:rgba(232,184,75,0.06); transform:translateY(-1px); }
+  .ovcard.sel { background:rgba(232,184,75,0.1); }
+  #ovSub { display:grid; grid-template-rows:0fr; transition:grid-template-rows .35s ease; }
+  #ovSub.on { grid-template-rows:1fr; }
+  #ovSub > div { overflow:hidden; }
+  .ovpanel { border:1px solid var(--line); border-radius:14px; padding:14px 16px 10px; margin:4px 0 14px; background:rgba(8,17,31,0.35); }
+  .ovpanel .arc { transition:stroke-dashoffset .6s ease .05s; }
+  .ovmini { cursor:pointer; text-align:center; width:96px; border-radius:10px; padding:5px 2px; transition:background .15s; }
+  .ovmini:hover { background:rgba(232,184,75,0.08); }
+  .ovmini.sel { background:rgba(232,184,75,0.12); }
+  .ovmini .lbl { font-size:11px; font-weight:600; margin-top:1px; line-height:1.25;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .ovshowcard { cursor:pointer; text-align:center; width:118px; border-radius:10px; padding:6px 4px; transition:background .15s; }
+  .ovshowcard:hover { background:rgba(232,184,75,0.08); }
+  .ovshowcard.sel { background:rgba(232,184,75,0.12); }
+  .ovbands { display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+  .ovbands.on { grid-template-rows:1fr; }
+  .ovbands > div { overflow:hidden; }
+  .ovbandsin { border-left:2px solid rgba(232,184,75,0.35); margin:8px 0 0 10px; padding:6px 0 4px 14px; display:flex; gap:8px; flex-wrap:wrap; }
+  .ovroster { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; }
+
+  /* kebab menu: destructive-ish row actions hide behind ⋯ so a stray click
+     can't flip anything (a redeemed ticket got fat-fingered once) */
+  .kbwrap { position:relative; display:inline-block; margin-left:6px; }
+  .kb { border:1px solid var(--line); background:transparent; color:var(--dim); border-radius:8px;
+    cursor:pointer; padding:0 8px; font-size:14px; line-height:20px; }
+  .kb:hover { color:#fff; border-color:#E8B84B; }
+  .kbmenu { display:none; position:absolute; right:0; top:24px; z-index:50; min-width:210px;
+    background:#0d1b30; border:1px solid var(--line); border-radius:10px; padding:4px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+  .kbmenu.on { display:block; }
+  .kbmenu button { display:block; width:100%; text-align:left; border:0; background:transparent;
+    color:#fff; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:12.5px; }
+  .kbmenu button:hover { background:rgba(232,184,75,0.12); }
 
   .main { flex:1; padding:26px 30px 60px; min-width:0; }
   .sec { display:none; }
@@ -116,11 +170,13 @@
 <div class="layout" id="app" style="display:none">
   <div class="side">
     <div class="logo">NOVA<em>PA</em></div>
+    <div class="gsearch"><input type="text" id="gSearch" placeholder="Search anything…" autocomplete="off"></div>
+    <div class="gres" id="gRes"></div>
     <div class="nav" id="nav">
       <a data-s="overview" class="on">Overview</a>
       <a data-s="orders">Orders</a>
       <a data-s="balances">Balances</a>
-      <a data-s="inventory">Inventory</a>
+      <a data-s="inventory">Programs</a>
       <a data-s="campers">Campers</a>
       <a data-s="accounting">Accounting</a>
       <a data-s="insurance">Insurance</a>
@@ -136,7 +192,9 @@
   <div class="main">
     <section class="sec on" id="s-overview">
       <h2>Sellout Progress</h2>
-      <div id="stFill" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px"></div>
+      <p class="sub" style="margin:-6px 0 10px">Click a ring to drill down — program &rsaquo; show &rsaquo; age group &rsaquo; live roster.</p>
+      <div id="stFill" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px"></div>
+      <div id="ovSub"><div></div></div>
       <h2>Revenue (Stripe)</h2>
       <div class="stats" id="stRevenue"></div>
     </section>
@@ -152,7 +210,8 @@
     </section>
 
     <section class="sec" id="s-inventory">
-      <h2>Everything we sell</h2>
+      <h2>Programs — everything we sell</h2>
+      <p class="sub" style="margin:-6px 0 10px">Click any program row or summer grid cell to open its live roster.</p>
       <div class="stats" id="stInv" style="margin-bottom:6px"></div>
       <p class="sub" id="invNote" style="margin:0 0 16px"></p>
       <h2>Summer Camps</h2>
@@ -267,8 +326,9 @@
     <section class="sec" id="s-referrals">
       <h2>Referrals — 2 free tickets each side</h2>
       <p class="sub">A row appears when a brand-new family completes a paid registration through another
-      family's share link. Both families are owed <b>2 tickets to any show</b> — mark each side redeemed
-      when the tickets are claimed at the box office.</p>
+      family's share link. Both families are owed <b>2 tickets to any show</b>. Families see and redeem
+      their own tickets from My NOVAPA at the box office — the &#8943; menu here is the manual override
+      (mark redeemed, or undo a mistake).</p>
       <div class="wrap-scroll"><table id="tblRefs"></table></div>
     </section>
 
@@ -401,9 +461,9 @@
   var LOADERS = {
     overview: function(){
       rload('overview', 'admin_stats', function(d){ if (d) renderStats(d); });
-      rload('overview', 'admin_offering_fill', function(d){ renderFill(d || []); });
+      rload('overview', 'admin_overview_groups', function(d){ renderFill(d || []); });
     },
-    orders:    function(){ rload('orders', 'admin_orders', function(d){ renderOrders(d || []); }); },
+    orders:    function(){ rload('orders', 'admin_orders', function(d){ ORDERS = d || []; renderOrders(ORDERS); }); },
     balances:  function(){ rload('balances', 'admin_balances', function(d){ renderBalances(d || []); }); },
     inventory: loadInventory,
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
@@ -457,12 +517,17 @@
       .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
   // the tab you're looking at quietly refreshes itself once a minute, so the
-  // numbers stay live without anyone pressing anything
+  // numbers stay live without anyone pressing anything — unless you have a
+  // roster open, because a refresh would slam it shut mid-read
   setInterval(function(){
-    if (document.visibilityState === 'visible') runLoader(activeTab());
+    if (document.visibilityState !== 'visible') return;
+    var sec = document.querySelector('.sec.on');
+    if (sec && sec.querySelector('.roster')) return;
+    runLoader(activeTab());
   }, 60000);
 
   var CAMPERS = [];
+  var ORDERS = [];
   function missingOf(c){
     var p = c.profile || {};
     var m = [];
@@ -606,6 +671,9 @@
   }
   $('accYear').addEventListener('change', function(){ ACC = null; loadAccounting(); });
   // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
+  document.addEventListener('click', function(){
+    document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+  });
   function loadRefs(){
     sb.rpc('admin_referrals').then(function(res){
       var rows = res.data || [];
@@ -614,8 +682,12 @@
       rows.forEach(function(r){
         function side(label, email, name, at, key){
           return '<div style="margin:2px 0">' + label + ' ' + esc(name || email) +
-            (at ? ' <span style="color:var(--ok)">&#10003; redeemed</span>'
-                : ' <button data-red="' + r.id + '|' + key + '">2 tickets — mark redeemed</button>') + '</div>';
+            (at ? ' <span style="color:var(--ok)">&#10003; redeemed ' + String(at).slice(0,10) + '</span>'
+                : ' <span class="sub">2 tickets available</span>') +
+            '<span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
+            (at ? '<button data-red="' + r.id + '|' + key + '|undo">Undo redeemed (mistake)</button>'
+                : '<button data-red="' + r.id + '|' + key + '|redeem">Mark redeemed — box office</button>') +
+            '</div></span></div>';
         }
         html += '<tr><td>' + String(r.created_at).slice(0,10) + '</td>' +
           '<td>' + esc(r.referrer_name || '') + '<div class="sub">' + esc(r.referrer_email) + '</div></td>' +
@@ -625,11 +697,22 @@
                    side('New family:', r.referred_email, r.referred_name, r.referred_redeemed_at, 'referred') + '</td></tr>';
       });
       $('tblRefs').innerHTML = html;
+      $('tblRefs').querySelectorAll('.kb').forEach(function(k){
+        k.addEventListener('click', function(e){
+          e.stopPropagation();
+          var menu = k.nextElementSibling, open = menu.classList.contains('on');
+          document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+          if (!open) menu.classList.add('on');
+        });
+      });
       $('tblRefs').querySelectorAll('button[data-red]').forEach(function(b){
         b.addEventListener('click', function(){
-          var p = b.dataset.red.split('|');
+          var p = b.dataset.red.split('|'), undo = p[2] === 'undo';
+          if (!confirm(undo
+            ? 'Un-redeem these 2 tickets? They become available to the family again.'
+            : 'Mark these 2 tickets redeemed?\n\nOnly do this at the box office when the family uses them.')) return;
           b.disabled = true;
-          sb.rpc('admin_referral_redeem', { p_id: p[0], p_side: p[1] })
+          sb.rpc('admin_referral_redeem', { p_id: p[0], p_side: p[1], p_undo: undo })
             .then(loadRefs).catch(function(){ b.disabled = false; });
         });
       });
@@ -1166,23 +1249,212 @@
       });
     });
 
-  // the goal is 100% on every ring by end of year — one donut per offering,
-  // detail lives in the Inventory tab
+  // the goal is 100% on every ring by end of year — one donut per program
+  // group. Click a ring and it expands in place into one small donut per
+  // camp/cast/class inside the group; click one of those and its live roster
+  // opens right there. Same data as Programs, zero page-hopping.
+  var OVG = [], ovOpen = null, ovShow = null;
+  function donutSvg(taken, cap, size, sweep){
+    var pct = cap ? Math.min(100, Math.round(taken * 100 / cap)) : 0;
+    var r = size * 34 / 88, c = 2 * Math.PI * r, half = size / 2;
+    var len = c * pct / 100;
+    var color = pct >= 100 ? '#6BCB77' : pct >= 60 ? '#E8B84B' : '#5B8DEF';
+    var sw = size >= 80 ? 10 : 7, fs = size >= 80 ? 18 : 14;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+      '<circle cx="' + half + '" cy="' + half + '" r="' + r + '" fill="none" stroke="rgba(128,140,170,.25)" stroke-width="' + sw + '"/>' +
+      '<circle class="arc" cx="' + half + '" cy="' + half + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"' +
+      ' stroke-dasharray="' + len.toFixed(1) + ' ' + c.toFixed(1) + '"' +
+      (sweep ? ' stroke-dashoffset="' + len.toFixed(1) + '"' : '') +
+      ' transform="rotate(-90 ' + half + ' ' + half + ')"/>' +
+      '<text x="' + half + '" y="' + (half + fs * 0.34) + '" text-anchor="middle" font-size="' + fs + '" font-weight="700" fill="currentColor">' + pct + '%</text></svg>';
+  }
   function renderFill(rows){
-    $('stFill').innerHTML = rows.map(function(o){
-      var cap = o.cap || 0, taken = o.taken || 0;
-      var pct = cap ? Math.min(100, Math.round(taken * 100 / cap)) : 0;
-      var r = 34, c = 2 * Math.PI * r;
-      var color = pct >= 100 ? '#6BCB77' : pct >= 60 ? '#E8B84B' : '#5B8DEF';
-      return '<div style="text-align:center;min-width:104px">' +
-        '<svg width="88" height="88" viewBox="0 0 88 88">' +
-        '<circle cx="44" cy="44" r="34" fill="none" stroke="rgba(128,140,170,.25)" stroke-width="10"/>' +
-        '<circle cx="44" cy="44" r="34" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round"' +
-        ' stroke-dasharray="' + (c * pct / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 44 44)"/>' +
-        '<text x="44" y="50" text-anchor="middle" font-size="18" font-weight="700" fill="currentColor">' + pct + '%</text></svg>' +
+    OVG = rows || [];
+    if (ovOpen && !OVG.some(function(g){ return g.key === ovOpen; })) ovOpen = null;
+    $('stFill').innerHTML = OVG.map(function(o){
+      return '<div class="ovcard' + (o.key === ovOpen ? ' sel' : '') + '" data-key="' + esc(o.key) + '" style="text-align:center;min-width:104px">' +
+        donutSvg(o.taken || 0, o.cap || 0, 88, false) +
         '<div style="font-size:12.5px;font-weight:600;margin-top:2px">' + esc(o.label) + '</div>' +
-        '<div style="font-size:11px;opacity:.6">' + taken + ' / ' + cap + ' sold</div></div>';
+        '<div style="font-size:11px;opacity:.6">' + (o.taken || 0) + ' / ' + (o.cap || 0) + ' sold</div></div>';
     }).join('');
+    if (ovOpen) renderOvSub(false); else closeOvSub();
+  }
+  // collapsing must also empty the panel: a leftover .roster node inside it
+  // would pause the 60s auto-refresh forever (the interval guard matches it).
+  // The clear waits out the slide-shut transition; reopening cancels it.
+  var ovClear = null;
+  function closeOvSub(){
+    $('ovSub').classList.remove('on');
+    clearTimeout(ovClear);
+    ovClear = setTimeout(function(){
+      if (!ovOpen) $('ovSub').firstElementChild.innerHTML = '';
+    }, 380);
+  }
+  // items sorted busiest-first so the rings that matter lead; a group like Day
+  // Camps has 60+ sessions and the empty ones shouldn't bury the live ones
+  function ovLabel(it){
+    if (it.show) return (SHOWL[it.show] || it.show) + ' · ' + it.band;
+    var l = it.label || '';
+    return l.indexOf('|') !== -1 ? l.split('|').pop().trim() : l;
+  }
+  // groups with a real show structure get a middle level: program › show ›
+  // age group. Summer's items carry (show, band) natively; fall shows encode
+  // both in the activity name ("Broadway Bound Junior | Frozen, Jr." = Frozen,
+  // Junior). Everything else (classes, day camps, coaching) stays one level.
+  function ovShowsOf(g){
+    var m = {}, order = [];
+    function bucket(name){
+      if (!m[name]) { m[name] = { name: name, cap: 0, taken: 0, bands: [] }; order.push(name); }
+      return m[name];
+    }
+    if (g.key === 'summer') {
+      (g.items || []).forEach(function(it){
+        var s = bucket(SHOWL[it.show] || it.show);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: it.band, cap: it.cap || 0, taken: it.taken || 0, show: it.show, band: it.band });
+      });
+    } else if (g.key === 'fallshows') {
+      (g.items || []).forEach(function(it){
+        var parts = (it.label || '').split('|');
+        var post = (parts[1] || parts[0] || '').trim();
+        var name = /mermaid/i.test(post) ? 'The Little Mermaid' : /frozen/i.test(post) ? 'Frozen' : post;
+        var age = (parts.length > 1 ? parts[0] : '').replace(/broadway bound/i, '').trim() || 'Kids';
+        var s = bucket(name);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: age, cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: it.label });
+      });
+    } else if (g.key === 'classes') {
+      // buckets mirror how CJ groups the class catalog (Aug 12 conversation)
+      (g.items || []).forEach(function(it){
+        var l = it.label || '';
+        var name = /^adult/i.test(l) ? 'Adult Classes'
+          : /homeschool/i.test(l) ? 'Homeschool'
+          : /ballet|hip-hop|dance|k-pop/i.test(l) ? 'Dance'
+          : /acting|improv/i.test(l) ? 'Acting & Improv'
+          : 'Musical Theatre';
+        var s = bucket(name);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: l, cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: l });
+      });
+    } else if (g.key === 'daycamps') {
+      // a name repeated across dates ("Ages 5–9 Day Camp · Oct 30, 2026") is a
+      // series and gets its own ring, dates sorted chronologically; one-off
+      // themed days collapse into a single bucket
+      var counts = {}, seen = {};
+      (g.items || []).forEach(function(it){
+        var base = (it.label || '').split('·')[0].trim();
+        counts[base] = (counts[base] || 0) + 1;
+      });
+      (g.items || []).forEach(function(it){
+        var l = it.label || '', parts = l.split('·');
+        var base = parts[0].trim(), date = (parts[1] || '').trim();
+        var series = counts[base] > 1;
+        var s = bucket(series ? base : 'Themed One-Day Camps');
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        seen[base] = (seen[base] || 0) + 1;
+        s.bands.push({
+          label: series ? (date || 'Session ' + seen[base]) : base,
+          ord: series ? (date ? (Date.parse(date) || 0) : seen[base]) : 0,
+          cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: l });
+      });
+    } else if (g.key === 'coaching') {
+      // the 970xxx id blocks are the families: 9701 college, 9702 audition
+      // prep, 9703 pre-screens, 9704 acting sessions, 9705 branding
+      (g.items || []).forEach(function(it){
+        var id = +it.activity_id || 0, l = it.label || '';
+        var name = id >= 970500 ? 'Branding & Media'
+          : id >= 970400 ? 'Acting Coaching'
+          : id >= 970300 ? 'Pre-Screen Videos'
+          : id >= 970200 ? 'Audition Prep & Support'
+          : 'College Auditions';
+        var s = bucket(name);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: l, cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: l });
+      });
+    } else return null;
+    return order.map(function(k){ return m[k]; });
+  }
+  // youngest first: named tiers by rank, numeric bands ("5-9") by leading age.
+  // Bands carrying an explicit ord (day-camp dates) sort by it instead.
+  function bandSort(bands){
+    var rank = { kids: 0, junior: 1, teens: 2 };
+    return bands.slice().sort(function(a, b){
+      if (a.ord != null || b.ord != null)
+        return (a.ord || 0) - (b.ord || 0) || a.label.localeCompare(b.label);
+      var A = rank[a.label.toLowerCase()], B = rank[b.label.toLowerCase()];
+      if (A != null && B != null) return A - B;
+      return (parseInt(a.label, 10) || 0) - (parseInt(b.label, 10) || 0) || a.label.localeCompare(b.label);
+    });
+  }
+  function renderOvSub(sweep){
+    var g = OVG.filter(function(x){ return x.key === ovOpen; })[0];
+    var box = $('ovSub').firstElementChild;
+    if (!g) { closeOvSub(); return; }
+    var shows = ovShowsOf(g);
+    var isShowKey = g.key === 'summer' || g.key === 'fallshows';
+    var n = shows ? shows.length : (g.items || []).length;
+    var head = '<div class="sub" style="margin:0 0 8px"><b>' + esc(g.label) + '</b> · ' + n +
+      (shows ? (isShowKey ? ' show' : ' group') : ' program') + (n === 1 ? '' : 's') + ' · ' + (g.taken || 0) + ' / ' + (g.cap || 0) + ' sold' +
+      ' <a href="#" id="ovToProg" style="float:right">open in Programs →</a></div>';
+    if (!shows) {
+      var items = (g.items || []).slice().sort(function(a, b){
+        return (b.taken || 0) - (a.taken || 0) || ovLabel(a).localeCompare(ovLabel(b));
+      });
+      box.innerHTML = '<div class="ovpanel">' + head +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        items.map(function(it){
+          var key = it.show ? 'data-show="' + esc(it.show) + '" data-band="' + esc(it.band) + '"'
+                            : 'data-act="' + esc(it.activity_id) + '"';
+          return '<div class="ovmini" ' + key + ' title="' + esc(it.label || ovLabel(it)) + '">' +
+            donutSvg(it.taken || 0, it.cap || 0, 64, sweep) +
+            '<div class="lbl">' + esc(ovLabel(it)) + '</div>' +
+            '<div style="font-size:10px;opacity:.6">' + (it.taken || 0) + ' / ' + (it.cap || 0) + '</div></div>';
+        }).join('') + '</div><div class="ovroster" style="display:none"></div></div>';
+    } else {
+      if (ovShow && !shows.some(function(s){ return s.name === ovShow; })) ovShow = null;
+      shows.sort(function(a, b){ return (b.taken || 0) - (a.taken || 0) || a.name.localeCompare(b.name); });
+      box.innerHTML = '<div class="ovpanel">' + head +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        shows.map(function(s){
+          return '<div class="ovshowcard' + (s.name === ovShow ? ' sel' : '') + '" data-showname="' + esc(s.name) + '">' +
+            donutSvg(s.taken, s.cap, 76, sweep) +
+            '<div class="lbl" style="font-size:12px;font-weight:600;margin-top:1px">' + esc(s.name) + '</div>' +
+            '<div style="font-size:10.5px;opacity:.6">' + s.taken + ' / ' + s.cap + '</div>' +
+            '<div style="font-size:10px;opacity:.5">' + s.bands.length + ' ' +
+              (isShowKey ? 'age group' : g.key === 'daycamps' ? 'day' : 'option') + (s.bands.length === 1 ? '' : 's') + '</div></div>';
+        }).join('') + '</div>' +
+        '<div class="ovbands"><div></div></div><div class="ovroster" style="display:none"></div></div>';
+      if (ovShow) renderOvBands(false);
+    }
+    $('ovSub').classList.add('on');
+    if (sweep) requestAnimationFrame(function(){
+      box.querySelectorAll('.arc').forEach(function(a){ a.style.strokeDashoffset = '0'; });
+    });
+  }
+  function renderOvBands(sweep){
+    var g = OVG.filter(function(x){ return x.key === ovOpen; })[0];
+    if (!g) return;
+    var box = $('ovSub').firstElementChild;
+    var bandsEl = box.querySelector('.ovbands');
+    if (!bandsEl) return;
+    var s = (ovShowsOf(g) || []).filter(function(x){ return x.name === ovShow; })[0];
+    box.querySelectorAll('.ovshowcard').forEach(function(c){ c.classList.toggle('sel', c.dataset.showname === ovShow); });
+    var ros = box.querySelector('.ovroster');
+    if (ros) { ros.style.display = 'none'; ros.innerHTML = ''; ros.classList.remove('roster'); }
+    if (!s) { bandsEl.classList.remove('on'); return; }
+    bandsEl.firstElementChild.innerHTML = '<div class="ovbandsin">' +
+      bandSort(s.bands).map(function(b){
+        var key = b.act != null ? 'data-act="' + esc(b.act) + '"'
+                                : 'data-show="' + esc(b.show) + '" data-band="' + esc(b.band) + '"';
+        return '<div class="ovmini" ' + key + ' title="' + esc(b.full || (ovShow + ' · ' + b.label)) + '">' +
+          donutSvg(b.taken, b.cap, 64, sweep) +
+          '<div class="lbl">' + esc(b.label) + '</div>' +
+          '<div style="font-size:10px;opacity:.6">' + b.taken + ' / ' + b.cap + '</div></div>';
+      }).join('') + '</div>';
+    bandsEl.classList.add('on');
+    if (sweep) requestAnimationFrame(function(){
+      bandsEl.querySelectorAll('.arc').forEach(function(a){ a.style.strokeDashoffset = '0'; });
+    });
   }
   // Overview is deliberately minimal now (Jason, Aug 3): donuts + the numbers
   // that mirror Stripe (our orders table). Legacy platform totals and
@@ -1277,7 +1549,7 @@
           if (!r || r.cap == null) return '<td><span class="sub">not offered</span></td>';
           var taken = (r.booked||0) + (r.held||0);
           var pct = r.cap ? Math.round(taken/r.cap*100) : 0;
-          return '<td><b>' + taken + '</b> <span class="sub">/ ' + r.cap + '</span>' +
+          return '<td class="drill" data-show="' + sh + '" data-band="' + b + '" title="Click for roster"><b>' + taken + '</b> <span class="sub">/ ' + r.cap + '</span>' +
             '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div></td>';
         }).join('') + '</tr>';
       }).join('');
@@ -1354,7 +1626,7 @@
         '<th style="min-width:130px">spots</th><th class="num">registered</th><th></th></tr>' +
         mg.map(function(a){
           var c = countOf(a);
-          return '<tr><td>' + esc(a.name) + '</td>' +
+          return '<tr class="drill" data-act="' + a.id + '"><td>' + esc(a.name) + '</td>' +
             '<td class="sub">' + esc(a.schedule || '') + '</td>' +
             '<td class="sub">' + esc(a.age || '') + '</td>' +
             '<td class="num">' + usd(a.price_cents) + '</td>' +
@@ -1376,7 +1648,8 @@
         var m = String(a.age || a.age_range || '').match(/(\d+)/);
         band = m ? (+m[1] <= 5 ? '5-9' : +m[1] >= 12 ? '12-15' : '9-12') : null;
       }
-      return band ? by[show + '|' + band] : null;
+      var r = band ? by[show + '|' + band] : null;
+      return r ? { r: r, show: show, band: band } : null;
     }
 
     // ── one row renderer, used by every grouped table below ──
@@ -1385,7 +1658,8 @@
     var invTally = { programs: 0, registered: 0, uncounted: 0, catalogOnly: catalogOnly };
     function row(a){
       var cap, taken, left, parts = [], known = true;
-      var invRow = summerInvRow(a);
+      var sr = summerInvRow(a);
+      var invRow = sr && sr.r;
       if (invRow) {
         cap = invRow.cap;
         taken = (invRow.booked || 0) + (invRow.held || 0);
@@ -1397,7 +1671,9 @@
       }
       invTally.programs++;
       if (known) invTally.registered += taken; else invTally.uncounted++;
-      return '<tr><td>' + esc(a.name) +
+      var drill = sr ? 'class="drill" data-show="' + sr.show + '" data-band="' + sr.band + '"'
+                     : 'class="drill" data-act="' + a.id + '"';
+      return '<tr ' + drill + '><td>' + esc(a.name) +
           (a.catalog_only ? ' <span class="tag bad" title="On sale, but nothing is counting registrations for it">no inventory row</span>' : '') +
           (a.bookable === false ? ' <span class="tag">not on sale</span>' : '') + '</td>' +
         '<td class="sub">' + esc(a.schedule || '') + '</td>' +
@@ -1478,6 +1754,145 @@
         'record behind them, so registrations against them are not being tallied here.'
       : 'Every program on sale is listed below with its registrations.';
   }
+
+  // ── roster drill-down: click a program row (or summer grid cell) and the
+  // live roster expands underneath it — who, which family, what they paid.
+  // Fetched per node on first open (the camper-history pattern), refetched on
+  // every open so it never goes stale.
+  function rosterHtml(rows){
+    if (!rows || !rows.length) return '<div class="sub" style="padding:6px 2px">nobody registered yet</div>';
+    return '<table>' +
+      '<tr><th>camper</th><th>family</th><th class="num">paid</th><th>plan</th><th>when</th></tr>' +
+      rows.map(function(r){
+        return '<tr><td><b>' + esc(r.camper || '') + '</b></td>' +
+          '<td>' + esc(r.parent_name || '') + '<div class="sub">' + esc(r.email || '') + '</div></td>' +
+          '<td class="num">' + (r.paid_cents != null ? usd(r.paid_cents) : '<span class="sub">—</span>') + '</td>' +
+          '<td><span class="tag' + (r.source === 'web' ? ' ok' : '') + '">' + esc(r.source === 'web' ? (r.plan || 'web') : r.source) + '</span></td>' +
+          '<td class="sub">' + (r.ordered_at ? dt(r.ordered_at) : '') + '</td></tr>';
+      }).join('') + '</table>';
+  }
+  function openRoster(target, params, label){
+    var tr = target.closest('tr');
+    if (!tr) return;
+    var next = tr.nextElementSibling;
+    if (next && next.classList.contains('roster')) { next.remove(); return; }  // toggle shut
+    var cols = tr.children.length;
+    var det = document.createElement('tr');
+    det.className = 'roster';
+    det.innerHTML = '<td colspan="' + cols + '"><div class="sub">loading roster…</div></td>';
+    tr.parentNode.insertBefore(det, tr.nextSibling);
+    sb.rpc('admin_roster', params).then(function(res){
+      var rows = res.data || [];
+      det.firstChild.innerHTML =
+        (label ? '<div class="sub" style="margin:4px 0 2px"><b>' + esc(label) + '</b> · ' + rows.length + ' registered</div>' : '') +
+        rosterHtml(rows);
+    }).catch(function(e){ det.firstChild.innerHTML = '<div class="sub">roster failed: ' + esc(e.message || 'error') + '</div>'; });
+  }
+  $('s-inventory').addEventListener('click', function(e){
+    var cell = e.target.closest('td.drill');
+    if (cell) {
+      return openRoster(cell, { p_show: cell.dataset.show, p_band: cell.dataset.band, p_activity_id: null },
+        SHOWL[cell.dataset.show] + ' · ' + cell.dataset.band);
+    }
+    var tr = e.target.closest('tr.drill');
+    if (!tr) return;
+    if (tr.dataset.act) openRoster(tr.children[0], { p_show: null, p_band: null, p_activity_id: +tr.dataset.act }, null);
+    else openRoster(tr.children[0], { p_show: tr.dataset.show, p_band: tr.dataset.band, p_activity_id: null },
+      SHOWL[tr.dataset.show] + ' · ' + tr.dataset.band);
+  });
+
+  // ── overview donuts expand in place ──
+  $('stFill').addEventListener('click', function(e){
+    var card = e.target.closest('.ovcard');
+    if (!card) return;
+    ovOpen = (ovOpen === card.dataset.key) ? null : card.dataset.key;
+    ovShow = null;
+    $('stFill').querySelectorAll('.ovcard').forEach(function(c){
+      c.classList.toggle('sel', c.dataset.key === ovOpen);
+    });
+    if (ovOpen) renderOvSub(true); else closeOvSub();
+  });
+  $('ovSub').addEventListener('click', function(e){
+    if (e.target.id === 'ovToProg') {
+      e.preventDefault();
+      var progTab = document.querySelector('#nav a[data-s=inventory]');
+      if (progTab) progTab.click();
+      return;
+    }
+    var sc = e.target.closest('.ovshowcard');
+    if (sc) {
+      ovShow = (ovShow === sc.dataset.showname) ? null : sc.dataset.showname;
+      renderOvBands(true);
+      return;
+    }
+    var mini = e.target.closest('.ovmini');
+    if (!mini) return;
+    var panel = mini.closest('.ovpanel'), ros = panel.querySelector('.ovroster');
+    var was = mini.classList.contains('sel');
+    panel.querySelectorAll('.ovmini').forEach(function(m){ m.classList.remove('sel'); });
+    if (was) { ros.style.display = 'none'; ros.innerHTML = ''; ros.classList.remove('roster'); return; }
+    mini.classList.add('sel');
+    // .roster on the open panel is what pauses the 60s auto-refresh (see the
+    // interval guard) so the list can't be yanked away mid-read
+    ros.classList.add('roster');
+    ros.style.display = 'block';
+    ros.innerHTML = '<div class="sub">loading roster…</div>';
+    var params = mini.dataset.act
+      ? { p_show: null, p_band: null, p_activity_id: +mini.dataset.act }
+      : { p_show: mini.dataset.show, p_band: mini.dataset.band, p_activity_id: null };
+    var label = mini.dataset.act ? mini.title : (SHOWL[mini.dataset.show] || mini.dataset.show) + ' · ' + mini.dataset.band;
+    sb.rpc('admin_roster', params).then(function(res){
+      var rows = res.data || [];
+      ros.innerHTML = '<div class="sub" style="margin:0 0 2px"><b>' + esc(label) + '</b> · ' +
+        rows.length + ' registered</div>' + rosterHtml(rows);
+    }).catch(function(err){ ros.innerHTML = '<div class="sub">roster failed: ' + esc(err.message || 'error') + '</div>'; });
+  });
+
+  // ── global search: campers, families, programs, orders — from the caches
+  // the boot preload already filled, so results are instant.
+  (function(){
+    var box = $('gSearch'), out = $('gRes'), t = null;
+    function jumpTab(s){ var a = document.querySelector('#nav a[data-s=' + s + ']'); if (a) a.click(); }
+    function results(q){
+      q = q.trim().toLowerCase();
+      if (q.length < 2) { out.classList.remove('on'); return; }
+      var html = '';
+      var kids = CAMPERS.filter(function(c){
+        return (c.name + ' ' + (c.emails || []).join(' ')).toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 6);
+      if (kids.length) html += '<div class="gt">Campers</div>' + kids.map(function(c){
+        return '<a data-go="camper" data-q="' + esc(c.name) + '"><b>' + esc(c.name) + '</b> <span class="sub">' + esc((c.emails || []).join(', ')) + '</span></a>';
+      }).join('');
+      var acts = ((INV && INV.activities) || []).concat((INV && INV.catalog) || []).filter(function(a, i, arr){
+        return a.name && a.name.toLowerCase().indexOf(q) !== -1 &&
+          arr.findIndex(function(x){ return x.id === a.id; }) === i;
+      }).slice(0, 6);
+      if (acts.length) html += '<div class="gt">Programs</div>' + acts.map(function(a){
+        return '<a data-go="program" data-q=""><b>' + esc(a.name) + '</b> <span class="sub">' + esc(a.schedule || a.schedule_name || '') + '</span></a>';
+      }).join('');
+      var ords = ORDERS.filter(function(o){
+        return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + (o.items || '')).toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 6);
+      if (ords.length) html += '<div class="gt">Orders</div>' + ords.map(function(o){
+        return '<a data-go="order" data-q=""><b>' + esc(o.parent_name || o.email) + '</b> <span class="sub">' + usd(o.total_cents) + ' · ' + dt(o.created_at) + '</span></a>';
+      }).join('');
+      out.innerHTML = html || '<div class="gt">nothing matched</div>';
+      out.classList.add('on');
+    }
+    box.addEventListener('input', function(){ clearTimeout(t); t = setTimeout(function(){ results(box.value); }, 120); });
+    box.addEventListener('focus', function(){ if (box.value.trim().length >= 2) results(box.value); });
+    document.addEventListener('click', function(e){
+      if (e.target === box) return;
+      var a = e.target.closest('#gRes a');
+      if (a) {
+        var go = a.dataset.go;
+        if (go === 'camper') { jumpTab('campers'); $('campQ').value = a.dataset.q; renderCampers(); }
+        else if (go === 'program') { jumpTab('inventory'); }
+        else if (go === 'order') { jumpTab('orders'); }
+      }
+      out.classList.remove('on');
+    });
+  })();
 
 })();
 </script>
