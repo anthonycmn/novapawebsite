@@ -131,6 +131,20 @@ export default async (req) => {
   // opens instantly and one Todd waits on every time.
   const forecastOnly = !!body.forecast_only;
 
+  // The full sweep costs ~10s of serial Stripe pagination, and the dashboard
+  // asks for it on every open. Cache the finished payload per year for 5
+  // minutes: the first request in a window pays the sweep, everyone else gets
+  // it instantly. Pass {refresh:true} to bypass.
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+  if (!forecastOnly && !body.refresh) {
+    try {
+      const rows = await svcGet(`finance_cache?year=eq.${year}&select=payload,computed_at`);
+      if (rows.length && Date.now() - new Date(rows[0].computed_at).getTime() < CACHE_TTL_MS) {
+        return Response.json({ ...rows[0].payload, cached_at: rows[0].computed_at });
+      }
+    } catch (e) { console.error("finance cache read:", e.message); }
+  }
+
   // --- our order data ---
   const [orders, items, activities] = await Promise.all([
     svcGet("orders?select=*&order=created_at.desc&limit=1000"),
@@ -281,10 +295,26 @@ export default async (req) => {
 
   upcoming.sort((a, b) => a.date < b.date ? -1 : 1);
 
-  return Response.json({
+  const payload = {
     year, orders, items_by_order: itemsByOrder, activities,
     transactions: txns, refunds, disputes, payouts, upcoming,
-  });
+  };
+
+  if (!forecastOnly) {
+    try {
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      await fetch(`${SUPABASE_URL}/rest/v1/finance_cache?on_conflict=year`, {
+        method: "POST",
+        headers: {
+          apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates",
+        },
+        body: JSON.stringify({ year, payload, computed_at: new Date().toISOString() }),
+      });
+    } catch (e) { console.error("finance cache write:", e.message); }
+  }
+
+  return Response.json(payload);
 };
 
 export const config = { path: "/api/reg-finance" };

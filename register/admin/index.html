@@ -564,16 +564,28 @@
     return '2026-09-14'; // classes/day camps: season start
   }
   function money0(c){ return usd2(c); }
-  // one fetch, shared by Accounting and Insurance so the two never disagree
+  // one fetch, shared by Accounting and Insurance so the two never disagree —
+  // and shared literally: both tabs consume the same in-flight request and the
+  // result is reused for 2 minutes, so opening the second tab is instant. The
+  // server caches the Stripe sweep for 5 minutes on top of this.
+  var FIN = {};   // year -> { at, data, promise }
   function fetchFinance(year){
-    return sb.auth.getSession().then(function(res){
+    var k = String(+year), c = FIN[k];
+    if (c && c.data && Date.now() - c.at < 120000) return Promise.resolve(c.data);
+    if (c && c.promise) return c.promise;
+    var p = sb.auth.getSession().then(function(res){
       var token = res.data && res.data.session && res.data.session.access_token;
       return fetch('/api/reg-finance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ year: +year })
       });
-    }).then(function(r){ return r.json(); });
+    }).then(function(r){ return r.json(); }).then(function(d){
+      FIN[k] = { at: Date.now(), data: d };
+      return d;
+    }).catch(function(e){ delete FIN[k]; throw e; });
+    FIN[k] = { promise: p };
+    return p;
   }
   function loadAccounting(){
     if (ACC) renderAccounting();  // paint what we have, then refresh behind it
