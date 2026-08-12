@@ -717,6 +717,7 @@
     <button id="tPast">Past</button>
   </div>
   <div id="list"></div>
+  <div id="rewards"></div>
 
   <p class="foot" id="foot" style="display:none">
     Something missing or look wrong? Email <a href="mailto:info@novapa.org">info@novapa.org</a> and we'll fix it fast.
@@ -727,7 +728,7 @@
 <script>
   var sb = window.supabase.createClient(window.NOVAREG.SUPABASE_URL, window.NOVAREG.SUPABASE_ANON_KEY);
   var $ = function(id){ return document.getElementById(id); };
-  var DATA = null, VIEW = 'upcoming';
+  var DATA = null, VIEW = 'upcoming', AUTH_TOKEN = null, PORTAL_TOKEN = null;
 
   function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
@@ -745,12 +746,58 @@
     }).join('');
     $('list').innerHTML = cards ||
       '<div class="card"><div class="empty">' + (past ? 'No past programs yet.' : 'Nothing upcoming yet. Time to fix that!') + '</div></div>';
+    renderRewards();
+  }
+
+  // ── referral tickets: earned by sharing your link (or by joining through
+  // one). Redeemed in person — a parent taps REDEEM at the box office with
+  // staff watching, and the ticket flips to used for everyone.
+  function fmtDay(iso){
+    var d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+  }
+  function renderRewards(){
+    var rws = (DATA && DATA.rewards) || [];
+    if (!rws.length) { $('rewards').innerHTML = ''; return; }
+    $('rewards').innerHTML = '<div class="card">' +
+      '<div class="camper">&#127903;&#65039; Referral rewards</div>' +
+      rws.map(function(r){
+        var why = r.side === 'referrer'
+          ? 'For referring ' + esc(r.other_name)
+          : 'Welcome gift &mdash; you joined through ' + esc(r.other_name) + "'s link";
+        return '<div class="item"><b>2 tickets to any show</b><span>' + why + '</span>' +
+          (r.redeemed_at
+            ? '<span style="color:#6BCB77;font-weight:600">&#10003; Redeemed ' + fmtDay(r.redeemed_at) + '</span>'
+            : '<button class="redeem-btn" data-rw="' + esc(r.id) + '" style="margin-top:8px;padding:8px 16px;border-radius:10px;border:1px solid #E8B84B;background:transparent;color:#E8B84B;font-weight:700;letter-spacing:0.05em;cursor:pointer">REDEEM AT BOX OFFICE</button>') +
+          '</div>';
+      }).join('') +
+      '<div class="empty" style="font-size:12px;margin-top:6px">Tap redeem at the box office with a staff member present &mdash; it can only be used once.</div>' +
+      '</div>';
+    $('rewards').querySelectorAll('.redeem-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (!confirm('Redeem your 2 show tickets now?\n\nOnly tap this at the box office with a staff member watching - once redeemed it cannot be used again.')) return;
+        b.disabled = true; b.textContent = 'REDEEMING…';
+        fetch('/api/reg-account', {
+          method: 'POST',
+          headers: AUTH_TOKEN
+            ? { 'Content-Type':'application/json', Authorization: 'Bearer ' + AUTH_TOKEN }
+            : { 'Content-Type':'application/json' },
+          body: JSON.stringify(PORTAL_TOKEN
+            ? { action:'redeem_referral', reward_id: b.dataset.rw, portal_token: PORTAL_TOKEN }
+            : { action:'redeem_referral', reward_id: b.dataset.rw })
+        }).then(function(r){ return r.json(); }).then(function(d){
+          if (d.error) { alert(d.error); b.disabled = false; b.textContent = 'REDEEM AT BOX OFFICE'; return; }
+          load(AUTH_TOKEN, PORTAL_TOKEN);
+        }).catch(function(){ b.disabled = false; b.textContent = 'REDEEM AT BOX OFFICE'; });
+      });
+    });
   }
 
   $('tUpcoming').onclick = function(){ VIEW = 'upcoming'; this.classList.add('on'); $('tPast').classList.remove('on'); render(); };
   $('tPast').onclick = function(){ VIEW = 'past'; this.classList.add('on'); $('tUpcoming').classList.remove('on'); render(); };
 
   function load(token, portalToken) {
+    AUTH_TOKEN = token || null; PORTAL_TOKEN = portalToken || null;
     $('authCard').style.display = 'none';
     $('list').innerHTML = '<div class="card"><div class="empty">Loading your registrations…</div></div>';
     fetch('/api/reg-account', {

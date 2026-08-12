@@ -69,6 +69,20 @@
   .ovbandsin { border-left:2px solid rgba(232,184,75,0.35); margin:8px 0 0 10px; padding:6px 0 4px 14px; display:flex; gap:8px; flex-wrap:wrap; }
   .ovroster { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; }
 
+  /* kebab menu: destructive-ish row actions hide behind ⋯ so a stray click
+     can't flip anything (a redeemed ticket got fat-fingered once) */
+  .kbwrap { position:relative; display:inline-block; margin-left:6px; }
+  .kb { border:1px solid var(--line); background:transparent; color:var(--dim); border-radius:8px;
+    cursor:pointer; padding:0 8px; font-size:14px; line-height:20px; }
+  .kb:hover { color:#fff; border-color:#E8B84B; }
+  .kbmenu { display:none; position:absolute; right:0; top:24px; z-index:50; min-width:210px;
+    background:#0d1b30; border:1px solid var(--line); border-radius:10px; padding:4px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+  .kbmenu.on { display:block; }
+  .kbmenu button { display:block; width:100%; text-align:left; border:0; background:transparent;
+    color:#fff; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:12.5px; }
+  .kbmenu button:hover { background:rgba(232,184,75,0.12); }
+
   .main { flex:1; padding:26px 30px 60px; min-width:0; }
   .sec { display:none; }
   .sec.on { display:block; }
@@ -312,8 +326,9 @@
     <section class="sec" id="s-referrals">
       <h2>Referrals — 2 free tickets each side</h2>
       <p class="sub">A row appears when a brand-new family completes a paid registration through another
-      family's share link. Both families are owed <b>2 tickets to any show</b> — mark each side redeemed
-      when the tickets are claimed at the box office.</p>
+      family's share link. Both families are owed <b>2 tickets to any show</b>. Families see and redeem
+      their own tickets from My NOVAPA at the box office — the &#8943; menu here is the manual override
+      (mark redeemed, or undo a mistake).</p>
       <div class="wrap-scroll"><table id="tblRefs"></table></div>
     </section>
 
@@ -656,6 +671,9 @@
   }
   $('accYear').addEventListener('change', function(){ ACC = null; loadAccounting(); });
   // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
+  document.addEventListener('click', function(){
+    document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+  });
   function loadRefs(){
     sb.rpc('admin_referrals').then(function(res){
       var rows = res.data || [];
@@ -664,8 +682,12 @@
       rows.forEach(function(r){
         function side(label, email, name, at, key){
           return '<div style="margin:2px 0">' + label + ' ' + esc(name || email) +
-            (at ? ' <span style="color:var(--ok)">&#10003; redeemed</span>'
-                : ' <button data-red="' + r.id + '|' + key + '">2 tickets — mark redeemed</button>') + '</div>';
+            (at ? ' <span style="color:var(--ok)">&#10003; redeemed ' + String(at).slice(0,10) + '</span>'
+                : ' <span class="sub">2 tickets available</span>') +
+            '<span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
+            (at ? '<button data-red="' + r.id + '|' + key + '|undo">Undo redeemed (mistake)</button>'
+                : '<button data-red="' + r.id + '|' + key + '|redeem">Mark redeemed — box office</button>') +
+            '</div></span></div>';
         }
         html += '<tr><td>' + String(r.created_at).slice(0,10) + '</td>' +
           '<td>' + esc(r.referrer_name || '') + '<div class="sub">' + esc(r.referrer_email) + '</div></td>' +
@@ -675,11 +697,22 @@
                    side('New family:', r.referred_email, r.referred_name, r.referred_redeemed_at, 'referred') + '</td></tr>';
       });
       $('tblRefs').innerHTML = html;
+      $('tblRefs').querySelectorAll('.kb').forEach(function(k){
+        k.addEventListener('click', function(e){
+          e.stopPropagation();
+          var menu = k.nextElementSibling, open = menu.classList.contains('on');
+          document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+          if (!open) menu.classList.add('on');
+        });
+      });
       $('tblRefs').querySelectorAll('button[data-red]').forEach(function(b){
         b.addEventListener('click', function(){
-          var p = b.dataset.red.split('|');
+          var p = b.dataset.red.split('|'), undo = p[2] === 'undo';
+          if (!confirm(undo
+            ? 'Un-redeem these 2 tickets? They become available to the family again.'
+            : 'Mark these 2 tickets redeemed?\n\nOnly do this at the box office when the family uses them.')) return;
           b.disabled = true;
-          sb.rpc('admin_referral_redeem', { p_id: p[0], p_side: p[1] })
+          sb.rpc('admin_referral_redeem', { p_id: p[0], p_side: p[1], p_undo: undo })
             .then(loadRefs).catch(function(){ b.disabled = false; });
         });
       });

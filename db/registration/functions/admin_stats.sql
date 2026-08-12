@@ -1,5 +1,6 @@
 -- Exported from live DB (tlkuqwsqicxcjdmumkje) on 2026-08-11.
--- ACL at export: =X/postgres | postgres=X/postgres | anon=X/postgres | authenticated=X/postgres | service_role=X/postgres
+-- Aug 12 2026: families/campers counts exclude is_test families (Jason's
+-- jason@novapa.org preview account must never move the real numbers).
 
 CREATE OR REPLACE FUNCTION public.admin_stats()
  RETURNS jsonb
@@ -22,8 +23,8 @@ begin
     'sawyer_outstanding_count', (select count(*) from platform_balances where source='sawyer' and balance_cents > 0),
     'sawyer_due_now_cents', (select coalesce(sum(due_now_cents),0) from platform_balances where source='sawyer'),
     'regpack_due_now_cents', (select coalesce(sum(due_now_cents),0) from platform_balances where source='regpack'),
-    'families', (select count(*) from families),
-    'campers', (select count(*) from campers),
+    'families', (select count(*) from families where not is_test),
+    'campers', (select count(*) from campers c join families f on f.id = c.family_id where not f.is_test),
     'waitlist', (select count(*) from waitlist),
     'summer_taken', (select coalesce(sum(booked),0) from inventory),
     'summer_cap', (select coalesce(sum(cap),0) from inventory),
@@ -31,4 +32,3 @@ begin
   );
 end;
 $function$
-
