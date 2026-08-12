@@ -55,6 +55,26 @@ for (const show of S.shows) {
     show.key + ' falls on ' + EXPECT_DAY[show.key].join('/') + ' — got ' + got.join('/'));
 }
 
+// A card row labelled "Season" does not answer "when does my child start?".
+// Each conservatory production states its first rehearsal explicitly, and that
+// date has to agree with the show page's own "from <date> through opening
+// night" line. Sweeney moved from 17 to 24 August on 12 Aug 2026 and four
+// separate places had to change; this is what catches the fifth.
+console.log('\nFIRST REHEARSAL');
+const REHEARSALS = [
+  ['Sweeney Todd', 'Mon, Aug 24, 2026', 'sweeney-todd.html', 'from August 24 through opening night'],
+  ['Hadestown', 'Mon, Nov 16, 2026', 'hadestown.html', 'from November 16 through opening night'],
+];
+const textOf = (f) => plain(read(f).replace(/<[^>]+>/g, ' '));
+for (const [show, stated, page, prose] of REHEARSALS) {
+  A(textOf('teen-conservatory.html').includes('First rehearsal ' + stated),
+    show + ' states its first rehearsal on the conservatory page: ' + stated);
+  A(plain(read(page)).includes(prose),
+    '  …and ' + page + ' agrees: "' + prose + '"');
+}
+A(!/August 17|Aug 17/.test(read('sweeney-todd.html') + read('teen-conservatory.html')),
+  'nothing still says Sweeney rehearsals start 17 August');
+
 // ── licensed titles ─────────────────────────────────────────────────────
 // We license Frozen KIDS, Frozen JR., Little Mermaid KIDS and Little Mermaid
 // JR. There is no teen edition of either title. Our teen band performs the JR.
