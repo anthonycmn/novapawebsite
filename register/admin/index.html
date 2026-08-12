@@ -46,6 +46,22 @@
   .roster table { margin:6px 0 10px; }
   .roster th { font-size:10.5px; }
 
+  /* overview drill-down: group donut expands into a panel of program donuts */
+  .ovcard { cursor:pointer; border-radius:12px; padding:6px 4px; transition:background .15s, transform .15s; }
+  .ovcard:hover { background:rgba(232,184,75,0.06); transform:translateY(-1px); }
+  .ovcard.sel { background:rgba(232,184,75,0.1); }
+  #ovSub { display:grid; grid-template-rows:0fr; transition:grid-template-rows .35s ease; }
+  #ovSub.on { grid-template-rows:1fr; }
+  #ovSub > div { overflow:hidden; }
+  .ovpanel { border:1px solid var(--line); border-radius:14px; padding:14px 16px 10px; margin:4px 0 14px; background:rgba(8,17,31,0.35); }
+  .ovpanel .arc { transition:stroke-dashoffset .6s ease .05s; }
+  .ovmini { cursor:pointer; text-align:center; width:96px; border-radius:10px; padding:5px 2px; transition:background .15s; }
+  .ovmini:hover { background:rgba(232,184,75,0.08); }
+  .ovmini.sel { background:rgba(232,184,75,0.12); }
+  .ovmini .lbl { font-size:11px; font-weight:600; margin-top:1px; line-height:1.25;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .ovroster { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; }
+
   .main { flex:1; padding:26px 30px 60px; min-width:0; }
   .sec { display:none; }
   .sec.on { display:block; }
@@ -155,7 +171,9 @@
   <div class="main">
     <section class="sec on" id="s-overview">
       <h2>Sellout Progress</h2>
-      <div id="stFill" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px"></div>
+      <p class="sub" style="margin:-6px 0 10px">Click a ring to expand its programs — click a program to see its roster.</p>
+      <div id="stFill" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px"></div>
+      <div id="ovSub"><div></div></div>
       <h2>Revenue (Stripe)</h2>
       <div class="stats" id="stRevenue"></div>
     </section>
@@ -1191,23 +1209,78 @@
       });
     });
 
-  // the goal is 100% on every ring by end of year — one donut per offering,
-  // detail lives in the Inventory tab
+  // the goal is 100% on every ring by end of year — one donut per program
+  // group. Click a ring and it expands in place into one small donut per
+  // camp/cast/class inside the group; click one of those and its live roster
+  // opens right there. Same data as Programs, zero page-hopping.
+  var OVG = [], ovOpen = null;
+  function donutSvg(taken, cap, size, sweep){
+    var pct = cap ? Math.min(100, Math.round(taken * 100 / cap)) : 0;
+    var r = size * 34 / 88, c = 2 * Math.PI * r, half = size / 2;
+    var len = c * pct / 100;
+    var color = pct >= 100 ? '#6BCB77' : pct >= 60 ? '#E8B84B' : '#5B8DEF';
+    var sw = size >= 80 ? 10 : 7, fs = size >= 80 ? 18 : 14;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+      '<circle cx="' + half + '" cy="' + half + '" r="' + r + '" fill="none" stroke="rgba(128,140,170,.25)" stroke-width="' + sw + '"/>' +
+      '<circle class="arc" cx="' + half + '" cy="' + half + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-linecap="round"' +
+      ' stroke-dasharray="' + len.toFixed(1) + ' ' + c.toFixed(1) + '"' +
+      (sweep ? ' stroke-dashoffset="' + len.toFixed(1) + '"' : '') +
+      ' transform="rotate(-90 ' + half + ' ' + half + ')"/>' +
+      '<text x="' + half + '" y="' + (half + fs * 0.34) + '" text-anchor="middle" font-size="' + fs + '" font-weight="700" fill="currentColor">' + pct + '%</text></svg>';
+  }
   function renderFill(rows){
-    $('stFill').innerHTML = rows.map(function(o){
-      var cap = o.cap || 0, taken = o.taken || 0;
-      var pct = cap ? Math.min(100, Math.round(taken * 100 / cap)) : 0;
-      var r = 34, c = 2 * Math.PI * r;
-      var color = pct >= 100 ? '#6BCB77' : pct >= 60 ? '#E8B84B' : '#5B8DEF';
-      return '<div style="text-align:center;min-width:104px">' +
-        '<svg width="88" height="88" viewBox="0 0 88 88">' +
-        '<circle cx="44" cy="44" r="34" fill="none" stroke="rgba(128,140,170,.25)" stroke-width="10"/>' +
-        '<circle cx="44" cy="44" r="34" fill="none" stroke="' + color + '" stroke-width="10" stroke-linecap="round"' +
-        ' stroke-dasharray="' + (c * pct / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 44 44)"/>' +
-        '<text x="44" y="50" text-anchor="middle" font-size="18" font-weight="700" fill="currentColor">' + pct + '%</text></svg>' +
+    OVG = rows || [];
+    if (ovOpen && !OVG.some(function(g){ return g.key === ovOpen; })) ovOpen = null;
+    $('stFill').innerHTML = OVG.map(function(o){
+      return '<div class="ovcard' + (o.key === ovOpen ? ' sel' : '') + '" data-key="' + esc(o.key) + '" style="text-align:center;min-width:104px">' +
+        donutSvg(o.taken || 0, o.cap || 0, 88, false) +
         '<div style="font-size:12.5px;font-weight:600;margin-top:2px">' + esc(o.label) + '</div>' +
-        '<div style="font-size:11px;opacity:.6">' + taken + ' / ' + cap + ' sold</div></div>';
+        '<div style="font-size:11px;opacity:.6">' + (o.taken || 0) + ' / ' + (o.cap || 0) + ' sold</div></div>';
     }).join('');
+    if (ovOpen) renderOvSub(false); else closeOvSub();
+  }
+  // collapsing must also empty the panel: a leftover .roster node inside it
+  // would pause the 60s auto-refresh forever (the interval guard matches it).
+  // The clear waits out the slide-shut transition; reopening cancels it.
+  var ovClear = null;
+  function closeOvSub(){
+    $('ovSub').classList.remove('on');
+    clearTimeout(ovClear);
+    ovClear = setTimeout(function(){
+      if (!ovOpen) $('ovSub').firstElementChild.innerHTML = '';
+    }, 380);
+  }
+  // items sorted busiest-first so the rings that matter lead; a group like Day
+  // Camps has 60+ sessions and the empty ones shouldn't bury the live ones
+  function ovLabel(it){
+    if (it.show) return (SHOWL[it.show] || it.show) + ' · ' + it.band;
+    var l = it.label || '';
+    return l.indexOf('|') !== -1 ? l.split('|').pop().trim() : l;
+  }
+  function renderOvSub(sweep){
+    var g = OVG.filter(function(x){ return x.key === ovOpen; })[0];
+    var box = $('ovSub').firstElementChild;
+    if (!g) { $('ovSub').classList.remove('on'); return; }
+    var items = (g.items || []).slice().sort(function(a, b){
+      return (b.taken || 0) - (a.taken || 0) || ovLabel(a).localeCompare(ovLabel(b));
+    });
+    box.innerHTML = '<div class="ovpanel">' +
+      '<div class="sub" style="margin:0 0 8px"><b>' + esc(g.label) + '</b> · ' + items.length +
+        ' program' + (items.length === 1 ? '' : 's') + ' · ' + (g.taken || 0) + ' / ' + (g.cap || 0) + ' sold' +
+        ' <a href="#" id="ovToProg" style="float:right">open in Programs →</a></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      items.map(function(it){
+        var key = it.show ? 'data-show="' + esc(it.show) + '" data-band="' + esc(it.band) + '"'
+                          : 'data-act="' + esc(it.activity_id) + '"';
+        return '<div class="ovmini" ' + key + ' title="' + esc(it.label || ovLabel(it)) + '">' +
+          donutSvg(it.taken || 0, it.cap || 0, 64, sweep) +
+          '<div class="lbl">' + esc(ovLabel(it)) + '</div>' +
+          '<div style="font-size:10px;opacity:.6">' + (it.taken || 0) + ' / ' + (it.cap || 0) + '</div></div>';
+      }).join('') + '</div><div class="ovroster" style="display:none"></div></div>';
+    $('ovSub').classList.add('on');
+    if (sweep) requestAnimationFrame(function(){
+      box.querySelectorAll('.arc').forEach(function(a){ a.style.strokeDashoffset = '0'; });
+    });
   }
   // Overview is deliberately minimal now (Jason, Aug 3): donuts + the numbers
   // that mirror Stripe (our orders table). Legacy platform totals and
@@ -1554,11 +1627,44 @@
       SHOWL[tr.dataset.show] + ' · ' + tr.dataset.band);
   });
 
-  // ── overview donuts jump into Programs ──
+  // ── overview donuts expand in place ──
   $('stFill').addEventListener('click', function(e){
-    if (!e.target.closest('svg') && !e.target.closest('div')) return;
-    var progTab = document.querySelector('#nav a[data-s=inventory]');
-    if (progTab) progTab.click();
+    var card = e.target.closest('.ovcard');
+    if (!card) return;
+    ovOpen = (ovOpen === card.dataset.key) ? null : card.dataset.key;
+    $('stFill').querySelectorAll('.ovcard').forEach(function(c){
+      c.classList.toggle('sel', c.dataset.key === ovOpen);
+    });
+    if (ovOpen) renderOvSub(true); else closeOvSub();
+  });
+  $('ovSub').addEventListener('click', function(e){
+    if (e.target.id === 'ovToProg') {
+      e.preventDefault();
+      var progTab = document.querySelector('#nav a[data-s=inventory]');
+      if (progTab) progTab.click();
+      return;
+    }
+    var mini = e.target.closest('.ovmini');
+    if (!mini) return;
+    var panel = mini.closest('.ovpanel'), ros = panel.querySelector('.ovroster');
+    var was = mini.classList.contains('sel');
+    panel.querySelectorAll('.ovmini').forEach(function(m){ m.classList.remove('sel'); });
+    if (was) { ros.style.display = 'none'; ros.innerHTML = ''; ros.classList.remove('roster'); return; }
+    mini.classList.add('sel');
+    // .roster on the open panel is what pauses the 60s auto-refresh (see the
+    // interval guard) so the list can't be yanked away mid-read
+    ros.classList.add('roster');
+    ros.style.display = 'block';
+    ros.innerHTML = '<div class="sub">loading roster…</div>';
+    var params = mini.dataset.act
+      ? { p_show: null, p_band: null, p_activity_id: +mini.dataset.act }
+      : { p_show: mini.dataset.show, p_band: mini.dataset.band, p_activity_id: null };
+    var label = mini.dataset.act ? mini.title : (SHOWL[mini.dataset.show] || mini.dataset.show) + ' · ' + mini.dataset.band;
+    sb.rpc('admin_roster', params).then(function(res){
+      var rows = res.data || [];
+      ros.innerHTML = '<div class="sub" style="margin:0 0 2px"><b>' + esc(label) + '</b> · ' +
+        rows.length + ' registered</div>' + rosterHtml(rows);
+    }).catch(function(err){ ros.innerHTML = '<div class="sub">roster failed: ' + esc(err.message || 'error') + '</div>'; });
   });
 
   // ── global search: campers, families, programs, orders — from the caches
