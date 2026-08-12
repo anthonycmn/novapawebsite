@@ -331,54 +331,69 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 // Weekly recurring classes: [dayOfWeek(0=Sun), timeLabel, className, agesLabel, discipline]
 // These repeat every week classes are in session (Sep 14 2026 – Jun 11 2027, minus breaks)
 const WEEKLY_CLASSES = [
+  // Generated from staff_portal.classes by `npm run gen:site-calendar`.
+  // Do not hand-edit the rows below: the portal is the source of truth for
+  // the weekly timetable, so a correction made here is a correction that
+  // disappears the next time anybody regenerates. Fix it in the portal.
   // MONDAY
-  [1,'9:30–10:15am','Parent & Me Dance','Ages 2–4','Tiny Tots Dance'],
-  [1,'10:30–11:15am','Pre-Ballet & Mini Movers','Ages 4–5','Tiny Tots Dance'],
-  [1,'5:00–5:50pm','Ballet – Ages 5–8','Ages 5–8','Dance'],
-  [1,'6:05–6:55pm','Actors Studio – Ages 5–8','Ages 5–8','Theatre'],
-  [1,'6:00–6:50pm','Ballet I – Ages 9–12','Ages 9–12','Dance'],
-  [1,'7:05–7:55pm','Ballet II – Ages 9–12','Ages 9–12','Dance'],
-  [1,'7:00–7:50pm','Voice & Triple Threat','Ages 13–17','Voice'],
-  [1,'7:00–7:50pm','Adult Acting Fundamentals','Ages 18+','Theatre'],
-  [1,'8:00–8:50pm','Adult Dance Class','Ages 18+','Dance'],
-  [1,'8:00–8:50pm','Film & TV Class','Ages 11–17','Film & TV'],
+  [1,'9:30–10:15am','Parent & Me Dance','Ages 2–4','Dance'],
+  [1,'10:30–11:15am','Pre-Ballet & Mini Movers','Ages 4–5','Dance'],
+  [1,'5:00–6:00pm','Ballet for Musical Theatre','Ages 5–8','Dance'],
+  [1,'6:00–7:00pm','Acting','Ages 5–8','Theatre'],
+  [1,'6:00–7:00pm','Ballet for Musical Theatre I','Ages 9–11','Dance'],
+  [1,'7:00–8:00pm','Ballet for Musical Theatre II','Ages 9–11','Dance'],
+  [1,'7:00–8:30pm','Triple Threat Musical Theatre Training','Ages 13–17','Voice'],
+  [1,'8:00–8:50pm','Film & TV Class','Ages 11–17','Film/TV'],
   // TUESDAY
-  [2,'9:30–10:15am','Tots Dance – Tap & Tumble','Ages 3–5','Tiny Tots Dance'],
-  [2,'5:00–5:50pm','Musical Theatre – Ages 5–8','Ages 5–8','Musical Theatre'],
-  [2,'6:05–6:55pm','K-Pop Dance – Ages 5–8','Ages 5–8','Dance'],
-  [2,'6:15–7:45pm','Broadway Bound Jr. Rehearsal','Ages 9–12','Production'],
-  [2,'7:00–7:50pm','Musical Theatre Dance – Ages 13–17','Ages 13–17','Musical Theatre'],
-  [2,'8:05–8:55pm','Musical Theatre Acting – Ages 13–17','Ages 13–17','Theatre'],
+  [2,'9:30–10:15am','Tots Dance – Tap & Tumble','Ages 3–5','Dance'],
+  [2,'5:00–6:00pm','Musical Theatre','Ages 5–8','Musical Theatre'],
+  [2,'6:05–6:55pm','K-Pop Dance','Ages 5–8','Dance'],
+  [2,'7:00–8:00pm','Musical Theatre Dance','Ages 13–17','Musical Theatre'],
+  [2,'7:30–8:30pm','Adult Acting Class','Ages 18+','Theatre'],
+  [2,'8:00–9:00pm','Musical Theatre Acting','Ages 13–17','Musical Theatre'],
   [2,'9:00–9:50pm','Adult Voice & Choir','Ages 18+','Voice'],
   // WEDNESDAY
-  [3,'10:30–11:20am','Homeschool Theatre Class','Ages 5–11','Theatre'],
-  [3,'11:35am–12:25pm','Homeschool Theatre/Dance','Ages 12–17','Dance'],
-  [3,'5:15–6:45pm','Broadway Bound Kids Rehearsal','Ages 5–9','Production'],
-  [3,'5:15–6:05pm','Actors Studio I & II – Ages 10–12','Ages 10–12','Theatre'],
-  [3,'6:20–7:10pm','Musical Theatre Dance – Ages 10–12','Ages 10–12','Musical Theatre'],
-  [3,'7:15–8:05pm','Bollywood Dance – Ages 10–12','Ages 10–12','Dance'],
-  [3,'7:00–9:00pm','Teen Conservatory Rehearsal','Ages 13–18','Production'],
-  [3,'7:25–8:15pm','Adult Musical Theatre Class','Ages 18+','Musical Theatre'],
+  [3,'1:00–2:00pm','Homeschool Musical Theatre','Ages 9–13','Musical Theatre'],
+  [3,'2:00–3:00pm','Homeschool Theatre','Ages 9–13','Theatre'],
+  [3,'5:15–6:15pm','Acting','Ages 9–12','Theatre'],
+  [3,'6:00–7:00pm','Triple Threat Musical Theatre Training','Ages 13–17','Voice'],
+  [3,'6:15–7:15pm','Musical Theatre Dance','Ages 9–12','Musical Theatre'],
+  [3,'7:15–8:05pm','Bollywood Dance','Ages 10–12','Dance'],
+  [3,'7:15–8:15pm','Musical Theatre Acting','Ages 9–12','Musical Theatre'],
   // THURSDAY
-  [4,'9:30–10:15am','Tots Dance – Ballet Morning','Ages 2–4','Tiny Tots Dance'],
-  [4,'10:30–11:15am','Tiny Tots Improv & Play','Ages 4–6','Tiny Tots Theatre'],
-  [4,'5:00–5:50pm','MT/Jazz – Ages 5–8','Ages 5–8','Musical Theatre'],
-  [4,'6:05–6:55pm','Hip-Hop – Ages 5–8','Ages 5–8','Dance'],
+  [4,'9:30–10:15am','Tots Dance – Ballet Morning','Ages 2–4','Dance'],
+  [4,'10:30–11:15am','Tiny Tots Improv & Play','Ages 4–6','Theatre'],
   [4,'5:00–5:50pm','Boys Hip-Hop & Street Dance','Ages 7–14','Dance'],
-  [4,'5:30–6:20pm','Improv – Ages 9–12','Ages 9–12','Theatre'],
-  [4,'6:30–7:50pm','Technical Theatre – Ages 12+','Ages 12+','Theatre'],
+  [4,'5:00–6:00pm','Hip-Hop for Musical Theatre','Ages 5–8','Dance'],
+  [4,'5:00–5:50pm','MT/Jazz','Ages 5–8','Musical Theatre'],
+  [4,'6:00–7:00pm','Hip-Hop for Musical Theatre','Ages 9–12','Dance'],
+  [4,'6:30–7:30pm','Improv for Actors','Ages 9–12','Theatre'],
+  [4,'6:30–7:50pm','Technical Theatre','Ages 12+','Design / Tech'],
   [4,'7:00–8:20pm','Teen Conservatory','Ages 13–18','Conservatory'],
+  [4,'7:30–8:30pm','Adult Dance for Musical Theatre','Ages 18+','Dance'],
+  [4,'7:30–8:30pm','Improv for Actors','Ages 13–17','Theatre'],
   [4,'8:30–9:30pm','Adult Acting & Improv','Ages 18+','Theatre'],
   // SATURDAY
+  [6,'9:00–10:00am','Adult Musical Theatre Class','Ages 18+','Musical Theatre'],
+  [6,'9:00–9:50am','Ballet','Ages 5–8','Dance'],
+  [6,'9:00–11:00am','Technical Theatre Lab','Ages 12–17','Design / Tech'],
   [6,'9:00am–1:00pm','Teen Conservatory','Ages 13–18','Conservatory'],
-  [6,'9:00–11:00am','Technical Theatre Lab','Ages 12–17','Theatre'],
-  [6,'9:00–9:50am','Ballet – Ages 5–8','Ages 5–8','Dance'],
-  [6,'10:00–10:50am','K-Pop Dance – Ages 5–8','Ages 5–8','Dance'],
-  [6,'11:10am–12:00pm','Acting & Play – Ages 5–8','Ages 5–8','Theatre'],
-  [6,'11:00–11:50am','K-Pop Dance – Ages 9–12','Ages 9–12','Dance'],
-  [6,'12:05–12:55pm','Acting & Musical Theatre – Ages 9–12','Ages 9–12','Musical Theatre'],
-  [6,'12:00–1:30pm','Junior Thespian Troupe','Ages 10–17','Theatre'],
+  [6,'10:00–11:00am','Acting','Ages 5–8','Theatre'],
   [6,'10:00–11:30am','Improv Theatre Troupe','Ages 13+','Theatre'],
+  [6,'10:00–10:50am','K-Pop Dance','Ages 5–8','Dance'],
+  [6,'11:00am–12:00pm','K-Pop Stage Performance','Ages 9–12','Dance'],
+  [6,'11:00am–12:00pm','Musical Theatre','Ages 5–8','Musical Theatre'],
+  [6,'12:00–1:00pm','Acting & Musical Theatre','Ages 9–12','Musical Theatre'],
+  [6,'12:00–1:30pm','Junior Thespian Troupe','Ages 10–17','Theatre'],
+  // ---- not classes, and therefore kept by hand ----------------------------
+  // Production rehearsals. They are deliberately absent from
+  // staff_portal.classes, which models a production once with its own
+  // assignments and schedule — listing them as weekly classes would give each
+  // show a second, rival existence. They stay here because a family reading
+  // this page wants to know when the building is busy.
+  [2,'6:15–7:45pm','Broadway Bound Jr. Rehearsal','Ages 9–12','Production'],
+  [3,'5:15–6:45pm','Broadway Bound Kids Rehearsal','Ages 5–9','Production'],
+  [3,'7:00–9:00pm','Teen Conservatory Rehearsal','Ages 13–18','Production'],
 ];
 
 // Class session date ranges (start inclusive, end inclusive)
