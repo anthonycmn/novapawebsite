@@ -1323,13 +1323,64 @@
         s.cap += it.cap || 0; s.taken += it.taken || 0;
         s.bands.push({ label: age, cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: it.label });
       });
+    } else if (g.key === 'classes') {
+      // buckets mirror how CJ groups the class catalog (Aug 12 conversation)
+      (g.items || []).forEach(function(it){
+        var l = it.label || '';
+        var name = /^adult/i.test(l) ? 'Adult Classes'
+          : /homeschool/i.test(l) ? 'Homeschool'
+          : /ballet|hip-hop|dance|k-pop/i.test(l) ? 'Dance'
+          : /acting|improv/i.test(l) ? 'Acting & Improv'
+          : 'Musical Theatre';
+        var s = bucket(name);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: l, cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: l });
+      });
+    } else if (g.key === 'daycamps') {
+      // a name repeated across dates ("Ages 5–9 Day Camp · Oct 30, 2026") is a
+      // series and gets its own ring, dates sorted chronologically; one-off
+      // themed days collapse into a single bucket
+      var counts = {}, seen = {};
+      (g.items || []).forEach(function(it){
+        var base = (it.label || '').split('·')[0].trim();
+        counts[base] = (counts[base] || 0) + 1;
+      });
+      (g.items || []).forEach(function(it){
+        var l = it.label || '', parts = l.split('·');
+        var base = parts[0].trim(), date = (parts[1] || '').trim();
+        var series = counts[base] > 1;
+        var s = bucket(series ? base : 'Themed One-Day Camps');
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        seen[base] = (seen[base] || 0) + 1;
+        s.bands.push({
+          label: series ? (date || 'Session ' + seen[base]) : base,
+          ord: series ? (date ? (Date.parse(date) || 0) : seen[base]) : 0,
+          cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: l });
+      });
+    } else if (g.key === 'coaching') {
+      // the 970xxx id blocks are the families: 9701 college, 9702 audition
+      // prep, 9703 pre-screens, 9704 acting sessions, 9705 branding
+      (g.items || []).forEach(function(it){
+        var id = +it.activity_id || 0, l = it.label || '';
+        var name = id >= 970500 ? 'Branding & Media'
+          : id >= 970400 ? 'Acting Coaching'
+          : id >= 970300 ? 'Pre-Screen Videos'
+          : id >= 970200 ? 'Audition Prep & Support'
+          : 'College Auditions';
+        var s = bucket(name);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: l, cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: l });
+      });
     } else return null;
     return order.map(function(k){ return m[k]; });
   }
-  // youngest first: named tiers by rank, numeric bands ("5-9") by leading age
+  // youngest first: named tiers by rank, numeric bands ("5-9") by leading age.
+  // Bands carrying an explicit ord (day-camp dates) sort by it instead.
   function bandSort(bands){
     var rank = { kids: 0, junior: 1, teens: 2 };
     return bands.slice().sort(function(a, b){
+      if (a.ord != null || b.ord != null)
+        return (a.ord || 0) - (b.ord || 0) || a.label.localeCompare(b.label);
       var A = rank[a.label.toLowerCase()], B = rank[b.label.toLowerCase()];
       if (A != null && B != null) return A - B;
       return (parseInt(a.label, 10) || 0) - (parseInt(b.label, 10) || 0) || a.label.localeCompare(b.label);
@@ -1340,9 +1391,10 @@
     var box = $('ovSub').firstElementChild;
     if (!g) { closeOvSub(); return; }
     var shows = ovShowsOf(g);
+    var isShowKey = g.key === 'summer' || g.key === 'fallshows';
     var n = shows ? shows.length : (g.items || []).length;
     var head = '<div class="sub" style="margin:0 0 8px"><b>' + esc(g.label) + '</b> · ' + n +
-      (shows ? ' show' : ' program') + (n === 1 ? '' : 's') + ' · ' + (g.taken || 0) + ' / ' + (g.cap || 0) + ' sold' +
+      (shows ? (isShowKey ? ' show' : ' group') : ' program') + (n === 1 ? '' : 's') + ' · ' + (g.taken || 0) + ' / ' + (g.cap || 0) + ' sold' +
       ' <a href="#" id="ovToProg" style="float:right">open in Programs →</a></div>';
     if (!shows) {
       var items = (g.items || []).slice().sort(function(a, b){
@@ -1368,7 +1420,8 @@
             donutSvg(s.taken, s.cap, 76, sweep) +
             '<div class="lbl" style="font-size:12px;font-weight:600;margin-top:1px">' + esc(s.name) + '</div>' +
             '<div style="font-size:10.5px;opacity:.6">' + s.taken + ' / ' + s.cap + '</div>' +
-            '<div style="font-size:10px;opacity:.5">' + s.bands.length + ' age group' + (s.bands.length === 1 ? '' : 's') + '</div></div>';
+            '<div style="font-size:10px;opacity:.5">' + s.bands.length + ' ' +
+              (isShowKey ? 'age group' : g.key === 'daycamps' ? 'day' : 'option') + (s.bands.length === 1 ? '' : 's') + '</div></div>';
         }).join('') + '</div>' +
         '<div class="ovbands"><div></div></div><div class="ovroster" style="display:none"></div></div>';
       if (ovShow) renderOvBands(false);
