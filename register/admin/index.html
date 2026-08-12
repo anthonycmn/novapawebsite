@@ -28,6 +28,23 @@
   .nav a { display:block; padding:10px 20px; color:var(--dim); font-weight:500; border-left:2px solid transparent; }
   .nav a.on { color:#fff; border-left-color:var(--gold); background:rgba(232,184,75,0.06); }
   .side .who { margin-top:auto; padding:14px 20px 0; font-size:11px; color:var(--dim); border-top:1px solid var(--line); word-break:break-all; }
+  .gsearch { padding:0 14px 12px; }
+  .gsearch input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-family:inherit; font-size:12.5px; }
+  .gres { position:fixed; left:190px; top:14px; z-index:60; width:min(440px, 70vw); max-height:70vh; overflow:auto;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px; display:none;
+    box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+  .gres.on { display:block; }
+  .gres a { display:block; padding:8px 10px; border-radius:8px; color:#fff; font-size:13px; }
+  .gres a:hover { background:rgba(232,184,75,0.1); }
+  .gres .gt { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); padding:8px 10px 2px; }
+  tr.drill { cursor:pointer; }
+  tr.drill:hover td { background:rgba(232,184,75,0.05); }
+  td.drill { cursor:pointer; }
+  td.drill:hover { background:rgba(232,184,75,0.08); }
+  .roster td { background:rgba(8,17,31,0.5); }
+  .roster table { margin:6px 0 10px; }
+  .roster th { font-size:10.5px; }
 
   .main { flex:1; padding:26px 30px 60px; min-width:0; }
   .sec { display:none; }
@@ -116,11 +133,13 @@
 <div class="layout" id="app" style="display:none">
   <div class="side">
     <div class="logo">NOVA<em>PA</em></div>
+    <div class="gsearch"><input type="text" id="gSearch" placeholder="Search anything…" autocomplete="off"></div>
+    <div class="gres" id="gRes"></div>
     <div class="nav" id="nav">
       <a data-s="overview" class="on">Overview</a>
       <a data-s="orders">Orders</a>
       <a data-s="balances">Balances</a>
-      <a data-s="inventory">Inventory</a>
+      <a data-s="inventory">Programs</a>
       <a data-s="campers">Campers</a>
       <a data-s="accounting">Accounting</a>
       <a data-s="insurance">Insurance</a>
@@ -152,7 +171,8 @@
     </section>
 
     <section class="sec" id="s-inventory">
-      <h2>Everything we sell</h2>
+      <h2>Programs — everything we sell</h2>
+      <p class="sub" style="margin:-6px 0 10px">Click any program row or summer grid cell to open its live roster.</p>
       <div class="stats" id="stInv" style="margin-bottom:6px"></div>
       <p class="sub" id="invNote" style="margin:0 0 16px"></p>
       <h2>Summer Camps</h2>
@@ -401,9 +421,9 @@
   var LOADERS = {
     overview: function(){
       rload('overview', 'admin_stats', function(d){ if (d) renderStats(d); });
-      rload('overview', 'admin_offering_fill', function(d){ renderFill(d || []); });
+      rload('overview', 'admin_overview_groups', function(d){ renderFill(d || []); });
     },
-    orders:    function(){ rload('orders', 'admin_orders', function(d){ renderOrders(d || []); }); },
+    orders:    function(){ rload('orders', 'admin_orders', function(d){ ORDERS = d || []; renderOrders(ORDERS); }); },
     balances:  function(){ rload('balances', 'admin_balances', function(d){ renderBalances(d || []); }); },
     inventory: loadInventory,
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
@@ -457,12 +477,17 @@
       .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
   // the tab you're looking at quietly refreshes itself once a minute, so the
-  // numbers stay live without anyone pressing anything
+  // numbers stay live without anyone pressing anything — unless you have a
+  // roster open, because a refresh would slam it shut mid-read
   setInterval(function(){
-    if (document.visibilityState === 'visible') runLoader(activeTab());
+    if (document.visibilityState !== 'visible') return;
+    var sec = document.querySelector('.sec.on');
+    if (sec && sec.querySelector('.roster')) return;
+    runLoader(activeTab());
   }, 60000);
 
   var CAMPERS = [];
+  var ORDERS = [];
   function missingOf(c){
     var p = c.profile || {};
     var m = [];
@@ -1277,7 +1302,7 @@
           if (!r || r.cap == null) return '<td><span class="sub">not offered</span></td>';
           var taken = (r.booked||0) + (r.held||0);
           var pct = r.cap ? Math.round(taken/r.cap*100) : 0;
-          return '<td><b>' + taken + '</b> <span class="sub">/ ' + r.cap + '</span>' +
+          return '<td class="drill" data-show="' + sh + '" data-band="' + b + '" title="Click for roster"><b>' + taken + '</b> <span class="sub">/ ' + r.cap + '</span>' +
             '<div class="bar"><i class="' + (pct>=100?'full':'') + '" style="width:' + Math.min(100,pct) + '%"></i></div></td>';
         }).join('') + '</tr>';
       }).join('');
@@ -1354,7 +1379,7 @@
         '<th style="min-width:130px">spots</th><th class="num">registered</th><th></th></tr>' +
         mg.map(function(a){
           var c = countOf(a);
-          return '<tr><td>' + esc(a.name) + '</td>' +
+          return '<tr class="drill" data-act="' + a.id + '"><td>' + esc(a.name) + '</td>' +
             '<td class="sub">' + esc(a.schedule || '') + '</td>' +
             '<td class="sub">' + esc(a.age || '') + '</td>' +
             '<td class="num">' + usd(a.price_cents) + '</td>' +
@@ -1376,7 +1401,8 @@
         var m = String(a.age || a.age_range || '').match(/(\d+)/);
         band = m ? (+m[1] <= 5 ? '5-9' : +m[1] >= 12 ? '12-15' : '9-12') : null;
       }
-      return band ? by[show + '|' + band] : null;
+      var r = band ? by[show + '|' + band] : null;
+      return r ? { r: r, show: show, band: band } : null;
     }
 
     // ── one row renderer, used by every grouped table below ──
@@ -1385,7 +1411,8 @@
     var invTally = { programs: 0, registered: 0, uncounted: 0, catalogOnly: catalogOnly };
     function row(a){
       var cap, taken, left, parts = [], known = true;
-      var invRow = summerInvRow(a);
+      var sr = summerInvRow(a);
+      var invRow = sr && sr.r;
       if (invRow) {
         cap = invRow.cap;
         taken = (invRow.booked || 0) + (invRow.held || 0);
@@ -1397,7 +1424,9 @@
       }
       invTally.programs++;
       if (known) invTally.registered += taken; else invTally.uncounted++;
-      return '<tr><td>' + esc(a.name) +
+      var drill = sr ? 'class="drill" data-show="' + sr.show + '" data-band="' + sr.band + '"'
+                     : 'class="drill" data-act="' + a.id + '"';
+      return '<tr ' + drill + '><td>' + esc(a.name) +
           (a.catalog_only ? ' <span class="tag bad" title="On sale, but nothing is counting registrations for it">no inventory row</span>' : '') +
           (a.bookable === false ? ' <span class="tag">not on sale</span>' : '') + '</td>' +
         '<td class="sub">' + esc(a.schedule || '') + '</td>' +
@@ -1478,6 +1507,105 @@
         'record behind them, so registrations against them are not being tallied here.'
       : 'Every program on sale is listed below with its registrations.';
   }
+
+  // ── roster drill-down: click a program row (or summer grid cell) and the
+  // live roster expands underneath it — who, which family, what they paid.
+  // Fetched per node on first open (the camper-history pattern), refetched on
+  // every open so it never goes stale.
+  function rosterHtml(rows){
+    if (!rows || !rows.length) return '<div class="sub" style="padding:6px 2px">nobody registered yet</div>';
+    return '<table>' +
+      '<tr><th>camper</th><th>family</th><th class="num">paid</th><th>plan</th><th>when</th></tr>' +
+      rows.map(function(r){
+        return '<tr><td><b>' + esc(r.camper || '') + '</b></td>' +
+          '<td>' + esc(r.parent_name || '') + '<div class="sub">' + esc(r.email || '') + '</div></td>' +
+          '<td class="num">' + (r.paid_cents != null ? usd(r.paid_cents) : '<span class="sub">—</span>') + '</td>' +
+          '<td><span class="tag' + (r.source === 'web' ? ' ok' : '') + '">' + esc(r.source === 'web' ? (r.plan || 'web') : r.source) + '</span></td>' +
+          '<td class="sub">' + (r.ordered_at ? dt(r.ordered_at) : '') + '</td></tr>';
+      }).join('') + '</table>';
+  }
+  function openRoster(target, params, label){
+    var tr = target.closest('tr');
+    if (!tr) return;
+    var next = tr.nextElementSibling;
+    if (next && next.classList.contains('roster')) { next.remove(); return; }  // toggle shut
+    var cols = tr.children.length;
+    var det = document.createElement('tr');
+    det.className = 'roster';
+    det.innerHTML = '<td colspan="' + cols + '"><div class="sub">loading roster…</div></td>';
+    tr.parentNode.insertBefore(det, tr.nextSibling);
+    sb.rpc('admin_roster', params).then(function(res){
+      var rows = res.data || [];
+      det.firstChild.innerHTML =
+        (label ? '<div class="sub" style="margin:4px 0 2px"><b>' + esc(label) + '</b> · ' + rows.length + ' registered</div>' : '') +
+        rosterHtml(rows);
+    }).catch(function(e){ det.firstChild.innerHTML = '<div class="sub">roster failed: ' + esc(e.message || 'error') + '</div>'; });
+  }
+  $('s-inventory').addEventListener('click', function(e){
+    var cell = e.target.closest('td.drill');
+    if (cell) {
+      return openRoster(cell, { p_show: cell.dataset.show, p_band: cell.dataset.band, p_activity_id: null },
+        SHOWL[cell.dataset.show] + ' · ' + cell.dataset.band);
+    }
+    var tr = e.target.closest('tr.drill');
+    if (!tr) return;
+    if (tr.dataset.act) openRoster(tr.children[0], { p_show: null, p_band: null, p_activity_id: +tr.dataset.act }, null);
+    else openRoster(tr.children[0], { p_show: tr.dataset.show, p_band: tr.dataset.band, p_activity_id: null },
+      SHOWL[tr.dataset.show] + ' · ' + tr.dataset.band);
+  });
+
+  // ── overview donuts jump into Programs ──
+  $('stFill').addEventListener('click', function(e){
+    if (!e.target.closest('svg') && !e.target.closest('div')) return;
+    var progTab = document.querySelector('#nav a[data-s=inventory]');
+    if (progTab) progTab.click();
+  });
+
+  // ── global search: campers, families, programs, orders — from the caches
+  // the boot preload already filled, so results are instant.
+  (function(){
+    var box = $('gSearch'), out = $('gRes'), t = null;
+    function jumpTab(s){ var a = document.querySelector('#nav a[data-s=' + s + ']'); if (a) a.click(); }
+    function results(q){
+      q = q.trim().toLowerCase();
+      if (q.length < 2) { out.classList.remove('on'); return; }
+      var html = '';
+      var kids = CAMPERS.filter(function(c){
+        return (c.name + ' ' + (c.emails || []).join(' ')).toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 6);
+      if (kids.length) html += '<div class="gt">Campers</div>' + kids.map(function(c){
+        return '<a data-go="camper" data-q="' + esc(c.name) + '"><b>' + esc(c.name) + '</b> <span class="sub">' + esc((c.emails || []).join(', ')) + '</span></a>';
+      }).join('');
+      var acts = ((INV && INV.activities) || []).concat((INV && INV.catalog) || []).filter(function(a, i, arr){
+        return a.name && a.name.toLowerCase().indexOf(q) !== -1 &&
+          arr.findIndex(function(x){ return x.id === a.id; }) === i;
+      }).slice(0, 6);
+      if (acts.length) html += '<div class="gt">Programs</div>' + acts.map(function(a){
+        return '<a data-go="program" data-q=""><b>' + esc(a.name) + '</b> <span class="sub">' + esc(a.schedule || a.schedule_name || '') + '</span></a>';
+      }).join('');
+      var ords = ORDERS.filter(function(o){
+        return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + (o.items || '')).toLowerCase().indexOf(q) !== -1;
+      }).slice(0, 6);
+      if (ords.length) html += '<div class="gt">Orders</div>' + ords.map(function(o){
+        return '<a data-go="order" data-q=""><b>' + esc(o.parent_name || o.email) + '</b> <span class="sub">' + usd(o.total_cents) + ' · ' + dt(o.created_at) + '</span></a>';
+      }).join('');
+      out.innerHTML = html || '<div class="gt">nothing matched</div>';
+      out.classList.add('on');
+    }
+    box.addEventListener('input', function(){ clearTimeout(t); t = setTimeout(function(){ results(box.value); }, 120); });
+    box.addEventListener('focus', function(){ if (box.value.trim().length >= 2) results(box.value); });
+    document.addEventListener('click', function(e){
+      if (e.target === box) return;
+      var a = e.target.closest('#gRes a');
+      if (a) {
+        var go = a.dataset.go;
+        if (go === 'camper') { jumpTab('campers'); $('campQ').value = a.dataset.q; renderCampers(); }
+        else if (go === 'program') { jumpTab('inventory'); }
+        else if (go === 'order') { jumpTab('orders'); }
+      }
+      out.classList.remove('on');
+    });
+  })();
 
 })();
 </script>
