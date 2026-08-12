@@ -122,13 +122,11 @@
       <a data-s="balances">Balances</a>
       <a data-s="inventory">Inventory</a>
       <a data-s="campers">Campers</a>
-      <a data-s="calendar">Calendar</a>
       <a data-s="accounting">Accounting</a>
       <a data-s="insurance">Insurance</a>
       <a data-s="cashflow">Cash Flow</a>
       <a data-s="credits">Credits</a>
       <a data-s="referrals">Referrals</a>
-      <a data-s="marketing">Marketing</a>
       <a data-s="starpages">Star Pages</a>
       <a data-s="hiring">Hiring</a>
     </div>
@@ -169,7 +167,6 @@
       <h2>Tuition Insurance</h2>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
         <select id="insYear" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px"></select>
-        <button class="tag" id="insLoad" style="cursor:pointer;border:0;padding:8px 16px">Load</button>
         <span class="sub" id="insStatus"></span>
       </div>
       <div id="insBody" style="display:none">
@@ -208,16 +205,6 @@
       Résumé links are generated on demand and expire after 5 minutes. Every submission also emails everyone in admin_emails.</p>
     </section>
 
-    <section class="sec" id="s-marketing">
-      <h2>Marketing — retargeting sequences</h2>
-      <div class="stats" id="mkStats" style="margin-bottom:14px"></div>
-      <div id="mkSeqs"></div>
-      <h2 style="margin-top:22px">Leads</h2>
-      <div class="wrap-scroll"><table id="tblMkLeads"></table></div>
-      <p class="sub" style="margin-top:10px">The engine runs every 15 minutes. Buyers are removed automatically and never re-enter.
-      Edits to subject/body/delay apply from the next run. Variables: {parentName} {camperName} {camperNames} {camp} {camps} {link}</p>
-    </section>
-
     <section class="sec" id="s-accounting">
       <h2>Accounting</h2>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
@@ -227,7 +214,6 @@
           <option value="payment">By payment date</option>
           <option value="program">By program date</option>
         </select>
-        <button class="tag" id="accLoad" style="cursor:pointer;border:0;padding:8px 16px">Load</button>
         <button class="tag" id="accCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
         <span class="sub" id="accStatus"></span>
       </div>
@@ -289,7 +275,6 @@
     <section class="sec" id="s-cashflow">
       <h2>Cash flow forecast</h2>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-        <button class="tag" id="cfLoad" style="cursor:pointer;border:0;padding:8px 16px">Refresh</button>
         <button class="tag" id="cfCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
         <span class="sub" id="cfStatus"></span>
       </div>
@@ -304,14 +289,6 @@
       </div>
     </section>
 
-    <section class="sec" id="s-calendar">
-      <div class="cal-head">
-        <button id="calPrev">‹</button><b id="calTitle"></b><button id="calNext">›</button>
-      </div>
-      <div class="cal" id="calGrid"></div>
-      <h2>Weekly / Ongoing</h2>
-      <div class="wrap-scroll"><table id="tblOngoing"></table></div>
-    </section>
   </div>
 </div>
 
@@ -416,7 +393,7 @@
       lastLoad.inventory = Date.now();
       INV = r.data;
       INV.catalog = (res[1] && res[1].data) || [];
-      try { renderInventory(INV); buildCal(); }
+      try { renderInventory(INV); }
       catch (e) { console.error(e); loadErr('inventory', 'render: ' + e.message); }
     });
   }
@@ -429,7 +406,6 @@
     orders:    function(){ rload('orders', 'admin_orders', function(d){ renderOrders(d || []); }); },
     balances:  function(){ rload('balances', 'admin_balances', function(d){ renderBalances(d || []); }); },
     inventory: loadInventory,
-    calendar:  function(){ if (INV) buildCal(); else loadInventory(); },
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
     cashflow:  function(){ loadCashflow(); },
     starpages: function(){ loadStars(); },
@@ -438,9 +414,9 @@
       if (!$('crExp').value) $('crExp').value = '2027-07-31';
       loadCredits();
     },
-    hiring:    function(){ loadHiring(); },
-    // insurance renders from the orders payload
-    insurance: function(){ rload('insurance', 'admin_orders', function(d){ renderOrders(d || []); }); }
+    hiring:     function(){ loadHiring(); },
+    insurance:  function(){ loadInsurance(); },
+    accounting: function(){ loadAccounting(); }
   };
   function runLoader(tab){
     var fn = LOADERS[tab];
@@ -460,7 +436,6 @@
     });
   });
 
-  var INV = null;
   // The hiring block below is its own IIFE, so the loader it defines is not in
   // scope here — boot() calling it directly threw a ReferenceError on every
   // page load (#66). The block hands its loader out through this instead.
@@ -475,14 +450,17 @@
   });
 
   function boot(){
-    // stagger the startup so the heavy calls are not all racing one another
-    runLoader('overview');
-    setTimeout(function(){ runLoader('orders'); }, 200);
-    setTimeout(function(){ runLoader('balances'); }, 400);
-    setTimeout(function(){ runLoader('inventory'); }, 600);
-    setTimeout(function(){ runLoader('campers'); }, 900);
-    setTimeout(function(){ runLoader('hiring'); }, 1200);
+    // preload EVERY tab, staggered so the heavy calls don't race one another —
+    // no tab should ever greet you with a Load button or an empty table
+    ['overview','orders','balances','inventory','campers','hiring','referrals',
+     'credits','cashflow','insurance','accounting','starpages']
+      .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
+  // the tab you're looking at quietly refreshes itself once a minute, so the
+  // numbers stay live without anyone pressing anything
+  setInterval(function(){
+    if (document.visibilityState === 'visible') runLoader(activeTab());
+  }, 60000);
 
   var CAMPERS = [];
   function missingOf(c){
@@ -562,6 +540,10 @@
   (function(){
     var t=null;
     $('campQ').addEventListener('input', function(){ clearTimeout(t); t=setTimeout(renderCampers, 150); });
+  })();
+  // ^ this IIFE used to run all the way to the campCopy listener 700 lines
+  // down, swallowing loadRefs/loadStars/loadCredits/loadCashflow into a
+  // private scope the LOADERS map couldn't see — four dead tabs (#67).
 
   // ---------- accounting ----------
   var ACC = null;
@@ -593,11 +575,13 @@
       });
     }).then(function(r){ return r.json(); });
   }
-  $('accLoad').addEventListener('click', function(){
-    $('accStatus').textContent = 'loading\u2026';
+  function loadAccounting(){
+    if (ACC) renderAccounting();  // paint what we have, then refresh behind it
+    $('accStatus').textContent = ACC ? 'refreshing\u2026' : 'loading\u2026';
     fetchFinance($('accYear').value).then(function(d){
       if (d.error) { $('accStatus').textContent = 'error: ' + d.error; return; }
       ACC = d;
+      lastLoad.accounting = Date.now();
       $('accStatus').textContent = d.transactions.length + ' payments, ' + d.orders.length + ' orders';
       var progs = {};
       d.orders.forEach(function(o){ (d.items_by_order[o.id]||[]).forEach(function(it){
@@ -607,7 +591,8 @@
       $('accBody').style.display = ''; $('accCsv').style.display = '';
       renderAccounting();
     }).catch(function(e){ $('accStatus').textContent = 'network error'; });
-  });
+  }
+  $('accYear').addEventListener('change', function(){ ACC = null; loadAccounting(); });
   // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
   function loadRefs(){
     sb.rpc('admin_referrals').then(function(res){
@@ -714,21 +699,18 @@
     table(passed, 'tblInsNo', 'every eligible order took insurance');
     $('insBody').style.display = '';
   }
-  // The nav handler lives in an outer scope that cannot see INS, so the
-  // open-the-tab-and-load behaviour is wired from in here instead.
-  (function(){
-    var tab = document.querySelector('#nav a[data-s=insurance]');
-    if (tab) tab.addEventListener('click', function(){ if (!INS) $('insLoad').click(); });
-  })();
-  $('insLoad').addEventListener('click', function(){
-    $('insStatus').textContent = 'loading…';
+  function loadInsurance(){
+    if (INS) renderInsurance();   // paint what we have, then refresh behind it
+    $('insStatus').textContent = INS ? 'refreshing…' : 'loading…';
     fetchFinance($('insYear').value).then(function(d){
       if (d.error) { $('insStatus').textContent = 'error: ' + d.error; return; }
       INS = d;
+      lastLoad.insurance = Date.now();
       $('insStatus').textContent = (d.orders || []).length + ' orders scanned';
       renderInsurance();
     }).catch(function(){ $('insStatus').textContent = 'network error'; });
-  });
+  }
+  $('insYear').addEventListener('change', function(){ INS = null; loadInsurance(); });
 
   // ---- Star Pages (Zoe builds the playbill from these) ----
   function loadStars(){
@@ -931,7 +913,6 @@
     var b = m.split('-');
     return MN[+b[1] - 1] + ' ' + b[0];
   }
-  $('cfLoad').addEventListener('click', loadCashflow);
   $('cfCsv').addEventListener('click', function(){
     if (!CF) return;
     var rows = [['scheduled_date','family','type','amount','stripe_ref']];
@@ -1134,99 +1115,6 @@
     });
   }
 
-  function loadMarketing(){
-    sb.rpc('marketing_get').then(function(r){
-      MK = r.data;
-      if (!MK) { $('mkStats').innerHTML = '<div class="empty">no data — run the SQL setup</div>'; return; }
-      renderMarketing();
-    });
-  }
-  function mkStageName(seq, stage, status){
-    if (status === 'purchased') return 'PURCHASED';
-    if (status === 'stopped') return 'stopped';
-    if (status === 'done') return 'sequence finished';
-    return stage === 0 ? 'waiting (30m window)' : 'email ' + stage + ' sent';
-  }
-  function renderMarketing(){
-    var pipe = MK.pipeline || [];
-    var total = pipe.reduce(function(s,p){ return s + p.n; }, 0);
-    var bought = pipe.filter(function(p){ return p.status === 'purchased'; }).reduce(function(s,p){ return s + p.n; }, 0);
-    var active = pipe.filter(function(p){ return p.status === 'active'; }).reduce(function(s,p){ return s + p.n; }, 0);
-    $('mkStats').innerHTML =
-      '<div class="stat"><div class="v">' + total + '</div><div class="l">total leads</div></div>' +
-      '<div class="stat"><div class="v">' + active + '</div><div class="l">in sequence</div></div>' +
-      '<div class="stat"><div class="v gold">' + bought + '</div><div class="l">converted</div></div>';
-    $('mkSeqs').innerHTML = (MK.sequences || []).map(function(s){
-      var hrs = s.delay_minutes >= 60 ? (s.delay_minutes/60) + 'h' : s.delay_minutes + 'm';
-      return '<div class="card" style="border:1px solid var(--line,rgba(255,255,255,0.12));border-radius:12px;padding:14px;margin-bottom:12px">' +
-        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
-        '<span class="tag gold">' + esc(s.seq) + ' · step ' + s.step + '</span>' +
-        '<label class="sub">delay <input type="number" data-mk="delay" value="' + s.delay_minutes + '" style="width:80px;padding:6px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff"> min (' + hrs + ')</label>' +
-        '<label class="sub"><input type="checkbox" data-mk="enabled" ' + (s.enabled ? 'checked' : '') + '> enabled</label>' +
-        '<button class="tag" data-mk-test="' + s.id + '" style="cursor:pointer;border:0;margin-left:auto">Send test to me</button>' +
-        '<button class="tag ok" data-mk-save="' + s.id + '" style="cursor:pointer;border:0">Save</button>' +
-        '<span class="sub" data-mk-msg></span></div>' +
-        '<input type="text" data-mk="subject" value="' + esc(s.subject).replace(/"/g,'&quot;') + '" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-weight:600;margin-bottom:8px">' +
-        '<textarea data-mk="body" rows="8" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:13.5px;line-height:1.5">' + esc(s.body) + '</textarea>' +
-        '</div>';
-    }).join('');
-    $('mkSeqs').querySelectorAll('[data-mk-test]').forEach(function(b){
-      b.addEventListener('click', function(){
-        var card = b.closest('.card');
-        b.textContent = 'sending...'; b.disabled = true;
-        sb.auth.getSession().then(function(res){
-          var token = res.data && res.data.session && res.data.session.access_token;
-          return fetch('/api/reg-drip-test', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ step_id: +b.dataset.mkTest })
-          });
-        }).then(function(r){ return r.json(); }).then(function(j){
-          b.disabled = false; b.textContent = 'Send test to me';
-          card.querySelector('[data-mk-msg]').textContent = j.ok ? 'test sent to ' + j.to : ('failed: ' + (j.error || 'error'));
-          setTimeout(function(){ card.querySelector('[data-mk-msg]').textContent = ''; }, 4000);
-        }).catch(function(){ b.disabled = false; b.textContent = 'Send test to me'; });
-      });
-    });
-    $('mkSeqs').querySelectorAll('[data-mk-save]').forEach(function(b){
-      b.addEventListener('click', function(){
-        var card = b.closest('.card');
-        var g = function(k){ return card.querySelector('[data-mk="' + k + '"]'); };
-        b.textContent = '...';
-        sb.rpc('marketing_save_step', {
-          p_id: +b.dataset.mkSave,
-          p_delay: +g('delay').value || 30,
-          p_subject: g('subject').value,
-          p_body: g('body').value,
-          p_enabled: g('enabled').checked
-        }).then(function(r){
-          b.textContent = 'Save';
-          card.querySelector('[data-mk-msg]').textContent = r.error ? 'save failed' : 'saved';
-          setTimeout(function(){ card.querySelector('[data-mk-msg]').textContent = ''; }, 2500);
-        });
-      });
-    });
-    var leads = MK.recent || [];
-    $('tblMkLeads').innerHTML = leads.length
-      ? '<tr><th>email</th><th>parent</th><th>camps</th><th>seq</th><th>state</th><th>last send</th><th></th></tr>' +
-        leads.map(function(l){
-          var c = l.ctx || {};
-          return '<tr><td>' + esc(l.email) + '</td><td>' + esc(c.parent || '') + '</td>' +
-            '<td class="sub">' + esc((c.camps || []).join(', ')) + '</td>' +
-            '<td><span class="tag">' + esc(l.seq) + '</span></td>' +
-            '<td><span class="tag ' + (l.status === 'purchased' ? 'ok' : l.status === 'active' ? 'gold' : '') + '">' + mkStageName(l.seq, l.stage, l.status) + '</span></td>' +
-            '<td class="sub">' + (l.sent ? dt(l.sent) : '—') + '</td>' +
-            '<td>' + (l.status === 'active' ? '<button class="tag bad mk-stop" data-email="' + esc(l.email) + '" style="cursor:pointer;border:0">stop</button>' : '') + '</td></tr>';
-        }).join('')
-      : '<tr><td class="empty">no leads yet — the engine enrolls sign-ins automatically</td></tr>';
-    $('tblMkLeads').querySelectorAll('.mk-stop').forEach(function(b){
-      b.addEventListener('click', function(){
-        if (!confirm('Stop all remaining emails to ' + b.dataset.email + '?')) return;
-        sb.rpc('marketing_stop', { p_email: b.dataset.email }).then(loadMarketing);
-      });
-    });
-  }
-  loadMarketing();
 
   $('accCsv').addEventListener('click', function(){
     if (!ACC) return;
@@ -1265,7 +1153,6 @@
         setTimeout(function(){ $('campCopy').textContent = 'Copy chase-list emails'; }, 2500);
       });
     });
-  })();
 
   // the goal is 100% on every ring by end of year — one donut per offering,
   // detail lives in the Inventory tab
@@ -1580,49 +1467,6 @@
       : 'Every program on sale is listed below with its registrations.';
   }
 
-  // ---- calendar ----
-  var calY, calM;
-  function parseEvents(){
-    var evs = [];
-    (INV && INV.activities || []).forEach(function(a){
-      var m = (a.schedule || '').match(/^(\d{1,2})\/(\d{1,2})\s*-\s*(\d{1,2})\/(\d{1,2})$/);
-      if (!m) return;
-      var year = (a.raw_in_progress === 'true') ? 2026 : (a.bb_gated ? 2027 : (parseInt(m[1],10) >= 9 ? 2026 : 2027));
-      evs.push({ name: a.name, y: year,
-        start: new Date(year, parseInt(m[1],10)-1, parseInt(m[2],10)),
-        end: new Date(year, parseInt(m[3],10)-1, parseInt(m[4],10)) });
-    });
-    return evs;
-  }
-  function buildCal(){
-    var now = new Date();
-    if (calY === undefined) { calY = now.getFullYear(); calM = now.getMonth(); }
-    var evs = parseEvents();
-    var first = new Date(calY, calM, 1);
-    var days = new Date(calY, calM+1, 0).getDate();
-    $('calTitle').textContent = first.toLocaleString('en-US',{month:'long',year:'numeric'});
-    var html = ['S','M','T','W','T','F','S'].map(function(d){ return '<div class="dow">'+d+'</div>'; }).join('');
-    for (var i = 0; i < first.getDay(); i++) html += '<div class="day blank"></div>';
-    for (var d = 1; d <= days; d++) {
-      var cur = new Date(calY, calM, d);
-      var todays = evs.filter(function(e){ return cur >= e.start && cur <= e.end; });
-      var isToday = cur.toDateString() === now.toDateString();
-      html += '<div class="day' + (isToday?' today':'') + '"><div class="d">' + d + '</div>' +
-        todays.slice(0,3).map(function(e){
-          return '<span class="ev' + (e.y===2026?' c2026':'') + '" title="' + esc(e.name) + '">' + esc(e.name.replace(/Broadway Bound\s*\|?\s*/i,'')) + '</span>';
-        }).join('') + (todays.length>3 ? '<span class="sub">+' + (todays.length-3) + '</span>' : '') + '</div>';
-    }
-    $('calGrid').innerHTML = html;
-
-    var ongoing = (INV.activities || []).filter(function(a){ return !/^\d{1,2}\//.test(a.schedule || ''); });
-    $('tblOngoing').innerHTML =
-      '<tr><th>program</th><th>schedule</th><th>ages</th></tr>' +
-      ongoing.map(function(a){
-        return '<tr><td>' + esc(a.name) + '</td><td class="sub">' + esc(a.schedule || '—') + '</td><td class="sub">' + esc(a.age || '') + '</td></tr>';
-      }).join('');
-  }
-  $('calPrev').addEventListener('click', function(){ calM--; if (calM<0){calM=11;calY--;} buildCal(); });
-  $('calNext').addEventListener('click', function(){ calM++; if (calM>11){calM=0;calY++;} buildCal(); });
 })();
 </script>
 </body>
