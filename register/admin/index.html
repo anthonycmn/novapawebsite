@@ -60,6 +60,13 @@
   .ovmini.sel { background:rgba(232,184,75,0.12); }
   .ovmini .lbl { font-size:11px; font-weight:600; margin-top:1px; line-height:1.25;
     overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .ovshowcard { cursor:pointer; text-align:center; width:118px; border-radius:10px; padding:6px 4px; transition:background .15s; }
+  .ovshowcard:hover { background:rgba(232,184,75,0.08); }
+  .ovshowcard.sel { background:rgba(232,184,75,0.12); }
+  .ovbands { display:grid; grid-template-rows:0fr; transition:grid-template-rows .3s ease; }
+  .ovbands.on { grid-template-rows:1fr; }
+  .ovbands > div { overflow:hidden; }
+  .ovbandsin { border-left:2px solid rgba(232,184,75,0.35); margin:8px 0 0 10px; padding:6px 0 4px 14px; display:flex; gap:8px; flex-wrap:wrap; }
   .ovroster { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; }
 
   .main { flex:1; padding:26px 30px 60px; min-width:0; }
@@ -171,7 +178,7 @@
   <div class="main">
     <section class="sec on" id="s-overview">
       <h2>Sellout Progress</h2>
-      <p class="sub" style="margin:-6px 0 10px">Click a ring to expand its programs — click a program to see its roster.</p>
+      <p class="sub" style="margin:-6px 0 10px">Click a ring to drill down — program &rsaquo; show &rsaquo; age group &rsaquo; live roster.</p>
       <div id="stFill" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px"></div>
       <div id="ovSub"><div></div></div>
       <h2>Revenue (Stripe)</h2>
@@ -1213,7 +1220,7 @@
   // group. Click a ring and it expands in place into one small donut per
   // camp/cast/class inside the group; click one of those and its live roster
   // opens right there. Same data as Programs, zero page-hopping.
-  var OVG = [], ovOpen = null;
+  var OVG = [], ovOpen = null, ovShow = null;
   function donutSvg(taken, cap, size, sweep){
     var pct = cap ? Math.min(100, Math.round(taken * 100 / cap)) : 0;
     var r = size * 34 / 88, c = 2 * Math.PI * r, half = size / 2;
@@ -1257,29 +1264,110 @@
     var l = it.label || '';
     return l.indexOf('|') !== -1 ? l.split('|').pop().trim() : l;
   }
+  // groups with a real show structure get a middle level: program › show ›
+  // age group. Summer's items carry (show, band) natively; fall shows encode
+  // both in the activity name ("Broadway Bound Junior | Frozen, Jr." = Frozen,
+  // Junior). Everything else (classes, day camps, coaching) stays one level.
+  function ovShowsOf(g){
+    var m = {}, order = [];
+    function bucket(name){
+      if (!m[name]) { m[name] = { name: name, cap: 0, taken: 0, bands: [] }; order.push(name); }
+      return m[name];
+    }
+    if (g.key === 'summer') {
+      (g.items || []).forEach(function(it){
+        var s = bucket(SHOWL[it.show] || it.show);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: it.band, cap: it.cap || 0, taken: it.taken || 0, show: it.show, band: it.band });
+      });
+    } else if (g.key === 'fallshows') {
+      (g.items || []).forEach(function(it){
+        var parts = (it.label || '').split('|');
+        var post = (parts[1] || parts[0] || '').trim();
+        var name = /mermaid/i.test(post) ? 'The Little Mermaid' : /frozen/i.test(post) ? 'Frozen' : post;
+        var age = (parts.length > 1 ? parts[0] : '').replace(/broadway bound/i, '').trim() || 'Kids';
+        var s = bucket(name);
+        s.cap += it.cap || 0; s.taken += it.taken || 0;
+        s.bands.push({ label: age, cap: it.cap || 0, taken: it.taken || 0, act: it.activity_id, full: it.label });
+      });
+    } else return null;
+    return order.map(function(k){ return m[k]; });
+  }
+  // youngest first: named tiers by rank, numeric bands ("5-9") by leading age
+  function bandSort(bands){
+    var rank = { kids: 0, junior: 1, teens: 2 };
+    return bands.slice().sort(function(a, b){
+      var A = rank[a.label.toLowerCase()], B = rank[b.label.toLowerCase()];
+      if (A != null && B != null) return A - B;
+      return (parseInt(a.label, 10) || 0) - (parseInt(b.label, 10) || 0) || a.label.localeCompare(b.label);
+    });
+  }
   function renderOvSub(sweep){
     var g = OVG.filter(function(x){ return x.key === ovOpen; })[0];
     var box = $('ovSub').firstElementChild;
-    if (!g) { $('ovSub').classList.remove('on'); return; }
-    var items = (g.items || []).slice().sort(function(a, b){
-      return (b.taken || 0) - (a.taken || 0) || ovLabel(a).localeCompare(ovLabel(b));
-    });
-    box.innerHTML = '<div class="ovpanel">' +
-      '<div class="sub" style="margin:0 0 8px"><b>' + esc(g.label) + '</b> · ' + items.length +
-        ' program' + (items.length === 1 ? '' : 's') + ' · ' + (g.taken || 0) + ' / ' + (g.cap || 0) + ' sold' +
-        ' <a href="#" id="ovToProg" style="float:right">open in Programs →</a></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-      items.map(function(it){
-        var key = it.show ? 'data-show="' + esc(it.show) + '" data-band="' + esc(it.band) + '"'
-                          : 'data-act="' + esc(it.activity_id) + '"';
-        return '<div class="ovmini" ' + key + ' title="' + esc(it.label || ovLabel(it)) + '">' +
-          donutSvg(it.taken || 0, it.cap || 0, 64, sweep) +
-          '<div class="lbl">' + esc(ovLabel(it)) + '</div>' +
-          '<div style="font-size:10px;opacity:.6">' + (it.taken || 0) + ' / ' + (it.cap || 0) + '</div></div>';
-      }).join('') + '</div><div class="ovroster" style="display:none"></div></div>';
+    if (!g) { closeOvSub(); return; }
+    var shows = ovShowsOf(g);
+    var n = shows ? shows.length : (g.items || []).length;
+    var head = '<div class="sub" style="margin:0 0 8px"><b>' + esc(g.label) + '</b> · ' + n +
+      (shows ? ' show' : ' program') + (n === 1 ? '' : 's') + ' · ' + (g.taken || 0) + ' / ' + (g.cap || 0) + ' sold' +
+      ' <a href="#" id="ovToProg" style="float:right">open in Programs →</a></div>';
+    if (!shows) {
+      var items = (g.items || []).slice().sort(function(a, b){
+        return (b.taken || 0) - (a.taken || 0) || ovLabel(a).localeCompare(ovLabel(b));
+      });
+      box.innerHTML = '<div class="ovpanel">' + head +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        items.map(function(it){
+          var key = it.show ? 'data-show="' + esc(it.show) + '" data-band="' + esc(it.band) + '"'
+                            : 'data-act="' + esc(it.activity_id) + '"';
+          return '<div class="ovmini" ' + key + ' title="' + esc(it.label || ovLabel(it)) + '">' +
+            donutSvg(it.taken || 0, it.cap || 0, 64, sweep) +
+            '<div class="lbl">' + esc(ovLabel(it)) + '</div>' +
+            '<div style="font-size:10px;opacity:.6">' + (it.taken || 0) + ' / ' + (it.cap || 0) + '</div></div>';
+        }).join('') + '</div><div class="ovroster" style="display:none"></div></div>';
+    } else {
+      if (ovShow && !shows.some(function(s){ return s.name === ovShow; })) ovShow = null;
+      shows.sort(function(a, b){ return (b.taken || 0) - (a.taken || 0) || a.name.localeCompare(b.name); });
+      box.innerHTML = '<div class="ovpanel">' + head +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        shows.map(function(s){
+          return '<div class="ovshowcard' + (s.name === ovShow ? ' sel' : '') + '" data-showname="' + esc(s.name) + '">' +
+            donutSvg(s.taken, s.cap, 76, sweep) +
+            '<div class="lbl" style="font-size:12px;font-weight:600;margin-top:1px">' + esc(s.name) + '</div>' +
+            '<div style="font-size:10.5px;opacity:.6">' + s.taken + ' / ' + s.cap + '</div>' +
+            '<div style="font-size:10px;opacity:.5">' + s.bands.length + ' age group' + (s.bands.length === 1 ? '' : 's') + '</div></div>';
+        }).join('') + '</div>' +
+        '<div class="ovbands"><div></div></div><div class="ovroster" style="display:none"></div></div>';
+      if (ovShow) renderOvBands(false);
+    }
     $('ovSub').classList.add('on');
     if (sweep) requestAnimationFrame(function(){
       box.querySelectorAll('.arc').forEach(function(a){ a.style.strokeDashoffset = '0'; });
+    });
+  }
+  function renderOvBands(sweep){
+    var g = OVG.filter(function(x){ return x.key === ovOpen; })[0];
+    if (!g) return;
+    var box = $('ovSub').firstElementChild;
+    var bandsEl = box.querySelector('.ovbands');
+    if (!bandsEl) return;
+    var s = (ovShowsOf(g) || []).filter(function(x){ return x.name === ovShow; })[0];
+    box.querySelectorAll('.ovshowcard').forEach(function(c){ c.classList.toggle('sel', c.dataset.showname === ovShow); });
+    var ros = box.querySelector('.ovroster');
+    if (ros) { ros.style.display = 'none'; ros.innerHTML = ''; ros.classList.remove('roster'); }
+    if (!s) { bandsEl.classList.remove('on'); return; }
+    bandsEl.firstElementChild.innerHTML = '<div class="ovbandsin">' +
+      bandSort(s.bands).map(function(b){
+        var key = b.act != null ? 'data-act="' + esc(b.act) + '"'
+                                : 'data-show="' + esc(b.show) + '" data-band="' + esc(b.band) + '"';
+        return '<div class="ovmini" ' + key + ' title="' + esc(b.full || (ovShow + ' · ' + b.label)) + '">' +
+          donutSvg(b.taken, b.cap, 64, sweep) +
+          '<div class="lbl">' + esc(b.label) + '</div>' +
+          '<div style="font-size:10px;opacity:.6">' + b.taken + ' / ' + b.cap + '</div></div>';
+      }).join('') + '</div>';
+    bandsEl.classList.add('on');
+    if (sweep) requestAnimationFrame(function(){
+      bandsEl.querySelectorAll('.arc').forEach(function(a){ a.style.strokeDashoffset = '0'; });
     });
   }
   // Overview is deliberately minimal now (Jason, Aug 3): donuts + the numbers
@@ -1632,6 +1720,7 @@
     var card = e.target.closest('.ovcard');
     if (!card) return;
     ovOpen = (ovOpen === card.dataset.key) ? null : card.dataset.key;
+    ovShow = null;
     $('stFill').querySelectorAll('.ovcard').forEach(function(c){
       c.classList.toggle('sel', c.dataset.key === ovOpen);
     });
@@ -1642,6 +1731,12 @@
       e.preventDefault();
       var progTab = document.querySelector('#nav a[data-s=inventory]');
       if (progTab) progTab.click();
+      return;
+    }
+    var sc = e.target.closest('.ovshowcard');
+    if (sc) {
+      ovShow = (ovShow === sc.dataset.showname) ? null : sc.dataset.showname;
+      renderOvBands(true);
       return;
     }
     var mini = e.target.closest('.ovmini');
