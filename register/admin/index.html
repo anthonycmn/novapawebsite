@@ -98,6 +98,13 @@
   .btn2.ghost { border-color:var(--line); background:transparent; color:var(--dim); }
   .btn2.ghost:hover { color:#fff; }
 
+  /* grouped-tab pills: one nav entry, related views switch inside the page */
+  #subnav { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 18px; }
+  #subnav button { border:1px solid var(--line); background:transparent; color:var(--dim);
+    border-radius:999px; padding:5px 14px; font-size:12px; cursor:pointer; font-family:inherit; }
+  #subnav button:hover { color:#fff; }
+  #subnav button.on { color:#E8B84B; border-color:#E8B84B; background:rgba(232,184,75,0.08); }
+
   /* move-camper popover: search-first, no giant list */
   .mvpop { position:fixed; z-index:80; width:320px; background:#0d1b30; border:1px solid var(--line);
     border-radius:12px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,0.55); }
@@ -210,16 +217,10 @@
     <div class="gres" id="gRes"></div>
     <div class="nav" id="nav">
       <a data-s="overview" class="on">Overview</a>
-      <a data-s="orders">Orders</a>
-      <a data-s="balances">Balances</a>
-      <a data-s="inventory">Programs</a>
-      <a data-s="products">Products</a>
-      <a data-s="campers">Campers</a>
-      <a data-s="accounting">Accounting</a>
-      <a data-s="insurance">Insurance</a>
-      <a data-s="cashflow">Cash Flow</a>
-      <a data-s="credits">Credits</a>
-      <a data-s="referrals">Referrals</a>
+      <a data-g="programs">Programs</a>
+      <a data-g="families">Families</a>
+      <a data-g="money">Money</a>
+      <a data-g="rewards">Credits &amp; Referrals</a>
       <a data-s="starpages">Star Pages</a>
       <a data-s="hiring">Hiring</a>
     </div>
@@ -227,6 +228,7 @@
   </div>
 
   <div class="main">
+    <div id="subnav" style="display:none"></div>
     <section class="sec on" id="s-overview">
       <h2>Revenue (Stripe)</h2>
       <div class="stats" id="stRevenue" style="margin-bottom:14px"></div>
@@ -537,17 +539,50 @@
     var fn = LOADERS[tab];
     if (fn) try { fn(); } catch (e) { console.error(tab, e); loadErr(tab, e.message); }
   }
+  // Related views live behind ONE nav entry and switch via pills inside the
+  // page (13 sidebar tabs collapsed to 7, Aug 12). Every old tab survives as
+  // a pill; setTab(member) is the one way to change views, so search jumps
+  // and drill-throughs land on the right pill too.
+  var GROUPS = {
+    programs: [['inventory', 'Capacity & rosters'], ['products', 'Edit products']],
+    families: [['campers', 'Campers'], ['orders', 'Orders']],
+    money: [['balances', 'Balances'], ['accounting', 'Accounting'], ['insurance', 'Insurance'], ['cashflow', 'Cash flow']],
+    rewards: [['credits', 'Credits'], ['referrals', 'Referrals']]
+  };
+  var GROUP_OF = {}, GROUP_LAST = {};
+  Object.keys(GROUPS).forEach(function(g){
+    GROUPS[g].forEach(function(t){ GROUP_OF[t[0]] = g; });
+    GROUP_LAST[g] = GROUPS[g][0][0];
+  });
   function activeTab(){
-    var a = document.querySelector('#nav a.on');
-    return a ? a.dataset.s : 'overview';
+    var s = document.querySelector('.sec.on');
+    return s ? s.id.slice(2) : 'overview';
   }
-
+  function setTab(member){
+    var g = GROUP_OF[member];
+    document.querySelectorAll('#nav a').forEach(function(a){
+      a.classList.toggle('on', g ? a.dataset.g === g : a.dataset.s === member);
+    });
+    document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
+    $('s-' + member).classList.add('on');
+    if (g) {
+      GROUP_LAST[g] = member;
+      $('subnav').style.display = 'flex';
+      $('subnav').innerHTML = GROUPS[g].map(function(t){
+        return '<button data-t="' + t[0] + '" class="' + (t[0] === member ? 'on' : '') + '">' + t[1] + '</button>';
+      }).join('');
+    } else {
+      $('subnav').style.display = 'none';
+    }
+    runLoader(member);
+  }
+  $('subnav').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-t]');
+    if (b) setTab(b.dataset.t);
+  });
   document.querySelectorAll('#nav a').forEach(function(a){
     a.addEventListener('click', function(){
-      document.querySelectorAll('#nav a').forEach(function(x){ x.classList.remove('on'); });
-      document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
-      a.classList.add('on'); $('s-' + a.dataset.s).classList.add('on');
-      runLoader(a.dataset.s);
+      setTab(a.dataset.g ? GROUP_LAST[a.dataset.g] : a.dataset.s);
     });
   });
 
@@ -827,6 +862,46 @@
   // The editor expands INLINE under the clicked row (same pattern as the
   // roster drill-down) — no jumping to the top of the page. Only "+ New
   // product" uses the panel above the table, since it has no row to live under.
+  // One venue plus video calls — location is a pick, not prose.
+  var PE_LOCS = ['National Conference Center — Leesburg', 'Google Meet', 'Zoom'];
+  function locSelectHtml(cur){
+    var known = !cur || PE_LOCS.indexOf(cur) !== -1;
+    return '<select id="pe-loc" style="width:100%">' +
+      '<option value=""' + (!cur ? ' selected' : '') + '>—</option>' +
+      PE_LOCS.map(function(l){ return '<option' + (cur === l ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join('') +
+      '<option value="__other"' + (!known ? ' selected' : '') + '>Other…</option></select>' +
+      '<input id="pe-loc-other" style="width:100%;margin-top:6px;display:' + (known ? 'none' : 'block') + '"' +
+      ' value="' + esc(!known ? cur : '') + '" placeholder="Where?">';
+  }
+  // schedule_meta -> the display string families see. Vague free text is out;
+  // each category gets real date/time fields and this composes the line.
+  var PE_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function peD(iso){
+    if (!iso) return '';
+    var p2 = iso.split('-');
+    return PE_MONTHS[+p2[1] - 1] + ' ' + (+p2[2]);
+  }
+  function peT(t){
+    if (!t) return '';
+    var hm = t.split(':'), h = +hm[0], m = hm[1];
+    var ap = h >= 12 ? 'pm' : 'am'; h = h % 12 || 12;
+    return h + (m === '00' ? '' : ':' + m) + ap;
+  }
+  function composeSchedule(cat, m){
+    if (cat === 'class' && m.weekday) {
+      return m.weekday + 's' + (m.start ? ' ' + peT(m.start) + '–' + peT(m.end) : '') +
+        (m.from ? ' · ' + peD(m.from) + ' – ' + peD(m.to) : '');
+    }
+    if (cat === 'coaching' && m.minutes) return m.minutes + ' minutes';
+    if ((cat === 'camp' || cat === 'performance') && (m.days || []).length) {
+      var ds = m.days.slice().sort();
+      var range = ds.length > 1 ? peD(ds[0]) + ' – ' + peD(ds[ds.length - 1]) : peD(ds[0]);
+      return (ds.length > 2 ? ds.length + ' days · ' : '') + range +
+        (m.start ? ' · ' + peT(m.start) + '–' + peT(m.end) : '') +
+        ((m.perf || []).length ? ' · Performances ' + m.perf.slice().sort().map(peD).join(', ') : '');
+    }
+    return null;
+  }
   function openProdEditor(p, isNew, anchorTr){
     closeProdEditor();
     p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true, hidden:false };
@@ -852,9 +927,9 @@
           }).join('') + '</select>') + '</div>' +
         '<div style="flex:1">' + field('Ages', '<input id="pe-age" style="width:100%" value="' + esc(p.age_range || '') + '">') + '</div>' +
       '</div>' +
-      field('Schedule (what families see, e.g. "Saturdays 10–11am · Sep 12 – Jan 16")',
-        '<input id="pe-sched" style="width:100%" value="' + esc(p.schedule_name || '') + '">') +
-      field('Location', '<input id="pe-loc" style="width:100%" value="' + esc(p.location || '') + '">') +
+      '<div id="pe-schedzone"></div>' +
+      '<div class="sub" style="margin:4px 0 0">Families will see: <b id="pe-prev" style="color:#fff"></b></div>' +
+      field('Location', locSelectHtml(p.location)) +
       '<div style="display:flex;gap:10px">' +
         '<div style="flex:1">' + field('Price ($)', '<input id="pe-price" type="number" step="0.01" style="width:100%" value="' + ((p.price_cents || 0) / 100) + '">') + '</div>' +
         '<div style="flex:1">' + field('Capacity', '<input id="pe-cap" type="number" style="width:100%" value="' + (p.capacity || 0) + '">') + '</div>' +
@@ -868,6 +943,87 @@
       '<div style="margin-top:12px;display:flex;gap:8px;align-items:center"><button id="pe-save" class="btn2">Save</button> ' +
       '<button id="pe-close" class="btn2 ghost">Cancel</button> ' +
       '<span class="sub" id="pe-status"></span></div></div>';
+    // schedule builder state — starts from whatever is stored, edits live here
+    var meta = {};
+    try { meta = JSON.parse(JSON.stringify(p.schedule_meta || {})); } catch (err) {}
+    function sfield(label, html){
+      return '<div>' + field(label, html) + '</div>';
+    }
+    function chipsHtml(k){
+      return (meta[k] || []).slice().sort().map(function(d){
+        return '<span class="tag" style="margin:2px 3px 2px 0">' + peD(d) +
+          ' <a class="pe-chip-x" data-k="' + k + '" data-d="' + d + '" style="cursor:pointer;color:#E8654B">&times;</a></span>';
+      }).join('') || '<span class="sub">none yet</span>';
+    }
+    function updatePrev(){
+      $('pe-prev').textContent = composeSchedule($('pe-cat').value, meta) || p.schedule_name || '—';
+    }
+    function renderSched(){
+      var cat = $('pe-cat').value, z = $('pe-schedzone');
+      if (cat === 'class') {
+        z.innerHTML = '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+          sfield('Day of week', '<select id="pe-sm-weekday">' + '<option value="">—</option>' +
+            ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(w){
+              return '<option' + (meta.weekday === w ? ' selected' : '') + '>' + w + '</option>';
+            }).join('') + '</select>') +
+          sfield('Starts', '<input type="time" id="pe-sm-start" value="' + esc(meta.start || '') + '">') +
+          sfield('Ends', '<input type="time" id="pe-sm-end" value="' + esc(meta.end || '') + '">') +
+          sfield('First class', '<input type="date" id="pe-sm-from" value="' + esc(meta.from || '') + '">') +
+          sfield('Last class', '<input type="date" id="pe-sm-to" value="' + esc(meta.to || '') + '">') + '</div>';
+      } else if (cat === 'coaching') {
+        z.innerHTML = '<div style="display:flex;gap:10px">' +
+          sfield('Session length (minutes)', '<input type="number" id="pe-sm-min" style="width:130px" value="' + esc(meta.minutes || '') + '">') + '</div>';
+      } else {
+        z.innerHTML =
+          field('Session days', '<input type="date" id="pe-sm-day"> <button type="button" class="btn2 ghost pe-add" data-k="days">add day</button>' +
+            '<div id="pe-chips-days" style="margin-top:5px">' + chipsHtml('days') + '</div>') +
+          field('Performance dates (optional)', '<input type="date" id="pe-sm-perf"> <button type="button" class="btn2 ghost pe-add" data-k="perf">add date</button>' +
+            '<div id="pe-chips-perf" style="margin-top:5px">' + chipsHtml('perf') + '</div>') +
+          '<div style="display:flex;gap:10px">' +
+          sfield('Daily start', '<input type="time" id="pe-sm-start" value="' + esc(meta.start || '') + '">') +
+          sfield('Daily end', '<input type="time" id="pe-sm-end" value="' + esc(meta.end || '') + '">') + '</div>';
+      }
+      z.querySelectorAll('input,select').forEach(function(el){
+        el.addEventListener('input', function(){
+          if (cat === 'class') {
+            meta = { weekday: $('pe-sm-weekday').value || null, start: $('pe-sm-start').value || null,
+              end: $('pe-sm-end').value || null, from: $('pe-sm-from').value || null, to: $('pe-sm-to').value || null };
+          } else if (cat === 'coaching') {
+            meta = { minutes: +$('pe-sm-min').value || null };
+          } else {
+            meta.start = $('pe-sm-start').value || null;
+            meta.end = $('pe-sm-end').value || null;
+          }
+          updatePrev();
+        });
+      });
+      updatePrev();
+    }
+    host.addEventListener('click', function(e){
+      var add = e.target.closest('.pe-add');
+      if (add) {
+        var inp = add.dataset.k === 'days' ? $('pe-sm-day') : $('pe-sm-perf');
+        if (inp && inp.value) {
+          meta[add.dataset.k] = meta[add.dataset.k] || [];
+          if (meta[add.dataset.k].indexOf(inp.value) === -1) meta[add.dataset.k].push(inp.value);
+          inp.value = '';
+          $('pe-chips-' + add.dataset.k).innerHTML = chipsHtml(add.dataset.k);
+          updatePrev();
+        }
+        return;
+      }
+      var x = e.target.closest('.pe-chip-x');
+      if (x) {
+        meta[x.dataset.k] = (meta[x.dataset.k] || []).filter(function(d){ return d !== x.dataset.d; });
+        $('pe-chips-' + x.dataset.k).innerHTML = chipsHtml(x.dataset.k);
+        updatePrev();
+      }
+    });
+    $('pe-cat').addEventListener('change', renderSched);
+    $('pe-loc').addEventListener('change', function(){
+      $('pe-loc-other').style.display = $('pe-loc').value === '__other' ? 'block' : 'none';
+    });
+    renderSched();
     var origPrice = p.price_cents || 0;
     $('pe-price').addEventListener('input', function(){
       var now = Math.round(parseFloat($('pe-price').value || '0') * 100);
@@ -875,12 +1031,15 @@
     });
     $('pe-close').addEventListener('click', closeProdEditor);
     $('pe-save').addEventListener('click', function(){
+      var cat = $('pe-cat').value;
+      var loc = $('pe-loc').value === '__other' ? $('pe-loc-other').value.trim() : $('pe-loc').value;
       var fields = {
         name: $('pe-name').value.trim(),
-        category: $('pe-cat').value,
+        category: cat,
         age_range: $('pe-age').value.trim() || null,
-        schedule_name: $('pe-sched').value.trim() || null,
-        location: $('pe-loc').value.trim() || null,
+        schedule_meta: meta,
+        schedule_name: composeSchedule(cat, meta) || p.schedule_name || null,
+        location: loc || null,
         price_cents: Math.round(parseFloat($('pe-price').value || '0') * 100),
         capacity: Math.round(parseFloat($('pe-cap').value || '0')),
         bookable: $('pe-book').checked,
@@ -1873,8 +2032,7 @@
       }).join('');
     $('tblOrders').querySelectorAll('.o-camper').forEach(function(a){
       a.addEventListener('click', function(){
-        var t = document.querySelector('#nav a[data-s=campers]');
-        if (t) t.click();
+        setTab('campers');
         $('campQ').value = a.dataset.name;
         renderCampers();
       });
@@ -2218,8 +2376,7 @@
   $('ovSub').addEventListener('click', function(e){
     if (e.target.id === 'ovToProg') {
       e.preventDefault();
-      var progTab = document.querySelector('#nav a[data-s=inventory]');
-      if (progTab) progTab.click();
+      setTab('inventory');
       return;
     }
     var sc = e.target.closest('.ovshowcard');
@@ -2255,7 +2412,7 @@
   // the boot preload already filled, so results are instant.
   (function(){
     var box = $('gSearch'), out = $('gRes'), t = null;
-    function jumpTab(s){ var a = document.querySelector('#nav a[data-s=' + s + ']'); if (a) a.click(); }
+    function jumpTab(s){ setTab(s); }
     function results(q){
       q = q.trim().toLowerCase();
       if (q.length < 2) { out.classList.remove('on'); return; }

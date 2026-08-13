@@ -17,6 +17,11 @@ CREATE TABLE IF NOT EXISTS public.activity_price_log (
 );
 ALTER TABLE public.activity_price_log ENABLE ROW LEVEL SECURITY;
 
+-- structured schedule for the product editor: per-category typed fields
+-- (class: weekday/times/date range; camp/show: session + performance dates;
+-- coaching: minutes). schedule_name stays the composed display string.
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS schedule_meta jsonb;
+
 CREATE TABLE IF NOT EXISTS public.admin_actions (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   action text NOT NULL,

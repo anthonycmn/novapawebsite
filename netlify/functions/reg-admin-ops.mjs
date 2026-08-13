@@ -53,7 +53,7 @@ async function audit(action, actor, payload) {
 
 // Fields an admin may edit. Retiring = bookable:false + hidden:true — there is
 // deliberately no delete; sold history hangs off these ids forever.
-const EDITABLE = ["name", "schedule_name", "age_range", "price_cents", "capacity", "bookable", "hidden", "category", "location"];
+const EDITABLE = ["name", "schedule_name", "schedule_meta", "age_range", "price_cents", "capacity", "bookable", "hidden", "category", "location"];
 
 export default async (req) => {
   if (req.method !== "POST") return new Response("method", { status: 405 });
@@ -67,7 +67,7 @@ export default async (req) => {
 
   try {
     if (action === "products_list") {
-      const rows = await db("activities?select=id,name,category,schedule_name,age_range,price_cents,capacity,sold,booked_offline,bookable,hidden,active,location&order=name&limit=1000");
+      const rows = await db("activities?select=id,name,category,schedule_name,schedule_meta,age_range,price_cents,capacity,sold,booked_offline,bookable,hidden,active,location&order=name&limit=1000");
       return Response.json({ products: rows || [] });
     }
 
@@ -130,7 +130,8 @@ export default async (req) => {
         headers: { "Content-Type": "application/json", Prefer: "return=representation" },
         body: JSON.stringify({
           id, name, category: String(f.category || "class"),
-          schedule_name: f.schedule_name || null, age_range: f.age_range || null,
+          schedule_name: f.schedule_name || null, schedule_meta: f.schedule_meta || null,
+          age_range: f.age_range || null,
           location: f.location || null,
           price_cents: price, capacity: cap, sold: 0,
           active: true, bookable: f.bookable !== false, hidden: !!f.hidden,
