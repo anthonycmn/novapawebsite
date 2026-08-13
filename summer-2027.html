@@ -229,7 +229,7 @@
 <section class="sc-hero sc-wrap">
   <div class="sc-eyebrow">Broadway Bound Summer Camp</div>
   <h1 class="sc-h1">2027 registration is <em>open to everyone.</em></h1>
-  <p class="sc-promo">Get <span>up to 20% off</span> through August 15.</p>
+  <p class="sc-promo">Get <span>up to 20% off</span> through Saturday, August 15.</p>
   <div class="sc-count" id="scCount" data-deadline="2026-08-01T10:00:00-04:00">
     <div class="sc-cell"><div class="sc-tiles" id="scDays"></div><div class="sc-unit">Days</div></div>
     <div class="sc-colon">:</div>
@@ -388,11 +388,11 @@
   var cd = document.getElementById('scCount');
   if (cd) cd.dataset.deadline = '2026-08-15T23:59:59-04:00';
   var promo = document.querySelector('.sc-promo');
-  if (promo) promo.textContent = 'Launch sale \u2014 up to 20% off \u2014 ends August 15.';
+  if (promo) promo.textContent = 'Launch sale \u2014 up to 20% off \u2014 ends Saturday, August 15 at 11:59 PM.';
   document.querySelectorAll('.sc-a').forEach(function(el){
     el.innerHTML = el.innerHTML
       .replace('Open now for returning NOVAPA families. New families: public registration opens <strong>August 1 at 10 AM</strong> \u2014 join the waitlist when you register for early access.',
-               'Open to everyone. The launch sale \u2014 up to 20% off \u2014 runs through <strong>August 15</strong>.');
+               'Open to everyone. The launch sale \u2014 up to 20% off \u2014 runs through <strong>Saturday, August 15 at 11:59 PM</strong>.');
   });
 })();
 </script>
@@ -481,7 +481,7 @@
       <div>
         <h3>Ready to grab <em style="font-style:normal;color:#E8B84B">their spot</em>?</h3>
         <p>Registration takes about two minutes, payment plans are built in, and the launch sale
-          runs through August 15: 10% off one program, 15% off two, 20% off three or more,
+          runs through Saturday, August 15 at 11:59 PM: 10% off one program, 15% off two, 20% off three or more,
           applied automatically at checkout.</p>
       </div>
       <a class="pb-acct-btn" href="/register/">Register now
