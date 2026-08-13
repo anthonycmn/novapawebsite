@@ -26,7 +26,7 @@ About: Northern Virginia's performing arts conservatory. Dance, theatre, voice, 
 
 Registration (2026–27 season): Opened June 1, 2026. One family registration covers all children in the household, at no charge. Sibling discount: 5% off per additional child. Classes begin September 14, 2026; season runs through June 11, 2027. New for 2026–27: subscription-based, more affordable programming. Register: https://www.northernvirginiaperformingarts.org/novapa_registration
 
-Location: The National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg VA 20175. Drop-off and pick-up are in front of Plaza C. Parking is free and directly in front of the building. Directions: https://maps.google.com?q=18945+Conference+Center+Drive+Plaza+C+Leesburg+VA+20175
+Location: The National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg VA 20176. Drop-off and pick-up are in front of Plaza C. Parking is free and directly in front of the building. Directions: https://maps.google.com?q=18945+Conference+Center+Drive+Plaza+C+Leesburg+VA+20176
 
 Classes: Weekly classes Monday–Saturday, September 14 2026 – June 11 2027, $90/month per class (2 classes $159/mo, 3 classes $199/mo). Every class is theatre training. Dance — Ballet for Musical Theatre (5–8, and levels I & II for 9–11), Hip-Hop for Musical Theatre (5–8, 9–12), K-Pop Stage Performance (9–12, Saturdays); Theatre & Acting — Acting (5–8, 9–12), Improv for Actors (9–12, 13–17); Musical Theatre — Musical Theatre (5–8), Musical Theatre Dance and Musical Theatre Acting (9–12, 13–17), Acting & Musical Theatre (9–12, Saturdays); Voice — Triple Threat Musical Theatre Training (13–17); Homeschool daytime classes Wednesdays (9–13); Adults 18+ — Adult Acting (Tue 7:30pm), Adult Dance for Musical Theatre (Thu 7:30pm), Adult Musical Theatre (Sat 9am). Schedule: https://www.northernvirginiaperformingarts.org/classes — Adult programs: https://www.northernvirginiaperformingarts.org/classes?age=adult
 
@@ -51,7 +51,7 @@ Key dates still ahead: Dear Evan Hansen Aug 14–16, 2026 · Press Submit Aug 28
 
 Policies (registration, attendance, refunds, makeup classes, conduct): https://www.northernvirginiaperformingarts.org/policies
 
-Contact: info@novapa.org · (571) 571-2120 · 18945 Conference Center Drive, Plaza C, Leesburg VA 20175 · Free 15-min consultation: https://calendly.com/novapa/free-consultation-15-minutes · We typically respond within one business day.`;
+Contact: info@novapa.org · (571) 571-2120 · 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 · Free 15-min consultation: https://calendly.com/novapa/free-consultation-15-minutes · We typically respond within one business day.`;
 
 // Allow only the tags the widget expects; strip everything else.
 function sanitizeHtml(html) {

@@ -197,7 +197,7 @@ export function reportHtml(r) {
       <tr><td style="padding:24px 32px 28px">
         <p style="margin:0;font-size:12.5px;color:#999;line-height:1.6;border-top:1px solid #eee8dd;padding-top:14px">
           Generated from the Dear Evan Hansen staff dashboard.<br>
-          Northern Virginia Performing Arts · 18945 Conference Center Drive, Plaza C, Leesburg VA 20175
+          Northern Virginia Performing Arts · 18945 Conference Center Drive, Plaza C, Leesburg VA 20176
         </p>
       </td></tr>
     </table>
@@ -340,7 +340,7 @@ export function buyHtml(r) {
       <tr><td style="padding:24px 32px 28px">
         <p style="margin:0;font-size:12.5px;color:#999;line-height:1.6;border-top:1px solid #eee8dd;padding-top:14px">
           Sent from the Dear Evan Hansen staff dashboard. Reply to this email to reach the production team.<br>
-          Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20175
+          Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176
         </p>
       </td></tr>
     </table>
