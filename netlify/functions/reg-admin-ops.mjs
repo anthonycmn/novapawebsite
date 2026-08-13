@@ -160,6 +160,70 @@ export default async (req) => {
       return Response.json({ ok: true, product: (rows || [])[0] || null });
     }
 
+    // Edit a whole product — the show, camp day or class — by applying the
+    // fields its age bands share to every band at once. Bands keep their own
+    // name, ages, price and capacity unless those are explicitly included.
+    // A rename is a find-and-replace of the product's title inside each band's
+    // name, so "Broadway Bound Junior | Frozen, Jr." keeps its band wording.
+    if (action === "product_bulk_update") {
+      const ids = (Array.isArray(body.ids) ? body.ids : []).map(Number).filter(Boolean);
+      if (!ids.length) return Response.json({ error: "no bands" }, { status: 400 });
+      const rows = await db(`activities?id=in.(${ids.join(",")})&select=*`);
+      if (!rows.length) return Response.json({ error: "bands not found" }, { status: 404 });
+
+      const shared = {};
+      for (const k of ["schedule_name", "schedule_meta", "category", "location", "bookable"])
+        if (k in (body.fields || {})) shared[k] = body.fields[k];
+
+      let price = null, capacity = null;
+      if (body.fields && body.fields.price_cents != null && body.fields.price_cents !== "") {
+        price = Math.round(Number(body.fields.price_cents));
+        if (!isFinite(price) || price < 0) return Response.json({ error: "bad price" }, { status: 400 });
+        const changes = rows.some((r) => r.price_cents !== price);
+        if (changes && !String(body.reason || "").trim())
+          return Response.json({ error: "price changes need a reason (it goes in the price log)" }, { status: 400 });
+      }
+      if (body.fields && body.fields.capacity != null && body.fields.capacity !== "") {
+        capacity = Math.round(Number(body.fields.capacity));
+        if (!isFinite(capacity) || capacity < 0) return Response.json({ error: "bad capacity" }, { status: 400 });
+        const tooSmall = rows.filter((r) => capacity < (r.sold || 0) + (r.booked_offline || 0));
+        if (tooSmall.length)
+          return Response.json({ error: `capacity ${capacity} is below what is already registered in ${tooSmall.map((r) => r.name).join(", ")}` }, { status: 400 });
+      }
+
+      const rename = body.rename && body.rename.from && body.rename.to ? body.rename : null;
+      const results = [];
+      for (const r of rows) {
+        const patch = { ...shared };
+        if (price != null) patch.price_cents = price;
+        if (capacity != null) patch.capacity = capacity;
+        if (rename && r.name && r.name.includes(rename.from))
+          patch.name = r.name.split(rename.from).join(rename.to);
+        if (!Object.keys(patch).length) continue;
+        await db(`activities?id=eq.${r.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        });
+        if (price != null && price !== r.price_cents) {
+          await db("activity_price_log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              activity_id: r.id, old_price_cents: r.price_cents, new_price_cents: price,
+              reason: String(body.reason).trim(), changed_by: actor,
+            }),
+          });
+        }
+        results.push({ id: r.id, name: patch.name || r.name });
+      }
+      await audit("product_bulk_update", actor, {
+        ids, applied: Object.keys(shared), price_cents: price, capacity,
+        rename: rename || null, bands: results.length,
+      });
+      return Response.json({ ok: true, updated: results });
+    }
+
     if (action === "product_create") {
       const f = body.fields || {};
       const name = String(f.name || "").trim();

@@ -919,8 +919,10 @@
     var menu = k && k.nextElementSibling;
     var wasOpen = menu && menu.classList.contains('on');
     document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
-    if (!k || wasOpen) return;
+    if (!k) return;
+    // the ⋯ button never counts as a click on the row behind it
     e.stopPropagation();
+    if (wasOpen) return;
     var r = k.getBoundingClientRect();
     menu.style.left = Math.max(8, Math.min(window.innerWidth - 236, r.right - 220)) + 'px';
     menu.style.top = (window.innerHeight - r.bottom < 140 ? Math.max(8, r.top - 116) : r.bottom + 4) + 'px';
@@ -1112,11 +1114,122 @@
         '<span><span class="nm">' + esc(label) + '</span>' +
           (sched ? '<div class="sub" style="font-size:11.5px">' + esc(sched) + '</div>' : '') + '</span>' +
         '<span class="meta">' + items.length + ' band' + (items.length === 1 ? '' : 's') +
-          ' · ' + live + ' on sale<br>' + price + ' · ' + taken + ' / ' + cap + ' filled</span></div>' +
+          ' · ' + live + ' on sale<br>' + price + ' · ' + taken + ' / ' + cap + ' filled</span>' +
+        kebabHtml([
+          { label: 'Edit product&hellip;', cls: 'pc-edit' },
+          { label: 'Add age band', cls: 'pc-addband' },
+          { label: live ? 'Stop selling every band&hellip;' : 'Start selling every band', cls: 'pc-sell', attrs: ' data-on="' + (live ? '0' : '1') + '"' }
+        ]) + '</div>' +
+      '<div class="pc-editor"></div>' +
       '<div class="pcbands" style="display:' + (open ? 'block' : 'none') + '">' +
         bandSortProds(items).map(bandRowHtml).join('') +
         '<div class="bandadd"><button class="btn2 ghost pc-addband">+ Add age band</button></div>' +
       '</div></div>';
+  }
+  // Editing the PRODUCT: everything its bands share — the title, the schedule,
+  // where it happens, and optionally one price or capacity for all of them.
+  // Anything left blank stays whatever each band already had.
+  function openProductEditor(card){
+    var host = card.querySelector('.pc-editor');
+    if (host.innerHTML) { host.innerHTML = ''; return; }
+    var label = card.querySelector('.nm').textContent;
+    var bands = Array.prototype.map.call(card.querySelectorAll('.bandrow'), function(r){ return prodById(r.dataset.id); })
+      .filter(Boolean);
+    if (!bands.length) return;
+    var sample = bands[0];
+    var samePrice = bands.every(function(b){ return b.price_cents === sample.price_cents; });
+    var sameCap = bands.every(function(b){ return b.capacity === sample.capacity; });
+    function fld(label, html){
+      return '<div><label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' + label + '</label>' + html + '</div>';
+    }
+    host.innerHTML = '<div class="ovpanel pe" style="margin:8px 10px 12px">' +
+      '<b>Edit ' + esc(label) + '</b> <span class="sub">applies to all ' + bands.length +
+        ' band' + (bands.length === 1 ? '' : 's') + '</span>' +
+      fld('Product name', '<input class="pc-name" style="width:100%" value="' + esc(label) + '">' +
+        '<div class="sub pc-rename-prev" style="margin-top:4px"></div>') +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+        '<div style="flex:1;min-width:150px">' + fld('Category', '<select class="pc-cat" style="width:100%">' +
+          ['class','camp','coaching','performance'].map(function(c){
+            return '<option' + (sample.category === c ? ' selected' : '') + '>' + c + '</option>';
+          }).join('') + '</select>') + '</div>' +
+        '<div style="flex:1;min-width:200px">' + fld('Location',
+          locSelectHtml(sample.location).replace(/id="pe-loc"/, 'class="pc-loc"').replace(/id="pe-loc-other"/, 'class="pc-loc-other"')) + '</div>' +
+      '</div>' +
+      '<div class="schedzone"></div>' +
+      '<div class="sub" style="margin:4px 0 0">Families will see: <b class="pc-prev" style="color:#fff"></b></div>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+        '<div>' + fld('Price for every band ($)', '<input class="pc-price" type="number" step="0.01" style="width:150px" value="' +
+          (samePrice ? ((sample.price_cents || 0) / 100) : '') + '" placeholder="' + (samePrice ? '' : 'bands differ') + '">') + '</div>' +
+        '<div>' + fld('Capacity for every band', '<input class="pc-cap" type="number" style="width:150px" value="' +
+          (sameCap ? (sample.capacity || 0) : '') + '" placeholder="' + (sameCap ? '' : 'bands differ') + '">') + '</div>' +
+      '</div>' +
+      '<div class="pc-reason-wrap" style="display:none">' +
+        fld('Why is the price changing? (required, goes in the price log)', '<input class="pc-reason" style="width:100%">') + '</div>' +
+      '<div style="margin-top:12px;display:flex;gap:8px;align-items:center">' +
+        '<button class="btn2 pc-save">Save product</button>' +
+        '<button class="btn2 ghost pc-close">Cancel</button>' +
+        '<span class="sub pc-status"></span></div></div>';
+
+    var nameIn = host.querySelector('.pc-name');
+    var sched = mountSchedule(host, sample.schedule_meta, function(){ return host.querySelector('.pc-cat').value; },
+      function(txt){ host.querySelector('.pc-prev').textContent = txt || sample.schedule_name || '—'; });
+    sched.render();
+    host.querySelector('.pc-cat').addEventListener('change', sched.render);
+    host.querySelector('.pc-loc').addEventListener('change', function(){
+      host.querySelector('.pc-loc-other').style.display = this.value === '__other' ? 'block' : 'none';
+    });
+    // renaming rewrites the title inside each band's name — show exactly what
+    // the result will be before anyone commits to it
+    function renamePrev(){
+      var to = nameIn.value.trim();
+      var prev = host.querySelector('.pc-rename-prev');
+      if (!to || to === label) { prev.textContent = ''; return; }
+      var hits = bands.filter(function(b){ return (b.name || '').indexOf(label) !== -1; });
+      prev.innerHTML = hits.length
+        ? 'Bands become: ' + hits.slice(0, 4).map(function(b){
+            return '<b style="color:#fff">' + esc(b.name.split(label).join(to)) + '</b>'; }).join(', ') +
+          (hits.length > 4 ? ' and ' + (hits.length - 4) + ' more' : '')
+        : 'No band name contains "' + esc(label) + '", so names stay as they are.';
+    }
+    nameIn.addEventListener('input', renamePrev);
+    var origPrice = samePrice ? (sample.price_cents || 0) : null;
+    host.querySelector('.pc-price').addEventListener('input', function(){
+      var now = Math.round(parseFloat(this.value || '0') * 100);
+      host.querySelector('.pc-reason-wrap').style.display =
+        (this.value !== '' && now !== origPrice) ? 'block' : 'none';
+    });
+    host.querySelector('.pc-close').addEventListener('click', function(){ host.innerHTML = ''; });
+    host.querySelector('.pc-save').addEventListener('click', function(){
+      var locSel = host.querySelector('.pc-loc');
+      var loc = locSel.value === '__other' ? host.querySelector('.pc-loc-other').value.trim() : locSel.value;
+      var cat = host.querySelector('.pc-cat').value;
+      var priceRaw = host.querySelector('.pc-price').value;
+      var capRaw = host.querySelector('.pc-cap').value;
+      var reasonEl = host.querySelector('.pc-reason');
+      var payload = {
+        action: 'product_bulk_update',
+        ids: bands.map(function(b){ return b.id; }),
+        reason: reasonEl ? reasonEl.value.trim() : '',
+        fields: {
+          category: cat,
+          location: loc || null,
+          schedule_meta: sched.meta(),
+          schedule_name: composeSchedule(cat, sched.meta()) || sample.schedule_name || null
+        }
+      };
+      if (priceRaw !== '') payload.fields.price_cents = Math.round(parseFloat(priceRaw) * 100);
+      if (capRaw !== '') payload.fields.capacity = Math.round(parseFloat(capRaw));
+      var newName = nameIn.value.trim();
+      if (newName && newName !== label) payload.rename = { from: label, to: newName };
+      var st = host.querySelector('.pc-status');
+      st.textContent = 'saving…';
+      opsApi(payload).then(function(d){
+        if (d.error) { st.textContent = d.error; return; }
+        host.innerHTML = '';
+        loadProducts();
+        runLoader('overview');
+      }).catch(function(){ st.textContent = 'network error'; });
+    });
   }
   function renderProducts(){
     if (!PRODS) return;
@@ -1213,6 +1326,24 @@
           if (d.error) { alert(d.error); tog.classList.toggle('on', !turningOn); return; }
           loadProducts();
         }).catch(function(){ alert('network error'); tog.classList.toggle('on', !turningOn); });
+      return;
+    }
+    var pedit = e.target.closest('.pc-edit');
+    if (pedit) { e.stopPropagation(); openProductEditor(pedit.closest('.pcard')); return; }
+    var psell = e.target.closest('.pc-sell');
+    if (psell) {
+      e.stopPropagation();
+      var pcard = psell.closest('.pcard'), turnOn = psell.dataset.on === '1';
+      var ids = Array.prototype.map.call(pcard.querySelectorAll('.bandrow'), function(r){ return +r.dataset.id; });
+      var pname = pcard.querySelector('.nm').textContent;
+      var seats = ids.reduce(function(n, id){ var b = prodById(id); return n + ((b && b.sold) || 0) + ((b && b.booked_offline) || 0); }, 0);
+      if (!turnOn && !confirm('Stop selling every band of "' + pname + '"?\n\n' +
+        ids.length + ' band' + (ids.length === 1 ? '' : 's') + ' come off sale and nobody new can register.' +
+        (seats ? '\n\n' + seats + ' already registered — they keep their spots, nothing is refunded or cancelled.' : '') +
+        '\n\nNothing is deleted and you can switch it back on any time.')) return;
+      opsApi({ action: 'product_bulk_update', ids: ids, fields: { bookable: turnOn } })
+        .then(function(d){ if (d.error) { alert(d.error); return; } loadProducts(); })
+        .catch(function(){ alert('network error'); });
       return;
     }
     var addb = e.target.closest('.pc-addband');
@@ -1408,6 +1539,91 @@
     }
     return null;
   }
+  // Structured schedule builder, scoped to a root element instead of global
+  // ids so two can be open at once (a product editor and one of its bands).
+  // Renders the fields that suit the category and reports the composed line.
+  function mountSchedule(root, startMeta, getCat, onPreview){
+    var meta = {};
+    try { meta = JSON.parse(JSON.stringify(startMeta || {})); } catch (e) {}
+    function q(sel){ return root.querySelector(sel); }
+    function val(sel){ var el = q(sel); return el ? el.value : ''; }
+    function fld(label, html){
+      return '<div><label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' +
+        label + '</label>' + html + '</div>';
+    }
+    function chipsHtml(k){
+      return (meta[k] || []).slice().sort().map(function(d){
+        return '<span class="tag" style="margin:2px 3px 2px 0">' + peD(d) +
+          ' <a class="sm-x" data-k="' + k + '" data-d="' + d + '" style="cursor:pointer;color:#E8654B">&times;</a></span>';
+      }).join('') || '<span class="sub">none yet</span>';
+    }
+    function preview(){ if (onPreview) onPreview(composeSchedule(getCat(), meta)); }
+    function render(){
+      var cat = getCat(), z = root.querySelector('.schedzone');
+      if (!z) return;
+      if (cat === 'class') {
+        z.innerHTML = '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+          fld('Day of week', '<select class="sm-weekday"><option value="">—</option>' +
+            ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(w){
+              return '<option' + (meta.weekday === w ? ' selected' : '') + '>' + w + '</option>';
+            }).join('') + '</select>') +
+          fld('Starts', '<input type="time" class="sm-start" value="' + esc(meta.start || '') + '">') +
+          fld('Ends', '<input type="time" class="sm-end" value="' + esc(meta.end || '') + '">') +
+          fld('First class', '<input type="date" class="sm-from" value="' + esc(meta.from || '') + '">') +
+          fld('Last class', '<input type="date" class="sm-to" value="' + esc(meta.to || '') + '">') + '</div>';
+      } else if (cat === 'coaching') {
+        z.innerHTML = '<div style="display:flex;gap:10px">' +
+          fld('Session length (minutes)', '<input type="number" class="sm-min" style="width:130px" value="' + esc(meta.minutes || '') + '">') + '</div>';
+      } else {
+        z.innerHTML =
+          fld('Session days', '<input type="date" class="sm-day"> <button type="button" class="btn2 ghost sm-add" data-k="days">add day</button>' +
+            '<div class="sm-chips-days" style="margin-top:5px">' + chipsHtml('days') + '</div>') +
+          fld('Performance dates (optional)', '<input type="date" class="sm-perf"> <button type="button" class="btn2 ghost sm-add" data-k="perf">add date</button>' +
+            '<div class="sm-chips-perf" style="margin-top:5px">' + chipsHtml('perf') + '</div>') +
+          '<div style="display:flex;gap:10px">' +
+          fld('Daily start', '<input type="time" class="sm-start" value="' + esc(meta.start || '') + '">') +
+          fld('Daily end', '<input type="time" class="sm-end" value="' + esc(meta.end || '') + '">') + '</div>';
+      }
+      z.querySelectorAll('input,select').forEach(function(el){
+        el.addEventListener('input', function(){
+          var c = getCat();
+          if (c === 'class') {
+            meta = { weekday: val('.sm-weekday') || null, start: val('.sm-start') || null,
+              end: val('.sm-end') || null, from: val('.sm-from') || null, to: val('.sm-to') || null };
+          } else if (c === 'coaching') {
+            meta = { minutes: +val('.sm-min') || null };
+          } else {
+            meta.start = val('.sm-start') || null;
+            meta.end = val('.sm-end') || null;
+          }
+          preview();
+        });
+      });
+      preview();
+    }
+    root.addEventListener('click', function(e){
+      var add = e.target.closest('.sm-add');
+      if (add) {
+        var inp = q(add.dataset.k === 'days' ? '.sm-day' : '.sm-perf');
+        if (inp && inp.value) {
+          meta[add.dataset.k] = meta[add.dataset.k] || [];
+          if (meta[add.dataset.k].indexOf(inp.value) === -1) meta[add.dataset.k].push(inp.value);
+          inp.value = '';
+          q('.sm-chips-' + add.dataset.k).innerHTML = chipsHtml(add.dataset.k);
+          preview();
+        }
+        return;
+      }
+      var x = e.target.closest('.sm-x');
+      if (x) {
+        meta[x.dataset.k] = (meta[x.dataset.k] || []).filter(function(d){ return d !== x.dataset.d; });
+        q('.sm-chips-' + x.dataset.k).innerHTML = chipsHtml(x.dataset.k);
+        preview();
+      }
+    });
+    return { render: render, meta: function(){ return meta; } };
+  }
+
   function openProdEditor(p, isNew, anchorTr){
     closeProdEditor();
     p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true };
@@ -1433,7 +1649,7 @@
           }).join('') + '</select>') + '</div>' +
         '<div style="flex:1">' + field('Age band', ageSelectHtml(p.age_range)) + '</div>' +
       '</div>' +
-      '<div id="pe-schedzone"></div>' +
+      '<div class="schedzone"></div>' +
       '<div class="sub" style="margin:4px 0 0">Families will see: <b id="pe-prev" style="color:#fff"></b></div>' +
       field('Location', locSelectHtml(p.location)) +
       '<div style="display:flex;gap:10px">' +
@@ -1449,89 +1665,16 @@
       '<button id="pe-close" class="btn2 ghost">Cancel</button> ' +
       '<span class="sub" id="pe-status"></span></div></div>';
     // schedule builder state — starts from whatever is stored, edits live here
-    var meta = {};
-    try { meta = JSON.parse(JSON.stringify(p.schedule_meta || {})); } catch (err) {}
-    function sfield(label, html){
-      return '<div>' + field(label, html) + '</div>';
-    }
-    function chipsHtml(k){
-      return (meta[k] || []).slice().sort().map(function(d){
-        return '<span class="tag" style="margin:2px 3px 2px 0">' + peD(d) +
-          ' <a class="pe-chip-x" data-k="' + k + '" data-d="' + d + '" style="cursor:pointer;color:#E8654B">&times;</a></span>';
-      }).join('') || '<span class="sub">none yet</span>';
-    }
-    function updatePrev(){
-      $('pe-prev').textContent = composeSchedule($('pe-cat').value, meta) || p.schedule_name || '—';
-    }
-    function renderSched(){
-      var cat = $('pe-cat').value, z = $('pe-schedzone');
-      if (cat === 'class') {
-        z.innerHTML = '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
-          sfield('Day of week', '<select id="pe-sm-weekday">' + '<option value="">—</option>' +
-            ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(w){
-              return '<option' + (meta.weekday === w ? ' selected' : '') + '>' + w + '</option>';
-            }).join('') + '</select>') +
-          sfield('Starts', '<input type="time" id="pe-sm-start" value="' + esc(meta.start || '') + '">') +
-          sfield('Ends', '<input type="time" id="pe-sm-end" value="' + esc(meta.end || '') + '">') +
-          sfield('First class', '<input type="date" id="pe-sm-from" value="' + esc(meta.from || '') + '">') +
-          sfield('Last class', '<input type="date" id="pe-sm-to" value="' + esc(meta.to || '') + '">') + '</div>';
-      } else if (cat === 'coaching') {
-        z.innerHTML = '<div style="display:flex;gap:10px">' +
-          sfield('Session length (minutes)', '<input type="number" id="pe-sm-min" style="width:130px" value="' + esc(meta.minutes || '') + '">') + '</div>';
-      } else {
-        z.innerHTML =
-          field('Session days', '<input type="date" id="pe-sm-day"> <button type="button" class="btn2 ghost pe-add" data-k="days">add day</button>' +
-            '<div id="pe-chips-days" style="margin-top:5px">' + chipsHtml('days') + '</div>') +
-          field('Performance dates (optional)', '<input type="date" id="pe-sm-perf"> <button type="button" class="btn2 ghost pe-add" data-k="perf">add date</button>' +
-            '<div id="pe-chips-perf" style="margin-top:5px">' + chipsHtml('perf') + '</div>') +
-          '<div style="display:flex;gap:10px">' +
-          sfield('Daily start', '<input type="time" id="pe-sm-start" value="' + esc(meta.start || '') + '">') +
-          sfield('Daily end', '<input type="time" id="pe-sm-end" value="' + esc(meta.end || '') + '">') + '</div>';
-      }
-      z.querySelectorAll('input,select').forEach(function(el){
-        el.addEventListener('input', function(){
-          if (cat === 'class') {
-            meta = { weekday: $('pe-sm-weekday').value || null, start: $('pe-sm-start').value || null,
-              end: $('pe-sm-end').value || null, from: $('pe-sm-from').value || null, to: $('pe-sm-to').value || null };
-          } else if (cat === 'coaching') {
-            meta = { minutes: +$('pe-sm-min').value || null };
-          } else {
-            meta.start = $('pe-sm-start').value || null;
-            meta.end = $('pe-sm-end').value || null;
-          }
-          updatePrev();
-        });
-      });
-      updatePrev();
-    }
-    host.addEventListener('click', function(e){
-      var add = e.target.closest('.pe-add');
-      if (add) {
-        var inp = add.dataset.k === 'days' ? $('pe-sm-day') : $('pe-sm-perf');
-        if (inp && inp.value) {
-          meta[add.dataset.k] = meta[add.dataset.k] || [];
-          if (meta[add.dataset.k].indexOf(inp.value) === -1) meta[add.dataset.k].push(inp.value);
-          inp.value = '';
-          $('pe-chips-' + add.dataset.k).innerHTML = chipsHtml(add.dataset.k);
-          updatePrev();
-        }
-        return;
-      }
-      var x = e.target.closest('.pe-chip-x');
-      if (x) {
-        meta[x.dataset.k] = (meta[x.dataset.k] || []).filter(function(d){ return d !== x.dataset.d; });
-        $('pe-chips-' + x.dataset.k).innerHTML = chipsHtml(x.dataset.k);
-        updatePrev();
-      }
-    });
-    $('pe-cat').addEventListener('change', renderSched);
+    var sched = mountSchedule(host, p.schedule_meta, function(){ return $('pe-cat').value; },
+      function(txt){ $('pe-prev').textContent = txt || p.schedule_name || '—'; });
+    $('pe-cat').addEventListener('change', sched.render);
     $('pe-loc').addEventListener('change', function(){
       $('pe-loc-other').style.display = $('pe-loc').value === '__other' ? 'block' : 'none';
     });
     $('pe-age').addEventListener('change', function(){
       $('pe-age-other').style.display = $('pe-age').value === '__other' ? 'block' : 'none';
     });
-    renderSched();
+    sched.render();
     var origPrice = p.price_cents || 0;
     $('pe-price').addEventListener('input', function(){
       var now = Math.round(parseFloat($('pe-price').value || '0') * 100);
@@ -1545,8 +1688,8 @@
         name: $('pe-name').value.trim(),
         category: cat,
         age_range: ($('pe-age').value === '__other' ? $('pe-age-other').value.trim() : $('pe-age').value) || null,
-        schedule_meta: meta,
-        schedule_name: composeSchedule(cat, meta) || p.schedule_name || null,
+        schedule_meta: sched.meta(),
+        schedule_name: composeSchedule(cat, sched.meta()) || p.schedule_name || null,
         location: loc || null,
         price_cents: Math.round(parseFloat($('pe-price').value || '0') * 100),
         capacity: Math.round(parseFloat($('pe-cap').value || '0')),
