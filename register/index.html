@@ -1359,7 +1359,7 @@
               return '<span class="pill' + (on === a.id ? ' sel' : '') + '" data-dayg="' + gi + '" data-i="' + i + '" data-act="' + a.id + '">Ages ' + r.min + '\u2013' + r.max + leftTag + '</span>';
             }).join('') + '</div>';
           }
-          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-dayg="' + gi + '" data-i="' + i + '" ' + (on ? 'checked' : '') + (eligible.length ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' +
+          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-dayg="' + gi + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' +
             (eligible.length ? '' : ' <span class="badge-done" style="opacity:.65">for ages ' + ages + '</span>') + '</label>' + pills + '</div>';
         }).join('');
         return '<div class="showb" data-cat="day">' +
@@ -1432,9 +1432,8 @@
           var on = state.assign[key] && state.assign[key].on;
           var age = ageOn(k.bday, '2026-09-14');
           var ok = age == null || (isAdult ? age >= 18 : (age >= cr2.min - 1 && age <= cr2.max));
-          if (!ok && on) { delete state.assign[key]; on = false; }
           var badge = ok ? '' : ' <span class="badge-done" style="opacity:.65">for ' + (isAdult ? 'adults 18+' : 'ages ' + cr2.min + '\u2013' + cr2.max) + '</span>';
-          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + (ok ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' + badge + '</label></div>';
+          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' + badge + '</label></div>';
         }).join('');
         return '<div class="showb" data-cat="class">' +
           '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
@@ -1487,8 +1486,8 @@
           ? '<div class="bday-row"><label class="bday-lbl">Birthday <span class="req">(needed)</span></label>' +
             '<input type="date" class="fallBday" data-i="' + i + '" data-fs="' + sKey + '" max="' + today + '"></div>' : '';
         return '<div class="kid-row">' +
-          '<label class="kid-check"><input type="checkbox" data-fall="' + sKey + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + (eligible ? '' : ' disabled') + '> <span>' + esc(k.name) + '</span>' +
-          (eligible ? soloTag : ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
+          '<label class="kid-check"><input type="checkbox" data-fall="' + sKey + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' +
+          (inRange ? soloTag : soloTag + ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
       }).join('');
     });
@@ -1520,13 +1519,6 @@
       function commit(reRender){
         var kid = state.kids[+inp.dataset.i];
         if (!kid || !inp.value) return;
-        var yrs = ageOn(inp.value, '2026-09-15');
-        if (!(yrs >= 3 && yrs <= 25)) {
-          inp.setCustomValidity('Please check this birthday');
-          inp.reportValidity && inp.reportValidity();
-          return;
-        }
-        inp.setCustomValidity('');
         if (kid.bday === inp.value) return;
         kid.bday = inp.value;
         sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday })
@@ -1817,13 +1809,6 @@
       function commit(reRender){
         var kid = state.kids[+inp.dataset.i];
         if (!kid || !inp.value) return;
-        var yrs = ageOn(inp.value, '2026-09-15');
-        if (!(yrs >= 3 && yrs <= 25)) {
-          inp.setCustomValidity('Please check this birthday');
-          inp.reportValidity && inp.reportValidity();
-          return;
-        }
-        inp.setCustomValidity('');
         if (kid.bday === inp.value) return;
         kid.bday = inp.value;
         sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday })
