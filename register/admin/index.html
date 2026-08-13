@@ -107,6 +107,31 @@
   #subnav button:hover { color:#fff; }
   #subnav button.on { color:#E8B84B; border-color:#E8B84B; background:rgba(232,184,75,0.08); }
 
+  /* product cards: the show (or camp day) is the product, its age bands are
+     variants you switch on and off underneath it */
+  .pcard { border:1px solid var(--line); border-radius:12px; background:var(--panel); margin:8px 0; overflow:hidden; }
+  .pchead { display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer; }
+  .pchead:hover { background:rgba(232,184,75,0.04); }
+  .pchead .cr { color:var(--gold); font-size:11px; width:10px; }
+  .pchead .nm { font-weight:700; font-size:14px; }
+  .pchead .meta { margin-left:auto; font-size:11.5px; color:var(--dim); text-align:right; white-space:nowrap; }
+  .pcbands { border-top:1px solid var(--line); padding:4px 10px 10px; }
+  .bandrow { display:flex; align-items:center; gap:12px; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .bandrow:last-of-type { border-bottom:0; }
+  .bandrow .bn { font-weight:600; font-size:13px; min-width:110px; }
+  .bandrow .bs { color:var(--dim); font-size:11.5px; flex:1; min-width:120px; }
+  .bandrow.off .bn, .bandrow.off .bs { opacity:.45; }
+  .btog { position:relative; width:38px; height:21px; border-radius:999px; border:1px solid var(--line);
+    background:rgba(255,255,255,0.06); cursor:pointer; flex:0 0 auto; transition:background .15s; }
+  .btog i { position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%;
+    background:var(--dim); transition:left .15s, background .15s; }
+  .btog.on { background:rgba(232,184,75,0.25); border-color:#E8B84B; }
+  .btog.on i { left:19px; background:#E8B84B; }
+  .bandadd { margin:8px 6px 2px; }
+  .bandnew { border:1px dashed var(--line); border-radius:10px; padding:10px; margin:8px 6px 2px;
+    display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+  .bandnew label { display:block; font-size:10.5px; color:var(--dim); margin-bottom:3px; }
+
   /* move-camper popover: search-first, no giant list */
   .mvpop { position:fixed; z-index:80; width:320px; background:#0d1b30; border:1px solid var(--line);
     border-radius:12px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,0.55); }
@@ -914,28 +939,62 @@
     return a.localeCompare(b);
   }
 
-  function prodRowHtml(p, group){
+  // A product is the SHOW (or the camp day, or the class) — the thing families
+  // buy. Age bands are variants switched on and off inside it, so "Frozen" is
+  // one card carrying Kids / Junior / Teens / Technical Theatre, not four
+  // unrelated products that happen to share a name.
+  function bandLabel(p){ return bandOf(p) || (p.age_range || '').replace(/\s*yrs?\s*/i, '').trim() || 'Standard'; }
+  function isLive(p){ return !!p.active && !p.hidden && p.bookable !== false; }
+  // youngest first, with the crew bands after every performing band
+  var BAND_RANK = { 'Kids': 0, 'Junior': 1, 'Teens': 2, 'Adult': 3, 'Adults': 3,
+    'Tech Crew': 900, 'Technical Theatre': 900, 'Standard': 0 };
+  function bandSortProds(list){
+    return list.slice().sort(function(a, b){
+      var A = bandLabel(a), B = bandLabel(b);
+      var ra = BAND_RANK[A] != null ? BAND_RANK[A] : (parseInt(A, 10) || 50);
+      var rb = BAND_RANK[B] != null ? BAND_RANK[B] : (parseInt(B, 10) || 50);
+      return ra - rb || A.localeCompare(B);
+    });
+  }
+  function bandRowHtml(p){
     var taken = (p.sold || 0) + (p.booked_offline || 0);
-    var state = !p.active ? '<span class="tag">inactive</span>'
-      : p.hidden ? '<span class="tag">hidden</span>'
-      : p.bookable === false ? '<span class="tag bad">not bookable</span>'
-      : '<span class="tag ok">on sale</span>';
-    // inside a show or a camp day, the age band is the headline: these rows are
-    // variants of one product, and the import name is the detail
-    var band = (group === 'Full Camps' || group === 'Teen Productions' || group === 'Day Camps') ? bandOf(p) : null;
-    var title = band ? esc(band) : esc(p.name);
-    var subtitle = '#' + p.id + (band ? ' · ' + esc(p.name) : (p.age_range ? ' · ages ' + esc(p.age_range) : ''));
-    return '<tr class="prow" data-id="' + p.id + '" style="cursor:pointer">' +
-      '<td><b>' + title + '</b><div class="sub">' + subtitle + '</div></td>' +
-      '<td class="sub">' + esc(p.schedule_name || '—') + '</td>' +
-      '<td class="num">' + usd(p.price_cents || 0) + '</td>' +
-      '<td class="num">' + taken + ' / ' + (p.capacity || 0) + '</td>' +
-      '<td>' + state + '</td>' +
-      '<td><span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
-        '<button data-pact="edit" data-id="' + p.id + '">Edit</button>' +
-        '<button data-pact="dup" data-id="' + p.id + '">Duplicate</button>' +
-        '<button data-pact="del" data-id="' + p.id + '">Delete&hellip;</button>' +
-      '</div></span></td></tr>';
+    var live = isLive(p);
+    return '<div class="bandrow' + (live ? '' : ' off') + '" data-id="' + p.id + '">' +
+      '<button class="btog' + (live ? ' on' : '') + '" data-id="' + p.id + '" title="' +
+        (live ? 'On sale — click to turn off' : 'Off — click to put on sale') + '"><i></i></button>' +
+      '<span class="bn">' + esc(bandLabel(p)) + '</span>' +
+      '<span class="bs">' + esc(p.age_range || '') + (p.age_range ? ' · ' : '') + usd(p.price_cents || 0) +
+        ' · ' + taken + ' / ' + (p.capacity || 0) + ' filled' +
+        (!p.active ? ' · <span class="tag">inactive</span>' : '') + '</span>' +
+      '<span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
+        '<button data-pact="edit" data-id="' + p.id + '">Edit this band</button>' +
+        '<button data-pact="dup" data-id="' + p.id + '">Duplicate band</button>' +
+        '<button data-pact="del" data-id="' + p.id + '">Delete band&hellip;</button>' +
+      '</div></span></div>';
+  }
+  function prodCardHtml(key, label, items, group){
+    var taken = 0, cap = 0, live = 0, lo = null, hi = null, sched = '';
+    items.forEach(function(p){
+      taken += (p.sold || 0) + (p.booked_offline || 0); cap += p.capacity || 0;
+      if (isLive(p)) live++;
+      var c = p.price_cents || 0;
+      if (lo === null || c < lo) lo = c;
+      if (hi === null || c > hi) hi = c;
+      if (!sched && p.schedule_name) sched = p.schedule_name;
+    });
+    var price = lo === hi ? usd(lo || 0) : usd(lo || 0) + '–' + usd(hi || 0);
+    var open = !!PROD_OPEN['card:' + key];
+    return '<div class="pcard" data-key="' + esc(key) + '" data-group="' + esc(group) + '">' +
+      '<div class="pchead">' +
+        '<span class="cr">' + (open ? '&#9660;' : '&#9654;') + '</span>' +
+        '<span><span class="nm">' + esc(label) + '</span>' +
+          (sched ? '<div class="sub" style="font-size:11.5px">' + esc(sched) + '</div>' : '') + '</span>' +
+        '<span class="meta">' + items.length + ' band' + (items.length === 1 ? '' : 's') +
+          ' · ' + live + ' on sale<br>' + price + ' · ' + taken + ' / ' + cap + ' filled</span></div>' +
+      '<div class="pcbands" style="display:' + (open ? 'block' : 'none') + '">' +
+        bandSortProds(items).map(bandRowHtml).join('') +
+        '<div class="bandadd"><button class="btn2 ghost pc-addband">+ Add age band</button></div>' +
+      '</div></div>';
   }
   function renderProducts(){
     if (!PRODS) return;
@@ -955,11 +1014,18 @@
     $('prodArchive').style.display = stale.length ? 'inline-block' : 'none';
     $('prodArchive').textContent = 'Archive ' + stale.length + ' finished';
 
-    var tree = {};
+    // group -> product -> its bands. For shows and camp days the sub-bucket IS
+    // the product; for classes and coaching the product is the class itself and
+    // the sub-bucket stays a heading above the cards.
+    var tree = {}, SHOWLIKE = { 'Full Camps':1, 'Teen Productions':1, 'Day Camps':1 };
     rows.forEach(function(p){
-      var b = prodBucket(p);
-      tree[b[0]] = tree[b[0]] || {};
-      (tree[b[0]][b[1]] = tree[b[0]][b[1]] || []).push(p);
+      var b = prodBucket(p), g = b[0], sub = b[1];
+      var showlike = SHOWLIKE[g];
+      var key = showlike ? g + '|' + sub : g + '|' + sub + '|' + (p.name || '');
+      var label = showlike ? sub : (p.name || '');
+      tree[g] = tree[g] || {};
+      tree[g][sub] = tree[g][sub] || {};
+      (tree[g][sub][key] = tree[g][sub][key] || { label: label, items: [] }).items.push(p);
     });
     var names = Object.keys(tree).sort(function(a, b){
       var A = PROD_ORDER.indexOf(a), B = PROD_ORDER.indexOf(b);
@@ -969,11 +1035,13 @@
 
     $('prodGroups').innerHTML = names.map(function(g){
       var subs = tree[g], subNames = Object.keys(subs).sort(subSort);
-      var all = [], taken = 0, cap = 0, live = 0;
-      subNames.forEach(function(s){ all = all.concat(subs[s]); });
+      var all = [], taken = 0, cap = 0, live = 0, nProd = 0;
+      subNames.forEach(function(s){
+        Object.keys(subs[s]).forEach(function(k){ nProd++; all = all.concat(subs[s][k].items); });
+      });
       all.forEach(function(p){
         taken += (p.sold || 0) + (p.booked_offline || 0); cap += p.capacity || 0;
-        if (p.active && !p.hidden && p.bookable !== false) live++;
+        if (isLive(p)) live++;
       });
       // searching opens what it found; otherwise remember what you had open
       var open = q ? true : (PROD_OPEN[g] != null ? PROD_OPEN[g] : false);
@@ -982,26 +1050,55 @@
           'border:1px solid var(--line);border-radius:10px;background:var(--panel)">' +
           '<span style="color:var(--gold);font-size:11px;width:10px">' + (open ? '&#9660;' : '&#9654;') + '</span>' +
           '<b style="flex:1">' + esc(g) + '</b>' +
-          '<span class="sub">' + all.length + ' product' + (all.length === 1 ? '' : 's') +
+          '<span class="sub">' + nProd + ' product' + (nProd === 1 ? '' : 's') +
+            ' · ' + all.length + ' band' + (all.length === 1 ? '' : 's') +
             ' · ' + live + ' on sale · ' + taken + ' / ' + cap + ' filled</span></div>' +
-        '<div class="pgbody" style="display:' + (open ? 'block' : 'none') + ';padding:6px 0 2px 10px">' +
+        '<div class="pgbody" style="display:' + (open ? 'block' : 'none') + ';padding:2px 0 2px 10px">' +
           subNames.map(function(s){
-            return (subNames.length > 1 || s !== g
-              ? '<div class="sub" style="margin:10px 0 4px;text-transform:uppercase;letter-spacing:.1em;font-size:10px">' + esc(s) + '</div>' : '') +
-              '<div class="wrap-scroll"><table>' +
-              '<tr><th>product</th><th>schedule</th><th class="num">price</th><th class="num">filled</th><th>state</th><th></th></tr>' +
-              subs[s].slice().sort(function(a, b){
-                var A = bandOf(a), B = bandOf(b), rank = { 'Kids':0, 'Junior':1, 'Teens':2, 'Tech Crew':3 };
-                if (A && B && rank[A] != null && rank[B] != null) return rank[A] - rank[B];
-                if (A && B) return (parseInt(A, 10) || 99) - (parseInt(B, 10) || 99);
-                return (a.name || '').localeCompare(b.name || '');
-              }).map(function(p){ return prodRowHtml(p, g); }).join('') + '</table></div>';
+            var cards = subs[s], keys = Object.keys(cards).sort(function(a, b){
+              return cards[a].label.localeCompare(cards[b].label);
+            });
+            // a heading only earns its place when it says something the card
+            // titles don't (class types, coaching families) — for shows and
+            // camp days the card title already is the heading
+            return (SHOWLIKE[g] ? '' :
+              '<div class="sub" style="margin:12px 0 2px;text-transform:uppercase;letter-spacing:.1em;font-size:10px">' + esc(s) + '</div>') +
+              keys.map(function(k){ return prodCardHtml(k, cards[k].label, cards[k].items, g); }).join('');
           }).join('') +
         '</div></div>';
     }).join('');
     wireKebabs($('prodGroups'));
   }
+  // ── product card interactions: expand, switch a band on/off, add a band ──
   $('prodGroups').addEventListener('click', function(e){
+    var tog = e.target.closest('.btog');
+    if (tog) {
+      e.stopPropagation();
+      var p = prodById(tog.dataset.id);
+      if (!p) return;
+      var turningOn = !isLive(p);
+      tog.classList.toggle('on', turningOn);
+      opsApi({ action: 'product_update', id: p.id,
+        fields: turningOn ? { bookable: true, hidden: false } : { bookable: false, hidden: true } })
+        .then(function(d){
+          if (d.error) { alert(d.error); tog.classList.toggle('on', !turningOn); return; }
+          loadProducts();
+        }).catch(function(){ alert('network error'); tog.classList.toggle('on', !turningOn); });
+      return;
+    }
+    var addb = e.target.closest('.pc-addband');
+    if (addb) { e.stopPropagation(); openAddBand(addb.closest('.pcard')); return; }
+    if (e.target.closest('.bandnew')) { e.stopPropagation(); return; }
+
+    var ch = e.target.closest('.pchead');
+    if (ch) {
+      var card = ch.parentNode, bands = card.querySelector('.pcbands');
+      var wasOpen = bands.style.display !== 'none';
+      bands.style.display = wasOpen ? 'none' : 'block';
+      ch.firstElementChild.innerHTML = wasOpen ? '&#9654;' : '&#9660;';
+      PROD_OPEN['card:' + card.dataset.key] = !wasOpen;
+      return;
+    }
     var h = e.target.closest('.pghead');
     if (!h) return;
     var g = h.parentNode, body = g.querySelector('.pgbody');
@@ -1011,17 +1108,81 @@
     PROD_OPEN[g.dataset.g] = !open;
   });
   function prodById(id){ return (PRODS || []).filter(function(x){ return String(x.id) === String(id); })[0]; }
+
+  // Turning on a new band for a show: it inherits the show's price, schedule,
+  // capacity and category from a sibling band, so the only real decisions are
+  // which band and what families will see it called.
+  var ADD_BANDS = ['Kids', 'Junior', 'Teens', 'Technical Theatre', 'Adult'];
+  function openAddBand(card){
+    var existing = card.querySelector('.bandnew');
+    if (existing) { existing.remove(); return; }
+    var sample = null, label = card.querySelector('.nm').textContent;
+    card.querySelectorAll('.bandrow').forEach(function(r){
+      var p = prodById(r.dataset.id);
+      if (p && (!sample || (p.capacity || 0) > (sample.capacity || 0))) sample = p;
+    });
+    if (!sample) return;
+    var taken = {};
+    card.querySelectorAll('.bandrow').forEach(function(r){
+      var p = prodById(r.dataset.id); if (p) taken[bandLabel(p).toLowerCase()] = 1;
+    });
+    var opts = ADD_BANDS.filter(function(b){ return !taken[b.toLowerCase()]; });
+    var box = document.createElement('div');
+    box.className = 'bandnew pe';
+    box.innerHTML =
+      '<div><label>Band</label><select class="nb-band">' +
+        opts.map(function(b){ return '<option>' + esc(b) + '</option>'; }).join('') +
+        '<option value="__other">Other…</option></select></div>' +
+      '<div><label>Ages</label>' + ageSelectHtml(null).replace(/id="pe-age"/, 'class="nb-age"').replace(/id="pe-age-other"/, 'class="nb-age-other"') + '</div>' +
+      '<div style="flex:1;min-width:200px"><label>Name families see</label>' +
+        '<input class="nb-name" style="width:100%" value="' + esc(label + ' | ') + '"></div>' +
+      '<div><label>Price ($)</label><input class="nb-price" type="number" step="0.01" style="width:110px" value="' + ((sample.price_cents || 0) / 100) + '"></div>' +
+      '<div><label>Capacity</label><input class="nb-cap" type="number" style="width:90px" value="' + (sample.capacity || 20) + '"></div>' +
+      '<button class="btn2 nb-save">Add band</button>' +
+      '<button class="btn2 ghost nb-cancel">Cancel</button>' +
+      '<span class="sub nb-status"></span>';
+    card.querySelector('.pcbands').appendChild(box);
+    var bandSel = box.querySelector('.nb-band'), nameIn = box.querySelector('.nb-name');
+    function syncName(){
+      var b = bandSel.value === '__other' ? '' : bandSel.value;
+      nameIn.value = label + (b ? ' | ' + b : ' | ');
+    }
+    syncName();
+    bandSel.addEventListener('change', syncName);
+    box.querySelector('.nb-age').addEventListener('change', function(){
+      box.querySelector('.nb-age-other').style.display = this.value === '__other' ? 'block' : 'none';
+    });
+    box.querySelector('.nb-cancel').addEventListener('click', function(){ box.remove(); });
+    box.querySelector('.nb-save').addEventListener('click', function(){
+      var ageSel = box.querySelector('.nb-age');
+      var age = ageSel.value === '__other' ? box.querySelector('.nb-age-other').value.trim() : ageSel.value;
+      var st = box.querySelector('.nb-status');
+      st.textContent = 'adding…';
+      opsApi({ action: 'product_create', fields: {
+        name: nameIn.value.trim(), category: sample.category,
+        age_range: age || null, schedule_name: sample.schedule_name || null,
+        schedule_meta: sample.schedule_meta || null, location: sample.location || null,
+        price_cents: Math.round(parseFloat(box.querySelector('.nb-price').value || '0') * 100),
+        capacity: Math.round(parseFloat(box.querySelector('.nb-cap').value || '0')),
+        bookable: true, hidden: false
+      } }).then(function(d){
+        if (d.error) { st.textContent = d.error; return; }
+        PROD_OPEN['card:' + card.dataset.key] = true;
+        loadProducts();
+      }).catch(function(){ st.textContent = 'network error'; });
+    });
+  }
   $('prodQ').addEventListener('input', function(){ renderProducts(); });
   $('prodGroups').addEventListener('click', function(e){
     var act = e.target.closest('button[data-pact]');
     if (act) {
       var p0 = prodById(act.dataset.id);
       if (!p0) return;
-      if (act.dataset.pact === 'edit') openProdEditor(p0, false, act.closest('tr.prow'));
+      if (act.dataset.pact === 'edit') openProdEditor(p0, false, act.closest('.bandrow'));
       if (act.dataset.pact === 'dup') {
         var copy = {}; for (var k in p0) copy[k] = p0[k];
         copy.name = p0.name + ' (copy)';
-        openProdEditor(copy, true, act.closest('tr.prow'));
+        openProdEditor(copy, true, act.closest('.bandrow'));
       }
       if (act.dataset.pact === 'del') {
         if (!confirm('Delete "' + p0.name + '"?\n\nIf anyone has ever registered for it, it will be retired (off sale + hidden) instead — history is never destroyed.')) return;
@@ -1033,16 +1194,16 @@
       }
       return;
     }
-    if (e.target.closest('.kbwrap') || e.target.closest('tr.pedit')) return;
-    var tr = e.target.closest('tr.prow');
-    if (!tr) return;
-    var p = prodById(tr.dataset.id);
-    if (p) openProdEditor(p, false, tr);
+    if (e.target.closest('.kbwrap') || e.target.closest('.pedit') || e.target.closest('.btog')) return;
+    var row = e.target.closest('.bandrow');
+    if (!row) return;
+    var p = prodById(row.dataset.id);
+    if (p) openProdEditor(p, false, row);
   });
   $('prodNew').addEventListener('click', function(){ openProdEditor(null, true, null); });
 
   function closeProdEditor(){
-    var old = document.querySelector('tr.pedit');
+    var old = document.querySelector('.pedit');
     if (old) old.remove();
     $('prodEditor').style.display = 'none';
     $('prodEditor').innerHTML = '';
@@ -1109,11 +1270,11 @@
     function field(label, html){ return '<label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' + label + '</label>' + html; }
     var host;
     if (anchorTr) {
-      var det = document.createElement('tr');
-      det.className = 'pedit roster';
-      det.innerHTML = '<td colspan="' + anchorTr.children.length + '"></td>';
+      // the editor opens right under the band row you clicked
+      var det = document.createElement('div');
+      det.className = 'pedit';
       anchorTr.parentNode.insertBefore(det, anchorTr.nextSibling);
-      host = det.firstChild;
+      host = det;
     } else {
       host = $('prodEditor');
       host.style.display = 'block';
