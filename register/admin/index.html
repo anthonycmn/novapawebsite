@@ -278,7 +278,7 @@
       <h2>Campers</h2>
       <div class="stats" id="stCampers" style="margin-bottom:14px"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-        <input type="text" id="campQ" placeholder="Search name or email\u2026" style="flex:1;min-width:220px;padding:10px 14px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:14px">
+        <input type="text" id="campQ" placeholder="Search name or email&hellip;" style="flex:1;min-width:220px;padding:10px 14px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:14px">
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="campMissing" style="accent-color:var(--gold,#C8892A)"> missing info only</label>
         <button id="campCopy" style="padding:10px 14px;border:0;border-radius:10px;background:var(--gold,#C8892A);color:#1a1206;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px">Copy chase-list emails</button>
       </div>
@@ -1776,20 +1776,41 @@
       stat(s.web_orders_7d, 'orders · 7d');
   }
 
+  // items arrive as [{item_id, camper, what}] — the camper name links to their
+  // profile (Campers tab pre-filtered) and each seat carries its own
+  // move/cancel, so a "can you switch her Tuesday class" email is handled
+  // without leaving the order row.
+  function orderItemsText(o){
+    return (o.items || []).map(function(i){ return (i.camper || '') + ' - ' + (i.what || ''); }).join(' | ');
+  }
   function renderOrders(rows){
     if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
     $('tblOrders').innerHTML =
       '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th>sawyer</th><th></th></tr>' +
       rows.map(function(o){
+        var itemsHtml = (o.items || []).map(function(i){
+          return '<div style="margin:2px 0;white-space:nowrap">' +
+            '<a class="o-camper" data-name="' + esc(i.camper || '') + '" style="cursor:pointer;text-decoration:underline dotted">' + esc(i.camper || '') + '</a>' +
+            ' <span class="sub">' + esc(i.what || '') + '</span> ' +
+            (i.item_id ? rosterActionBtns(i.item_id, i.camper) : '') + '</div>';
+        }).join('');
         return '<tr><td>' + dt(o.created_at) + '</td>' +
           '<td>' + esc(o.parent_name || '') + '<div class="sub">' + esc(o.email) + '</div></td>' +
-          '<td>' + esc(o.items || '') + '</td>' +
+          '<td>' + itemsHtml + '</td>' +
           '<td><span class="tag ' + (o.plan==='subscription'?'gold':'') + '">' + o.plan + '</span></td>' +
           '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
           '<td class="num">' + usd2(o.total_cents) + '</td>' +
           '<td>' + (o.sawyer_entered ? '<span class="tag ok">✓</span>' : '<span class="tag bad">no</span>') + '</td>' +
-          '<td><button class="tag bad ord-del" data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + (o.items||'').slice(0,80)) + '" style="cursor:pointer;border:0">delete</button></td></tr>';
+          '<td><button class="tag bad ord-del" data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + orderItemsText(o).slice(0,80)) + '" style="cursor:pointer;border:0">delete</button></td></tr>';
       }).join('');
+    $('tblOrders').querySelectorAll('.o-camper').forEach(function(a){
+      a.addEventListener('click', function(){
+        var t = document.querySelector('#nav a[data-s=campers]');
+        if (t) t.click();
+        $('campQ').value = a.dataset.name;
+        renderCampers();
+      });
+    });
     $('tblOrders').querySelectorAll('.ord-del').forEach(function(b){
       b.addEventListener('click', function(){
         var msg = 'Delete this order?\n\n' + b.dataset.who +
@@ -2185,7 +2206,7 @@
         return '<a data-go="program" data-q=""><b>' + esc(a.name) + '</b> <span class="sub">' + esc(a.schedule || a.schedule_name || '') + '</span></a>';
       }).join('');
       var ords = ORDERS.filter(function(o){
-        return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + (o.items || '')).toLowerCase().indexOf(q) !== -1;
+        return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + orderItemsText(o)).toLowerCase().indexOf(q) !== -1;
       }).slice(0, 6);
       if (ords.length) html += '<div class="gt">Orders</div>' + ords.map(function(o){
         return '<a data-go="order" data-q=""><b>' + esc(o.parent_name || o.email) + '</b> <span class="sub">' + usd(o.total_cents) + ' · ' + dt(o.created_at) + '</span></a>';
