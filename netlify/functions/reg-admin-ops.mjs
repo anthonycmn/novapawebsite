@@ -275,6 +275,31 @@ export default async (req) => {
       return Response.json({ ...out, refund_id: refundId, refunded_cents: amount });
     }
 
+    // Regpack chase list. Deliberately temporary: it dies when the last family
+    // converts to our own billing.
+    if (action === "chase_list") {
+      const plans = await db("migration_plans?select=*&order=status,family_label&limit=500");
+      const snap = await db("platform_balances?select=source,imported_at&order=imported_at.desc&limit=500");
+      const freshness = {};
+      for (const s of snap) if (!freshness[s.source]) freshness[s.source] = s.imported_at;
+      return Response.json({ plans: plans || [], snapshot_imported: freshness });
+    }
+    if (action === "chase_update") {
+      const id = body.id;
+      if (!id) return Response.json({ error: "no id" }, { status: 400 });
+      const fields = {};
+      if ("notes" in body) fields.notes = String(body.notes || "").slice(0, 4000);
+      if ("status" in body) fields.status = String(body.status);
+      if (!Object.keys(fields).length) return Response.json({ error: "nothing to change" }, { status: 400 });
+      const rows = await db(`migration_plans?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify(fields),
+      });
+      await audit("chase_update", actor, { id, fields });
+      return Response.json({ ok: true, plan: (rows || [])[0] || null });
+    }
+
     if (action === "referral_add") {
       const referred = String(body.referred_email || "").trim().toLowerCase();
       const who = String(body.referrer || "").trim();

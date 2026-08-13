@@ -275,8 +275,17 @@
     </section>
 
     <section class="sec" id="s-balances">
-      <div class="stats" id="stBal" style="margin-bottom:14px"></div>
+      <h2>Regpack chase</h2>
+      <p class="sub" style="margin:-6px 0 12px">Families still moving off Regpack billing onto ours. This page is
+      temporary by design &mdash; it retires when the last family converts. Live web money lives in Cash flow
+      and Accounting.</p>
+      <div class="stats" id="stChase" style="margin-bottom:14px"></div>
+      <div id="chaseList"></div>
+
+      <h2 style="margin-top:34px">Legacy platform snapshot</h2>
+      <div id="balStale"></div>
       <div class="wrap-scroll"><table id="tblBal"></table></div>
+      <div class="stats" id="stBal" style="margin-top:14px"></div>
     </section>
 
     <section class="sec" id="s-inventory">
@@ -554,7 +563,10 @@
     },
     orders:    function(){ rload('orders', 'admin_orders', function(d){ ORDERS = d || []; renderOrders(ORDERS); }); },
     products:  function(){ loadProducts(); },
-    balances:  function(){ rload('balances', 'admin_balances', function(d){ renderBalances(d || []); }); },
+    balances:  function(){
+      rload('balances', 'admin_balances', function(d){ renderBalances(d || []); });
+      loadChase();
+    },
     inventory: loadInventory,
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
     cashflow:  function(){ loadCashflow(); },
@@ -578,7 +590,7 @@
   // and drill-throughs land on the right pill too.
   var GROUPS = {
     families: [['campers', 'Campers'], ['orders', 'Orders']],
-    money: [['balances', 'Balances'], ['accounting', 'Accounting'], ['insurance', 'Insurance'], ['cashflow', 'Cash flow']],
+    money: [['cashflow', 'Cash flow'], ['accounting', 'Accounting'], ['insurance', 'Insurance'], ['balances', 'Regpack chase']],
     rewards: [['credits', 'Credits'], ['referrals', 'Referrals']]
   };
   var GROUP_OF = {}, GROUP_LAST = {};
@@ -2420,16 +2432,98 @@
     });
   }
 
+  // ---- Regpack chase: the families still being moved onto our billing ----
+  // The only live thing on this page. migration_plans is hand-maintained, so
+  // notes save inline and a family flips to resolved the moment they pay.
+  var CHASE = null, CHASE_SNAP = {};
+  function loadChase(){
+    opsApi({ action: 'chase_list' }).then(function(d){
+      if (d.error) { $('chaseList').innerHTML = '<p class="sub">error: ' + esc(d.error) + '</p>'; return; }
+      CHASE = d.plans || [];
+      CHASE_SNAP = d.snapshot_imported || {};
+      renderChase();
+      renderStale();
+    }).catch(function(){ $('chaseList').innerHTML = '<p class="sub">network error</p>'; });
+  }
+  function planTotal(p){
+    return (p.one_off_cents || 0) + (p.monthly_cents || 0) * (p.months_total || 0) + (p.final_cents || 0);
+  }
+  function renderChase(){
+    if (!CHASE) return;
+    var open = CHASE.filter(function(p){ return p.status !== 'resolved'; });
+    var done = CHASE.filter(function(p){ return p.status === 'resolved'; });
+    var owed = open.reduce(function(s, p){ return s + planTotal(p); }, 0);
+    var got  = done.reduce(function(s, p){ return s + planTotal(p); }, 0);
+    $('stChase').innerHTML =
+      stat(open.length, 'still chasing', open.length ? 'bad' : 'ok') +
+      stat(usd(owed), 'outstanding') +
+      stat(done.length, 'resolved', 'ok') +
+      stat(usd(got), 'converted');
+    function rows(list, resolved){
+      if (!list.length) return '<tr><td class="empty">none</td></tr>';
+      return list.map(function(p){
+        return '<tr data-id="' + esc(p.id) + '">' +
+          '<td><b>' + esc(p.family_label || '') + '</b>' +
+            '<div class="sub">' + esc(p.cohort || '') + '</div></td>' +
+          '<td class="sub" style="max-width:420px">' + esc(p.terms || '') +
+            (p.stripe_link ? '<div><a href="' + esc(p.stripe_link) + '" target="_blank" rel="noopener">payment link</a></div>' : '') + '</td>' +
+          '<td class="num">' + (planTotal(p) ? usd(planTotal(p)) : '<span class="sub">—</span>') + '</td>' +
+          '<td style="min-width:200px"><input class="ch-note" data-id="' + esc(p.id) + '" value="' + esc(p.notes || '') +
+            '" placeholder="chase status…" style="width:100%"></td>' +
+          '<td><button class="tag ' + (resolved ? '' : 'ok') + ' ch-flip" data-id="' + esc(p.id) +
+            '" data-to="' + (resolved ? 'sent' : 'resolved') + '" style="cursor:pointer;border:0">' +
+            (resolved ? 'reopen' : 'mark resolved') + '</button></td></tr>';
+      }).join('');
+    }
+    var head = '<tr><th>family</th><th>terms</th><th class="num">plan total</th><th>notes</th><th></th></tr>';
+    $('chaseList').innerHTML =
+      '<div class="wrap-scroll"><table>' + head + rows(open, false) + '</table></div>' +
+      '<h2 style="margin-top:24px;font-size:13px">Resolved</h2>' +
+      '<div class="wrap-scroll"><table>' + head + rows(done, true) + '</table></div>';
+    $('chaseList').querySelectorAll('.ch-note').forEach(function(inp){
+      var t = null;
+      inp.addEventListener('input', function(){
+        clearTimeout(t);
+        t = setTimeout(function(){
+          opsApi({ action: 'chase_update', id: inp.dataset.id, notes: inp.value })
+            .then(function(){ inp.style.borderColor = 'var(--ok)'; setTimeout(function(){ inp.style.borderColor = ''; }, 900); });
+        }, 700);
+      });
+    });
+    $('chaseList').querySelectorAll('.ch-flip').forEach(function(b){
+      b.addEventListener('click', function(){
+        b.disabled = true;
+        opsApi({ action: 'chase_update', id: b.dataset.id, status: b.dataset.to })
+          .then(function(d){ if (d.error) { alert(d.error); b.disabled = false; return; } loadChase(); })
+          .catch(function(){ b.disabled = false; });
+      });
+    });
+  }
+  // The legacy table is an import, not a feed — say so plainly and date it,
+  // because it reads like "everything anyone owes us" and it is not that.
+  function renderStale(){
+    var parts = Object.keys(CHASE_SNAP).map(function(src){
+      var d = new Date(CHASE_SNAP[src]);
+      var days = Math.floor((Date.now() - d.getTime()) / 86400000);
+      return src + ' last imported ' + dt(CHASE_SNAP[src]) + ' (' + days + ' day' + (days === 1 ? '' : 's') + ' ago)';
+    });
+    $('balStale').innerHTML = '<p class="sub" style="border:1px solid var(--bad);border-radius:10px;padding:10px 12px;margin:-4px 0 12px">' +
+      '<b style="color:var(--bad)">Frozen snapshot, not live.</b> These rows were swept out of Regpack and Sawyer by hand: ' +
+      (parts.join(' · ') || 'import date unknown') + '. Sawyer has no live feed here, so anything paid since then still ' +
+      'shows as owed, and Sawyer families missing from the sweep do not show at all. Treat it as a historical worksheet ' +
+      'for the migration above, never as the answer to "what is outstanding".</p>';
+  }
+
   function renderBalances(rows){
     var owing = rows.filter(function(r){ return (r.balance_cents||0) > 0; });
     var tot = owing.reduce(function(s,r){ return s + r.balance_cents; }, 0);
     var dueNow = owing.reduce(function(s,r){ return s + (r.due_now_cents||0); }, 0);
     var auto = owing.filter(function(r){ return r.has_saved_pm; }).length;
     $('stBal').innerHTML =
-      stat(usd(tot), 'outstanding', 'bad') +
-      stat(usd(dueNow), 'due now') +
-      stat(owing.length, 'accounts') +
-      stat(auto + ' / ' + owing.length, 'card on file');
+      stat(usd(tot), 'owed as of the sweep') +
+      stat(usd(dueNow), 'was due then') +
+      stat(owing.length, 'accounts in sweep') +
+      stat(auto + ' / ' + owing.length, 'had card on file');
     $('tblBal').innerHTML =
       '<tr><th>name</th><th>email</th><th class="num">ordered</th><th class="num">paid</th><th class="num">balance</th><th class="num">due now</th><th class="num">future</th><th>autobill</th><th>src</th></tr>' +
       owing.map(function(r){
