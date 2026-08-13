@@ -83,6 +83,21 @@
     color:#fff; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:12.5px; }
   .kbmenu button:hover { background:rgba(232,184,75,0.12); }
 
+  /* products tab + editor: same dark chrome as everything else, no browser-
+     default white inputs */
+  .pe input[type=text], .pe input[type=number], .pe select,
+  #s-products > div > input[type=text] {
+    padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-size:13px; font-family:inherit; }
+  .pe input:focus, .pe select:focus, #s-products input:focus { outline:none; border-color:#E8B84B; }
+  .pe input[type=checkbox] { accent-color:#E8B84B; width:auto; }
+  .pe label { user-select:none; }
+  .btn2 { border:1px solid #E8B84B; background:rgba(232,184,75,0.12); color:#E8B84B;
+    border-radius:8px; padding:7px 16px; cursor:pointer; font-weight:600; font-size:12.5px; font-family:inherit; }
+  .btn2:hover { background:rgba(232,184,75,0.22); }
+  .btn2.ghost { border-color:var(--line); background:transparent; color:var(--dim); }
+  .btn2.ghost:hover { color:#fff; }
+
   /* move-camper popover: search-first, no giant list */
   .mvpop { position:fixed; z-index:80; width:320px; background:#0d1b30; border:1px solid var(--line);
     border-radius:12px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,0.55); }
@@ -266,8 +281,8 @@
       website checkout and CJ's staff portal. Click a row to edit. Price changes need a reason and are logged.
       Nothing gets deleted — retiring a product hides it and stops sales, history stays.</p>
       <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
-        <input type="text" id="prodQ" placeholder="Filter products…" style="flex:0 0 260px">
-        <button id="prodNew">+ New product</button>
+        <input type="text" id="prodQ" placeholder="Filter products&hellip;" style="flex:0 0 260px">
+        <button id="prodNew" class="btn2">+ New product</button>
         <span class="sub" id="prodStatus"></span>
       </div>
       <div id="prodEditor" style="display:none"></div>
@@ -741,7 +756,7 @@
     });
     $('prodStatus').textContent = rows.length + ' of ' + PRODS.length;
     $('tblProducts').innerHTML =
-      '<tr><th>name</th><th>category</th><th>schedule</th><th>ages</th><th class="num">price</th><th class="num">cap</th><th class="num">taken</th><th>state</th></tr>' +
+      '<tr><th>name</th><th>category</th><th>schedule</th><th>ages</th><th class="num">price</th><th class="num">cap</th><th class="num">taken</th><th>state</th><th></th></tr>' +
       rows.map(function(p){
         var taken = (p.sold || 0) + (p.booked_offline || 0);
         var state = !p.active ? '<span class="tag">inactive</span>'
@@ -756,24 +771,58 @@
           '<td class="num">' + usd(p.price_cents || 0) + '</td>' +
           '<td class="num">' + (p.capacity || 0) + '</td>' +
           '<td class="num">' + taken + '</td>' +
-          '<td>' + state + '</td></tr>';
+          '<td>' + state + '</td>' +
+          '<td><span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
+            '<button data-pact="edit" data-id="' + p.id + '">Edit</button>' +
+            '<button data-pact="dup" data-id="' + p.id + '">Duplicate</button>' +
+            '<button data-pact="del" data-id="' + p.id + '">Delete&hellip;</button>' +
+          '</div></span></td></tr>';
       }).join('');
+    $('tblProducts').querySelectorAll('.kb').forEach(function(k){
+      k.addEventListener('click', function(e){
+        e.stopPropagation();
+        var menu = k.nextElementSibling, open = menu.classList.contains('on');
+        document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+        if (!open) menu.classList.add('on');
+      });
+    });
   }
+  function prodById(id){ return (PRODS || []).filter(function(x){ return String(x.id) === String(id); })[0]; }
   $('prodQ').addEventListener('input', function(){ renderProducts(); });
   $('tblProducts').addEventListener('click', function(e){
+    var act = e.target.closest('button[data-pact]');
+    if (act) {
+      var p0 = prodById(act.dataset.id);
+      if (!p0) return;
+      if (act.dataset.pact === 'edit') openProdEditor(p0, false);
+      if (act.dataset.pact === 'dup') {
+        var copy = {}; for (var k in p0) copy[k] = p0[k];
+        copy.name = p0.name + ' (copy)';
+        openProdEditor(copy, true);
+      }
+      if (act.dataset.pact === 'del') {
+        if (!confirm('Delete "' + p0.name + '"?\n\nIf anyone has ever registered for it, it will be retired (off sale + hidden) instead — history is never destroyed.')) return;
+        opsApi({ action: 'product_delete', id: p0.id }).then(function(d){
+          if (d.error) { alert(d.error); return; }
+          if (d.retired) alert(d.message);
+          loadProducts();
+        }).catch(function(){ alert('network error'); });
+      }
+      return;
+    }
+    if (e.target.closest('.kbwrap')) return;
     var tr = e.target.closest('tr.prow');
     if (!tr) return;
-    var p = (PRODS || []).filter(function(x){ return String(x.id) === tr.dataset.id; })[0];
-    if (p) openProdEditor(p);
+    var p = prodById(tr.dataset.id);
+    if (p) openProdEditor(p, false);
   });
-  $('prodNew').addEventListener('click', function(){ openProdEditor(null); });
+  $('prodNew').addEventListener('click', function(){ openProdEditor(null, true); });
 
-  function openProdEditor(p){
-    var isNew = !p;
+  function openProdEditor(p, isNew){
     p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true, hidden:false };
     function field(label, html){ return '<label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' + label + '</label>' + html; }
     $('prodEditor').style.display = 'block';
-    $('prodEditor').innerHTML = '<div class="ovpanel" style="max-width:640px">' +
+    $('prodEditor').innerHTML = '<div class="ovpanel pe" style="max-width:640px">' +
       '<b>' + (isNew ? 'New product' : 'Edit: ' + esc(p.name)) + '</b>' +
       field('Name', '<input id="pe-name" style="width:100%" value="' + esc(p.name) + '">') +
       '<div style="display:flex;gap:10px">' +
@@ -796,8 +845,8 @@
         '<label style="margin-right:14px"><input type="checkbox" id="pe-book"' + (p.bookable !== false ? ' checked' : '') + '> bookable</label>' +
         '<label><input type="checkbox" id="pe-hide"' + (p.hidden ? ' checked' : '') + '> hidden from site</label>' +
       '</div>' +
-      '<div style="margin-top:10px"><button id="pe-save" class="tag ok" style="cursor:pointer;border:0;padding:6px 14px">Save</button> ' +
-      '<button id="pe-close" class="tag" style="cursor:pointer;border:0;padding:6px 14px">Cancel</button> ' +
+      '<div style="margin-top:12px;display:flex;gap:8px;align-items:center"><button id="pe-save" class="btn2">Save</button> ' +
+      '<button id="pe-close" class="btn2 ghost">Cancel</button> ' +
       '<span class="sub" id="pe-status"></span></div></div>';
     var origPrice = p.price_cents || 0;
     $('pe-price').addEventListener('input', function(){

@@ -140,6 +140,31 @@ export default async (req) => {
       return Response.json({ ok: true, product: (rows || [])[0] || null });
     }
 
+    // Delete only what nothing ever touched; anything with a registration or
+    // a legacy row retires instead (off sale + hidden) so history keeps its id.
+    if (action === "product_delete") {
+      const id = Number(body.id);
+      if (!id) return Response.json({ error: "no id" }, { status: 400 });
+      const cur = (await db(`activities?id=eq.${id}&select=*`))[0];
+      if (!cur) return Response.json({ error: "activity not found" }, { status: 404 });
+      const taken = (cur.sold || 0) + (cur.booked_offline || 0);
+      const refs = await db(`order_items?activity_id=eq.${id}&select=id&limit=1`);
+      const legacy = await db(`legacy_enrollments?activity_id=eq.${id}&select=id&limit=1`);
+      if (taken > 0 || refs.length || legacy.length) {
+        await db(`activities?id=eq.${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookable: false, hidden: true }),
+        });
+        await audit("product_retire", actor, { id, name: cur.name, taken });
+        return Response.json({ ok: true, retired: true,
+          message: `"${cur.name}" has registrations, so it was retired (off sale + hidden) instead of deleted — history stays.` });
+      }
+      await db(`activities?id=eq.${id}`, { method: "DELETE" });
+      await audit("product_delete", actor, { id, name: cur.name });
+      return Response.json({ ok: true, deleted: true });
+    }
+
     if (action === "move") {
       const out = await rpc("admin_move_camper", {
         p_item_id: String(body.item_id || ""),
