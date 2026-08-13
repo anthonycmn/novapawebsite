@@ -85,8 +85,8 @@
 
   /* products tab + editor: same dark chrome as everything else, no browser-
      default white inputs */
-  .pe input[type=text], .pe input[type=number], .pe select,
-  #s-products > div > input[type=text] {
+  .pe input:not([type=checkbox]), .pe select,
+  #s-products > div > input {
     padding:8px 10px; border-radius:8px; border:1px solid var(--line);
     background:rgba(8,17,31,0.6); color:#fff; font-size:13px; font-family:inherit; }
   .pe input:focus, .pe select:focus, #s-products input:focus { outline:none; border-color:#E8B84B; }
@@ -794,11 +794,11 @@
     if (act) {
       var p0 = prodById(act.dataset.id);
       if (!p0) return;
-      if (act.dataset.pact === 'edit') openProdEditor(p0, false);
+      if (act.dataset.pact === 'edit') openProdEditor(p0, false, act.closest('tr.prow'));
       if (act.dataset.pact === 'dup') {
         var copy = {}; for (var k in p0) copy[k] = p0[k];
         copy.name = p0.name + ' (copy)';
-        openProdEditor(copy, true);
+        openProdEditor(copy, true, act.closest('tr.prow'));
       }
       if (act.dataset.pact === 'del') {
         if (!confirm('Delete "' + p0.name + '"?\n\nIf anyone has ever registered for it, it will be retired (off sale + hidden) instead — history is never destroyed.')) return;
@@ -810,19 +810,39 @@
       }
       return;
     }
-    if (e.target.closest('.kbwrap')) return;
+    if (e.target.closest('.kbwrap') || e.target.closest('tr.pedit')) return;
     var tr = e.target.closest('tr.prow');
     if (!tr) return;
     var p = prodById(tr.dataset.id);
-    if (p) openProdEditor(p, false);
+    if (p) openProdEditor(p, false, tr);
   });
-  $('prodNew').addEventListener('click', function(){ openProdEditor(null, true); });
+  $('prodNew').addEventListener('click', function(){ openProdEditor(null, true, null); });
 
-  function openProdEditor(p, isNew){
+  function closeProdEditor(){
+    var old = document.querySelector('tr.pedit');
+    if (old) old.remove();
+    $('prodEditor').style.display = 'none';
+    $('prodEditor').innerHTML = '';
+  }
+  // The editor expands INLINE under the clicked row (same pattern as the
+  // roster drill-down) — no jumping to the top of the page. Only "+ New
+  // product" uses the panel above the table, since it has no row to live under.
+  function openProdEditor(p, isNew, anchorTr){
+    closeProdEditor();
     p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true, hidden:false };
     function field(label, html){ return '<label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' + label + '</label>' + html; }
-    $('prodEditor').style.display = 'block';
-    $('prodEditor').innerHTML = '<div class="ovpanel pe" style="max-width:640px">' +
+    var host;
+    if (anchorTr) {
+      var det = document.createElement('tr');
+      det.className = 'pedit roster';
+      det.innerHTML = '<td colspan="' + anchorTr.children.length + '"></td>';
+      anchorTr.parentNode.insertBefore(det, anchorTr.nextSibling);
+      host = det.firstChild;
+    } else {
+      host = $('prodEditor');
+      host.style.display = 'block';
+    }
+    host.innerHTML = '<div class="ovpanel pe" style="max-width:640px">' +
       '<b>' + (isNew ? 'New product' : 'Edit: ' + esc(p.name)) + '</b>' +
       field('Name', '<input id="pe-name" style="width:100%" value="' + esc(p.name) + '">') +
       '<div style="display:flex;gap:10px">' +
@@ -853,7 +873,7 @@
       var now = Math.round(parseFloat($('pe-price').value || '0') * 100);
       $('pe-reason-wrap').style.display = (!isNew && now !== origPrice) ? 'block' : 'none';
     });
-    $('pe-close').addEventListener('click', function(){ $('prodEditor').style.display = 'none'; });
+    $('pe-close').addEventListener('click', closeProdEditor);
     $('pe-save').addEventListener('click', function(){
       var fields = {
         name: $('pe-name').value.trim(),
@@ -872,12 +892,11 @@
       $('pe-status').textContent = 'saving…';
       opsApi(payload).then(function(d){
         if (d.error) { $('pe-status').textContent = d.error; return; }
-        $('prodEditor').style.display = 'none';
+        closeProdEditor();
         loadProducts();
         runLoader('overview');
       }).catch(function(){ $('pe-status').textContent = 'network error'; });
     });
-    $('prodEditor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   // ---- roster row actions: move a camper, cancel + refund a seat ----
