@@ -292,6 +292,7 @@
       <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
         <input type="text" id="prodQ" placeholder="Filter products&hellip;" style="flex:0 0 260px">
         <button id="prodNew" class="btn2">+ New product</button>
+        <button id="prodArchive" class="btn2 ghost" style="display:none"></button>
         <span class="sub" id="prodStatus"></span>
       </div>
       <div id="prodEditor" style="display:none"></div>
@@ -802,25 +803,86 @@
       if (d.error) { $('prodStatus').textContent = 'error: ' + d.error; return; }
       lastLoad.products = Date.now();
       PRODS = d.products || [];
+      if ((d.auto_archived || []).length) {
+        $('prodStatus').textContent = 'Archived ' + d.auto_archived.length + ' finished product(s) automatically.';
+      }
       renderProducts();
     }).catch(function(){ $('prodStatus').textContent = 'network error'; });
   }
+  // Anything whose run has ended but is still on sale — offered as one click
+  // because these dates were read out of the text, not entered in the editor.
+  $('prodArchive').addEventListener('click', function(){
+    var stale = (PRODS || []).filter(function(p){
+      return isPastProd(p) && (p.bookable !== false || !p.hidden);
+    });
+    if (!stale.length) return;
+    if (!confirm('Archive ' + stale.length + ' finished product(s)?\n\n' +
+      stale.slice(0, 8).map(function(p){ return '· ' + p.name + ' (ended ' + endsOnOf(p) + ')'; }).join('\n') +
+      (stale.length > 8 ? '\n· …and ' + (stale.length - 8) + ' more' : '') +
+      '\n\nThey stop selling and hide from the site. Nothing is deleted and you can switch any of them back on.')) return;
+    opsApi({ action: 'product_archive', ids: stale.map(function(p){ return p.id; }) }).then(function(d){
+      if (d.error) { alert(d.error); return; }
+      loadProducts();
+    }).catch(function(){ alert('network error'); });
+  });
   // Products are filed under the same headings as the Overview rings, so the
   // dashboard tells one story: a ring you recognise there opens the same
   // bucket here, with the products inside it editable.
+  // Last day a product runs. ends_on (server-derived from the structured
+  // schedule) is authoritative; otherwise we read the dates out of the
+  // schedule text, which is how every pre-editor import carries its dates.
+  var PROD_MRE = /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?(?:,?\s*(\d{4}))?/gi;
+  function textEndDate(s){
+    if (!s) return null;
+    var best = null, year = null, m;
+    PROD_MRE.lastIndex = 0;
+    var found = [];
+    while ((m = PROD_MRE.exec(s))) found.push(m);
+    found.forEach(function(f){ if (f[4]) year = +f[4]; });
+    found.forEach(function(f){
+      var y = f[4] ? +f[4] : year;
+      if (!y) return;
+      var mo = PE_MONTHS.findIndex(function(x){ return x.toLowerCase() === f[1].slice(0,3).toLowerCase(); });
+      var day = +(f[3] || f[2]);
+      if (mo < 0 || !day) return;
+      var iso = y + '-' + String(mo + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      if (!best || iso > best) best = iso;
+    });
+    return best;
+  }
+  function endsOnOf(p){
+    return p.ends_on || textEndDate((p.schedule_name || '') + ' ' + (p.name || ''));
+  }
+  function isPastProd(p){
+    var e = endsOnOf(p);
+    return !!e && e < new Date().toISOString().slice(0, 10);
+  }
+  // Age bands are variants of one product, not separate products, so the row
+  // label inside a show or a day-camp date is the band — the messy import name
+  // moves to the subtitle.
+  function bandOf(p){
+    var n = p.name || '', a = (p.age_range || '').replace(/\s*yrs?\s*/i, '').trim();
+    if (/tech crew|technical theatre/i.test(n)) return 'Tech Crew';
+    if (/\bteens?\b/i.test(n)) return 'Teens';
+    if (/\bjunior\b|\bjr\.?\b/i.test(n) && /bound junior/i.test(n)) return 'Junior';
+    if (/\bkids\b/i.test(n)) return 'Kids';
+    return a || null;
+  }
   function prodBucket(p){
     var n = p.name || '', cat = p.category || '', id = +p.id || 0;
-    if (cat === 'performance' || /\d(am|pm) Performance/i.test(n))
-      return ['Performance Tickets', 'Box office'];
+    if (isPastProd(p)) return ['Past & archived', endsOnOf(p).slice(0, 4)];
+    // already retired by hand (off sale AND hidden) — old imports whose dates
+    // are too vague to parse live here rather than cluttering the live catalog
+    if (p.hidden && p.bookable === false) return ['Past & archived', 'Retired'];
     if (cat === 'camp' && /trolls|dragon|chocolate factory/i.test(n))
-      return ['Summer 2027', /trolls/i.test(n) ? 'Trolls Jr.'
+      return ['Full Camps', /trolls/i.test(n) ? 'Trolls Jr.'
         : /dragon/i.test(n) ? 'How to Train Your Dragon Jr.' : 'Charlie and the Chocolate Factory Jr.'];
     if (cat === 'camp' && /frozen|mermaid/i.test(n))
-      return ['Fall Shows', /mermaid/i.test(n) ? 'The Little Mermaid' : 'Frozen'];
+      return ['Full Camps', /mermaid/i.test(n) ? 'The Little Mermaid' : 'Frozen'];
     if (cat === 'camp' && /sweeney|hadestown|conservatory/i.test(n))
-      return ['Teen Conservatory', n.split('-')[0].trim() || n];
+      return ['Teen Productions', n.split('-')[0].trim() || n];
     if (cat === 'camp' && /mean girls|dear evan hansen/i.test(n))
-      return ['Other Productions', /mean girls/i.test(n) ? 'Mean Girls' : 'Dear Evan Hansen'];
+      return ['Teen Productions', /mean girls/i.test(n) ? 'Mean Girls' : 'Dear Evan Hansen'];
     if (cat === 'class') return ['Classes',
       /^adult/i.test(n) ? 'Adult Classes'
       : /homeschool/i.test(n) ? 'Homeschool'
@@ -830,24 +892,41 @@
       id >= 970500 ? 'Branding & Media' : id >= 970400 ? 'Acting Coaching'
       : id >= 970300 ? 'Pre-Screen Videos' : id >= 970200 ? 'Audition Prep & Support' : 'College Auditions'];
     if (cat === 'camp' && ((p.price_cents || 0) <= 20000 || /day camp/i.test(n))) {
-      var base = n.split('·')[0].trim();
-      return ['Day Camps', PROD_SERIES[base] > 1 ? base : 'Themed One-Day Camps'];
+      // one day = one camp day, three age bands. Group by the DATE so the
+      // bands sit together instead of scattering by theme name.
+      var d = textEndDate(p.schedule_name || '') || textEndDate(n);
+      if (d) {
+        var pr = d.split('-');
+        return ['Day Camps', PE_MONTHS[+pr[1] - 1] + ' ' + (+pr[2]) + ', ' + pr[0]];
+      }
+      return ['Day Camps', 'Undated'];
     }
     return ['Other', cat || 'uncategorised'];
   }
   var PROD_SERIES = {}, PROD_OPEN = {};
   // same running order as the Overview rings, with the odds and ends after
-  var PROD_ORDER = ['Summer 2027', 'Fall Shows', 'Classes', 'Day Camps', 'Teen Conservatory',
-    'Coaching', 'Other Productions', 'Performance Tickets', 'Other'];
+  var PROD_ORDER = ['Full Camps', 'Classes', 'Day Camps', 'Teen Productions',
+    'Coaching', 'Other', 'Past & archived'];
+  // day-camp sub-groups are dates: sort them chronologically, not A-Z
+  function subSort(a, b){
+    var A = Date.parse(a), B = Date.parse(b);
+    if (!isNaN(A) && !isNaN(B)) return A - B;
+    return a.localeCompare(b);
+  }
 
-  function prodRowHtml(p){
+  function prodRowHtml(p, group){
     var taken = (p.sold || 0) + (p.booked_offline || 0);
     var state = !p.active ? '<span class="tag">inactive</span>'
       : p.hidden ? '<span class="tag">hidden</span>'
       : p.bookable === false ? '<span class="tag bad">not bookable</span>'
       : '<span class="tag ok">on sale</span>';
+    // inside a show or a camp day, the age band is the headline: these rows are
+    // variants of one product, and the import name is the detail
+    var band = (group === 'Full Camps' || group === 'Teen Productions' || group === 'Day Camps') ? bandOf(p) : null;
+    var title = band ? esc(band) : esc(p.name);
+    var subtitle = '#' + p.id + (band ? ' · ' + esc(p.name) : (p.age_range ? ' · ages ' + esc(p.age_range) : ''));
     return '<tr class="prow" data-id="' + p.id + '" style="cursor:pointer">' +
-      '<td><b>' + esc(p.name) + '</b><div class="sub">#' + p.id + (p.age_range ? ' · ages ' + esc(p.age_range) : '') + '</div></td>' +
+      '<td><b>' + title + '</b><div class="sub">' + subtitle + '</div></td>' +
       '<td class="sub">' + esc(p.schedule_name || '—') + '</td>' +
       '<td class="num">' + usd(p.price_cents || 0) + '</td>' +
       '<td class="num">' + taken + ' / ' + (p.capacity || 0) + '</td>' +
@@ -872,6 +951,9 @@
       return !q || (p.name + ' ' + (p.category || '') + ' ' + (p.schedule_name || '') + ' ' + p.id).toLowerCase().indexOf(q) !== -1;
     });
     $('prodStatus').textContent = q ? rows.length + ' of ' + PRODS.length + ' match' : PRODS.length + ' products';
+    var stale = PRODS.filter(function(p){ return isPastProd(p) && (p.bookable !== false || !p.hidden); });
+    $('prodArchive').style.display = stale.length ? 'inline-block' : 'none';
+    $('prodArchive').textContent = 'Archive ' + stale.length + ' finished';
 
     var tree = {};
     rows.forEach(function(p){
@@ -886,7 +968,7 @@
     if (!names.length) { $('prodGroups').innerHTML = '<p class="sub">Nothing matches.</p>'; return; }
 
     $('prodGroups').innerHTML = names.map(function(g){
-      var subs = tree[g], subNames = Object.keys(subs).sort();
+      var subs = tree[g], subNames = Object.keys(subs).sort(subSort);
       var all = [], taken = 0, cap = 0, live = 0;
       subNames.forEach(function(s){ all = all.concat(subs[s]); });
       all.forEach(function(p){
@@ -894,7 +976,7 @@
         if (p.active && !p.hidden && p.bookable !== false) live++;
       });
       // searching opens what it found; otherwise remember what you had open
-      var open = q ? true : !!PROD_OPEN[g];
+      var open = q ? true : (PROD_OPEN[g] != null ? PROD_OPEN[g] : false);
       return '<div class="pgroup" data-g="' + esc(g) + '" style="margin-bottom:10px">' +
         '<div class="pghead" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;' +
           'border:1px solid var(--line);border-radius:10px;background:var(--panel)">' +
@@ -908,8 +990,12 @@
               ? '<div class="sub" style="margin:10px 0 4px;text-transform:uppercase;letter-spacing:.1em;font-size:10px">' + esc(s) + '</div>' : '') +
               '<div class="wrap-scroll"><table>' +
               '<tr><th>product</th><th>schedule</th><th class="num">price</th><th class="num">filled</th><th>state</th><th></th></tr>' +
-              subs[s].slice().sort(function(a, b){ return (a.name || '').localeCompare(b.name || ''); })
-                .map(prodRowHtml).join('') + '</table></div>';
+              subs[s].slice().sort(function(a, b){
+                var A = bandOf(a), B = bandOf(b), rank = { 'Kids':0, 'Junior':1, 'Teens':2, 'Tech Crew':3 };
+                if (A && B && rank[A] != null && rank[B] != null) return rank[A] - rank[B];
+                if (A && B) return (parseInt(A, 10) || 99) - (parseInt(B, 10) || 99);
+                return (a.name || '').localeCompare(b.name || '');
+              }).map(function(p){ return prodRowHtml(p, g); }).join('') + '</table></div>';
           }).join('') +
         '</div></div>';
     }).join('');
@@ -975,6 +1061,19 @@
       '<input id="pe-loc-other" style="width:100%;margin-top:6px;display:' + (known ? 'none' : 'block') + '"' +
       ' value="' + esc(!known ? cur : '') + '" placeholder="Where?">';
   }
+  // The bands we actually run. A band is a variant of a product, so this is a
+  // pick list — typing "5-9 yrs" vs "5 – 9 yrs" is how the same camp day ended
+  // up looking like three unrelated products.
+  var PE_BANDS = ['5 – 9 yrs', '9 – 12 yrs', '12 – 15 yrs', '12 – 18 yrs', 'Adult', 'All ages'];
+  function ageSelectHtml(cur){
+    var known = !cur || PE_BANDS.indexOf(cur) !== -1;
+    return '<select id="pe-age" style="width:100%">' +
+      '<option value=""' + (!cur ? ' selected' : '') + '>—</option>' +
+      PE_BANDS.map(function(b){ return '<option' + (cur === b ? ' selected' : '') + '>' + esc(b) + '</option>'; }).join('') +
+      '<option value="__other"' + (!known ? ' selected' : '') + '>Other…</option></select>' +
+      '<input id="pe-age-other" style="width:100%;margin-top:6px;display:' + (known ? 'none' : 'block') + '"' +
+      ' value="' + esc(!known ? cur : '') + '" placeholder="Custom age range">';
+  }
   // schedule_meta -> the display string families see. Vague free text is out;
   // each category gets real date/time fields and this composes the line.
   var PE_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1027,7 +1126,7 @@
           ['class','camp','coaching','performance'].map(function(c){
             return '<option' + (p.category === c ? ' selected' : '') + '>' + c + '</option>';
           }).join('') + '</select>') + '</div>' +
-        '<div style="flex:1">' + field('Ages', '<input id="pe-age" style="width:100%" value="' + esc(p.age_range || '') + '">') + '</div>' +
+        '<div style="flex:1">' + field('Age band', ageSelectHtml(p.age_range)) + '</div>' +
       '</div>' +
       '<div id="pe-schedzone"></div>' +
       '<div class="sub" style="margin:4px 0 0">Families will see: <b id="pe-prev" style="color:#fff"></b></div>' +
@@ -1125,6 +1224,9 @@
     $('pe-loc').addEventListener('change', function(){
       $('pe-loc-other').style.display = $('pe-loc').value === '__other' ? 'block' : 'none';
     });
+    $('pe-age').addEventListener('change', function(){
+      $('pe-age-other').style.display = $('pe-age').value === '__other' ? 'block' : 'none';
+    });
     renderSched();
     var origPrice = p.price_cents || 0;
     $('pe-price').addEventListener('input', function(){
@@ -1138,7 +1240,7 @@
       var fields = {
         name: $('pe-name').value.trim(),
         category: cat,
-        age_range: $('pe-age').value.trim() || null,
+        age_range: ($('pe-age').value === '__other' ? $('pe-age-other').value.trim() : $('pe-age').value) || null,
         schedule_meta: meta,
         schedule_name: composeSchedule(cat, meta) || p.schedule_name || null,
         location: loc || null,

@@ -55,6 +55,22 @@ async function audit(action, actor, payload) {
 // deliberately no delete; sold history hangs off these ids forever.
 const EDITABLE = ["name", "schedule_name", "schedule_meta", "age_range", "price_cents", "capacity", "bookable", "hidden", "category", "location"];
 
+// The last day a product is "live": final performance if there is one, else the
+// last session day, else the class end date. Derived here (not trusted from the
+// client) so ends_on always agrees with the structured schedule, and only ever
+// from structured data — text-parsed guesses stay advisory in the UI.
+function deriveEndsOn(meta) {
+  if (!meta || typeof meta !== "object") return null;
+  const pool = []
+    .concat(Array.isArray(meta.perf) ? meta.perf : [])
+    .concat(Array.isArray(meta.days) ? meta.days : [])
+    .concat(meta.to ? [meta.to] : [])
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+  if (!pool.length) return null;
+  return pool.sort()[pool.length - 1];
+}
+const today = () => new Date().toISOString().slice(0, 10);
+
 export default async (req) => {
   if (req.method !== "POST") return new Response("method", { status: 405 });
   const auth = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
@@ -67,8 +83,35 @@ export default async (req) => {
 
   try {
     if (action === "products_list") {
-      const rows = await db("activities?select=id,name,category,schedule_name,schedule_meta,age_range,price_cents,capacity,sold,booked_offline,bookable,hidden,active,location&order=name&limit=1000");
-      return Response.json({ products: rows || [] });
+      // Anything whose structured schedule has finished stops selling itself.
+      // Only ends_on (server-derived) can trigger this; nothing is deleted, and
+      // an archived product is one checkbox away from coming back.
+      const stale = await db(`activities?select=id,name&ends_on=lt.${today()}&bookable=is.true&limit=200`);
+      if (stale.length) {
+        await db(`activities?id=in.(${stale.map((s) => s.id).join(",")})`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookable: false, hidden: true }),
+        });
+        await audit("auto_archive_past", actor, { ids: stale.map((s) => s.id), names: stale.map((s) => s.name) });
+      }
+      const rows = await db("activities?select=id,name,category,schedule_name,schedule_meta,ends_on,age_range,price_cents,capacity,sold,booked_offline,bookable,hidden,active,location&order=name&limit=1000");
+      return Response.json({ products: rows || [], auto_archived: stale.map((s) => s.name) });
+    }
+
+    // Manual archive: for products whose end date we only know from their text
+    // (imports that predate the structured editor), so nothing auto-fires on a
+    // parsed guess — the dashboard proposes, an admin confirms.
+    if (action === "product_archive") {
+      const ids = (Array.isArray(body.ids) ? body.ids : []).map(Number).filter(Boolean);
+      if (!ids.length) return Response.json({ error: "no ids" }, { status: 400 });
+      await db(`activities?id=in.(${ids.join(",")})`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookable: false, hidden: true }),
+      });
+      await audit("archive_past", actor, { ids });
+      return Response.json({ ok: true, archived: ids.length });
     }
 
     if (action === "product_update") {
