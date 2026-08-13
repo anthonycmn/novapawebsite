@@ -75,13 +75,104 @@
   .kb { border:1px solid var(--line); background:transparent; color:var(--dim); border-radius:8px;
     cursor:pointer; padding:0 8px; font-size:14px; line-height:20px; }
   .kb:hover { color:#fff; border-color:#E8B84B; }
-  .kbmenu { display:none; position:absolute; right:0; top:24px; z-index:50; min-width:210px;
+  /* fixed, not absolute: tables carry overflow:hidden for their rounded corners
+     and .wrap-scroll adds overflow-x, either of which clips an absolute menu */
+  .kbmenu { display:none; position:fixed; z-index:70; min-width:210px;
     background:#0d1b30; border:1px solid var(--line); border-radius:10px; padding:4px;
     box-shadow:0 10px 30px rgba(0,0,0,0.5); }
   .kbmenu.on { display:block; }
   .kbmenu button { display:block; width:100%; text-align:left; border:0; background:transparent;
     color:#fff; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:12.5px; }
   .kbmenu button:hover { background:rgba(232,184,75,0.12); }
+
+  /* products tab + editor: same dark chrome as everything else, no browser-
+     default white inputs */
+  .pe input:not([type=checkbox]), .pe select,
+  #s-products > div > input, .ch-note, #s-balances input {
+    padding:8px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-size:13px; font-family:inherit; }
+  .pe input:focus, .pe select:focus, #s-products input:focus, .ch-note:focus { outline:none; border-color:#E8B84B; }
+  /* chase notes run to a paragraph — they need to wrap and breathe, not sit
+     in a one-line box that hides everything past the first few words */
+  .ch-note { width:100%; min-height:62px; font-size:12.5px; line-height:1.5; resize:vertical;
+    font-family:inherit; overflow:hidden; }
+  .ch-note::placeholder { color:var(--dim); opacity:.7; }
+  .ch-terms { font-size:11.5px; line-height:1.45; color:var(--dim); max-width:340px;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
+  .ch-terms.open { -webkit-line-clamp:unset; }
+  #chaseList td { vertical-align:top; }
+
+  /* camper panel: registrations, family and editable details side by side */
+  .camp-panel { display:grid; grid-template-columns:minmax(300px,1.4fr) minmax(160px,.6fr) minmax(280px,1fr);
+    gap:16px; padding:8px 0 4px; align-items:start; }
+  @media (max-width:1100px) { .camp-panel { grid-template-columns:1fr; } }
+  .cp-block { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:rgba(8,17,31,0.35); color:var(--ink); }
+  .cp-block > b { font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--dim); }
+  .cp-block table { background:transparent; border:0; }
+  .cp-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pe input[type=checkbox] { accent-color:#E8B84B; width:auto; }
+  .pe label { user-select:none; }
+  .btn2 { border:1px solid #E8B84B; background:rgba(232,184,75,0.12); color:#E8B84B;
+    border-radius:8px; padding:7px 16px; cursor:pointer; font-weight:600; font-size:12.5px; font-family:inherit; }
+  .btn2:hover { background:rgba(232,184,75,0.22); }
+  .btn2.ghost { border-color:var(--line); background:transparent; color:var(--dim); }
+  .btn2.ghost:hover { color:#fff; }
+
+  /* grouped-tab pills: one nav entry, related views switch inside the page */
+  #subnav { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 18px; }
+  #subnav button { border:1px solid var(--line); background:transparent; color:var(--dim);
+    border-radius:999px; padding:5px 14px; font-size:12px; cursor:pointer; font-family:inherit; }
+  #subnav button:hover { color:#fff; }
+  #subnav button.on { color:#E8B84B; border-color:#E8B84B; background:rgba(232,184,75,0.08); }
+
+  /* product cards: the show (or camp day) is the product, its age bands are
+     variants you switch on and off underneath it */
+  .pcard { border:1px solid var(--line); border-radius:12px; background:var(--panel); margin:8px 0; overflow:hidden; }
+  .pchead { display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer; }
+  .pchead:hover { background:rgba(232,184,75,0.04); }
+  .pchead .cr { color:var(--gold); font-size:11px; width:10px; }
+  .pchead .nm { font-weight:700; font-size:14px; }
+  .pchead .meta { margin-left:auto; font-size:11.5px; color:var(--dim); text-align:right; white-space:nowrap; }
+  .pcbands { border-top:1px solid var(--line); padding:4px 10px 10px; }
+  .bandrow { display:flex; align-items:center; gap:12px; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .bandrow:last-of-type { border-bottom:0; }
+  .bandrow .bn { font-weight:600; font-size:13px; min-width:110px; }
+  .bandrow .bs { color:var(--dim); font-size:11.5px; flex:1; min-width:120px; }
+  .bandrow.off .bn, .bandrow.off .bs { opacity:.45; }
+  /* the switch is "are we selling this" (bookable). Turning it off asks first
+     when people are already registered — one stray click once pulled a teen
+     production with 19 kids in it. */
+  .btog { position:relative; width:38px; height:21px; border-radius:999px; border:1px solid var(--line);
+    background:rgba(255,255,255,0.06); flex:0 0 auto; transition:background .15s; cursor:pointer; padding:0; }
+  .btog i { position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%;
+    background:var(--dim); transition:left .15s, background .15s; }
+  .btog.on { background:rgba(232,184,75,0.25); border-color:#E8B84B; }
+  .btog.on i { left:19px; background:#E8B84B; }
+  .bandadd { margin:8px 6px 2px; }
+  .bandnew { border:1px dashed var(--line); border-radius:10px; padding:10px; margin:8px 6px 2px;
+    display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+  .bandnew label { display:block; font-size:10.5px; color:var(--dim); margin-bottom:3px; }
+
+  /* move-camper popover: search-first, no giant list */
+  .mvpop { position:fixed; z-index:80; width:320px; background:#0d1b30; border:1px solid var(--line);
+    border-radius:12px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,0.55); }
+  .mvpop .mv-head { font-size:13px; margin-bottom:8px; }
+  .mvpop .mv-x { float:right; border:0; background:transparent; color:var(--dim); cursor:pointer; font-size:16px; line-height:1; }
+  .mvpop .mv-x:hover { color:#fff; }
+  .mvpop input { width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-size:13px; }
+  .mv-chips { display:flex; gap:5px; flex-wrap:wrap; margin:8px 0 0; }
+  .mv-chips button { border:1px solid var(--line); background:transparent; color:var(--dim);
+    border-radius:999px; padding:3px 10px; font-size:11px; cursor:pointer; }
+  .mv-chips button:hover, .mv-chips button.on { color:#E8B84B; border-color:#E8B84B; }
+  .mv-list { max-height:250px; overflow:auto; margin-top:8px; }
+  .mv-list .gt { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); padding:6px 4px 2px; }
+  .mv-list a { display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:7px 8px; border-radius:8px; color:#fff; font-size:12.5px; cursor:pointer; }
+  .mv-list a:hover { background:rgba(232,184,75,0.1); }
+  .mv-list .fill { font-size:11px; color:var(--dim); white-space:nowrap; }
+  .mv-list .fill.full { color:#E8654B; }
+  .mv-hint { font-size:11.5px; color:var(--dim); padding:10px 4px 2px; }
 
   .main { flex:1; padding:26px 30px 60px; min-width:0; }
   .sec { display:none; }
@@ -110,6 +201,10 @@
   .bar i { display:block; height:100%; background:var(--gold); }
   .bar i.full { background:var(--bad); }
   .wrap-scroll { overflow-x:auto; }
+  /* the table's own overflow:hidden (for the rounded corners) clips anything a
+     squeezed column can't fit, so wide tables must scroll rather than squash */
+  .wrap-scroll table { min-width:760px; }
+  #tblOrders { min-width:1020px; }
 
   /* calendar */
   .cal-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
@@ -174,15 +269,10 @@
     <div class="gres" id="gRes"></div>
     <div class="nav" id="nav">
       <a data-s="overview" class="on">Overview</a>
-      <a data-s="orders">Orders</a>
-      <a data-s="balances">Balances</a>
-      <a data-s="inventory">Programs</a>
-      <a data-s="campers">Campers</a>
-      <a data-s="accounting">Accounting</a>
-      <a data-s="insurance">Insurance</a>
-      <a data-s="cashflow">Cash Flow</a>
-      <a data-s="credits">Credits</a>
-      <a data-s="referrals">Referrals</a>
+      <a data-s="products">Products</a>
+      <a data-g="families">Families</a>
+      <a data-g="money">Money</a>
+      <a data-g="rewards">Credits &amp; Referrals</a>
       <a data-s="starpages">Star Pages</a>
       <a data-s="hiring">Hiring</a>
     </div>
@@ -190,13 +280,14 @@
   </div>
 
   <div class="main">
+    <div id="subnav" style="display:none"></div>
     <section class="sec on" id="s-overview">
+      <h2>Revenue (Stripe)</h2>
+      <div class="stats" id="stRevenue" style="margin-bottom:14px"></div>
       <h2>Sellout Progress</h2>
       <p class="sub" style="margin:-6px 0 10px">Click a ring to drill down — program &rsaquo; show &rsaquo; age group &rsaquo; live roster.</p>
       <div id="stFill" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px"></div>
       <div id="ovSub"><div></div></div>
-      <h2>Revenue (Stripe)</h2>
-      <div class="stats" id="stRevenue"></div>
     </section>
 
     <section class="sec" id="s-orders">
@@ -205,8 +296,12 @@
     </section>
 
     <section class="sec" id="s-balances">
-      <div class="stats" id="stBal" style="margin-bottom:14px"></div>
-      <div class="wrap-scroll"><table id="tblBal"></table></div>
+      <h2>Regpack chase</h2>
+      <p class="sub" style="margin:-6px 0 12px">Families still moving off Regpack billing onto ours. This page is
+      temporary by design &mdash; it retires when the last family converts. Live web money lives in Cash flow
+      and Accounting.</p>
+      <div class="stats" id="stChase" style="margin-bottom:14px"></div>
+      <div id="chaseList"></div>
     </section>
 
     <section class="sec" id="s-inventory">
@@ -238,11 +333,27 @@
       </div>
     </section>
 
+    <section class="sec" id="s-products">
+      <h2>Products — everything we sell</h2>
+      <p class="sub" style="margin:-6px 0 10px">Grouped the same way as the Overview rings. Click a category to
+      open it, then a product to edit — or use its &#8943; menu to duplicate or remove. This database is the
+      source of truth: changes flow to the website checkout and CJ's staff portal. Price changes need a reason
+      and are logged, and anything with registrations retires instead of deleting.</p>
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
+        <input type="text" id="prodQ" placeholder="Filter products&hellip;" style="flex:0 0 260px">
+        <button id="prodNew" class="btn2">+ New product</button>
+        <button id="prodArchive" class="btn2 ghost" style="display:none"></button>
+        <span class="sub" id="prodStatus"></span>
+      </div>
+      <div id="prodEditor" style="display:none"></div>
+      <div id="prodGroups"></div>
+    </section>
+
     <section class="sec" id="s-campers">
       <h2>Campers</h2>
       <div class="stats" id="stCampers" style="margin-bottom:14px"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-        <input type="text" id="campQ" placeholder="Search name or email\u2026" style="flex:1;min-width:220px;padding:10px 14px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:14px">
+        <input type="text" id="campQ" placeholder="Search name or email&hellip;" style="flex:1;min-width:220px;padding:10px 14px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.6);color:#fff;font-family:inherit;font-size:14px">
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="campMissing" style="accent-color:var(--gold,#C8892A)"> missing info only</label>
         <button id="campCopy" style="padding:10px 14px;border:0;border-radius:10px;background:var(--gold,#C8892A);color:#1a1206;font-weight:700;cursor:pointer;font-family:inherit;font-size:13px">Copy chase-list emails</button>
       </div>
@@ -329,6 +440,9 @@
       family's share link. Both families are owed <b>2 tickets to any show</b>. Families see and redeem
       their own tickets from My NOVAPA at the box office — the &#8943; menu here is the manual override
       (mark redeemed, or undo a mistake).</p>
+      <p style="margin:0 0 12px"><button id="refAdd">+ Add referral manually</button>
+      <span class="sub">For when a referral didn't record itself: $0 orders and first-month-free class
+      carts never earn automatically, and some families forget to use the link.</span></p>
       <div class="wrap-scroll"><table id="tblRefs"></table></div>
     </section>
 
@@ -464,7 +578,8 @@
       rload('overview', 'admin_overview_groups', function(d){ renderFill(d || []); });
     },
     orders:    function(){ rload('orders', 'admin_orders', function(d){ ORDERS = d || []; renderOrders(ORDERS); }); },
-    balances:  function(){ rload('balances', 'admin_balances', function(d){ renderBalances(d || []); }); },
+    products:  function(){ loadProducts(); },
+    balances:  function(){ loadChase(); },
     inventory: loadInventory,
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
     cashflow:  function(){ loadCashflow(); },
@@ -482,17 +597,49 @@
     var fn = LOADERS[tab];
     if (fn) try { fn(); } catch (e) { console.error(tab, e); loadErr(tab, e.message); }
   }
+  // Related views live behind ONE nav entry and switch via pills inside the
+  // page (13 sidebar tabs collapsed to 7, Aug 12). Every old tab survives as
+  // a pill; setTab(member) is the one way to change views, so search jumps
+  // and drill-throughs land on the right pill too.
+  var GROUPS = {
+    families: [['campers', 'Campers'], ['orders', 'Orders']],
+    money: [['cashflow', 'Cash flow'], ['accounting', 'Accounting'], ['insurance', 'Insurance'], ['balances', 'Regpack chase']],
+    rewards: [['credits', 'Credits'], ['referrals', 'Referrals']]
+  };
+  var GROUP_OF = {}, GROUP_LAST = {};
+  Object.keys(GROUPS).forEach(function(g){
+    GROUPS[g].forEach(function(t){ GROUP_OF[t[0]] = g; });
+    GROUP_LAST[g] = GROUPS[g][0][0];
+  });
   function activeTab(){
-    var a = document.querySelector('#nav a.on');
-    return a ? a.dataset.s : 'overview';
+    var s = document.querySelector('.sec.on');
+    return s ? s.id.slice(2) : 'overview';
   }
-
+  function setTab(member){
+    var g = GROUP_OF[member];
+    document.querySelectorAll('#nav a').forEach(function(a){
+      a.classList.toggle('on', g ? a.dataset.g === g : a.dataset.s === member);
+    });
+    document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
+    $('s-' + member).classList.add('on');
+    if (g) {
+      GROUP_LAST[g] = member;
+      $('subnav').style.display = 'flex';
+      $('subnav').innerHTML = GROUPS[g].map(function(t){
+        return '<button data-t="' + t[0] + '" class="' + (t[0] === member ? 'on' : '') + '">' + t[1] + '</button>';
+      }).join('');
+    } else {
+      $('subnav').style.display = 'none';
+    }
+    runLoader(member);
+  }
+  $('subnav').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-t]');
+    if (b) setTab(b.dataset.t);
+  });
   document.querySelectorAll('#nav a').forEach(function(a){
     a.addEventListener('click', function(){
-      document.querySelectorAll('#nav a').forEach(function(x){ x.classList.remove('on'); });
-      document.querySelectorAll('.sec').forEach(function(x){ x.classList.remove('on'); });
-      a.classList.add('on'); $('s-' + a.dataset.s).classList.add('on');
-      runLoader(a.dataset.s);
+      setTab(a.dataset.g ? GROUP_LAST[a.dataset.g] : a.dataset.s);
     });
   });
 
@@ -512,7 +659,7 @@
   function boot(){
     // preload EVERY tab, staggered so the heavy calls don't race one another —
     // no tab should ever greet you with a Load button or an empty table
-    ['overview','orders','balances','inventory','campers','hiring','referrals',
+    ['overview','orders','balances','inventory','products','campers','hiring','referrals',
      'credits','cashflow','insurance','accounting','starpages']
       .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
@@ -558,7 +705,7 @@
     });
     if (!rows.length) { $('tblCampers').innerHTML = '<tr><td class="empty">no matches</td></tr>'; return; }
     $('tblCampers').innerHTML =
-      '<tr><th>camper</th><th>family</th><th>birthday</th><th>missing</th><th>src</th></tr>' +
+      '<tr><th>camper</th><th>family</th><th>birthday</th><th>missing</th><th>src</th><th></th></tr>' +
       rows.slice(0, 400).map(function(c, i){
         var m = missingOf(c);
         var p = c.profile || {};
@@ -573,35 +720,124 @@
          .map(function(x){ return '<b>' + esc(x[0]) + ':</b> ' + esc(String(x[1]).trim()); }).join(' \u00b7 ');
         var emails = c.emails || [c.email];
         var srcs = c.sources || [c.source || 'web'];
-        return '<tr class="camp-row" data-i="' + i + '" style="cursor:pointer">' +
+        return '<tr class="camp-row" data-i="' + i + '" data-name="' + esc(c.name) + '" style="cursor:pointer">' +
           '<td>' + esc(c.name) + '</td>' +
           '<td>' + emails.map(esc).join('<br>') + '</td>' +
           '<td>' + (c.bday || '\u2014') + '</td>' +
           '<td>' + (m.length ? '<span class="tag bad">' + m.length + ': ' + esc(m.join(', ')) + '</span>' : '<span class="tag ok">complete</span>') + '</td>' +
-          '<td>' + srcs.map(function(s){ return '<span class="tag">' + esc(s) + '</span>'; }).join(' ') + '</td></tr>' +
-          '<tr class="camp-det" style="display:none"><td colspan="5" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' + (det || 'no details on file') + '</td></tr>';
+          '<td>' + srcs.map(function(s){ return '<span class="tag">' + esc(s) + '</span>'; }).join(' ') + '</td>' +
+          '<td>' + kebabHtml([
+            { label: 'Open full profile', cls: 'camp-open', attrs: ' data-name="' + esc(c.name) + '"' },
+            { label: 'Edit details&hellip;', cls: 'camp-edit', attrs: ' data-name="' + esc(c.name) + '"' }
+          ]) + '</td></tr>' +
+          '<tr class="camp-det" style="display:none"><td colspan="6" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' +
+            '<div class="camp-quick">' + (det || 'no details on file') + '</div>' +
+            '<div class="camp-full"></div></td></tr>';
       }).join('') + (rows.length > 400 ? '<tr><td class="empty">+' + (rows.length - 400) + ' more \u2014 refine search</td></tr>' : '');
     $('tblCampers').querySelectorAll('.camp-row').forEach(function(tr){
-      tr.addEventListener('click', function(){
-        var det = tr.nextElementSibling;
-        if (!det) return;
-        det.style.display = det.style.display === 'none' ? '' : 'none';
-        // legacy enrollment history (Sawyer per-kid import) — fetched once per row
-        if (det.style.display !== 'none' && !det.dataset.hist) {
-          det.dataset.hist = '1';
-          var c = rows[+tr.dataset.i];
-          sb.rpc('admin_camper_history', { p_name: c.name }).then(function(r){
-            var h = r.data || [];
-            if (!h.length) return;
-            var cell = det.querySelector('td');
-            cell.innerHTML += '<br><b>History (' + h.length + '):</b> ' + h.map(function(e){
-              return esc(e.activity) + (e.paid_cents ? ' ($' + (e.paid_cents / 100).toFixed(0) + ')' : '');
-            }).join(' · ');
-          });
-        }
+      tr.addEventListener('click', function(e){
+        if (e.target.closest('.kbwrap')) return;
+        toggleCamper(tr, false);
       });
     });
   }
+  // Clicking a camper opens the full picture: what they are registered for
+  // (with the same move / cancel actions the rosters have), their family, and
+  // their details — editable in place. This is where a "can you switch her
+  // class" or "her birthday is wrong" request gets handled end to end.
+  function toggleCamper(tr, forceOpen, startEditing){
+    var det = tr.nextElementSibling;
+    if (!det) return;
+    var hidden = det.style.display === 'none';
+    if (!hidden && forceOpen) { if (startEditing) campEdit(det); return; }
+    det.style.display = hidden ? '' : 'none';
+    if (det.style.display === 'none') return;
+    if (det.dataset.loaded) { if (startEditing) campEdit(det); return; }
+    det.dataset.loaded = '1';
+    var full = det.querySelector('.camp-full');
+    full.innerHTML = '<div class="sub" style="padding:6px 0">loading…</div>';
+    opsApi({ action: 'camper_detail', name: tr.dataset.name }).then(function(d){
+      if (d.error) { full.innerHTML = '<div class="sub">' + esc(d.error) + '</div>'; return; }
+      det.__data = d;
+      renderCamperPanel(full, d, tr.dataset.name);
+      if (startEditing) campEdit(det);
+    }).catch(function(){ full.innerHTML = '<div class="sub">network error</div>'; });
+  }
+  function renderCamperPanel(host, d, name){
+    var regs = d.registrations || [], leg = d.legacy || [], fams = d.families || [];
+    var c = (d.campers || [])[0] || {};
+    var p = c.profile || {};
+    function fld(label, key, val, type){
+      return '<div><label style="display:block;font-size:10.5px;color:var(--dim);margin-bottom:3px">' + label + '</label>' +
+        '<input class="cf" data-k="' + key + '" type="' + (type || 'text') + '" value="' + esc(val || '') + '"></div>';
+    }
+    host.innerHTML =
+      '<div class="camp-panel">' +
+        '<div class="cp-block"><b>Registered for</b>' +
+          (regs.length ? '<table style="margin-top:6px">' +
+            '<tr><th>program</th><th class="num">paid</th><th>order</th><th></th></tr>' +
+            regs.map(function(r){
+              return '<tr><td><b>' + esc(r.what) + '</b>' +
+                (r.schedule ? '<div class="sub">' + esc(r.schedule) + '</div>' : '') + '</td>' +
+                '<td class="num">' + (r.paid_cents != null ? usd(r.paid_cents) : '—') + '</td>' +
+                '<td class="sub">' + esc(r.plan || '') + (r.ordered_at ? '<div>' + dt(r.ordered_at) + '</div>' : '') + '</td>' +
+                '<td>' + rosterActionBtns(r.item_id, name) + '</td></tr>';
+            }).join('') + '</table>'
+            : '<div class="sub" style="padding:4px 0">nothing on our platform</div>') +
+          (leg.length ? '<div class="sub" style="margin-top:8px"><b>Before the platform:</b> ' +
+            leg.map(function(l){ return esc(l.activity_text || '') + (l.paid_cents ? ' (' + usd(l.paid_cents) + ')' : ''); }).join(' · ') + '</div>' : '') +
+        '</div>' +
+        '<div class="cp-block"><b>Family</b>' +
+          (fams.length ? fams.map(function(f){
+            return '<div style="margin-top:4px">' + esc(f.parent_name || '') +
+              '<div class="sub">' + esc(f.email) + (f.cc_email ? ' · also ' + esc(f.cc_email) : '') + '</div></div>';
+          }).join('') : '<div class="sub">no family record</div>') +
+        '</div>' +
+        '<div class="cp-block cp-edit pe"><b>Details</b>' +
+          '<div class="cp-grid" style="margin-top:6px">' +
+            fld('Name', 'name', c.name) +
+            fld('Birthday', 'birthdate', c.birthdate, 'date') +
+            fld('T-shirt', 'p.tshirt', p.tshirt) +
+            fld('Pronouns', 'p.pronouns', p.pronouns) +
+            fld('Allergies', 'allergies', c.allergies) +
+            fld('Emergency contact', 'emergency_contact', c.emergency_contact) +
+            fld('Medications', 'p.medications', p.medications) +
+            fld('Doctor', 'p.doctor', p.doctor) +
+          '</div>' +
+          '<div style="margin-top:10px;display:flex;gap:8px;align-items:center">' +
+            '<button class="btn2 cp-save" data-id="' + esc(c.id || '') + '">Save details</button>' +
+            '<span class="sub cp-status"></span></div>' +
+        '</div></div>';
+    var saveBtn = host.querySelector('.cp-save');
+    if (saveBtn) saveBtn.addEventListener('click', function(){
+      if (!saveBtn.dataset.id) { host.querySelector('.cp-status').textContent = 'no camper record to edit'; return; }
+      var fields = { profile: {} };
+      host.querySelectorAll('.cf').forEach(function(inp){
+        var k = inp.dataset.k;
+        if (k.indexOf('p.') === 0) fields.profile[k.slice(2)] = inp.value.trim();
+        else fields[k] = inp.value.trim();
+      });
+      var st = host.querySelector('.cp-status');
+      st.textContent = 'saving…';
+      opsApi({ action: 'camper_update', id: saveBtn.dataset.id, fields: fields }).then(function(r){
+        if (r.error) { st.textContent = r.error; return; }
+        st.textContent = 'saved';
+        runLoader('campers');
+        setTimeout(function(){ st.textContent = ''; }, 1500);
+      }).catch(function(){ st.textContent = 'network error'; });
+    });
+  }
+  function campEdit(det){
+    var f = det.querySelector('.cp-edit input');
+    if (f) { f.focus(); f.select(); }
+  }
+  $('tblCampers').addEventListener('click', function(e){
+    var open = e.target.closest('.camp-open'), edit = e.target.closest('.camp-edit');
+    var b = open || edit;
+    if (!b) return;
+    var tr = b.closest('tr');
+    toggleCamper(tr, true, !!edit);
+  });
   (function(){
     var t=null;
     $('campQ').addEventListener('input', function(){ clearTimeout(t); t=setTimeout(renderCampers, 150); });
@@ -670,9 +906,813 @@
     }).catch(function(e){ $('accStatus').textContent = 'network error'; });
   }
   $('accYear').addEventListener('change', function(){ ACC = null; loadAccounting(); });
-  // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
-  document.addEventListener('click', function(){
+  // ---- Phase C write ops: everything goes through /api/reg-admin-ops, which
+  // re-proves the caller is an admin and stamps every change into admin_actions.
+  // ⋯ menus are position:fixed so no table's overflow can clip them, which
+  // means the coordinates have to be set when the menu opens.
+  // One delegated handler for every ⋯ menu on the page, including rows that
+  // get inserted later (rosters, order items, camper panels) — nothing needs
+  // re-wiring after a re-render. Menus are fixed-position, so they are placed
+  // at open time and no table's overflow can clip them.
+  document.addEventListener('click', function(e){
+    var k = e.target.closest('.kb');
+    var menu = k && k.nextElementSibling;
+    var wasOpen = menu && menu.classList.contains('on');
     document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+    if (!k || wasOpen) return;
+    e.stopPropagation();
+    var r = k.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(window.innerWidth - 236, r.right - 220)) + 'px';
+    menu.style.top = (window.innerHeight - r.bottom < 140 ? Math.max(8, r.top - 116) : r.bottom + 4) + 'px';
+    menu.classList.add('on');
+  }, true);
+  function opsApi(payload){
+    return sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-admin-ops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+    }).then(function(r){ return r.json(); });
+  }
+
+  // ---- Products: the catalog, editable ----
+  var PRODS = null;
+  function loadProducts(){
+    opsApi({ action: 'products_list' }).then(function(d){
+      if (d.error) { $('prodStatus').textContent = 'error: ' + d.error; return; }
+      lastLoad.products = Date.now();
+      PRODS = d.products || [];
+      if ((d.auto_archived || []).length) {
+        $('prodStatus').textContent = 'Archived ' + d.auto_archived.length + ' finished product(s) automatically.';
+      }
+      renderProducts();
+    }).catch(function(){ $('prodStatus').textContent = 'network error'; });
+  }
+  // Anything whose run has ended but is still on sale — offered as one click
+  // because these dates were read out of the text, not entered in the editor.
+  $('prodArchive').addEventListener('click', function(){
+    var stale = (PRODS || []).filter(function(p){
+      return isPastProd(p) && (p.bookable !== false || !p.hidden);
+    });
+    if (!stale.length) return;
+    if (!confirm('Archive ' + stale.length + ' finished product(s)?\n\n' +
+      stale.slice(0, 8).map(function(p){ return '· ' + p.name + ' (ended ' + endsOnOf(p) + ')'; }).join('\n') +
+      (stale.length > 8 ? '\n· …and ' + (stale.length - 8) + ' more' : '') +
+      '\n\nThey stop selling and hide from the site. Nothing is deleted and you can switch any of them back on.')) return;
+    opsApi({ action: 'product_archive', ids: stale.map(function(p){ return p.id; }) }).then(function(d){
+      if (d.error) { alert(d.error); return; }
+      loadProducts();
+    }).catch(function(){ alert('network error'); });
+  });
+  // Products are filed under the same headings as the Overview rings, so the
+  // dashboard tells one story: a ring you recognise there opens the same
+  // bucket here, with the products inside it editable.
+  // Last day a product runs. ends_on (server-derived from the structured
+  // schedule) is authoritative; otherwise we read the dates out of the
+  // schedule text, which is how every pre-editor import carries its dates.
+  var PROD_MRE = /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?(?:,?\s*(\d{4}))?/gi;
+  function textEndDate(s){
+    if (!s) return null;
+    var best = null, year = null, m;
+    PROD_MRE.lastIndex = 0;
+    var found = [];
+    while ((m = PROD_MRE.exec(s))) found.push(m);
+    found.forEach(function(f){ if (f[4]) year = +f[4]; });
+    found.forEach(function(f){
+      var y = f[4] ? +f[4] : year;
+      if (!y) return;
+      var mo = PE_MONTHS.findIndex(function(x){ return x.toLowerCase() === f[1].slice(0,3).toLowerCase(); });
+      var day = +(f[3] || f[2]);
+      if (mo < 0 || !day) return;
+      var iso = y + '-' + String(mo + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      if (!best || iso > best) best = iso;
+    });
+    return best;
+  }
+  function endsOnOf(p){
+    return p.ends_on || textEndDate((p.schedule_name || '') + ' ' + (p.name || ''));
+  }
+  function isPastProd(p){
+    var e = endsOnOf(p);
+    return !!e && e < new Date().toISOString().slice(0, 10);
+  }
+  // Age bands are variants of one product, not separate products, so the row
+  // label inside a show or a day-camp date is the band — the messy import name
+  // moves to the subtitle.
+  function bandOf(p){
+    var n = p.name || '', a = (p.age_range || '').replace(/\s*yrs?\s*/i, '').trim();
+    if (/tech crew|technical theatre/i.test(n)) return 'Tech Crew';
+    if (/\bteens?\b/i.test(n)) return 'Teens';
+    if (/\bjunior\b|\bjr\.?\b/i.test(n) && /bound junior/i.test(n)) return 'Junior';
+    if (/\bkids\b/i.test(n)) return 'Kids';
+    return a || null;
+  }
+  function prodBucket(p){
+    var n = p.name || '', cat = p.category || '', id = +p.id || 0;
+    if (isPastProd(p)) return ['Past & archived', endsOnOf(p).slice(0, 4)];
+    // already retired by hand (off sale AND hidden) — old imports whose dates
+    // are too vague to parse live here rather than cluttering the live catalog
+    if (p.hidden && p.bookable === false) return ['Past & archived', 'Retired'];
+    if (cat === 'camp' && /trolls|dragon|chocolate factory/i.test(n))
+      return ['Full Camps', /trolls/i.test(n) ? 'Trolls Jr.'
+        : /dragon/i.test(n) ? 'How to Train Your Dragon Jr.' : 'Charlie and the Chocolate Factory Jr.'];
+    if (cat === 'camp' && /frozen|mermaid/i.test(n))
+      return ['Full Camps', /mermaid/i.test(n) ? 'The Little Mermaid' : 'Frozen'];
+    if (cat === 'camp' && /sweeney|hadestown|conservatory/i.test(n))
+      return ['Teen Productions', n.split('-')[0].trim() || n];
+    if (cat === 'camp' && /mean girls|dear evan hansen/i.test(n))
+      return ['Teen Productions', /mean girls/i.test(n) ? 'Mean Girls' : 'Dear Evan Hansen'];
+    if (cat === 'class') return ['Classes',
+      /^adult/i.test(n) ? 'Adult Classes'
+      : /homeschool/i.test(n) ? 'Homeschool'
+      : /ballet|hip-hop|dance|k-pop/i.test(n) ? 'Dance'
+      : /acting|improv/i.test(n) ? 'Acting & Improv' : 'Musical Theatre'];
+    if (id >= 970000 && id <= 979999 || cat === 'coaching') return ['Coaching',
+      id >= 970500 ? 'Branding & Media' : id >= 970400 ? 'Acting Coaching'
+      : id >= 970300 ? 'Pre-Screen Videos' : id >= 970200 ? 'Audition Prep & Support' : 'College Auditions'];
+    if (cat === 'camp' && ((p.price_cents || 0) <= 20000 || /day camp/i.test(n))) {
+      // one day = one camp day, three age bands. Group by the DATE so the
+      // bands sit together instead of scattering by theme name.
+      var d = textEndDate(p.schedule_name || '') || textEndDate(n);
+      if (d) {
+        var pr = d.split('-');
+        return ['Day Camps', PE_MONTHS[+pr[1] - 1] + ' ' + (+pr[2]) + ', ' + pr[0]];
+      }
+      return ['Day Camps', 'Undated'];
+    }
+    return ['Other', cat || 'uncategorised'];
+  }
+  var PROD_SERIES = {}, PROD_OPEN = {};
+  // same running order as the Overview rings, with the odds and ends after
+  var PROD_ORDER = ['Full Camps', 'Classes', 'Day Camps', 'Teen Productions',
+    'Coaching', 'Other', 'Past & archived'];
+  // day-camp sub-groups are dates: sort them chronologically, not A-Z
+  function subSort(a, b){
+    var A = Date.parse(a), B = Date.parse(b);
+    if (!isNaN(A) && !isNaN(B)) return A - B;
+    return a.localeCompare(b);
+  }
+
+  // A product is the SHOW (or the camp day, or the class) — the thing families
+  // buy. Age bands are variants switched on and off inside it, so "Frozen" is
+  // one card carrying Kids / Junior / Teens / Technical Theatre, not four
+  // unrelated products that happen to share a name.
+  function bandLabel(p){ return bandOf(p) || (p.age_range || '').replace(/\s*yrs?\s*/i, '').trim() || 'Standard'; }
+  // On sale = bookable. Whether something is listed on the website is a
+  // design decision made off the dashboard, so `hidden` is no longer
+  // something this page sets — it only reports it.
+  function isLive(p){ return !!p.active && p.bookable !== false; }
+  // youngest first, with the crew bands after every performing band
+  var BAND_RANK = { 'Kids': 0, 'Junior': 1, 'Teens': 2, 'Adult': 3, 'Adults': 3,
+    'Tech Crew': 900, 'Technical Theatre': 900, 'Standard': 0 };
+  function bandSortProds(list){
+    return list.slice().sort(function(a, b){
+      var A = bandLabel(a), B = bandLabel(b);
+      var ra = BAND_RANK[A] != null ? BAND_RANK[A] : (parseInt(A, 10) || 50);
+      var rb = BAND_RANK[B] != null ? BAND_RANK[B] : (parseInt(B, 10) || 50);
+      return ra - rb || A.localeCompare(B);
+    });
+  }
+  function bandRowHtml(p){
+    var taken = (p.sold || 0) + (p.booked_offline || 0);
+    var live = isLive(p);
+    return '<div class="bandrow' + (live ? '' : ' off') + '" data-id="' + p.id + '">' +
+      '<button class="btog' + (live ? ' on' : '') + '" data-id="' + p.id + '" title="' +
+        (live ? 'On sale — click to stop selling' : 'Not on sale — click to sell') + '"><i></i></button>' +
+      '<span class="bn">' + esc(bandLabel(p)) + '</span>' +
+      '<span class="bs">' + esc(p.age_range || '') + (p.age_range ? ' · ' : '') + usd(p.price_cents || 0) +
+        ' · ' + taken + ' / ' + (p.capacity || 0) + ' filled' +
+        (live ? '' : ' · <span class="tag">off sale</span>') +
+        (p.hidden ? ' · <span class="tag" title="not listed publicly on the website">unlisted</span>' : '') +
+        (!p.active ? ' · <span class="tag">inactive</span>' : '') + '</span>' +
+      kebabHtml([
+        { label: 'Edit this band', attrs: ' data-pact="edit" data-id="' + p.id + '"' },
+        { label: live ? 'Stop selling&hellip;' : 'Start selling', attrs: ' data-pact="' + (live ? 'off' : 'on') + '" data-id="' + p.id + '"' },
+        { label: 'Duplicate band', attrs: ' data-pact="dup" data-id="' + p.id + '"' },
+        { label: 'Delete band&hellip;', attrs: ' data-pact="del" data-id="' + p.id + '"' }
+      ]) + '</div>';
+  }
+  function prodCardHtml(key, label, items, group){
+    var taken = 0, cap = 0, live = 0, lo = null, hi = null, sched = '';
+    items.forEach(function(p){
+      taken += (p.sold || 0) + (p.booked_offline || 0); cap += p.capacity || 0;
+      if (isLive(p)) live++;
+      var c = p.price_cents || 0;
+      if (lo === null || c < lo) lo = c;
+      if (hi === null || c > hi) hi = c;
+      if (!sched && p.schedule_name) sched = p.schedule_name;
+    });
+    var price = lo === hi ? usd(lo || 0) : usd(lo || 0) + '–' + usd(hi || 0);
+    var open = !!PROD_OPEN['card:' + key];
+    return '<div class="pcard" data-key="' + esc(key) + '" data-group="' + esc(group) + '">' +
+      '<div class="pchead">' +
+        '<span class="cr">' + (open ? '&#9660;' : '&#9654;') + '</span>' +
+        '<span><span class="nm">' + esc(label) + '</span>' +
+          (sched ? '<div class="sub" style="font-size:11.5px">' + esc(sched) + '</div>' : '') + '</span>' +
+        '<span class="meta">' + items.length + ' band' + (items.length === 1 ? '' : 's') +
+          ' · ' + live + ' on sale<br>' + price + ' · ' + taken + ' / ' + cap + ' filled</span></div>' +
+      '<div class="pcbands" style="display:' + (open ? 'block' : 'none') + '">' +
+        bandSortProds(items).map(bandRowHtml).join('') +
+        '<div class="bandadd"><button class="btn2 ghost pc-addband">+ Add age band</button></div>' +
+      '</div></div>';
+  }
+  function renderProducts(){
+    if (!PRODS) return;
+    PROD_SERIES = {};
+    PRODS.forEach(function(p){
+      if (p.category === 'camp' && (p.price_cents || 0) <= 20000) {
+        var b = (p.name || '').split('·')[0].trim();
+        PROD_SERIES[b] = (PROD_SERIES[b] || 0) + 1;
+      }
+    });
+    var q = ($('prodQ').value || '').trim().toLowerCase();
+    var rows = PRODS.filter(function(p){
+      return !q || (p.name + ' ' + (p.category || '') + ' ' + (p.schedule_name || '') + ' ' + p.id).toLowerCase().indexOf(q) !== -1;
+    });
+    $('prodStatus').textContent = q ? rows.length + ' of ' + PRODS.length + ' match' : PRODS.length + ' products';
+    var stale = PRODS.filter(function(p){ return isPastProd(p) && (p.bookable !== false || !p.hidden); });
+    $('prodArchive').style.display = stale.length ? 'inline-block' : 'none';
+    $('prodArchive').textContent = 'Archive ' + stale.length + ' finished';
+
+    // group -> product -> its bands. For shows and camp days the sub-bucket IS
+    // the product; for classes and coaching the product is the class itself and
+    // the sub-bucket stays a heading above the cards.
+    var tree = {}, SHOWLIKE = { 'Full Camps':1, 'Teen Productions':1, 'Day Camps':1 };
+    rows.forEach(function(p){
+      var b = prodBucket(p), g = b[0], sub = b[1];
+      var showlike = SHOWLIKE[g];
+      var key = showlike ? g + '|' + sub : g + '|' + sub + '|' + (p.name || '');
+      var label = showlike ? sub : (p.name || '');
+      tree[g] = tree[g] || {};
+      tree[g][sub] = tree[g][sub] || {};
+      (tree[g][sub][key] = tree[g][sub][key] || { label: label, items: [] }).items.push(p);
+    });
+    var names = Object.keys(tree).sort(function(a, b){
+      var A = PROD_ORDER.indexOf(a), B = PROD_ORDER.indexOf(b);
+      return (A < 0 ? 99 : A) - (B < 0 ? 99 : B);
+    });
+    if (!names.length) { $('prodGroups').innerHTML = '<p class="sub">Nothing matches.</p>'; return; }
+
+    $('prodGroups').innerHTML = names.map(function(g){
+      var subs = tree[g], subNames = Object.keys(subs).sort(subSort);
+      var all = [], taken = 0, cap = 0, live = 0, nProd = 0;
+      subNames.forEach(function(s){
+        Object.keys(subs[s]).forEach(function(k){ nProd++; all = all.concat(subs[s][k].items); });
+      });
+      all.forEach(function(p){
+        taken += (p.sold || 0) + (p.booked_offline || 0); cap += p.capacity || 0;
+        if (isLive(p)) live++;
+      });
+      // searching opens what it found; otherwise remember what you had open
+      var open = q ? true : (PROD_OPEN[g] != null ? PROD_OPEN[g] : false);
+      return '<div class="pgroup" data-g="' + esc(g) + '" style="margin-bottom:10px">' +
+        '<div class="pghead" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;' +
+          'border:1px solid var(--line);border-radius:10px;background:var(--panel)">' +
+          '<span style="color:var(--gold);font-size:11px;width:10px">' + (open ? '&#9660;' : '&#9654;') + '</span>' +
+          '<b style="flex:1">' + esc(g) + '</b>' +
+          '<span class="sub">' + nProd + ' product' + (nProd === 1 ? '' : 's') +
+            ' · ' + all.length + ' band' + (all.length === 1 ? '' : 's') +
+            ' · ' + live + ' on sale · ' + taken + ' / ' + cap + ' filled</span></div>' +
+        '<div class="pgbody" style="display:' + (open ? 'block' : 'none') + ';padding:2px 0 2px 10px">' +
+          subNames.map(function(s){
+            var cards = subs[s], keys = Object.keys(cards).sort(function(a, b){
+              return cards[a].label.localeCompare(cards[b].label);
+            });
+            // a heading only earns its place when it says something the card
+            // titles don't (class types, coaching families) — for shows and
+            // camp days the card title already is the heading
+            return (SHOWLIKE[g] ? '' :
+              '<div class="sub" style="margin:12px 0 2px;text-transform:uppercase;letter-spacing:.1em;font-size:10px">' + esc(s) + '</div>') +
+              keys.map(function(k){ return prodCardHtml(k, cards[k].label, cards[k].items, g); }).join('');
+          }).join('') +
+        '</div></div>';
+    }).join('');
+  }
+  // ── product card interactions: expand, switch a band on/off, add a band ──
+  $('prodGroups').addEventListener('click', function(e){
+    // The switch sells or stops selling a band. Turning it ON is harmless and
+    // immediate; turning it OFF asks, and says how many people are already in.
+    var tog = e.target.closest('.btog');
+    if (tog) {
+      e.stopPropagation();
+      var tp = prodById(tog.dataset.id);
+      if (!tp) return;
+      var turningOn = !isLive(tp);
+      if (!turningOn) {
+        var have = (tp.sold || 0) + (tp.booked_offline || 0);
+        if (!confirm('Stop selling "' + tp.name + '"?\n\nNobody new can register for it.' +
+          (have ? '\n\n' + have + ' ' + (have === 1 ? 'person is' : 'people are') +
+            ' already registered — they keep their spots, and this does not refund or cancel anyone.' : '') +
+          '\n\nNothing is deleted and you can switch it back on any time.')) return;
+      }
+      tog.classList.toggle('on', turningOn);
+      opsApi({ action: 'product_update', id: tp.id, fields: { bookable: turningOn } })
+        .then(function(d){
+          if (d.error) { alert(d.error); tog.classList.toggle('on', !turningOn); return; }
+          loadProducts();
+        }).catch(function(){ alert('network error'); tog.classList.toggle('on', !turningOn); });
+      return;
+    }
+    var addb = e.target.closest('.pc-addband');
+    if (addb) { e.stopPropagation(); openAddBand(addb.closest('.pcard')); return; }
+    if (e.target.closest('.bandnew')) { e.stopPropagation(); return; }
+
+    var ch = e.target.closest('.pchead');
+    if (ch) {
+      var card = ch.parentNode, bands = card.querySelector('.pcbands');
+      var wasOpen = bands.style.display !== 'none';
+      bands.style.display = wasOpen ? 'none' : 'block';
+      ch.firstElementChild.innerHTML = wasOpen ? '&#9654;' : '&#9660;';
+      PROD_OPEN['card:' + card.dataset.key] = !wasOpen;
+      return;
+    }
+    var h = e.target.closest('.pghead');
+    if (!h) return;
+    var g = h.parentNode, body = g.querySelector('.pgbody');
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    h.firstElementChild.innerHTML = open ? '&#9654;' : '&#9660;';
+    PROD_OPEN[g.dataset.g] = !open;
+  });
+  function prodById(id){ return (PRODS || []).filter(function(x){ return String(x.id) === String(id); })[0]; }
+
+  // Turning on a new band for a show: it inherits the show's price, schedule,
+  // capacity and category from a sibling band, so the only real decisions are
+  // which band and what families will see it called.
+  var ADD_BANDS = ['Kids', 'Junior', 'Teens', 'Technical Theatre', 'Adult'];
+  function openAddBand(card){
+    var existing = card.querySelector('.bandnew');
+    if (existing) { existing.remove(); return; }
+    var sample = null, label = card.querySelector('.nm').textContent;
+    card.querySelectorAll('.bandrow').forEach(function(r){
+      var p = prodById(r.dataset.id);
+      if (p && (!sample || (p.capacity || 0) > (sample.capacity || 0))) sample = p;
+    });
+    if (!sample) return;
+    var taken = {};
+    card.querySelectorAll('.bandrow').forEach(function(r){
+      var p = prodById(r.dataset.id); if (p) taken[bandLabel(p).toLowerCase()] = 1;
+    });
+    var opts = ADD_BANDS.filter(function(b){ return !taken[b.toLowerCase()]; });
+    var box = document.createElement('div');
+    box.className = 'bandnew pe';
+    box.innerHTML =
+      '<div><label>Band</label><select class="nb-band">' +
+        opts.map(function(b){ return '<option>' + esc(b) + '</option>'; }).join('') +
+        '<option value="__other">Other…</option></select></div>' +
+      '<div><label>Ages</label>' + ageSelectHtml(null).replace(/id="pe-age"/, 'class="nb-age"').replace(/id="pe-age-other"/, 'class="nb-age-other"') + '</div>' +
+      '<div style="flex:1;min-width:200px"><label>Name families see</label>' +
+        '<input class="nb-name" style="width:100%" value="' + esc(label + ' | ') + '"></div>' +
+      '<div><label>Price ($)</label><input class="nb-price" type="number" step="0.01" style="width:110px" value="' + ((sample.price_cents || 0) / 100) + '"></div>' +
+      '<div><label>Capacity</label><input class="nb-cap" type="number" style="width:90px" value="' + (sample.capacity || 20) + '"></div>' +
+      '<button class="btn2 nb-save">Add band</button>' +
+      '<button class="btn2 ghost nb-cancel">Cancel</button>' +
+      '<span class="sub nb-status"></span>';
+    card.querySelector('.pcbands').appendChild(box);
+    var bandSel = box.querySelector('.nb-band'), nameIn = box.querySelector('.nb-name');
+    function syncName(){
+      var b = bandSel.value === '__other' ? '' : bandSel.value;
+      nameIn.value = label + (b ? ' | ' + b : ' | ');
+    }
+    syncName();
+    bandSel.addEventListener('change', syncName);
+    box.querySelector('.nb-age').addEventListener('change', function(){
+      box.querySelector('.nb-age-other').style.display = this.value === '__other' ? 'block' : 'none';
+    });
+    box.querySelector('.nb-cancel').addEventListener('click', function(){ box.remove(); });
+    box.querySelector('.nb-save').addEventListener('click', function(){
+      var ageSel = box.querySelector('.nb-age');
+      var age = ageSel.value === '__other' ? box.querySelector('.nb-age-other').value.trim() : ageSel.value;
+      var st = box.querySelector('.nb-status');
+      st.textContent = 'adding…';
+      opsApi({ action: 'product_create', fields: {
+        name: nameIn.value.trim(), category: sample.category,
+        age_range: age || null, schedule_name: sample.schedule_name || null,
+        schedule_meta: sample.schedule_meta || null, location: sample.location || null,
+        price_cents: Math.round(parseFloat(box.querySelector('.nb-price').value || '0') * 100),
+        capacity: Math.round(parseFloat(box.querySelector('.nb-cap').value || '0')),
+        bookable: true
+      } }).then(function(d){
+        if (d.error) { st.textContent = d.error; return; }
+        PROD_OPEN['card:' + card.dataset.key] = true;
+        loadProducts();
+      }).catch(function(){ st.textContent = 'network error'; });
+    });
+  }
+  $('prodQ').addEventListener('input', function(){ renderProducts(); });
+  $('prodGroups').addEventListener('click', function(e){
+    var act = e.target.closest('button[data-pact]');
+    if (act) {
+      var p0 = prodById(act.dataset.id);
+      if (!p0) return;
+      if (act.dataset.pact === 'edit') openProdEditor(p0, false, act.closest('.bandrow'));
+      if (act.dataset.pact === 'dup') {
+        var copy = {}; for (var k in p0) copy[k] = p0[k];
+        copy.name = p0.name + ' (copy)';
+        openProdEditor(copy, true, act.closest('.bandrow'));
+      }
+      // Taking a band off sale pulls it from the website, so it asks first and
+      // says out loud how many people are already registered. Putting one back
+      // on sale harms nothing, so it just goes.
+      if (act.dataset.pact === 'off' || act.dataset.pact === 'on') {
+        var on = act.dataset.pact === 'on';
+        var have = (p0.sold || 0) + (p0.booked_offline || 0);
+        if (!on && !confirm('Stop selling "' + p0.name + '"?\n\n' +
+          'Nobody new can register for it.' +
+          (have ? '\n\n' + have + ' ' + (have === 1 ? 'person is' : 'people are') +
+            ' already registered — they keep their spots, and this does not refund or cancel anyone.' : '') +
+          '\n\nNothing is deleted. You can put it back on sale any time.')) return;
+        opsApi({ action: 'product_update', id: p0.id, fields: { bookable: on } })
+          .then(function(d){ if (d.error) { alert(d.error); return; } loadProducts(); })
+          .catch(function(){ alert('network error'); });
+      }
+      if (act.dataset.pact === 'del') {
+        if (!confirm('Delete "' + p0.name + '"?\n\nIf anyone has ever registered for it, it will be retired (off sale + hidden) instead — history is never destroyed.')) return;
+        opsApi({ action: 'product_delete', id: p0.id }).then(function(d){
+          if (d.error) { alert(d.error); return; }
+          if (d.retired) alert(d.message);
+          loadProducts();
+        }).catch(function(){ alert('network error'); });
+      }
+      return;
+    }
+    if (e.target.closest('.kbwrap') || e.target.closest('.pedit') || e.target.closest('.btog')) return;
+    var row = e.target.closest('.bandrow');
+    if (!row) return;
+    var p = prodById(row.dataset.id);
+    if (p) openProdEditor(p, false, row);
+  });
+  $('prodNew').addEventListener('click', function(){ openProdEditor(null, true, null); });
+
+  function closeProdEditor(){
+    var old = document.querySelector('.pedit');
+    if (old) old.remove();
+    $('prodEditor').style.display = 'none';
+    $('prodEditor').innerHTML = '';
+  }
+  // The editor expands INLINE under the clicked row (same pattern as the
+  // roster drill-down) — no jumping to the top of the page. Only "+ New
+  // product" uses the panel above the table, since it has no row to live under.
+  // One venue plus video calls — location is a pick, not prose.
+  var PE_LOCS = ['National Conference Center — Leesburg', 'Google Meet', 'Zoom'];
+  function locSelectHtml(cur){
+    var known = !cur || PE_LOCS.indexOf(cur) !== -1;
+    return '<select id="pe-loc" style="width:100%">' +
+      '<option value=""' + (!cur ? ' selected' : '') + '>—</option>' +
+      PE_LOCS.map(function(l){ return '<option' + (cur === l ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join('') +
+      '<option value="__other"' + (!known ? ' selected' : '') + '>Other…</option></select>' +
+      '<input id="pe-loc-other" style="width:100%;margin-top:6px;display:' + (known ? 'none' : 'block') + '"' +
+      ' value="' + esc(!known ? cur : '') + '" placeholder="Where?">';
+  }
+  // The bands we actually run. A band is a variant of a product, so this is a
+  // pick list — typing "5-9 yrs" vs "5 – 9 yrs" is how the same camp day ended
+  // up looking like three unrelated products.
+  var PE_BANDS = ['5 – 9 yrs', '9 – 12 yrs', '12 – 15 yrs', '12 – 18 yrs', 'Adult', 'All ages'];
+  function ageSelectHtml(cur){
+    var known = !cur || PE_BANDS.indexOf(cur) !== -1;
+    return '<select id="pe-age" style="width:100%">' +
+      '<option value=""' + (!cur ? ' selected' : '') + '>—</option>' +
+      PE_BANDS.map(function(b){ return '<option' + (cur === b ? ' selected' : '') + '>' + esc(b) + '</option>'; }).join('') +
+      '<option value="__other"' + (!known ? ' selected' : '') + '>Other…</option></select>' +
+      '<input id="pe-age-other" style="width:100%;margin-top:6px;display:' + (known ? 'none' : 'block') + '"' +
+      ' value="' + esc(!known ? cur : '') + '" placeholder="Custom age range">';
+  }
+  // schedule_meta -> the display string families see. Vague free text is out;
+  // each category gets real date/time fields and this composes the line.
+  var PE_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function peD(iso){
+    if (!iso) return '';
+    var p2 = iso.split('-');
+    return PE_MONTHS[+p2[1] - 1] + ' ' + (+p2[2]);
+  }
+  function peT(t){
+    if (!t) return '';
+    var hm = t.split(':'), h = +hm[0], m = hm[1];
+    var ap = h >= 12 ? 'pm' : 'am'; h = h % 12 || 12;
+    return h + (m === '00' ? '' : ':' + m) + ap;
+  }
+  function composeSchedule(cat, m){
+    if (cat === 'class' && m.weekday) {
+      return m.weekday + 's' + (m.start ? ' ' + peT(m.start) + '–' + peT(m.end) : '') +
+        (m.from ? ' · ' + peD(m.from) + ' – ' + peD(m.to) : '');
+    }
+    if (cat === 'coaching' && m.minutes) return m.minutes + ' minutes';
+    if ((cat === 'camp' || cat === 'performance') && (m.days || []).length) {
+      var ds = m.days.slice().sort();
+      var range = ds.length > 1 ? peD(ds[0]) + ' – ' + peD(ds[ds.length - 1]) : peD(ds[0]);
+      return (ds.length > 2 ? ds.length + ' days · ' : '') + range +
+        (m.start ? ' · ' + peT(m.start) + '–' + peT(m.end) : '') +
+        ((m.perf || []).length ? ' · Performances ' + m.perf.slice().sort().map(peD).join(', ') : '');
+    }
+    return null;
+  }
+  function openProdEditor(p, isNew, anchorTr){
+    closeProdEditor();
+    p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true };
+    function field(label, html){ return '<label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' + label + '</label>' + html; }
+    var host;
+    if (anchorTr) {
+      // the editor opens right under the band row you clicked
+      var det = document.createElement('div');
+      det.className = 'pedit';
+      anchorTr.parentNode.insertBefore(det, anchorTr.nextSibling);
+      host = det;
+    } else {
+      host = $('prodEditor');
+      host.style.display = 'block';
+    }
+    host.innerHTML = '<div class="ovpanel pe" style="max-width:640px">' +
+      '<b>' + (isNew ? 'New product' : 'Edit: ' + esc(p.name)) + '</b>' +
+      field('Name', '<input id="pe-name" style="width:100%" value="' + esc(p.name) + '">') +
+      '<div style="display:flex;gap:10px">' +
+        '<div style="flex:1">' + field('Category', '<select id="pe-cat" style="width:100%">' +
+          ['class','camp','coaching','performance'].map(function(c){
+            return '<option' + (p.category === c ? ' selected' : '') + '>' + c + '</option>';
+          }).join('') + '</select>') + '</div>' +
+        '<div style="flex:1">' + field('Age band', ageSelectHtml(p.age_range)) + '</div>' +
+      '</div>' +
+      '<div id="pe-schedzone"></div>' +
+      '<div class="sub" style="margin:4px 0 0">Families will see: <b id="pe-prev" style="color:#fff"></b></div>' +
+      field('Location', locSelectHtml(p.location)) +
+      '<div style="display:flex;gap:10px">' +
+        '<div style="flex:1">' + field('Price ($)', '<input id="pe-price" type="number" step="0.01" style="width:100%" value="' + ((p.price_cents || 0) / 100) + '">') + '</div>' +
+        '<div style="flex:1">' + field('Capacity', '<input id="pe-cap" type="number" style="width:100%" value="' + (p.capacity || 0) + '">') + '</div>' +
+      '</div>' +
+      '<div id="pe-reason-wrap" style="display:none">' +
+        field('Why is the price changing? (required, goes in the price log)', '<input id="pe-reason" style="width:100%">') + '</div>' +
+      '<div style="margin:10px 0 4px">' +
+        '<label><input type="checkbox" id="pe-book"' + (p.bookable !== false ? ' checked' : '') + '> selling this</label>' +
+      '</div>' +
+      '<div style="margin-top:12px;display:flex;gap:8px;align-items:center"><button id="pe-save" class="btn2">Save</button> ' +
+      '<button id="pe-close" class="btn2 ghost">Cancel</button> ' +
+      '<span class="sub" id="pe-status"></span></div></div>';
+    // schedule builder state — starts from whatever is stored, edits live here
+    var meta = {};
+    try { meta = JSON.parse(JSON.stringify(p.schedule_meta || {})); } catch (err) {}
+    function sfield(label, html){
+      return '<div>' + field(label, html) + '</div>';
+    }
+    function chipsHtml(k){
+      return (meta[k] || []).slice().sort().map(function(d){
+        return '<span class="tag" style="margin:2px 3px 2px 0">' + peD(d) +
+          ' <a class="pe-chip-x" data-k="' + k + '" data-d="' + d + '" style="cursor:pointer;color:#E8654B">&times;</a></span>';
+      }).join('') || '<span class="sub">none yet</span>';
+    }
+    function updatePrev(){
+      $('pe-prev').textContent = composeSchedule($('pe-cat').value, meta) || p.schedule_name || '—';
+    }
+    function renderSched(){
+      var cat = $('pe-cat').value, z = $('pe-schedzone');
+      if (cat === 'class') {
+        z.innerHTML = '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+          sfield('Day of week', '<select id="pe-sm-weekday">' + '<option value="">—</option>' +
+            ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(w){
+              return '<option' + (meta.weekday === w ? ' selected' : '') + '>' + w + '</option>';
+            }).join('') + '</select>') +
+          sfield('Starts', '<input type="time" id="pe-sm-start" value="' + esc(meta.start || '') + '">') +
+          sfield('Ends', '<input type="time" id="pe-sm-end" value="' + esc(meta.end || '') + '">') +
+          sfield('First class', '<input type="date" id="pe-sm-from" value="' + esc(meta.from || '') + '">') +
+          sfield('Last class', '<input type="date" id="pe-sm-to" value="' + esc(meta.to || '') + '">') + '</div>';
+      } else if (cat === 'coaching') {
+        z.innerHTML = '<div style="display:flex;gap:10px">' +
+          sfield('Session length (minutes)', '<input type="number" id="pe-sm-min" style="width:130px" value="' + esc(meta.minutes || '') + '">') + '</div>';
+      } else {
+        z.innerHTML =
+          field('Session days', '<input type="date" id="pe-sm-day"> <button type="button" class="btn2 ghost pe-add" data-k="days">add day</button>' +
+            '<div id="pe-chips-days" style="margin-top:5px">' + chipsHtml('days') + '</div>') +
+          field('Performance dates (optional)', '<input type="date" id="pe-sm-perf"> <button type="button" class="btn2 ghost pe-add" data-k="perf">add date</button>' +
+            '<div id="pe-chips-perf" style="margin-top:5px">' + chipsHtml('perf') + '</div>') +
+          '<div style="display:flex;gap:10px">' +
+          sfield('Daily start', '<input type="time" id="pe-sm-start" value="' + esc(meta.start || '') + '">') +
+          sfield('Daily end', '<input type="time" id="pe-sm-end" value="' + esc(meta.end || '') + '">') + '</div>';
+      }
+      z.querySelectorAll('input,select').forEach(function(el){
+        el.addEventListener('input', function(){
+          if (cat === 'class') {
+            meta = { weekday: $('pe-sm-weekday').value || null, start: $('pe-sm-start').value || null,
+              end: $('pe-sm-end').value || null, from: $('pe-sm-from').value || null, to: $('pe-sm-to').value || null };
+          } else if (cat === 'coaching') {
+            meta = { minutes: +$('pe-sm-min').value || null };
+          } else {
+            meta.start = $('pe-sm-start').value || null;
+            meta.end = $('pe-sm-end').value || null;
+          }
+          updatePrev();
+        });
+      });
+      updatePrev();
+    }
+    host.addEventListener('click', function(e){
+      var add = e.target.closest('.pe-add');
+      if (add) {
+        var inp = add.dataset.k === 'days' ? $('pe-sm-day') : $('pe-sm-perf');
+        if (inp && inp.value) {
+          meta[add.dataset.k] = meta[add.dataset.k] || [];
+          if (meta[add.dataset.k].indexOf(inp.value) === -1) meta[add.dataset.k].push(inp.value);
+          inp.value = '';
+          $('pe-chips-' + add.dataset.k).innerHTML = chipsHtml(add.dataset.k);
+          updatePrev();
+        }
+        return;
+      }
+      var x = e.target.closest('.pe-chip-x');
+      if (x) {
+        meta[x.dataset.k] = (meta[x.dataset.k] || []).filter(function(d){ return d !== x.dataset.d; });
+        $('pe-chips-' + x.dataset.k).innerHTML = chipsHtml(x.dataset.k);
+        updatePrev();
+      }
+    });
+    $('pe-cat').addEventListener('change', renderSched);
+    $('pe-loc').addEventListener('change', function(){
+      $('pe-loc-other').style.display = $('pe-loc').value === '__other' ? 'block' : 'none';
+    });
+    $('pe-age').addEventListener('change', function(){
+      $('pe-age-other').style.display = $('pe-age').value === '__other' ? 'block' : 'none';
+    });
+    renderSched();
+    var origPrice = p.price_cents || 0;
+    $('pe-price').addEventListener('input', function(){
+      var now = Math.round(parseFloat($('pe-price').value || '0') * 100);
+      $('pe-reason-wrap').style.display = (!isNew && now !== origPrice) ? 'block' : 'none';
+    });
+    $('pe-close').addEventListener('click', closeProdEditor);
+    $('pe-save').addEventListener('click', function(){
+      var cat = $('pe-cat').value;
+      var loc = $('pe-loc').value === '__other' ? $('pe-loc-other').value.trim() : $('pe-loc').value;
+      var fields = {
+        name: $('pe-name').value.trim(),
+        category: cat,
+        age_range: ($('pe-age').value === '__other' ? $('pe-age-other').value.trim() : $('pe-age').value) || null,
+        schedule_meta: meta,
+        schedule_name: composeSchedule(cat, meta) || p.schedule_name || null,
+        location: loc || null,
+        price_cents: Math.round(parseFloat($('pe-price').value || '0') * 100),
+        capacity: Math.round(parseFloat($('pe-cap').value || '0')),
+        bookable: $('pe-book').checked
+      };
+      var payload = isNew
+        ? { action: 'product_create', fields: fields }
+        : { action: 'product_update', id: p.id, fields: fields, reason: ($('pe-reason') ? $('pe-reason').value.trim() : '') };
+      $('pe-status').textContent = 'saving…';
+      opsApi(payload).then(function(d){
+        if (d.error) { $('pe-status').textContent = d.error; return; }
+        closeProdEditor();
+        loadProducts();
+        runLoader('overview');
+      }).catch(function(){ $('pe-status').textContent = 'network error'; });
+    });
+  }
+
+  // ---- roster row actions: move a camper, cancel + refund a seat ----
+  // Move opens a small search popover — type a few letters or tap a category
+  // chip, pick the session, confirm. Targets come from OVG (the same computed
+  // groups the Overview rings use), so every sellable session is findable
+  // without ever rendering all 150 of them at once.
+  var MV = null; // { pop, cell, itemId, camper }
+  function mvClose(){
+    if (MV && MV.pop) MV.pop.remove();
+    MV = null;
+  }
+  function mvTargets(){
+    var out = [];
+    (OVG || []).forEach(function(g){
+      (g.items || []).forEach(function(it){
+        var label = it.show ? (SHOWL[it.show] || it.show) + ' · ' + it.band : (it.label || '');
+        out.push({
+          group: g.label, label: label, search: (g.label + ' ' + label).toLowerCase(),
+          taken: it.taken || 0, cap: it.cap || 0,
+          value: it.show ? 's|' + it.show + '|' + it.band : 'a|' + it.activity_id
+        });
+      });
+    });
+    return out;
+  }
+  function mvRender(list){
+    var box = MV.pop.querySelector('.mv-list');
+    if (!list) { box.innerHTML = '<div class="mv-hint">Type a session name, or tap a category.</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="mv-hint">Nothing matches.</div>'; return; }
+    var html = '', lastGroup = null;
+    list.slice(0, 40).forEach(function(t, i){
+      if (t.group !== lastGroup) { html += '<div class="gt">' + esc(t.group) + '</div>'; lastGroup = t.group; }
+      var full = t.cap - t.taken <= 0;
+      html += '<a data-v="' + esc(t.value) + '" data-l="' + esc(t.label) + '">' +
+        '<span>' + esc(t.label) + '</span>' +
+        '<span class="fill' + (full ? ' full' : '') + '">' + (full ? 'FULL · ' : '') + t.taken + '/' + t.cap + '</span></a>';
+    });
+    if (list.length > 40) html += '<div class="mv-hint">' + (list.length - 40) + ' more — keep typing to narrow.</div>';
+    box.innerHTML = html;
+  }
+  function mvOpen(btn){
+    mvClose();
+    var cell = btn.closest('td');
+    var pop = document.createElement('div');
+    pop.className = 'mvpop';
+    var groups = (OVG || []).map(function(g){ return g.label; });
+    pop.innerHTML =
+      '<div class="mv-head"><button class="mv-x">&times;</button>Move <b>' + esc(btn.dataset.camper || 'camper') + '</b> to&hellip;</div>' +
+      '<input class="mv-q" type="text" placeholder="Search sessions&hellip;">' +
+      '<div class="mv-chips">' + groups.map(function(gl){
+        return '<button data-g="' + esc(gl) + '">' + esc(gl) + '</button>';
+      }).join('') + '</div>' +
+      '<div class="mv-list"></div>';
+    document.body.appendChild(pop);
+    var r = btn.getBoundingClientRect();
+    pop.style.left = Math.max(8, Math.min(window.innerWidth - 336, r.left - 260)) + 'px';
+    pop.style.top = Math.min(window.innerHeight - 380, r.bottom + 6) + 'px';
+    MV = { pop: pop, cell: cell, itemId: btn.dataset.item, camper: btn.dataset.camper };
+    mvRender(null);
+    var q = pop.querySelector('.mv-q');
+    q.focus();
+    q.addEventListener('input', function(){
+      pop.querySelectorAll('.mv-chips button').forEach(function(b){ b.classList.remove('on'); });
+      var s = q.value.trim().toLowerCase();
+      mvRender(s ? mvTargets().filter(function(t){ return t.search.indexOf(s) !== -1; }) : null);
+    });
+    pop.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (e.target.closest('.mv-x')) { mvClose(); return; }
+      var chip = e.target.closest('.mv-chips button');
+      if (chip) {
+        q.value = '';
+        pop.querySelectorAll('.mv-chips button').forEach(function(b){ b.classList.toggle('on', b === chip); });
+        mvRender(mvTargets().filter(function(t){ return t.group === chip.dataset.g; }));
+        return;
+      }
+      var pick = e.target.closest('.mv-list a');
+      if (pick) mvExec(pick.dataset.v, pick.dataset.l, false);
+    });
+  }
+  function mvExec(value, label, force){
+    if (!MV) return;
+    var cell = MV.cell, itemId = MV.itemId, camper = MV.camper;
+    if (!force && !confirm('Move ' + camper + ' to ' + label + '?')) return;
+    var p = value.split('|');
+    var payload = { action: 'move', item_id: itemId, force: !!force };
+    if (p[0] === 's') { payload.show = p[1]; payload.band = p[2]; }
+    else payload.activity_id = +p[1];
+    mvClose();
+    cell.innerHTML = '<span class="sub">moving…</span>';
+    opsApi(payload).then(function(d){
+      if (d.needs_force) {
+        if (confirm(label + ' is FULL. Move ' + camper + ' anyway (oversell by one)?')) {
+          MV = { pop: null, cell: cell, itemId: itemId, camper: camper };
+          return mvExec(value, label, true);
+        }
+        cell.innerHTML = rosterActionBtns(itemId, camper);
+        return;
+      }
+      if (d.error) { alert(d.error); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      cell.innerHTML = '<span class="tag ok">moved → ' + esc(d.to || '') + '</span>';
+      runLoader('overview');
+    }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper); });
+  }
+  document.addEventListener('click', function(e){
+    var mv = e.target.closest('.r-move');
+    if (mv) { e.stopPropagation(); mvOpen(mv); return; }
+    if (MV && !e.target.closest('.mvpop')) mvClose();
+    var cx = e.target.closest('.r-cancel');
+    if (cx) runCancel(cx);
+  });
+  function runCancel(btn){
+    var cell = btn.closest('td'), itemId = btn.dataset.item, camper = btn.dataset.camper;
+    cell.innerHTML = '<span class="sub">checking…</span>';
+    opsApi({ action: 'cancel', item_id: itemId, dry_run: true }).then(function(d){
+      if (d.error) { alert(d.error); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var pv = d.preview;
+      var msg = 'Cancel ' + pv.camper + ' from ' + pv.what + '?\n\n' +
+        'Family: ' + (pv.email || '?') + '\nPaid for this seat: ' + usd(pv.paid_cents || 0) +
+        (pv.schedule_warning ? '\n\n⚠ ' + pv.schedule_warning : '') +
+        '\n\nNext you will set the refund amount.';
+      if (!confirm(msg)) { cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var amtStr = prompt('Refund amount in dollars (0 = free the seat, refund nothing):',
+        ((pv.suggested_refund_cents || 0) / 100).toFixed(2));
+      if (amtStr === null) { cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var amount = Math.round(parseFloat(amtStr || '0') * 100);
+      if (!isFinite(amount) || amount < 0) { alert('bad amount'); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var typed = prompt('Type REFUND to confirm ' + (amount ? usd(amount) + ' back to the family' : 'cancelling with NO refund') + ':');
+      if (typed !== 'REFUND') { cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      cell.innerHTML = '<span class="sub">processing…</span>';
+      opsApi({ action: 'cancel', item_id: itemId, amount_cents: amount, confirm: 'REFUND' }).then(function(r){
+        if (r.error) { alert(r.error); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+        cell.innerHTML = '<span class="tag ok">cancelled' + (r.refund_id ? ' · refunded ' + usd(r.refunded_cents) : '') + '</span>';
+        runLoader('overview');
+      }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper); });
+    }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper); });
+  }
+
+  // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
+  $('refAdd').addEventListener('click', function(){
+    var who = prompt("Referrer — their email OR their share code (e.g. NEELAF716):");
+    if (!who) return;
+    var red = prompt("New family's email (the family who was referred):");
+    if (!red) return;
+    opsApi({ action: 'referral_add', referrer: who.trim(), referred_email: red.trim() }).then(function(d){
+      if (d.error) { alert(d.error); return; }
+      alert('Done — both sides now show 2 tickets under ' + (d.referrer_name || who) + "'s referral.");
+      loadRefs();
+    }).catch(function(){ alert('network error'); });
   });
   function loadRefs(){
     sb.rpc('admin_referrals').then(function(res){
@@ -697,14 +1737,6 @@
                    side('New family:', r.referred_email, r.referred_name, r.referred_redeemed_at, 'referred') + '</td></tr>';
       });
       $('tblRefs').innerHTML = html;
-      $('tblRefs').querySelectorAll('.kb').forEach(function(k){
-        k.addEventListener('click', function(e){
-          e.stopPropagation();
-          var menu = k.nextElementSibling, open = menu.classList.contains('on');
-          document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
-          if (!open) menu.classList.add('on');
-        });
-      });
       $('tblRefs').querySelectorAll('button[data-red]').forEach(function(b){
         b.addEventListener('click', function(){
           var p = b.dataset.red.split('|'), undo = p[2] === 'undo';
@@ -1467,20 +2499,40 @@
       stat(s.web_orders_7d, 'orders · 7d');
   }
 
+  // items arrive as [{item_id, camper, what}] — the camper name links to their
+  // profile (Campers tab pre-filtered) and each seat carries its own
+  // move/cancel, so a "can you switch her Tuesday class" email is handled
+  // without leaving the order row.
+  function orderItemsText(o){
+    return (o.items || []).map(function(i){ return (i.camper || '') + ' - ' + (i.what || ''); }).join(' | ');
+  }
   function renderOrders(rows){
     if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
     $('tblOrders').innerHTML =
-      '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th>sawyer</th><th></th></tr>' +
+      '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th></th></tr>' +
       rows.map(function(o){
-        return '<tr><td>' + dt(o.created_at) + '</td>' +
+        var itemsHtml = (o.items || []).map(function(i){
+          return '<div style="margin:2px 0">' +
+            '<a class="o-camper" data-name="' + esc(i.camper || '') + '" style="cursor:pointer;text-decoration:underline dotted;white-space:nowrap">' + esc(i.camper || '') + '</a>' +
+            ' <span class="sub">' + esc(i.what || '') + '</span>' +
+            (i.item_id ? '<span style="white-space:nowrap"> ' + rosterActionBtns(i.item_id, i.camper) + '</span>' : '') + '</div>';
+        }).join('');
+        return '<tr><td style="white-space:nowrap">' + dt(o.created_at) + '</td>' +
           '<td>' + esc(o.parent_name || '') + '<div class="sub">' + esc(o.email) + '</div></td>' +
-          '<td>' + esc(o.items || '') + '</td>' +
+          '<td style="max-width:380px">' + itemsHtml + '</td>' +
           '<td><span class="tag ' + (o.plan==='subscription'?'gold':'') + '">' + o.plan + '</span></td>' +
           '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
           '<td class="num">' + usd2(o.total_cents) + '</td>' +
-          '<td>' + (o.sawyer_entered ? '<span class="tag ok">✓</span>' : '<span class="tag bad">no</span>') + '</td>' +
-          '<td><button class="tag bad ord-del" data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + (o.items||'').slice(0,80)) + '" style="cursor:pointer;border:0">delete</button></td></tr>';
+          '<td>' + kebabHtml([{ label: 'Delete whole order&hellip;', cls: 'ord-del',
+            attrs: ' data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + orderItemsText(o).slice(0,80)) + '"' }]) + '</td></tr>';
       }).join('');
+    $('tblOrders').querySelectorAll('.o-camper').forEach(function(a){
+      a.addEventListener('click', function(){
+        setTab('campers');
+        $('campQ').value = a.dataset.name;
+        renderCampers();
+      });
+    });
     $('tblOrders').querySelectorAll('.ord-del').forEach(function(b){
       b.addEventListener('click', function(){
         var msg = 'Delete this order?\n\n' + b.dataset.who +
@@ -1506,31 +2558,90 @@
     });
   }
 
-  function renderBalances(rows){
-    var owing = rows.filter(function(r){ return (r.balance_cents||0) > 0; });
-    var tot = owing.reduce(function(s,r){ return s + r.balance_cents; }, 0);
-    var dueNow = owing.reduce(function(s,r){ return s + (r.due_now_cents||0); }, 0);
-    var auto = owing.filter(function(r){ return r.has_saved_pm; }).length;
-    $('stBal').innerHTML =
-      stat(usd(tot), 'outstanding', 'bad') +
-      stat(usd(dueNow), 'due now') +
-      stat(owing.length, 'accounts') +
-      stat(auto + ' / ' + owing.length, 'card on file');
-    $('tblBal').innerHTML =
-      '<tr><th>name</th><th>email</th><th class="num">ordered</th><th class="num">paid</th><th class="num">balance</th><th class="num">due now</th><th class="num">future</th><th>autobill</th><th>src</th></tr>' +
-      owing.map(function(r){
-        return '<tr><td>' + esc(r.person_name) + '</td>' +
-          '<td class="sub">' + esc(r.parent_email || '?') + '</td>' +
-          '<td class="num">' + usd2(r.total_order_cents) + '</td>' +
-          '<td class="num">' + usd2(r.total_paid_cents) + '</td>' +
-          '<td class="num" style="color:var(--bad);font-weight:700">' + usd2(r.balance_cents) + '</td>' +
-          '<td class="num">' + usd2(r.due_now_cents) + '</td>' +
-          '<td class="num">' + usd2(r.due_future_cents) + '</td>' +
-          '<td>' + (r.has_saved_pm ? '<span class="tag ok">✓</span>' : '<span class="tag bad">—</span>') + '</td>' +
-          '<td><span class="tag">' + r.source + '</span></td></tr>';
-      }).join('');
+  // ---- Regpack chase: the families still being moved onto our billing ----
+  // The only live thing on this page. migration_plans is hand-maintained, so
+  // notes save inline and a family flips to resolved the moment they pay.
+  var CHASE = null, CHASE_DONE_OPEN = false;
+  function loadChase(){
+    opsApi({ action: 'chase_list' }).then(function(d){
+      if (d.error) { $('chaseList').innerHTML = '<p class="sub">error: ' + esc(d.error) + '</p>'; return; }
+      CHASE = d.plans || [];
+      renderChase();
+    }).catch(function(){ $('chaseList').innerHTML = '<p class="sub">network error</p>'; });
   }
-
+  function planTotal(p){
+    return (p.one_off_cents || 0) + (p.monthly_cents || 0) * (p.months_total || 0) + (p.final_cents || 0);
+  }
+  function renderChase(){
+    if (!CHASE) return;
+    var open = CHASE.filter(function(p){ return p.status !== 'resolved'; });
+    var done = CHASE.filter(function(p){ return p.status === 'resolved'; });
+    var owed = open.reduce(function(s, p){ return s + planTotal(p); }, 0);
+    var got  = done.reduce(function(s, p){ return s + planTotal(p); }, 0);
+    $('stChase').innerHTML =
+      stat(open.length, 'still chasing', open.length ? 'bad' : 'ok') +
+      stat(usd(owed), 'outstanding') +
+      stat(done.length, 'resolved', 'ok') +
+      stat(usd(got), 'converted');
+    function rows(list, resolved){
+      if (!list.length) return '<tr><td class="empty">none</td></tr>';
+      return list.map(function(p){
+        return '<tr data-id="' + esc(p.id) + '">' +
+          '<td><b>' + esc(p.family_label || '') + '</b>' +
+            '<div class="sub">' + esc(p.cohort || '') + '</div></td>' +
+          '<td><div class="ch-terms" title="click to expand">' + esc(p.terms || '') + '</div>' +
+            (p.stripe_link ? '<div style="font-size:11.5px;margin-top:4px"><a href="' + esc(p.stripe_link) + '" target="_blank" rel="noopener">payment link</a></div>' : '') + '</td>' +
+          '<td class="num">' + (planTotal(p) ? usd(planTotal(p)) : '<span class="sub">—</span>') + '</td>' +
+          '<td style="min-width:320px"><textarea class="ch-note" data-id="' + esc(p.id) +
+            '" placeholder="chase status…">' + esc(p.notes || '') + '</textarea></td>' +
+          '<td>' + kebabHtml([{ label: resolved ? 'Reopen this chase' : 'Mark resolved &mdash; they paid',
+            cls: 'ch-flip', attrs: ' data-id="' + esc(p.id) + '" data-to="' + (resolved ? 'sent' : 'resolved') + '"' }]) +
+            '</td></tr>';
+      }).join('');
+    }
+    var head = '<tr><th>family</th><th>terms</th><th class="num">plan total</th><th>notes</th><th></th></tr>';
+    // resolved families are history, not work — they stay folded away
+    $('chaseList').innerHTML =
+      '<div class="wrap-scroll"><table>' + head + rows(open, false) + '</table></div>' +
+      '<div class="pgroup" style="margin-top:18px">' +
+        '<div class="pghead" id="chDoneHead" style="cursor:pointer;display:flex;align-items:center;gap:10px;' +
+          'padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)">' +
+          '<span style="color:var(--gold);font-size:11px;width:10px">' + (CHASE_DONE_OPEN ? '&#9660;' : '&#9654;') + '</span>' +
+          '<b style="flex:1">Resolved</b><span class="sub">' + done.length + ' converted · ' + usd(got) + '</span></div>' +
+        '<div id="chDoneBody" style="display:' + (CHASE_DONE_OPEN ? 'block' : 'none') + ';padding-top:6px">' +
+          '<div class="wrap-scroll"><table>' + head + rows(done, true) + '</table></div></div></div>';
+    $('chDoneHead').addEventListener('click', function(){
+      CHASE_DONE_OPEN = !CHASE_DONE_OPEN;
+      $('chDoneBody').style.display = CHASE_DONE_OPEN ? 'block' : 'none';
+      $('chDoneHead').firstElementChild.innerHTML = CHASE_DONE_OPEN ? '&#9660;' : '&#9654;';
+    });
+    $('chaseList').querySelectorAll('.ch-note').forEach(function(inp){
+      var t = null;
+      // grow to fit what is written rather than hiding it behind a scrollbar
+      function fit(){ inp.style.height = 'auto'; inp.style.height = (inp.scrollHeight + 2) + 'px'; }
+      fit();
+      inp.addEventListener('input', function(){
+        fit();
+        clearTimeout(t);
+        t = setTimeout(function(){
+          opsApi({ action: 'chase_update', id: inp.dataset.id, notes: inp.value })
+            .then(function(){ inp.style.borderColor = 'var(--ok)'; setTimeout(function(){ inp.style.borderColor = ''; }, 900); });
+        }, 700);
+      });
+    });
+    // terms are reference material: three lines by default, click for the rest
+    $('chaseList').querySelectorAll('.ch-terms').forEach(function(d){
+      d.addEventListener('click', function(){ d.classList.toggle('open'); });
+    });
+    $('chaseList').querySelectorAll('.ch-flip').forEach(function(b){
+      b.addEventListener('click', function(){
+        b.disabled = true;
+        opsApi({ action: 'chase_update', id: b.dataset.id, status: b.dataset.to })
+          .then(function(d){ if (d.error) { alert(d.error); b.disabled = false; return; } loadChase(); })
+          .catch(function(){ b.disabled = false; });
+      });
+    });
+  }
   function renderInventory(inv){
     var sum = inv.summer || [];
     var rp = inv.summer_regpack || {};
@@ -1759,16 +2870,34 @@
   // live roster expands underneath it — who, which family, what they paid.
   // Fetched per node on first open (the camper-history pattern), refetched on
   // every open so it never goes stale.
+  // Every row action lives behind a ⋯ menu — nothing destructive sits one
+  // stray click away, and rows stay readable instead of ending in a row of
+  // buttons. Items are built from {label, cls, attrs} so any row can compose
+  // its own menu.
+  function kebabHtml(items){
+    return '<span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
+      items.map(function(it){
+        return '<button class="' + (it.cls || '') + '"' + (it.attrs || '') + '>' + it.label + '</button>';
+      }).join('') + '</div></span>';
+  }
+  function rosterActionBtns(itemId, camper){
+    var a = ' data-item="' + esc(itemId) + '" data-camper="' + esc(camper || '') + '"';
+    return kebabHtml([
+      { label: 'Move to another session&hellip;', cls: 'r-move', attrs: a },
+      { label: 'Cancel &amp; refund&hellip;', cls: 'r-cancel', attrs: a }
+    ]);
+  }
   function rosterHtml(rows){
     if (!rows || !rows.length) return '<div class="sub" style="padding:6px 2px">nobody registered yet</div>';
     return '<table>' +
-      '<tr><th>camper</th><th>family</th><th class="num">paid</th><th>plan</th><th>when</th></tr>' +
+      '<tr><th>camper</th><th>family</th><th class="num">paid</th><th>plan</th><th>when</th><th></th></tr>' +
       rows.map(function(r){
         return '<tr><td><b>' + esc(r.camper || '') + '</b></td>' +
           '<td>' + esc(r.parent_name || '') + '<div class="sub">' + esc(r.email || '') + '</div></td>' +
           '<td class="num">' + (r.paid_cents != null ? usd(r.paid_cents) : '<span class="sub">—</span>') + '</td>' +
           '<td><span class="tag' + (r.source === 'web' ? ' ok' : '') + '">' + esc(r.source === 'web' ? (r.plan || 'web') : r.source) + '</span></td>' +
-          '<td class="sub">' + (r.ordered_at ? dt(r.ordered_at) : '') + '</td></tr>';
+          '<td class="sub">' + (r.ordered_at ? dt(r.ordered_at) : '') + '</td>' +
+          '<td class="ract">' + (r.source === 'web' && r.item_id ? rosterActionBtns(r.item_id, r.camper) : '') + '</td></tr>';
       }).join('') + '</table>';
   }
   function openRoster(target, params, label){
@@ -1815,8 +2944,7 @@
   $('ovSub').addEventListener('click', function(e){
     if (e.target.id === 'ovToProg') {
       e.preventDefault();
-      var progTab = document.querySelector('#nav a[data-s=inventory]');
-      if (progTab) progTab.click();
+      setTab('products');
       return;
     }
     var sc = e.target.closest('.ovshowcard');
@@ -1852,7 +2980,7 @@
   // the boot preload already filled, so results are instant.
   (function(){
     var box = $('gSearch'), out = $('gRes'), t = null;
-    function jumpTab(s){ var a = document.querySelector('#nav a[data-s=' + s + ']'); if (a) a.click(); }
+    function jumpTab(s){ setTab(s); }
     function results(q){
       q = q.trim().toLowerCase();
       if (q.length < 2) { out.classList.remove('on'); return; }
@@ -1868,10 +2996,10 @@
           arr.findIndex(function(x){ return x.id === a.id; }) === i;
       }).slice(0, 6);
       if (acts.length) html += '<div class="gt">Programs</div>' + acts.map(function(a){
-        return '<a data-go="program" data-q=""><b>' + esc(a.name) + '</b> <span class="sub">' + esc(a.schedule || a.schedule_name || '') + '</span></a>';
+        return '<a data-go="program" data-q="' + esc(a.name) + '"><b>' + esc(a.name) + '</b> <span class="sub">' + esc(a.schedule || a.schedule_name || '') + '</span></a>';
       }).join('');
       var ords = ORDERS.filter(function(o){
-        return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + (o.items || '')).toLowerCase().indexOf(q) !== -1;
+        return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + orderItemsText(o)).toLowerCase().indexOf(q) !== -1;
       }).slice(0, 6);
       if (ords.length) html += '<div class="gt">Orders</div>' + ords.map(function(o){
         return '<a data-go="order" data-q=""><b>' + esc(o.parent_name || o.email) + '</b> <span class="sub">' + usd(o.total_cents) + ' · ' + dt(o.created_at) + '</span></a>';
@@ -1886,8 +3014,19 @@
       var a = e.target.closest('#gRes a');
       if (a) {
         var go = a.dataset.go;
-        if (go === 'camper') { jumpTab('campers'); $('campQ').value = a.dataset.q; renderCampers(); }
-        else if (go === 'program') { jumpTab('inventory'); }
+        if (go === 'camper') {
+          // land on the kid with their panel already open — registrations,
+          // family and editable details, no second click needed
+          jumpTab('campers');
+          $('campQ').value = a.dataset.q;
+          renderCampers();
+          var want = (a.dataset.q || '').toLowerCase();
+          var hit = Array.prototype.filter.call($('tblCampers').querySelectorAll('.camp-row'), function(tr){
+            return (tr.dataset.name || '').toLowerCase() === want;
+          })[0];
+          if (hit) { toggleCamper(hit, true); hit.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }
+        else if (go === 'program') { jumpTab('products'); $('prodQ').value = a.dataset.q || ''; renderProducts(); }
         else if (go === 'order') { jumpTab('orders'); }
       }
       out.classList.remove('on');

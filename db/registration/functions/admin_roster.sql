@@ -12,6 +12,7 @@ AS $function$
   FROM (
     SELECT jsonb_build_object(
       'source', 'web',
+      'item_id', oi.id,
       'camper', oi.camper_name,
       'parent_name', o.parent_name,
       'email', o.email,
