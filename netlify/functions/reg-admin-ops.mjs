@@ -1,5 +1,5 @@
 // Write actions for the registration dashboard — POST /api/reg-admin-ops
-//   { action: 'products_list' }                      -> every activity, incl hidden
+//   { action: 'products_list' }                      -> every activity, incl unlisted
 //   { action: 'product_update', id, fields, reason } -> edit; price change logs + needs reason
 //   { action: 'product_create', fields }             -> new activity (id auto from 2000000)
 //   { action: 'move', item_id, show|band|activity_id, force } -> move a paid seat
@@ -51,9 +51,12 @@ async function audit(action, actor, payload) {
   });
 }
 
-// Fields an admin may edit. Retiring = bookable:false + hidden:true — there is
-// deliberately no delete; sold history hangs off these ids forever.
-const EDITABLE = ["name", "schedule_name", "schedule_meta", "age_range", "price_cents", "capacity", "bookable", "hidden", "category", "location"];
+// Fields an admin may edit. "bookable" is the on/off switch — retiring sets it
+// false and nothing is ever deleted, because sold history hangs off these ids
+// forever. `hidden` (whether a product is listed on the public site) is NOT
+// edited here: that is a design call made off the dashboard, and three
+// audition-gated productions rely on being bookable but unlisted.
+const EDITABLE = ["name", "schedule_name", "schedule_meta", "age_range", "price_cents", "capacity", "bookable", "category", "location"];
 
 // The last day a product is "live": final performance if there is one, else the
 // last session day, else the class end date. Derived here (not trusted from the
@@ -91,7 +94,7 @@ export default async (req) => {
         await db(`activities?id=in.(${stale.map((s) => s.id).join(",")})`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookable: false, hidden: true }),
+          body: JSON.stringify({ bookable: false }),
         });
         await audit("auto_archive_past", actor, { ids: stale.map((s) => s.id), names: stale.map((s) => s.name) });
       }
@@ -108,7 +111,7 @@ export default async (req) => {
       await db(`activities?id=in.(${ids.join(",")})`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookable: false, hidden: true }),
+        body: JSON.stringify({ bookable: false }),
       });
       await audit("archive_past", actor, { ids });
       return Response.json({ ok: true, archived: ids.length });
@@ -177,7 +180,7 @@ export default async (req) => {
           age_range: f.age_range || null,
           location: f.location || null,
           price_cents: price, capacity: cap, sold: 0,
-          active: true, bookable: f.bookable !== false, hidden: !!f.hidden,
+          active: true, bookable: f.bookable !== false, hidden: false,
         }),
       });
       await audit("product_create", actor, { id, name, price_cents: price, capacity: cap });
@@ -185,7 +188,7 @@ export default async (req) => {
     }
 
     // Delete only what nothing ever touched; anything with a registration or
-    // a legacy row retires instead (off sale + hidden) so history keeps its id.
+    // a legacy row is taken off sale instead, so history keeps its id.
     if (action === "product_delete") {
       const id = Number(body.id);
       if (!id) return Response.json({ error: "no id" }, { status: 400 });
@@ -198,11 +201,11 @@ export default async (req) => {
         await db(`activities?id=eq.${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookable: false, hidden: true }),
+          body: JSON.stringify({ bookable: false }),
         });
         await audit("product_retire", actor, { id, name: cur.name, taken });
         return Response.json({ ok: true, retired: true,
-          message: `"${cur.name}" has registrations, so it was retired (off sale + hidden) instead of deleted — history stays.` });
+          message: `"${cur.name}" has registrations, so it was taken off sale instead of deleted — history stays.` });
       }
       await db(`activities?id=eq.${id}`, { method: "DELETE" });
       await audit("product_delete", actor, { id, name: cur.name });

@@ -139,11 +139,11 @@
   .bandrow .bn { font-weight:600; font-size:13px; min-width:110px; }
   .bandrow .bs { color:var(--dim); font-size:11.5px; flex:1; min-width:120px; }
   .bandrow.off .bn, .bandrow.off .bs { opacity:.45; }
-  /* a status light, not a control — flipping a band on or off is a real
-     decision and lives in the ⋯ menu behind a confirm */
+  /* the switch is "are we selling this" (bookable). Turning it off asks first
+     when people are already registered — one stray click once pulled a teen
+     production with 19 kids in it. */
   .btog { position:relative; width:38px; height:21px; border-radius:999px; border:1px solid var(--line);
-    background:rgba(255,255,255,0.06); flex:0 0 auto; transition:background .15s;
-    pointer-events:none; padding:0; }
+    background:rgba(255,255,255,0.06); flex:0 0 auto; transition:background .15s; cursor:pointer; padding:0; }
   .btog i { position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%;
     background:var(--dim); transition:left .15s, background .15s; }
   .btog.on { background:rgba(232,184,75,0.25); border-color:#E8B84B; }
@@ -1060,7 +1060,10 @@
   // one card carrying Kids / Junior / Teens / Technical Theatre, not four
   // unrelated products that happen to share a name.
   function bandLabel(p){ return bandOf(p) || (p.age_range || '').replace(/\s*yrs?\s*/i, '').trim() || 'Standard'; }
-  function isLive(p){ return !!p.active && !p.hidden && p.bookable !== false; }
+  // On sale = bookable. Whether something is listed on the website is a
+  // design decision made off the dashboard, so `hidden` is no longer
+  // something this page sets — it only reports it.
+  function isLive(p){ return !!p.active && p.bookable !== false; }
   // youngest first, with the crew bands after every performing band
   var BAND_RANK = { 'Kids': 0, 'Junior': 1, 'Teens': 2, 'Adult': 3, 'Adults': 3,
     'Tech Crew': 900, 'Technical Theatre': 900, 'Standard': 0 };
@@ -1076,15 +1079,17 @@
     var taken = (p.sold || 0) + (p.booked_offline || 0);
     var live = isLive(p);
     return '<div class="bandrow' + (live ? '' : ' off') + '" data-id="' + p.id + '">' +
-      '<span class="btog' + (live ? ' on' : '') + '" title="' + (live ? 'On sale' : 'Not on sale') + '"><i></i></span>' +
+      '<button class="btog' + (live ? ' on' : '') + '" data-id="' + p.id + '" title="' +
+        (live ? 'On sale — click to stop selling' : 'Not on sale — click to sell') + '"><i></i></button>' +
       '<span class="bn">' + esc(bandLabel(p)) + '</span>' +
       '<span class="bs">' + esc(p.age_range || '') + (p.age_range ? ' · ' : '') + usd(p.price_cents || 0) +
         ' · ' + taken + ' / ' + (p.capacity || 0) + ' filled' +
         (live ? '' : ' · <span class="tag">off sale</span>') +
+        (p.hidden ? ' · <span class="tag" title="not listed publicly on the website">unlisted</span>' : '') +
         (!p.active ? ' · <span class="tag">inactive</span>' : '') + '</span>' +
       kebabHtml([
         { label: 'Edit this band', attrs: ' data-pact="edit" data-id="' + p.id + '"' },
-        { label: live ? 'Take off sale&hellip;' : 'Put on sale', attrs: ' data-pact="' + (live ? 'off' : 'on') + '" data-id="' + p.id + '"' },
+        { label: live ? 'Stop selling&hellip;' : 'Start selling', attrs: ' data-pact="' + (live ? 'off' : 'on') + '" data-id="' + p.id + '"' },
         { label: 'Duplicate band', attrs: ' data-pact="dup" data-id="' + p.id + '"' },
         { label: 'Delete band&hellip;', attrs: ' data-pact="del" data-id="' + p.id + '"' }
       ]) + '</div>';
@@ -1187,6 +1192,29 @@
   }
   // ── product card interactions: expand, switch a band on/off, add a band ──
   $('prodGroups').addEventListener('click', function(e){
+    // The switch sells or stops selling a band. Turning it ON is harmless and
+    // immediate; turning it OFF asks, and says how many people are already in.
+    var tog = e.target.closest('.btog');
+    if (tog) {
+      e.stopPropagation();
+      var tp = prodById(tog.dataset.id);
+      if (!tp) return;
+      var turningOn = !isLive(tp);
+      if (!turningOn) {
+        var have = (tp.sold || 0) + (tp.booked_offline || 0);
+        if (!confirm('Stop selling "' + tp.name + '"?\n\nNobody new can register for it.' +
+          (have ? '\n\n' + have + ' ' + (have === 1 ? 'person is' : 'people are') +
+            ' already registered — they keep their spots, and this does not refund or cancel anyone.' : '') +
+          '\n\nNothing is deleted and you can switch it back on any time.')) return;
+      }
+      tog.classList.toggle('on', turningOn);
+      opsApi({ action: 'product_update', id: tp.id, fields: { bookable: turningOn } })
+        .then(function(d){
+          if (d.error) { alert(d.error); tog.classList.toggle('on', !turningOn); return; }
+          loadProducts();
+        }).catch(function(){ alert('network error'); tog.classList.toggle('on', !turningOn); });
+      return;
+    }
     var addb = e.target.closest('.pc-addband');
     if (addb) { e.stopPropagation(); openAddBand(addb.closest('.pcard')); return; }
     if (e.target.closest('.bandnew')) { e.stopPropagation(); return; }
@@ -1265,7 +1293,7 @@
         schedule_meta: sample.schedule_meta || null, location: sample.location || null,
         price_cents: Math.round(parseFloat(box.querySelector('.nb-price').value || '0') * 100),
         capacity: Math.round(parseFloat(box.querySelector('.nb-cap').value || '0')),
-        bookable: true, hidden: false
+        bookable: true
       } }).then(function(d){
         if (d.error) { st.textContent = d.error; return; }
         PROD_OPEN['card:' + card.dataset.key] = true;
@@ -1291,13 +1319,12 @@
       if (act.dataset.pact === 'off' || act.dataset.pact === 'on') {
         var on = act.dataset.pact === 'on';
         var have = (p0.sold || 0) + (p0.booked_offline || 0);
-        if (!on && !confirm('Take "' + p0.name + '" off sale?\n\n' +
-          'It disappears from the website and nobody new can register.' +
+        if (!on && !confirm('Stop selling "' + p0.name + '"?\n\n' +
+          'Nobody new can register for it.' +
           (have ? '\n\n' + have + ' ' + (have === 1 ? 'person is' : 'people are') +
             ' already registered — they keep their spots, and this does not refund or cancel anyone.' : '') +
           '\n\nNothing is deleted. You can put it back on sale any time.')) return;
-        opsApi({ action: 'product_update', id: p0.id,
-          fields: on ? { bookable: true, hidden: false } : { bookable: false, hidden: true } })
+        opsApi({ action: 'product_update', id: p0.id, fields: { bookable: on } })
           .then(function(d){ if (d.error) { alert(d.error); return; } loadProducts(); })
           .catch(function(){ alert('network error'); });
       }
@@ -1383,7 +1410,7 @@
   }
   function openProdEditor(p, isNew, anchorTr){
     closeProdEditor();
-    p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true, hidden:false };
+    p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true };
     function field(label, html){ return '<label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' + label + '</label>' + html; }
     var host;
     if (anchorTr) {
@@ -1416,8 +1443,7 @@
       '<div id="pe-reason-wrap" style="display:none">' +
         field('Why is the price changing? (required, goes in the price log)', '<input id="pe-reason" style="width:100%">') + '</div>' +
       '<div style="margin:10px 0 4px">' +
-        '<label style="margin-right:14px"><input type="checkbox" id="pe-book"' + (p.bookable !== false ? ' checked' : '') + '> bookable</label>' +
-        '<label><input type="checkbox" id="pe-hide"' + (p.hidden ? ' checked' : '') + '> hidden from site</label>' +
+        '<label><input type="checkbox" id="pe-book"' + (p.bookable !== false ? ' checked' : '') + '> selling this</label>' +
       '</div>' +
       '<div style="margin-top:12px;display:flex;gap:8px;align-items:center"><button id="pe-save" class="btn2">Save</button> ' +
       '<button id="pe-close" class="btn2 ghost">Cancel</button> ' +
@@ -1524,8 +1550,7 @@
         location: loc || null,
         price_cents: Math.round(parseFloat($('pe-price').value || '0') * 100),
         capacity: Math.round(parseFloat($('pe-cap').value || '0')),
-        bookable: $('pe-book').checked,
-        hidden: $('pe-hide').checked
+        bookable: $('pe-book').checked
       };
       var payload = isNew
         ? { action: 'product_create', fields: fields }
