@@ -139,8 +139,11 @@
   .bandrow .bn { font-weight:600; font-size:13px; min-width:110px; }
   .bandrow .bs { color:var(--dim); font-size:11.5px; flex:1; min-width:120px; }
   .bandrow.off .bn, .bandrow.off .bs { opacity:.45; }
+  /* a status light, not a control — flipping a band on or off is a real
+     decision and lives in the ⋯ menu behind a confirm */
   .btog { position:relative; width:38px; height:21px; border-radius:999px; border:1px solid var(--line);
-    background:rgba(255,255,255,0.06); cursor:pointer; flex:0 0 auto; transition:background .15s; }
+    background:rgba(255,255,255,0.06); flex:0 0 auto; transition:background .15s;
+    pointer-events:none; padding:0; }
   .btog i { position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%;
     background:var(--dim); transition:left .15s, background .15s; }
   .btog.on { background:rgba(232,184,75,0.25); border-color:#E8B84B; }
@@ -1073,17 +1076,18 @@
     var taken = (p.sold || 0) + (p.booked_offline || 0);
     var live = isLive(p);
     return '<div class="bandrow' + (live ? '' : ' off') + '" data-id="' + p.id + '">' +
-      '<button class="btog' + (live ? ' on' : '') + '" data-id="' + p.id + '" title="' +
-        (live ? 'On sale — click to turn off' : 'Off — click to put on sale') + '"><i></i></button>' +
+      '<span class="btog' + (live ? ' on' : '') + '" title="' + (live ? 'On sale' : 'Not on sale') + '"><i></i></span>' +
       '<span class="bn">' + esc(bandLabel(p)) + '</span>' +
       '<span class="bs">' + esc(p.age_range || '') + (p.age_range ? ' · ' : '') + usd(p.price_cents || 0) +
         ' · ' + taken + ' / ' + (p.capacity || 0) + ' filled' +
+        (live ? '' : ' · <span class="tag">off sale</span>') +
         (!p.active ? ' · <span class="tag">inactive</span>' : '') + '</span>' +
-      '<span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
-        '<button data-pact="edit" data-id="' + p.id + '">Edit this band</button>' +
-        '<button data-pact="dup" data-id="' + p.id + '">Duplicate band</button>' +
-        '<button data-pact="del" data-id="' + p.id + '">Delete band&hellip;</button>' +
-      '</div></span></div>';
+      kebabHtml([
+        { label: 'Edit this band', attrs: ' data-pact="edit" data-id="' + p.id + '"' },
+        { label: live ? 'Take off sale&hellip;' : 'Put on sale', attrs: ' data-pact="' + (live ? 'off' : 'on') + '" data-id="' + p.id + '"' },
+        { label: 'Duplicate band', attrs: ' data-pact="dup" data-id="' + p.id + '"' },
+        { label: 'Delete band&hellip;', attrs: ' data-pact="del" data-id="' + p.id + '"' }
+      ]) + '</div>';
   }
   function prodCardHtml(key, label, items, group){
     var taken = 0, cap = 0, live = 0, lo = null, hi = null, sched = '';
@@ -1183,21 +1187,6 @@
   }
   // ── product card interactions: expand, switch a band on/off, add a band ──
   $('prodGroups').addEventListener('click', function(e){
-    var tog = e.target.closest('.btog');
-    if (tog) {
-      e.stopPropagation();
-      var p = prodById(tog.dataset.id);
-      if (!p) return;
-      var turningOn = !isLive(p);
-      tog.classList.toggle('on', turningOn);
-      opsApi({ action: 'product_update', id: p.id,
-        fields: turningOn ? { bookable: true, hidden: false } : { bookable: false, hidden: true } })
-        .then(function(d){
-          if (d.error) { alert(d.error); tog.classList.toggle('on', !turningOn); return; }
-          loadProducts();
-        }).catch(function(){ alert('network error'); tog.classList.toggle('on', !turningOn); });
-      return;
-    }
     var addb = e.target.closest('.pc-addband');
     if (addb) { e.stopPropagation(); openAddBand(addb.closest('.pcard')); return; }
     if (e.target.closest('.bandnew')) { e.stopPropagation(); return; }
@@ -1295,6 +1284,22 @@
         var copy = {}; for (var k in p0) copy[k] = p0[k];
         copy.name = p0.name + ' (copy)';
         openProdEditor(copy, true, act.closest('.bandrow'));
+      }
+      // Taking a band off sale pulls it from the website, so it asks first and
+      // says out loud how many people are already registered. Putting one back
+      // on sale harms nothing, so it just goes.
+      if (act.dataset.pact === 'off' || act.dataset.pact === 'on') {
+        var on = act.dataset.pact === 'on';
+        var have = (p0.sold || 0) + (p0.booked_offline || 0);
+        if (!on && !confirm('Take "' + p0.name + '" off sale?\n\n' +
+          'It disappears from the website and nobody new can register.' +
+          (have ? '\n\n' + have + ' ' + (have === 1 ? 'person is' : 'people are') +
+            ' already registered — they keep their spots, and this does not refund or cancel anyone.' : '') +
+          '\n\nNothing is deleted. You can put it back on sale any time.')) return;
+        opsApi({ action: 'product_update', id: p0.id,
+          fields: on ? { bookable: true, hidden: false } : { bookable: false, hidden: true } })
+          .then(function(d){ if (d.error) { alert(d.error); return; } loadProducts(); })
+          .catch(function(){ alert('network error'); });
       }
       if (act.dataset.pact === 'del') {
         if (!confirm('Delete "' + p0.name + '"?\n\nIf anyone has ever registered for it, it will be retired (off sale + hidden) instead — history is never destroyed.')) return;
