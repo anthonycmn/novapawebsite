@@ -1827,10 +1827,30 @@
       cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); saveCart(); });
     });
     $('assignBlocks').querySelectorAll('.bdayInput').forEach(function(inp){
-      inp.addEventListener('change', function(){
+      // same trap as the fall-cast field: iOS fires change mid-scroll, and
+      // re-rendering here closes the picker on whatever it opened on. Save on
+      // change, redraw only once it has closed, and never accept a date that
+      // could not belong to a camper.
+      function commit(reRender){
         var kid = state.kids[+inp.dataset.i];
-        if (kid) { kid.bday = inp.value || null; renderCatAssign(); }
-      });
+        if (!kid || !inp.value) return;
+        var yrs = ageOn(inp.value, '2026-09-15');
+        if (!(yrs >= 3 && yrs <= 25)) {
+          inp.setCustomValidity('Please check this birthday');
+          inp.reportValidity && inp.reportValidity();
+          return;
+        }
+        inp.setCustomValidity('');
+        if (kid.bday === inp.value) return;
+        kid.bday = inp.value;
+        sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday })
+          .then(function(res){
+            if (res && res.error) ev('reg_save_failed', { fn: 'cat_bday', kid: kid.name });
+          });
+        if (reRender) renderCatAssign();
+      }
+      inp.addEventListener('change', function(){ commit(false); });
+      inp.addEventListener('blur', function(){ commit(true); });
     });
     var addBtn = $('cKidAdd');
     if (addBtn) addBtn.addEventListener('click', function(){
