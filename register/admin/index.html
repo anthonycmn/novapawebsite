@@ -75,7 +75,9 @@
   .kb { border:1px solid var(--line); background:transparent; color:var(--dim); border-radius:8px;
     cursor:pointer; padding:0 8px; font-size:14px; line-height:20px; }
   .kb:hover { color:#fff; border-color:#E8B84B; }
-  .kbmenu { display:none; position:absolute; right:0; top:24px; z-index:50; min-width:210px;
+  /* fixed, not absolute: tables carry overflow:hidden for their rounded corners
+     and .wrap-scroll adds overflow-x, either of which clips an absolute menu */
+  .kbmenu { display:none; position:fixed; z-index:70; min-width:210px;
     background:#0d1b30; border:1px solid var(--line); border-radius:10px; padding:4px;
     box-shadow:0 10px 30px rgba(0,0,0,0.5); }
   .kbmenu.on { display:block; }
@@ -153,6 +155,10 @@
   .bar i { display:block; height:100%; background:var(--gold); }
   .bar i.full { background:var(--bad); }
   .wrap-scroll { overflow-x:auto; }
+  /* the table's own overflow:hidden (for the rounded corners) clips anything a
+     squeezed column can't fit, so wide tables must scroll rather than squash */
+  .wrap-scroll table { min-width:760px; }
+  #tblOrders { min-width:1020px; }
 
   /* calendar */
   .cal-head { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
@@ -217,7 +223,7 @@
     <div class="gres" id="gRes"></div>
     <div class="nav" id="nav">
       <a data-s="overview" class="on">Overview</a>
-      <a data-g="programs">Programs</a>
+      <a data-s="products">Products</a>
       <a data-g="families">Families</a>
       <a data-g="money">Money</a>
       <a data-g="rewards">Credits &amp; Referrals</a>
@@ -278,17 +284,18 @@
     </section>
 
     <section class="sec" id="s-products">
-      <h2>Products — edit what we sell</h2>
-      <p class="sub" style="margin:-6px 0 10px">This database is the source of truth: changes here flow to the
-      website checkout and CJ's staff portal. Click a row to edit. Price changes need a reason and are logged.
-      Nothing gets deleted — retiring a product hides it and stops sales, history stays.</p>
+      <h2>Products — everything we sell</h2>
+      <p class="sub" style="margin:-6px 0 10px">Grouped the same way as the Overview rings. Click a category to
+      open it, then a product to edit — or use its &#8943; menu to duplicate or remove. This database is the
+      source of truth: changes flow to the website checkout and CJ's staff portal. Price changes need a reason
+      and are logged, and anything with registrations retires instead of deleting.</p>
       <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
         <input type="text" id="prodQ" placeholder="Filter products&hellip;" style="flex:0 0 260px">
         <button id="prodNew" class="btn2">+ New product</button>
         <span class="sub" id="prodStatus"></span>
       </div>
       <div id="prodEditor" style="display:none"></div>
-      <div class="wrap-scroll"><table id="tblProducts"></table></div>
+      <div id="prodGroups"></div>
     </section>
 
     <section class="sec" id="s-campers">
@@ -544,7 +551,6 @@
   // a pill; setTab(member) is the one way to change views, so search jumps
   // and drill-throughs land on the right pill too.
   var GROUPS = {
-    programs: [['inventory', 'Capacity & rosters'], ['products', 'Edit products']],
     families: [['campers', 'Campers'], ['orders', 'Orders']],
     money: [['balances', 'Balances'], ['accounting', 'Accounting'], ['insurance', 'Insurance'], ['cashflow', 'Cash flow']],
     rewards: [['credits', 'Credits'], ['referrals', 'Referrals']]
@@ -762,6 +768,22 @@
   $('accYear').addEventListener('change', function(){ ACC = null; loadAccounting(); });
   // ---- Phase C write ops: everything goes through /api/reg-admin-ops, which
   // re-proves the caller is an admin and stamps every change into admin_actions.
+  // ⋯ menus are position:fixed so no table's overflow can clip them, which
+  // means the coordinates have to be set when the menu opens.
+  function wireKebabs(root){
+    root.querySelectorAll('.kb').forEach(function(k){
+      k.addEventListener('click', function(e){
+        e.stopPropagation();
+        var menu = k.nextElementSibling, open = menu.classList.contains('on');
+        document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+        if (open) return;
+        var r = k.getBoundingClientRect();
+        menu.style.left = Math.max(8, Math.min(window.innerWidth - 226, r.right - 210)) + 'px';
+        menu.style.top = (window.innerHeight - r.bottom < 120 ? r.top - 96 : r.bottom + 4) + 'px';
+        menu.classList.add('on');
+      });
+    });
+  }
   function opsApi(payload){
     return sb.auth.getSession().then(function(res){
       var token = res.data && res.data.session && res.data.session.access_token;
@@ -783,48 +805,128 @@
       renderProducts();
     }).catch(function(){ $('prodStatus').textContent = 'network error'; });
   }
+  // Products are filed under the same headings as the Overview rings, so the
+  // dashboard tells one story: a ring you recognise there opens the same
+  // bucket here, with the products inside it editable.
+  function prodBucket(p){
+    var n = p.name || '', cat = p.category || '', id = +p.id || 0;
+    if (cat === 'performance' || /\d(am|pm) Performance/i.test(n))
+      return ['Performance Tickets', 'Box office'];
+    if (cat === 'camp' && /trolls|dragon|chocolate factory/i.test(n))
+      return ['Summer 2027', /trolls/i.test(n) ? 'Trolls Jr.'
+        : /dragon/i.test(n) ? 'How to Train Your Dragon Jr.' : 'Charlie and the Chocolate Factory Jr.'];
+    if (cat === 'camp' && /frozen|mermaid/i.test(n))
+      return ['Fall Shows', /mermaid/i.test(n) ? 'The Little Mermaid' : 'Frozen'];
+    if (cat === 'camp' && /sweeney|hadestown|conservatory/i.test(n))
+      return ['Teen Conservatory', n.split('-')[0].trim() || n];
+    if (cat === 'camp' && /mean girls|dear evan hansen/i.test(n))
+      return ['Other Productions', /mean girls/i.test(n) ? 'Mean Girls' : 'Dear Evan Hansen'];
+    if (cat === 'class') return ['Classes',
+      /^adult/i.test(n) ? 'Adult Classes'
+      : /homeschool/i.test(n) ? 'Homeschool'
+      : /ballet|hip-hop|dance|k-pop/i.test(n) ? 'Dance'
+      : /acting|improv/i.test(n) ? 'Acting & Improv' : 'Musical Theatre'];
+    if (id >= 970000 && id <= 979999 || cat === 'coaching') return ['Coaching',
+      id >= 970500 ? 'Branding & Media' : id >= 970400 ? 'Acting Coaching'
+      : id >= 970300 ? 'Pre-Screen Videos' : id >= 970200 ? 'Audition Prep & Support' : 'College Auditions'];
+    if (cat === 'camp' && ((p.price_cents || 0) <= 20000 || /day camp/i.test(n))) {
+      var base = n.split('·')[0].trim();
+      return ['Day Camps', PROD_SERIES[base] > 1 ? base : 'Themed One-Day Camps'];
+    }
+    return ['Other', cat || 'uncategorised'];
+  }
+  var PROD_SERIES = {}, PROD_OPEN = {};
+  // same running order as the Overview rings, with the odds and ends after
+  var PROD_ORDER = ['Summer 2027', 'Fall Shows', 'Classes', 'Day Camps', 'Teen Conservatory',
+    'Coaching', 'Other Productions', 'Performance Tickets', 'Other'];
+
+  function prodRowHtml(p){
+    var taken = (p.sold || 0) + (p.booked_offline || 0);
+    var state = !p.active ? '<span class="tag">inactive</span>'
+      : p.hidden ? '<span class="tag">hidden</span>'
+      : p.bookable === false ? '<span class="tag bad">not bookable</span>'
+      : '<span class="tag ok">on sale</span>';
+    return '<tr class="prow" data-id="' + p.id + '" style="cursor:pointer">' +
+      '<td><b>' + esc(p.name) + '</b><div class="sub">#' + p.id + (p.age_range ? ' · ages ' + esc(p.age_range) : '') + '</div></td>' +
+      '<td class="sub">' + esc(p.schedule_name || '—') + '</td>' +
+      '<td class="num">' + usd(p.price_cents || 0) + '</td>' +
+      '<td class="num">' + taken + ' / ' + (p.capacity || 0) + '</td>' +
+      '<td>' + state + '</td>' +
+      '<td><span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
+        '<button data-pact="edit" data-id="' + p.id + '">Edit</button>' +
+        '<button data-pact="dup" data-id="' + p.id + '">Duplicate</button>' +
+        '<button data-pact="del" data-id="' + p.id + '">Delete&hellip;</button>' +
+      '</div></span></td></tr>';
+  }
   function renderProducts(){
     if (!PRODS) return;
+    PROD_SERIES = {};
+    PRODS.forEach(function(p){
+      if (p.category === 'camp' && (p.price_cents || 0) <= 20000) {
+        var b = (p.name || '').split('·')[0].trim();
+        PROD_SERIES[b] = (PROD_SERIES[b] || 0) + 1;
+      }
+    });
     var q = ($('prodQ').value || '').trim().toLowerCase();
     var rows = PRODS.filter(function(p){
-      return !q || (p.name + ' ' + (p.category || '') + ' ' + p.id).toLowerCase().indexOf(q) !== -1;
+      return !q || (p.name + ' ' + (p.category || '') + ' ' + (p.schedule_name || '') + ' ' + p.id).toLowerCase().indexOf(q) !== -1;
     });
-    $('prodStatus').textContent = rows.length + ' of ' + PRODS.length;
-    $('tblProducts').innerHTML =
-      '<tr><th>name</th><th>category</th><th>schedule</th><th>ages</th><th class="num">price</th><th class="num">cap</th><th class="num">taken</th><th>state</th><th></th></tr>' +
-      rows.map(function(p){
-        var taken = (p.sold || 0) + (p.booked_offline || 0);
-        var state = !p.active ? '<span class="tag">inactive</span>'
-          : p.hidden ? '<span class="tag">hidden</span>'
-          : p.bookable === false ? '<span class="tag bad">not bookable</span>'
-          : '<span class="tag ok">on sale</span>';
-        return '<tr class="prow" data-id="' + p.id + '" style="cursor:pointer">' +
-          '<td><b>' + esc(p.name) + '</b><div class="sub">#' + p.id + '</div></td>' +
-          '<td>' + esc(p.category || '') + '</td>' +
-          '<td class="sub">' + esc(p.schedule_name || '') + '</td>' +
-          '<td class="sub">' + esc(p.age_range || '') + '</td>' +
-          '<td class="num">' + usd(p.price_cents || 0) + '</td>' +
-          '<td class="num">' + (p.capacity || 0) + '</td>' +
-          '<td class="num">' + taken + '</td>' +
-          '<td>' + state + '</td>' +
-          '<td><span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
-            '<button data-pact="edit" data-id="' + p.id + '">Edit</button>' +
-            '<button data-pact="dup" data-id="' + p.id + '">Duplicate</button>' +
-            '<button data-pact="del" data-id="' + p.id + '">Delete&hellip;</button>' +
-          '</div></span></td></tr>';
-      }).join('');
-    $('tblProducts').querySelectorAll('.kb').forEach(function(k){
-      k.addEventListener('click', function(e){
-        e.stopPropagation();
-        var menu = k.nextElementSibling, open = menu.classList.contains('on');
-        document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
-        if (!open) menu.classList.add('on');
+    $('prodStatus').textContent = q ? rows.length + ' of ' + PRODS.length + ' match' : PRODS.length + ' products';
+
+    var tree = {};
+    rows.forEach(function(p){
+      var b = prodBucket(p);
+      tree[b[0]] = tree[b[0]] || {};
+      (tree[b[0]][b[1]] = tree[b[0]][b[1]] || []).push(p);
+    });
+    var names = Object.keys(tree).sort(function(a, b){
+      var A = PROD_ORDER.indexOf(a), B = PROD_ORDER.indexOf(b);
+      return (A < 0 ? 99 : A) - (B < 0 ? 99 : B);
+    });
+    if (!names.length) { $('prodGroups').innerHTML = '<p class="sub">Nothing matches.</p>'; return; }
+
+    $('prodGroups').innerHTML = names.map(function(g){
+      var subs = tree[g], subNames = Object.keys(subs).sort();
+      var all = [], taken = 0, cap = 0, live = 0;
+      subNames.forEach(function(s){ all = all.concat(subs[s]); });
+      all.forEach(function(p){
+        taken += (p.sold || 0) + (p.booked_offline || 0); cap += p.capacity || 0;
+        if (p.active && !p.hidden && p.bookable !== false) live++;
       });
-    });
+      // searching opens what it found; otherwise remember what you had open
+      var open = q ? true : !!PROD_OPEN[g];
+      return '<div class="pgroup" data-g="' + esc(g) + '" style="margin-bottom:10px">' +
+        '<div class="pghead" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;' +
+          'border:1px solid var(--line);border-radius:10px;background:var(--panel)">' +
+          '<span style="color:var(--gold);font-size:11px;width:10px">' + (open ? '&#9660;' : '&#9654;') + '</span>' +
+          '<b style="flex:1">' + esc(g) + '</b>' +
+          '<span class="sub">' + all.length + ' product' + (all.length === 1 ? '' : 's') +
+            ' · ' + live + ' on sale · ' + taken + ' / ' + cap + ' filled</span></div>' +
+        '<div class="pgbody" style="display:' + (open ? 'block' : 'none') + ';padding:6px 0 2px 10px">' +
+          subNames.map(function(s){
+            return (subNames.length > 1 || s !== g
+              ? '<div class="sub" style="margin:10px 0 4px;text-transform:uppercase;letter-spacing:.1em;font-size:10px">' + esc(s) + '</div>' : '') +
+              '<div class="wrap-scroll"><table>' +
+              '<tr><th>product</th><th>schedule</th><th class="num">price</th><th class="num">filled</th><th>state</th><th></th></tr>' +
+              subs[s].slice().sort(function(a, b){ return (a.name || '').localeCompare(b.name || ''); })
+                .map(prodRowHtml).join('') + '</table></div>';
+          }).join('') +
+        '</div></div>';
+    }).join('');
+    wireKebabs($('prodGroups'));
   }
+  $('prodGroups').addEventListener('click', function(e){
+    var h = e.target.closest('.pghead');
+    if (!h) return;
+    var g = h.parentNode, body = g.querySelector('.pgbody');
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    h.firstElementChild.innerHTML = open ? '&#9654;' : '&#9660;';
+    PROD_OPEN[g.dataset.g] = !open;
+  });
   function prodById(id){ return (PRODS || []).filter(function(x){ return String(x.id) === String(id); })[0]; }
   $('prodQ').addEventListener('input', function(){ renderProducts(); });
-  $('tblProducts').addEventListener('click', function(e){
+  $('prodGroups').addEventListener('click', function(e){
     var act = e.target.closest('button[data-pact]');
     if (act) {
       var p0 = prodById(act.dataset.id);
@@ -1233,14 +1335,7 @@
                    side('New family:', r.referred_email, r.referred_name, r.referred_redeemed_at, 'referred') + '</td></tr>';
       });
       $('tblRefs').innerHTML = html;
-      $('tblRefs').querySelectorAll('.kb').forEach(function(k){
-        k.addEventListener('click', function(e){
-          e.stopPropagation();
-          var menu = k.nextElementSibling, open = menu.classList.contains('on');
-          document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
-          if (!open) menu.classList.add('on');
-        });
-      });
+      wireKebabs($('tblRefs'));
       $('tblRefs').querySelectorAll('button[data-red]').forEach(function(b){
         b.addEventListener('click', function(){
           var p = b.dataset.red.split('|'), undo = p[2] === 'undo';
@@ -2016,14 +2111,14 @@
       '<tr><th>date</th><th>family</th><th>items</th><th>plan</th><th class="num">today</th><th class="num">total</th><th>sawyer</th><th></th></tr>' +
       rows.map(function(o){
         var itemsHtml = (o.items || []).map(function(i){
-          return '<div style="margin:2px 0;white-space:nowrap">' +
-            '<a class="o-camper" data-name="' + esc(i.camper || '') + '" style="cursor:pointer;text-decoration:underline dotted">' + esc(i.camper || '') + '</a>' +
-            ' <span class="sub">' + esc(i.what || '') + '</span> ' +
-            (i.item_id ? rosterActionBtns(i.item_id, i.camper) : '') + '</div>';
+          return '<div style="margin:2px 0">' +
+            '<a class="o-camper" data-name="' + esc(i.camper || '') + '" style="cursor:pointer;text-decoration:underline dotted;white-space:nowrap">' + esc(i.camper || '') + '</a>' +
+            ' <span class="sub">' + esc(i.what || '') + '</span>' +
+            (i.item_id ? '<span style="white-space:nowrap"> ' + rosterActionBtns(i.item_id, i.camper) + '</span>' : '') + '</div>';
         }).join('');
-        return '<tr><td>' + dt(o.created_at) + '</td>' +
+        return '<tr><td style="white-space:nowrap">' + dt(o.created_at) + '</td>' +
           '<td>' + esc(o.parent_name || '') + '<div class="sub">' + esc(o.email) + '</div></td>' +
-          '<td>' + itemsHtml + '</td>' +
+          '<td style="max-width:380px">' + itemsHtml + '</td>' +
           '<td><span class="tag ' + (o.plan==='subscription'?'gold':'') + '">' + o.plan + '</span></td>' +
           '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
           '<td class="num">' + usd2(o.total_cents) + '</td>' +
@@ -2376,7 +2471,7 @@
   $('ovSub').addEventListener('click', function(e){
     if (e.target.id === 'ovToProg') {
       e.preventDefault();
-      setTab('inventory');
+      setTab('products');
       return;
     }
     var sc = e.target.closest('.ovshowcard');
@@ -2428,7 +2523,7 @@
           arr.findIndex(function(x){ return x.id === a.id; }) === i;
       }).slice(0, 6);
       if (acts.length) html += '<div class="gt">Programs</div>' + acts.map(function(a){
-        return '<a data-go="program" data-q=""><b>' + esc(a.name) + '</b> <span class="sub">' + esc(a.schedule || a.schedule_name || '') + '</span></a>';
+        return '<a data-go="program" data-q="' + esc(a.name) + '"><b>' + esc(a.name) + '</b> <span class="sub">' + esc(a.schedule || a.schedule_name || '') + '</span></a>';
       }).join('');
       var ords = ORDERS.filter(function(o){
         return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + orderItemsText(o)).toLowerCase().indexOf(q) !== -1;
@@ -2447,7 +2542,7 @@
       if (a) {
         var go = a.dataset.go;
         if (go === 'camper') { jumpTab('campers'); $('campQ').value = a.dataset.q; renderCampers(); }
-        else if (go === 'program') { jumpTab('inventory'); }
+        else if (go === 'program') { jumpTab('products'); $('prodQ').value = a.dataset.q || ''; renderProducts(); }
         else if (go === 'order') { jumpTab('orders'); }
       }
       out.classList.remove('on');
