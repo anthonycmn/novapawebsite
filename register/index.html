@@ -58,6 +58,10 @@
   .sub { color:var(--ink-dim); font-size:16px; line-height:1.6; margin-bottom:26px; }
   .step { display:none; animation:fade .35s ease; }
   .step.on { display:block; }
+  .spinner { width:34px; height:34px; margin:0 auto; border-radius:50%;
+    border:3px solid rgba(255,255,255,0.15); border-top-color:var(--gold3,#e9c46a);
+    animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg) } }
   @keyframes fade { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
 
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px; }
@@ -290,6 +294,19 @@
   </section>
 
   <!-- STEP: returning email -->
+  <!-- Signing in from an email link is not instant: supabase exchanges the
+       token, then the family view needs seven RPCs. Showing the email form
+       through all of that reads as "nothing happened, press it again". -->
+  <section class="step" id="st-loading">
+    <div class="eyebrow">One moment</div>
+    <h1>Signing you <em>in&hellip;</em></h1>
+    <p class="sub" id="loadMsg">Loading your family and this season's programs.</p>
+    <div class="card" style="text-align:center;padding:26px">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="tiny" style="margin-top:14px">This takes a few seconds the first time.</p>
+    </div>
+  </section>
+
   <section class="step" id="st-remail">
     <button class="back" data-back="st-gate">← Back</button>
     <div class="eyebrow">Welcome back</div>
@@ -790,16 +807,18 @@
   }
   sb.auth.onAuthStateChange(function(_evt, session){ enterWith(session); });
   if (authReturn) {
-    // say what is happening instead of showing a gate we are about to replace
-    var ge = $('gateErr');
-    if (ge) { ge.textContent = 'Signing you in…'; ge.classList.add('on'); }
-    go('st-remail');
-    // if the exchange never completes, fall back to asking rather than hanging
+    go('st-loading');
+    // if the exchange never completes, ask rather than spin forever
     setTimeout(function(){
       if (entered) return;
-      if (ge) { ge.innerHTML = "<b>That sign-in link didn't work.</b> Enter your email below for a new one."; }
+      var ge = $('gateErr');
+      if (ge) {
+        ge.innerHTML = "<b>That sign-in link didn't work.</b> Enter your email below for a new one.";
+        ge.classList.add('on');
+      }
+      go('st-remail');
       var inp = $('emailInput'); if (inp) inp.focus();
-    }, 6000);
+    }, 12000);
   }
 
   sb.auth.getSession().then(function(res){
@@ -940,10 +959,12 @@
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent='Please enter a valid email.'; errEl.classList.add('on'); return; }
     state.email = email.toLowerCase();
     $('emailGo').disabled = true;
+    $('emailGo').textContent = 'Checking…';
     ev('reg_email_submitted');
     sb.rpc('email_known', { p_email: state.email }).then(function(res){
       if (!res.data) {
         $('emailGo').disabled = false;
+        $('emailGo').textContent = 'Continue';
         ev('reg_email_unknown', { email: state.email });
         // bank the lead — dedupes server-side, failure is invisible to the user
         try { sb.rpc('join_waitlist', { p_email: state.email, p_source: 'unknown-email' }); } catch(e){}
@@ -959,11 +980,13 @@
   }
   function sendLink(){
     rememberIntent();
+    var go2 = $('emailGo'); if (go2) { go2.disabled = true; go2.textContent = 'Sending your link…'; }
     sb.auth.signInWithOtp({
       email: state.email,
       options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
     }).then(function(res){
       $('emailGo').disabled = false;
+      $('emailGo').textContent = 'Continue';
       if (res.error) { var e=$('gateErr'); e.textContent = res.error.message || 'Could not send the link — try again shortly.'; e.classList.add('on'); return; }
       $('sentTo').textContent = state.email;
       ev('reg_link_sent');
@@ -984,10 +1007,12 @@
   }
   function sendLinkNew(){
     rememberIntent();
+    var wj = $('wlJoin'); if (wj) { wj.disabled = true; wj.textContent = 'Sending your link…'; }
     sb.auth.signInWithOtp({
       email: state.email,
       options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
     }).then(function(res){
+      var wj2 = $('wlJoin'); if (wj2) { wj2.disabled = false; wj2.textContent = 'Continue'; }
       if (res.error) { var e=$('wlErr'); e.textContent = res.error.message || 'Could not send the link — try again shortly.'; e.classList.add('on'); return; }
       $('sentTo').textContent = state.email;
       ev('reg_link_sent');
@@ -999,6 +1024,8 @@
 
   // ---------- step: family ----------
   function loadFamily(){
+    var cur = document.querySelector('.step.on');
+    if (!cur || cur.id !== 'st-shows') go('st-loading');
     sb.rpc('ensure_my_family').then(function(){ loadFamily2(); });
   }
   function loadFamily2(){
