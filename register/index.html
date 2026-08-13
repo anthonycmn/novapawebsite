@@ -58,6 +58,10 @@
   .sub { color:var(--ink-dim); font-size:16px; line-height:1.6; margin-bottom:26px; }
   .step { display:none; animation:fade .35s ease; }
   .step.on { display:block; }
+  .spinner { width:34px; height:34px; margin:0 auto; border-radius:50%;
+    border:3px solid rgba(255,255,255,0.15); border-top-color:var(--gold3,#e9c46a);
+    animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg) } }
   @keyframes fade { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
 
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px; }
@@ -290,6 +294,19 @@
   </section>
 
   <!-- STEP: returning email -->
+  <!-- Signing in from an email link is not instant: supabase exchanges the
+       token, then the family view needs seven RPCs. Showing the email form
+       through all of that reads as "nothing happened, press it again". -->
+  <section class="step" id="st-loading">
+    <div class="eyebrow">One moment</div>
+    <h1>Signing you <em>in&hellip;</em></h1>
+    <p class="sub" id="loadMsg">Loading your family and this season's programs.</p>
+    <div class="card" style="text-align:center;padding:26px">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="tiny" style="margin-top:14px">This takes a few seconds the first time.</p>
+    </div>
+  </section>
+
   <section class="step" id="st-remail">
     <button class="back" data-back="st-gate">← Back</button>
     <div class="eyebrow">Welcome back</div>
@@ -796,16 +813,18 @@
   }
   sb.auth.onAuthStateChange(function(_evt, session){ enterWith(session); });
   if (authReturn) {
-    // say what is happening instead of showing a gate we are about to replace
-    var ge = $('gateErr');
-    if (ge) { ge.textContent = 'Signing you in…'; ge.classList.add('on'); }
-    go('st-remail');
-    // if the exchange never completes, fall back to asking rather than hanging
+    go('st-loading');
+    // if the exchange never completes, ask rather than spin forever
     setTimeout(function(){
       if (entered) return;
-      if (ge) { ge.innerHTML = "<b>That sign-in link didn't work.</b> Enter your email below for a new one."; }
+      var ge = $('gateErr');
+      if (ge) {
+        ge.innerHTML = "<b>That sign-in link didn't work.</b> Enter your email below for a new one.";
+        ge.classList.add('on');
+      }
+      go('st-remail');
       var inp = $('emailInput'); if (inp) inp.focus();
-    }, 6000);
+    }, 12000);
   }
 
   sb.auth.getSession().then(function(res){
@@ -1016,6 +1035,8 @@
 
   // ---------- step: family ----------
   function loadFamily(){
+    var cur = document.querySelector('.step.on');
+    if (!cur || cur.id !== 'st-shows') go('st-loading');
     sb.rpc('ensure_my_family').then(function(){ loadFamily2(); });
   }
   function loadFamily2(){
