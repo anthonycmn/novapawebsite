@@ -177,6 +177,7 @@
       <a data-s="orders">Orders</a>
       <a data-s="balances">Balances</a>
       <a data-s="inventory">Programs</a>
+      <a data-s="products">Products</a>
       <a data-s="campers">Campers</a>
       <a data-s="accounting">Accounting</a>
       <a data-s="insurance">Insurance</a>
@@ -191,12 +192,12 @@
 
   <div class="main">
     <section class="sec on" id="s-overview">
+      <h2>Revenue (Stripe)</h2>
+      <div class="stats" id="stRevenue" style="margin-bottom:14px"></div>
       <h2>Sellout Progress</h2>
       <p class="sub" style="margin:-6px 0 10px">Click a ring to drill down — program &rsaquo; show &rsaquo; age group &rsaquo; live roster.</p>
       <div id="stFill" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px"></div>
       <div id="ovSub"><div></div></div>
-      <h2>Revenue (Stripe)</h2>
-      <div class="stats" id="stRevenue"></div>
     </section>
 
     <section class="sec" id="s-orders">
@@ -236,6 +237,20 @@
         <p class="sub" style="margin:-6px 0 10px">Orders that contained an insurable program and went without. Day camps and classes are not eligible, so they are left out of both counts.</p>
         <div class="wrap-scroll"><table id="tblInsNo"></table></div>
       </div>
+    </section>
+
+    <section class="sec" id="s-products">
+      <h2>Products — edit what we sell</h2>
+      <p class="sub" style="margin:-6px 0 10px">This database is the source of truth: changes here flow to the
+      website checkout and CJ's staff portal. Click a row to edit. Price changes need a reason and are logged.
+      Nothing gets deleted — retiring a product hides it and stops sales, history stays.</p>
+      <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
+        <input type="text" id="prodQ" placeholder="Filter products…" style="flex:0 0 260px">
+        <button id="prodNew">+ New product</button>
+        <span class="sub" id="prodStatus"></span>
+      </div>
+      <div id="prodEditor" style="display:none"></div>
+      <div class="wrap-scroll"><table id="tblProducts"></table></div>
     </section>
 
     <section class="sec" id="s-campers">
@@ -329,6 +344,9 @@
       family's share link. Both families are owed <b>2 tickets to any show</b>. Families see and redeem
       their own tickets from My NOVAPA at the box office — the &#8943; menu here is the manual override
       (mark redeemed, or undo a mistake).</p>
+      <p style="margin:0 0 12px"><button id="refAdd">+ Add referral manually</button>
+      <span class="sub">For when a referral didn't record itself: $0 orders and first-month-free class
+      carts never earn automatically, and some families forget to use the link.</span></p>
       <div class="wrap-scroll"><table id="tblRefs"></table></div>
     </section>
 
@@ -464,6 +482,7 @@
       rload('overview', 'admin_overview_groups', function(d){ renderFill(d || []); });
     },
     orders:    function(){ rload('orders', 'admin_orders', function(d){ ORDERS = d || []; renderOrders(ORDERS); }); },
+    products:  function(){ loadProducts(); },
     balances:  function(){ rload('balances', 'admin_balances', function(d){ renderBalances(d || []); }); },
     inventory: loadInventory,
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
@@ -512,7 +531,7 @@
   function boot(){
     // preload EVERY tab, staggered so the heavy calls don't race one another —
     // no tab should ever greet you with a Load button or an empty table
-    ['overview','orders','balances','inventory','campers','hiring','referrals',
+    ['overview','orders','balances','inventory','products','campers','hiring','referrals',
      'credits','cashflow','insurance','accounting','starpages']
       .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
@@ -670,9 +689,231 @@
     }).catch(function(e){ $('accStatus').textContent = 'network error'; });
   }
   $('accYear').addEventListener('change', function(){ ACC = null; loadAccounting(); });
+  // ---- Phase C write ops: everything goes through /api/reg-admin-ops, which
+  // re-proves the caller is an admin and stamps every change into admin_actions.
+  function opsApi(payload){
+    return sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-admin-ops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+    }).then(function(r){ return r.json(); });
+  }
+
+  // ---- Products: the catalog, editable ----
+  var PRODS = null;
+  function loadProducts(){
+    opsApi({ action: 'products_list' }).then(function(d){
+      if (d.error) { $('prodStatus').textContent = 'error: ' + d.error; return; }
+      lastLoad.products = Date.now();
+      PRODS = d.products || [];
+      renderProducts();
+    }).catch(function(){ $('prodStatus').textContent = 'network error'; });
+  }
+  function renderProducts(){
+    if (!PRODS) return;
+    var q = ($('prodQ').value || '').trim().toLowerCase();
+    var rows = PRODS.filter(function(p){
+      return !q || (p.name + ' ' + (p.category || '') + ' ' + p.id).toLowerCase().indexOf(q) !== -1;
+    });
+    $('prodStatus').textContent = rows.length + ' of ' + PRODS.length;
+    $('tblProducts').innerHTML =
+      '<tr><th>name</th><th>category</th><th>schedule</th><th>ages</th><th class="num">price</th><th class="num">cap</th><th class="num">taken</th><th>state</th></tr>' +
+      rows.map(function(p){
+        var taken = (p.sold || 0) + (p.booked_offline || 0);
+        var state = !p.active ? '<span class="tag">inactive</span>'
+          : p.hidden ? '<span class="tag">hidden</span>'
+          : p.bookable === false ? '<span class="tag bad">not bookable</span>'
+          : '<span class="tag ok">on sale</span>';
+        return '<tr class="prow" data-id="' + p.id + '" style="cursor:pointer">' +
+          '<td><b>' + esc(p.name) + '</b><div class="sub">#' + p.id + '</div></td>' +
+          '<td>' + esc(p.category || '') + '</td>' +
+          '<td class="sub">' + esc(p.schedule_name || '') + '</td>' +
+          '<td class="sub">' + esc(p.age_range || '') + '</td>' +
+          '<td class="num">' + usd(p.price_cents || 0) + '</td>' +
+          '<td class="num">' + (p.capacity || 0) + '</td>' +
+          '<td class="num">' + taken + '</td>' +
+          '<td>' + state + '</td></tr>';
+      }).join('');
+  }
+  $('prodQ').addEventListener('input', function(){ renderProducts(); });
+  $('tblProducts').addEventListener('click', function(e){
+    var tr = e.target.closest('tr.prow');
+    if (!tr) return;
+    var p = (PRODS || []).filter(function(x){ return String(x.id) === tr.dataset.id; })[0];
+    if (p) openProdEditor(p);
+  });
+  $('prodNew').addEventListener('click', function(){ openProdEditor(null); });
+
+  function openProdEditor(p){
+    var isNew = !p;
+    p = p || { name:'', category:'class', schedule_name:'', age_range:'', location:'', price_cents:9000, capacity:20, bookable:true, hidden:false };
+    function field(label, html){ return '<label style="display:block;font-size:11px;color:var(--dim);margin:6px 0 2px">' + label + '</label>' + html; }
+    $('prodEditor').style.display = 'block';
+    $('prodEditor').innerHTML = '<div class="ovpanel" style="max-width:640px">' +
+      '<b>' + (isNew ? 'New product' : 'Edit: ' + esc(p.name)) + '</b>' +
+      field('Name', '<input id="pe-name" style="width:100%" value="' + esc(p.name) + '">') +
+      '<div style="display:flex;gap:10px">' +
+        '<div style="flex:1">' + field('Category', '<select id="pe-cat" style="width:100%">' +
+          ['class','camp','coaching','performance'].map(function(c){
+            return '<option' + (p.category === c ? ' selected' : '') + '>' + c + '</option>';
+          }).join('') + '</select>') + '</div>' +
+        '<div style="flex:1">' + field('Ages', '<input id="pe-age" style="width:100%" value="' + esc(p.age_range || '') + '">') + '</div>' +
+      '</div>' +
+      field('Schedule (what families see, e.g. "Saturdays 10–11am · Sep 12 – Jan 16")',
+        '<input id="pe-sched" style="width:100%" value="' + esc(p.schedule_name || '') + '">') +
+      field('Location', '<input id="pe-loc" style="width:100%" value="' + esc(p.location || '') + '">') +
+      '<div style="display:flex;gap:10px">' +
+        '<div style="flex:1">' + field('Price ($)', '<input id="pe-price" type="number" step="0.01" style="width:100%" value="' + ((p.price_cents || 0) / 100) + '">') + '</div>' +
+        '<div style="flex:1">' + field('Capacity', '<input id="pe-cap" type="number" style="width:100%" value="' + (p.capacity || 0) + '">') + '</div>' +
+      '</div>' +
+      '<div id="pe-reason-wrap" style="display:none">' +
+        field('Why is the price changing? (required, goes in the price log)', '<input id="pe-reason" style="width:100%">') + '</div>' +
+      '<div style="margin:10px 0 4px">' +
+        '<label style="margin-right:14px"><input type="checkbox" id="pe-book"' + (p.bookable !== false ? ' checked' : '') + '> bookable</label>' +
+        '<label><input type="checkbox" id="pe-hide"' + (p.hidden ? ' checked' : '') + '> hidden from site</label>' +
+      '</div>' +
+      '<div style="margin-top:10px"><button id="pe-save" class="tag ok" style="cursor:pointer;border:0;padding:6px 14px">Save</button> ' +
+      '<button id="pe-close" class="tag" style="cursor:pointer;border:0;padding:6px 14px">Cancel</button> ' +
+      '<span class="sub" id="pe-status"></span></div></div>';
+    var origPrice = p.price_cents || 0;
+    $('pe-price').addEventListener('input', function(){
+      var now = Math.round(parseFloat($('pe-price').value || '0') * 100);
+      $('pe-reason-wrap').style.display = (!isNew && now !== origPrice) ? 'block' : 'none';
+    });
+    $('pe-close').addEventListener('click', function(){ $('prodEditor').style.display = 'none'; });
+    $('pe-save').addEventListener('click', function(){
+      var fields = {
+        name: $('pe-name').value.trim(),
+        category: $('pe-cat').value,
+        age_range: $('pe-age').value.trim() || null,
+        schedule_name: $('pe-sched').value.trim() || null,
+        location: $('pe-loc').value.trim() || null,
+        price_cents: Math.round(parseFloat($('pe-price').value || '0') * 100),
+        capacity: Math.round(parseFloat($('pe-cap').value || '0')),
+        bookable: $('pe-book').checked,
+        hidden: $('pe-hide').checked
+      };
+      var payload = isNew
+        ? { action: 'product_create', fields: fields }
+        : { action: 'product_update', id: p.id, fields: fields, reason: ($('pe-reason') ? $('pe-reason').value.trim() : '') };
+      $('pe-status').textContent = 'saving…';
+      opsApi(payload).then(function(d){
+        if (d.error) { $('pe-status').textContent = d.error; return; }
+        $('prodEditor').style.display = 'none';
+        loadProducts();
+        runLoader('overview');
+      }).catch(function(){ $('pe-status').textContent = 'network error'; });
+    });
+    $('prodEditor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ---- roster row actions: move a camper, cancel + refund a seat ----
+  // The move picker's target list is OVG — the same computed groups the
+  // Overview rings use, so every sellable session is offered with its fill.
+  function moveOptions(){
+    var html = '<option value="">— pick the new session —</option>';
+    (OVG || []).forEach(function(g){
+      html += '<optgroup label="' + esc(g.label) + '">' + (g.items || []).map(function(it){
+        if (it.show) return '<option value="s|' + esc(it.show) + '|' + esc(it.band) + '">' +
+          esc((SHOWL[it.show] || it.show) + ' · ' + it.band) + ' (' + (it.taken || 0) + '/' + (it.cap || 0) + ')</option>';
+        return '<option value="a|' + esc(it.activity_id) + '">' + esc(it.label) +
+          ' (' + (it.taken || 0) + '/' + (it.cap || 0) + ')</option>';
+      }).join('') + '</optgroup>';
+    });
+    return html;
+  }
+  function execMove(cell, itemId, camper, force){
+    var sel = cell.querySelector('.r-move-sel');
+    var v = sel && sel.value;
+    if (!v) return;
+    var p = v.split('|');
+    var payload = { action: 'move', item_id: itemId, force: !!force };
+    if (p[0] === 's') { payload.show = p[1]; payload.band = p[2]; }
+    else payload.activity_id = +p[1];
+    cell.innerHTML = '<span class="sub">moving…</span>';
+    opsApi(payload).then(function(d){
+      if (d.needs_force) {
+        if (confirm('That session is FULL. Move ' + camper + ' anyway (oversell by one)?')) {
+          cell.innerHTML = '<select class="r-move-sel" style="display:none"><option value="' + esc(v) + '" selected></option></select>';
+          return execMove(cell, itemId, camper, true);
+        }
+        cell.innerHTML = rosterActionBtns(itemId, camper);
+        return;
+      }
+      if (d.error) { alert(d.error); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      cell.innerHTML = '<span class="tag ok">moved → ' + esc(d.to || '') + '</span>';
+      runLoader('overview');
+    }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper); });
+  }
+  document.addEventListener('click', function(e){
+    var mv = e.target.closest('.r-move');
+    if (mv) {
+      var cell = mv.closest('td');
+      cell.innerHTML = '<select class="r-move-sel" style="max-width:260px">' + moveOptions() + '</select> ' +
+        '<button class="tag ok r-move-go" style="cursor:pointer;border:0">go</button> ' +
+        '<button class="tag r-move-abort" style="cursor:pointer;border:0">&times;</button>';
+      cell.dataset.item = mv.dataset.item; cell.dataset.camper = mv.dataset.camper;
+      return;
+    }
+    var go = e.target.closest('.r-move-go');
+    if (go) {
+      var c1 = go.closest('td');
+      execMove(c1, c1.dataset.item, c1.dataset.camper, false);
+      return;
+    }
+    var ab = e.target.closest('.r-move-abort');
+    if (ab) {
+      var c2 = ab.closest('td');
+      c2.innerHTML = rosterActionBtns(c2.dataset.item, c2.dataset.camper);
+      return;
+    }
+    var cx = e.target.closest('.r-cancel');
+    if (cx) runCancel(cx);
+  });
+  function runCancel(btn){
+    var cell = btn.closest('td'), itemId = btn.dataset.item, camper = btn.dataset.camper;
+    cell.innerHTML = '<span class="sub">checking…</span>';
+    opsApi({ action: 'cancel', item_id: itemId, dry_run: true }).then(function(d){
+      if (d.error) { alert(d.error); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var pv = d.preview;
+      var msg = 'Cancel ' + pv.camper + ' from ' + pv.what + '?\n\n' +
+        'Family: ' + (pv.email || '?') + '\nPaid for this seat: ' + usd(pv.paid_cents || 0) +
+        (pv.schedule_warning ? '\n\n⚠ ' + pv.schedule_warning : '') +
+        '\n\nNext you will set the refund amount.';
+      if (!confirm(msg)) { cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var amtStr = prompt('Refund amount in dollars (0 = free the seat, refund nothing):',
+        ((pv.suggested_refund_cents || 0) / 100).toFixed(2));
+      if (amtStr === null) { cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var amount = Math.round(parseFloat(amtStr || '0') * 100);
+      if (!isFinite(amount) || amount < 0) { alert('bad amount'); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      var typed = prompt('Type REFUND to confirm ' + (amount ? usd(amount) + ' back to the family' : 'cancelling with NO refund') + ':');
+      if (typed !== 'REFUND') { cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      cell.innerHTML = '<span class="sub">processing…</span>';
+      opsApi({ action: 'cancel', item_id: itemId, amount_cents: amount, confirm: 'REFUND' }).then(function(r){
+        if (r.error) { alert(r.error); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+        cell.innerHTML = '<span class="tag ok">cancelled' + (r.refund_id ? ' · refunded ' + usd(r.refunded_cents) : '') + '</span>';
+        runLoader('overview');
+      }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper); });
+    }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper); });
+  }
+
   // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
   document.addEventListener('click', function(){
     document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+  });
+  $('refAdd').addEventListener('click', function(){
+    var who = prompt("Referrer — their email OR their share code (e.g. NEELAF716):");
+    if (!who) return;
+    var red = prompt("New family's email (the family who was referred):");
+    if (!red) return;
+    opsApi({ action: 'referral_add', referrer: who.trim(), referred_email: red.trim() }).then(function(d){
+      if (d.error) { alert(d.error); return; }
+      alert('Done — both sides now show 2 tickets under ' + (d.referrer_name || who) + "'s referral.");
+      loadRefs();
+    }).catch(function(){ alert('network error'); });
   });
   function loadRefs(){
     sb.rpc('admin_referrals').then(function(res){
@@ -1759,16 +2000,21 @@
   // live roster expands underneath it — who, which family, what they paid.
   // Fetched per node on first open (the camper-history pattern), refetched on
   // every open so it never goes stale.
+  function rosterActionBtns(itemId, camper){
+    return '<button class="tag r-move" data-item="' + esc(itemId) + '" data-camper="' + esc(camper || '') + '" style="cursor:pointer;border:0">move</button> ' +
+      '<button class="tag bad r-cancel" data-item="' + esc(itemId) + '" data-camper="' + esc(camper || '') + '" style="cursor:pointer;border:0">cancel</button>';
+  }
   function rosterHtml(rows){
     if (!rows || !rows.length) return '<div class="sub" style="padding:6px 2px">nobody registered yet</div>';
     return '<table>' +
-      '<tr><th>camper</th><th>family</th><th class="num">paid</th><th>plan</th><th>when</th></tr>' +
+      '<tr><th>camper</th><th>family</th><th class="num">paid</th><th>plan</th><th>when</th><th></th></tr>' +
       rows.map(function(r){
         return '<tr><td><b>' + esc(r.camper || '') + '</b></td>' +
           '<td>' + esc(r.parent_name || '') + '<div class="sub">' + esc(r.email || '') + '</div></td>' +
           '<td class="num">' + (r.paid_cents != null ? usd(r.paid_cents) : '<span class="sub">—</span>') + '</td>' +
           '<td><span class="tag' + (r.source === 'web' ? ' ok' : '') + '">' + esc(r.source === 'web' ? (r.plan || 'web') : r.source) + '</span></td>' +
-          '<td class="sub">' + (r.ordered_at ? dt(r.ordered_at) : '') + '</td></tr>';
+          '<td class="sub">' + (r.ordered_at ? dt(r.ordered_at) : '') + '</td>' +
+          '<td class="ract">' + (r.source === 'web' && r.item_id ? rosterActionBtns(r.item_id, r.camper) : '') + '</td></tr>';
       }).join('') + '</table>';
   }
   function openRoster(target, params, label){
