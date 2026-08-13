@@ -35,9 +35,10 @@ export function unsubUrl(email) {
 
 // Campaign bodies are markdown-lite: a [TEXT](url) alone on a line renders as
 // a gold button, inline as a normal link; "* " lines become bullets; a lone
-// "--" line starts the small-print footer. One butterfly logo up top is the
-// only image — a single hosted img with alt text doesn't move the spam
-// needle. The text part is the same body with link syntax flattened to
+// "--" line starts the small-print footer; and a lone ![alt](url) renders a
+// full-width photo. Images are hosted on our own domain and always carry alt
+// text, and the copy stays text-heavy — an image-only email is what trips
+// spam filters, not a photo alongside real words. The text part is the same body with link syntax flattened to
 // "TEXT: url", so plain-text clients get a clean copy and Gmail never sees
 // a display-text/href mismatch (its phishing wrapper).
 export function renderEmail(rawBody, vars) {
@@ -48,7 +49,12 @@ export function renderEmail(rawBody, vars) {
   if (personal) body = body.slice("[plain]\n".length);
   for (const [k, v] of Object.entries(vars)) body = body.replaceAll(`{${k}}`, v);
   const LINK = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
-  const text = body.replace(LINK, (_, t, u) => `${t}: ${u}`);
+  const IMG_LINE = /^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/;
+  // photos carry no meaning in the plain-text part, so drop them there rather
+  // than leaving a bare url the reader can do nothing with
+  const text = body
+    .split("\n").filter((l) => !IMG_LINE.test(l.trim())).join("\n")
+    .replace(LINK, (_, t, u) => `${t}: ${u}`);
   const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const inline = (s) => esc(s).replace(LINK, '<a href="$2" style="color:#0b5fff">$1</a>');
   let footer = false;
@@ -57,6 +63,10 @@ export function renderEmail(rawBody, vars) {
     if (lines[0] === "--") { footer = true; lines = lines.slice(1); }
     if (!lines.length) return "";
     const base = footer ? "font-size:13px;color:#8a93a3" : "font-size:16px;color:#1a2233";
+    const img = lines.length === 1 && lines[0].match(IMG_LINE);
+    if (img) {
+      return `<p style="margin:0 0 22px"><img src="${esc(img[2])}" alt="${esc(img[1])}" width="520" style="width:100%;max-width:520px;height:auto;border-radius:12px;display:block;margin:0 auto"></p>`;
+    }
     const btn = !personal && lines.length === 1 && lines[0].match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
     if (btn) {
       return `<p style="text-align:center;margin:28px 0"><a href="${esc(btn[2])}" style="display:inline-block;background:#f2c94c;color:#0b1b33;font-weight:700;font-size:16px;padding:13px 30px;border-radius:8px;text-decoration:none">${esc(btn[1])}</a></p>`;
