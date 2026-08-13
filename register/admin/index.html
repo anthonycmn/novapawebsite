@@ -88,10 +88,12 @@
   /* products tab + editor: same dark chrome as everything else, no browser-
      default white inputs */
   .pe input:not([type=checkbox]), .pe select,
-  #s-products > div > input {
+  #s-products > div > input, .ch-note, #s-balances input {
     padding:8px 10px; border-radius:8px; border:1px solid var(--line);
     background:rgba(8,17,31,0.6); color:#fff; font-size:13px; font-family:inherit; }
-  .pe input:focus, .pe select:focus, #s-products input:focus { outline:none; border-color:#E8B84B; }
+  .pe input:focus, .pe select:focus, #s-products input:focus, .ch-note:focus { outline:none; border-color:#E8B84B; }
+  .ch-note { font-size:12px; }
+  .ch-note::placeholder { color:var(--dim); opacity:.7; }
   .pe input[type=checkbox] { accent-color:#E8B84B; width:auto; }
   .pe label { user-select:none; }
   .btn2 { border:1px solid #E8B84B; background:rgba(232,184,75,0.12); color:#E8B84B;
@@ -281,11 +283,6 @@
       and Accounting.</p>
       <div class="stats" id="stChase" style="margin-bottom:14px"></div>
       <div id="chaseList"></div>
-
-      <h2 style="margin-top:34px">Legacy platform snapshot</h2>
-      <div id="balStale"></div>
-      <div class="wrap-scroll"><table id="tblBal"></table></div>
-      <div class="stats" id="stBal" style="margin-top:14px"></div>
     </section>
 
     <section class="sec" id="s-inventory">
@@ -563,10 +560,7 @@
     },
     orders:    function(){ rload('orders', 'admin_orders', function(d){ ORDERS = d || []; renderOrders(ORDERS); }); },
     products:  function(){ loadProducts(); },
-    balances:  function(){
-      rload('balances', 'admin_balances', function(d){ renderBalances(d || []); });
-      loadChase();
-    },
+    balances:  function(){ loadChase(); },
     inventory: loadInventory,
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
     cashflow:  function(){ loadCashflow(); },
@@ -2435,14 +2429,12 @@
   // ---- Regpack chase: the families still being moved onto our billing ----
   // The only live thing on this page. migration_plans is hand-maintained, so
   // notes save inline and a family flips to resolved the moment they pay.
-  var CHASE = null, CHASE_SNAP = {};
+  var CHASE = null, CHASE_DONE_OPEN = false;
   function loadChase(){
     opsApi({ action: 'chase_list' }).then(function(d){
       if (d.error) { $('chaseList').innerHTML = '<p class="sub">error: ' + esc(d.error) + '</p>'; return; }
       CHASE = d.plans || [];
-      CHASE_SNAP = d.snapshot_imported || {};
       renderChase();
-      renderStale();
     }).catch(function(){ $('chaseList').innerHTML = '<p class="sub">network error</p>'; });
   }
   function planTotal(p){
@@ -2476,10 +2468,21 @@
       }).join('');
     }
     var head = '<tr><th>family</th><th>terms</th><th class="num">plan total</th><th>notes</th><th></th></tr>';
+    // resolved families are history, not work — they stay folded away
     $('chaseList').innerHTML =
       '<div class="wrap-scroll"><table>' + head + rows(open, false) + '</table></div>' +
-      '<h2 style="margin-top:24px;font-size:13px">Resolved</h2>' +
-      '<div class="wrap-scroll"><table>' + head + rows(done, true) + '</table></div>';
+      '<div class="pgroup" style="margin-top:18px">' +
+        '<div class="pghead" id="chDoneHead" style="cursor:pointer;display:flex;align-items:center;gap:10px;' +
+          'padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)">' +
+          '<span style="color:var(--gold);font-size:11px;width:10px">' + (CHASE_DONE_OPEN ? '&#9660;' : '&#9654;') + '</span>' +
+          '<b style="flex:1">Resolved</b><span class="sub">' + done.length + ' converted · ' + usd(got) + '</span></div>' +
+        '<div id="chDoneBody" style="display:' + (CHASE_DONE_OPEN ? 'block' : 'none') + ';padding-top:6px">' +
+          '<div class="wrap-scroll"><table>' + head + rows(done, true) + '</table></div></div></div>';
+    $('chDoneHead').addEventListener('click', function(){
+      CHASE_DONE_OPEN = !CHASE_DONE_OPEN;
+      $('chDoneBody').style.display = CHASE_DONE_OPEN ? 'block' : 'none';
+      $('chDoneHead').firstElementChild.innerHTML = CHASE_DONE_OPEN ? '&#9660;' : '&#9654;';
+    });
     $('chaseList').querySelectorAll('.ch-note').forEach(function(inp){
       var t = null;
       inp.addEventListener('input', function(){
@@ -2499,46 +2502,6 @@
       });
     });
   }
-  // The legacy table is an import, not a feed — say so plainly and date it,
-  // because it reads like "everything anyone owes us" and it is not that.
-  function renderStale(){
-    var parts = Object.keys(CHASE_SNAP).map(function(src){
-      var d = new Date(CHASE_SNAP[src]);
-      var days = Math.floor((Date.now() - d.getTime()) / 86400000);
-      return src + ' last imported ' + dt(CHASE_SNAP[src]) + ' (' + days + ' day' + (days === 1 ? '' : 's') + ' ago)';
-    });
-    $('balStale').innerHTML = '<p class="sub" style="border:1px solid var(--bad);border-radius:10px;padding:10px 12px;margin:-4px 0 12px">' +
-      '<b style="color:var(--bad)">Frozen snapshot, not live.</b> These rows were swept out of Regpack and Sawyer by hand: ' +
-      (parts.join(' · ') || 'import date unknown') + '. Sawyer has no live feed here, so anything paid since then still ' +
-      'shows as owed, and Sawyer families missing from the sweep do not show at all. Treat it as a historical worksheet ' +
-      'for the migration above, never as the answer to "what is outstanding".</p>';
-  }
-
-  function renderBalances(rows){
-    var owing = rows.filter(function(r){ return (r.balance_cents||0) > 0; });
-    var tot = owing.reduce(function(s,r){ return s + r.balance_cents; }, 0);
-    var dueNow = owing.reduce(function(s,r){ return s + (r.due_now_cents||0); }, 0);
-    var auto = owing.filter(function(r){ return r.has_saved_pm; }).length;
-    $('stBal').innerHTML =
-      stat(usd(tot), 'owed as of the sweep') +
-      stat(usd(dueNow), 'was due then') +
-      stat(owing.length, 'accounts in sweep') +
-      stat(auto + ' / ' + owing.length, 'had card on file');
-    $('tblBal').innerHTML =
-      '<tr><th>name</th><th>email</th><th class="num">ordered</th><th class="num">paid</th><th class="num">balance</th><th class="num">due now</th><th class="num">future</th><th>autobill</th><th>src</th></tr>' +
-      owing.map(function(r){
-        return '<tr><td>' + esc(r.person_name) + '</td>' +
-          '<td class="sub">' + esc(r.parent_email || '?') + '</td>' +
-          '<td class="num">' + usd2(r.total_order_cents) + '</td>' +
-          '<td class="num">' + usd2(r.total_paid_cents) + '</td>' +
-          '<td class="num" style="color:var(--bad);font-weight:700">' + usd2(r.balance_cents) + '</td>' +
-          '<td class="num">' + usd2(r.due_now_cents) + '</td>' +
-          '<td class="num">' + usd2(r.due_future_cents) + '</td>' +
-          '<td>' + (r.has_saved_pm ? '<span class="tag ok">✓</span>' : '<span class="tag bad">—</span>') + '</td>' +
-          '<td><span class="tag">' + r.source + '</span></td></tr>';
-      }).join('');
-  }
-
   function renderInventory(inv){
     var sum = inv.summer || [];
     var rp = inv.summer_regpack || {};

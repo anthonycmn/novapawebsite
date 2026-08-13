@@ -279,10 +279,7 @@ export default async (req) => {
     // converts to our own billing.
     if (action === "chase_list") {
       const plans = await db("migration_plans?select=*&order=status,family_label&limit=500");
-      const snap = await db("platform_balances?select=source,imported_at&order=imported_at.desc&limit=500");
-      const freshness = {};
-      for (const s of snap) if (!freshness[s.source]) freshness[s.source] = s.imported_at;
-      return Response.json({ plans: plans || [], snapshot_imported: freshness });
+      return Response.json({ plans: plans || [] });
     }
     if (action === "chase_update") {
       const id = body.id;
