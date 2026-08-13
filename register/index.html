@@ -776,6 +776,38 @@
     return true;
   })();
 
+  // Coming back from a magic link, the session is not ready the instant this
+  // runs — supabase still has to exchange the #access_token in the URL. We used
+  // to call getSession() once, get null, and render the email gate, so a parent
+  // who just clicked their sign-in link was asked for their email AGAIN and had
+  // to sit there until the session quietly landed. Two fixes: hold the gate
+  // back while an auth hash is present, and react whenever the session arrives.
+  var authReturn = /(access_token|refresh_token)=/.test(String(location.hash || ''));
+  var entered = false;
+  function enterWith(session){
+    if (entered) return false;
+    var em = session && session.user && session.user.email;
+    if (!em) return false;
+    entered = true;
+    state.email = em.toLowerCase();
+    try { history.replaceState(null, '', location.pathname + location.search); } catch(e){}
+    loadFamily();
+    return true;
+  }
+  sb.auth.onAuthStateChange(function(_evt, session){ enterWith(session); });
+  if (authReturn) {
+    // say what is happening instead of showing a gate we are about to replace
+    var ge = $('gateErr');
+    if (ge) { ge.textContent = 'Signing you in…'; ge.classList.add('on'); }
+    go('st-remail');
+    // if the exchange never completes, fall back to asking rather than hanging
+    setTimeout(function(){
+      if (entered) return;
+      if (ge) { ge.innerHTML = "<b>That sign-in link didn't work.</b> Enter your email below for a new one."; }
+      var inp = $('emailInput'); if (inp) inp.focus();
+    }, 6000);
+  }
+
   sb.auth.getSession().then(function(res){
     var session = res.data && res.data.session;
     if (session && session.user && session.user.email) {
@@ -790,10 +822,11 @@
           }
         } catch(e){}
       } else { try { localStorage.removeItem('nv_reg_intent'); } catch(e){} }
-      state.email = session.user.email.toLowerCase();
-      loadFamily();
+      enterWith(session);
       return;
     }
+    // an auth hash is still being exchanged — onAuthStateChange will take it
+    if (authReturn) return;
     // Bare landings (playbill QRs, typed URLs) see the summer landing page first.
     // Anything intentional carries a query (?go, ?activity, ?season) or magic-link hash.
     // linkError guards the case above, where we just stripped the error hash off

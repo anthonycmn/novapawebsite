@@ -67,6 +67,16 @@ export function renderEmail(rawBody, vars) {
     if (img) {
       return `<p style="margin:0 0 22px"><img src="${esc(img[2])}" alt="${esc(img[1])}" width="520" style="width:100%;max-width:520px;height:auto;border-radius:12px;display:block;margin:0 auto"></p>`;
     }
+    // several ![]() lines stacked = a poster row. Tables, not flex: Outlook
+    // ignores flexbox, and a row of show art is the whole point of the block.
+    const imgs = lines.map((l) => l.match(IMG_LINE)).filter(Boolean);
+    if (imgs.length > 1 && imgs.length === lines.length) {
+      const w = Math.floor(520 / imgs.length) - 8;
+      return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px"><tr>` +
+        imgs.map((m) => `<td align="center" style="padding:0 4px" valign="top">` +
+          `<img src="${esc(m[2])}" alt="${esc(m[1])}" width="${w}" style="width:100%;max-width:${w}px;height:auto;border-radius:10px;display:block">` +
+          `</td>`).join("") + `</tr></table>`;
+    }
     const btn = !personal && lines.length === 1 && lines[0].match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)$/);
     if (btn) {
       return `<p style="text-align:center;margin:28px 0"><a href="${esc(btn[2])}" style="display:inline-block;background:#f2c94c;color:#0b1b33;font-weight:700;font-size:16px;padding:13px 30px;border-radius:8px;text-decoration:none">${esc(btn[1])}</a></p>`;
