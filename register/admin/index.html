@@ -101,6 +101,15 @@
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
   .ch-terms.open { -webkit-line-clamp:unset; }
   #chaseList td { vertical-align:top; }
+
+  /* camper panel: registrations, family and editable details side by side */
+  .camp-panel { display:grid; grid-template-columns:minmax(300px,1.4fr) minmax(160px,.6fr) minmax(280px,1fr);
+    gap:16px; padding:8px 0 4px; align-items:start; }
+  @media (max-width:1100px) { .camp-panel { grid-template-columns:1fr; } }
+  .cp-block { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:rgba(8,17,31,0.35); color:var(--ink); }
+  .cp-block > b { font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--dim); }
+  .cp-block table { background:transparent; border:0; }
+  .cp-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .pe input[type=checkbox] { accent-color:#E8B84B; width:auto; }
   .pe label { user-select:none; }
   .btn2 { border:1px solid #E8B84B; background:rgba(232,184,75,0.12); color:#E8B84B;
@@ -693,7 +702,7 @@
     });
     if (!rows.length) { $('tblCampers').innerHTML = '<tr><td class="empty">no matches</td></tr>'; return; }
     $('tblCampers').innerHTML =
-      '<tr><th>camper</th><th>family</th><th>birthday</th><th>missing</th><th>src</th></tr>' +
+      '<tr><th>camper</th><th>family</th><th>birthday</th><th>missing</th><th>src</th><th></th></tr>' +
       rows.slice(0, 400).map(function(c, i){
         var m = missingOf(c);
         var p = c.profile || {};
@@ -708,35 +717,124 @@
          .map(function(x){ return '<b>' + esc(x[0]) + ':</b> ' + esc(String(x[1]).trim()); }).join(' \u00b7 ');
         var emails = c.emails || [c.email];
         var srcs = c.sources || [c.source || 'web'];
-        return '<tr class="camp-row" data-i="' + i + '" style="cursor:pointer">' +
+        return '<tr class="camp-row" data-i="' + i + '" data-name="' + esc(c.name) + '" style="cursor:pointer">' +
           '<td>' + esc(c.name) + '</td>' +
           '<td>' + emails.map(esc).join('<br>') + '</td>' +
           '<td>' + (c.bday || '\u2014') + '</td>' +
           '<td>' + (m.length ? '<span class="tag bad">' + m.length + ': ' + esc(m.join(', ')) + '</span>' : '<span class="tag ok">complete</span>') + '</td>' +
-          '<td>' + srcs.map(function(s){ return '<span class="tag">' + esc(s) + '</span>'; }).join(' ') + '</td></tr>' +
-          '<tr class="camp-det" style="display:none"><td colspan="5" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' + (det || 'no details on file') + '</td></tr>';
+          '<td>' + srcs.map(function(s){ return '<span class="tag">' + esc(s) + '</span>'; }).join(' ') + '</td>' +
+          '<td>' + kebabHtml([
+            { label: 'Open full profile', cls: 'camp-open', attrs: ' data-name="' + esc(c.name) + '"' },
+            { label: 'Edit details&hellip;', cls: 'camp-edit', attrs: ' data-name="' + esc(c.name) + '"' }
+          ]) + '</td></tr>' +
+          '<tr class="camp-det" style="display:none"><td colspan="6" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' +
+            '<div class="camp-quick">' + (det || 'no details on file') + '</div>' +
+            '<div class="camp-full"></div></td></tr>';
       }).join('') + (rows.length > 400 ? '<tr><td class="empty">+' + (rows.length - 400) + ' more \u2014 refine search</td></tr>' : '');
     $('tblCampers').querySelectorAll('.camp-row').forEach(function(tr){
-      tr.addEventListener('click', function(){
-        var det = tr.nextElementSibling;
-        if (!det) return;
-        det.style.display = det.style.display === 'none' ? '' : 'none';
-        // legacy enrollment history (Sawyer per-kid import) — fetched once per row
-        if (det.style.display !== 'none' && !det.dataset.hist) {
-          det.dataset.hist = '1';
-          var c = rows[+tr.dataset.i];
-          sb.rpc('admin_camper_history', { p_name: c.name }).then(function(r){
-            var h = r.data || [];
-            if (!h.length) return;
-            var cell = det.querySelector('td');
-            cell.innerHTML += '<br><b>History (' + h.length + '):</b> ' + h.map(function(e){
-              return esc(e.activity) + (e.paid_cents ? ' ($' + (e.paid_cents / 100).toFixed(0) + ')' : '');
-            }).join(' · ');
-          });
-        }
+      tr.addEventListener('click', function(e){
+        if (e.target.closest('.kbwrap')) return;
+        toggleCamper(tr, false);
       });
     });
   }
+  // Clicking a camper opens the full picture: what they are registered for
+  // (with the same move / cancel actions the rosters have), their family, and
+  // their details — editable in place. This is where a "can you switch her
+  // class" or "her birthday is wrong" request gets handled end to end.
+  function toggleCamper(tr, forceOpen, startEditing){
+    var det = tr.nextElementSibling;
+    if (!det) return;
+    var hidden = det.style.display === 'none';
+    if (!hidden && forceOpen) { if (startEditing) campEdit(det); return; }
+    det.style.display = hidden ? '' : 'none';
+    if (det.style.display === 'none') return;
+    if (det.dataset.loaded) { if (startEditing) campEdit(det); return; }
+    det.dataset.loaded = '1';
+    var full = det.querySelector('.camp-full');
+    full.innerHTML = '<div class="sub" style="padding:6px 0">loading…</div>';
+    opsApi({ action: 'camper_detail', name: tr.dataset.name }).then(function(d){
+      if (d.error) { full.innerHTML = '<div class="sub">' + esc(d.error) + '</div>'; return; }
+      det.__data = d;
+      renderCamperPanel(full, d, tr.dataset.name);
+      if (startEditing) campEdit(det);
+    }).catch(function(){ full.innerHTML = '<div class="sub">network error</div>'; });
+  }
+  function renderCamperPanel(host, d, name){
+    var regs = d.registrations || [], leg = d.legacy || [], fams = d.families || [];
+    var c = (d.campers || [])[0] || {};
+    var p = c.profile || {};
+    function fld(label, key, val, type){
+      return '<div><label style="display:block;font-size:10.5px;color:var(--dim);margin-bottom:3px">' + label + '</label>' +
+        '<input class="cf" data-k="' + key + '" type="' + (type || 'text') + '" value="' + esc(val || '') + '"></div>';
+    }
+    host.innerHTML =
+      '<div class="camp-panel">' +
+        '<div class="cp-block"><b>Registered for</b>' +
+          (regs.length ? '<table style="margin-top:6px">' +
+            '<tr><th>program</th><th class="num">paid</th><th>order</th><th></th></tr>' +
+            regs.map(function(r){
+              return '<tr><td><b>' + esc(r.what) + '</b>' +
+                (r.schedule ? '<div class="sub">' + esc(r.schedule) + '</div>' : '') + '</td>' +
+                '<td class="num">' + (r.paid_cents != null ? usd(r.paid_cents) : '—') + '</td>' +
+                '<td class="sub">' + esc(r.plan || '') + (r.ordered_at ? '<div>' + dt(r.ordered_at) + '</div>' : '') + '</td>' +
+                '<td>' + rosterActionBtns(r.item_id, name) + '</td></tr>';
+            }).join('') + '</table>'
+            : '<div class="sub" style="padding:4px 0">nothing on our platform</div>') +
+          (leg.length ? '<div class="sub" style="margin-top:8px"><b>Before the platform:</b> ' +
+            leg.map(function(l){ return esc(l.activity_text || '') + (l.paid_cents ? ' (' + usd(l.paid_cents) + ')' : ''); }).join(' · ') + '</div>' : '') +
+        '</div>' +
+        '<div class="cp-block"><b>Family</b>' +
+          (fams.length ? fams.map(function(f){
+            return '<div style="margin-top:4px">' + esc(f.parent_name || '') +
+              '<div class="sub">' + esc(f.email) + (f.cc_email ? ' · also ' + esc(f.cc_email) : '') + '</div></div>';
+          }).join('') : '<div class="sub">no family record</div>') +
+        '</div>' +
+        '<div class="cp-block cp-edit pe"><b>Details</b>' +
+          '<div class="cp-grid" style="margin-top:6px">' +
+            fld('Name', 'name', c.name) +
+            fld('Birthday', 'birthdate', c.birthdate, 'date') +
+            fld('T-shirt', 'p.tshirt', p.tshirt) +
+            fld('Pronouns', 'p.pronouns', p.pronouns) +
+            fld('Allergies', 'allergies', c.allergies) +
+            fld('Emergency contact', 'emergency_contact', c.emergency_contact) +
+            fld('Medications', 'p.medications', p.medications) +
+            fld('Doctor', 'p.doctor', p.doctor) +
+          '</div>' +
+          '<div style="margin-top:10px;display:flex;gap:8px;align-items:center">' +
+            '<button class="btn2 cp-save" data-id="' + esc(c.id || '') + '">Save details</button>' +
+            '<span class="sub cp-status"></span></div>' +
+        '</div></div>';
+    var saveBtn = host.querySelector('.cp-save');
+    if (saveBtn) saveBtn.addEventListener('click', function(){
+      if (!saveBtn.dataset.id) { host.querySelector('.cp-status').textContent = 'no camper record to edit'; return; }
+      var fields = { profile: {} };
+      host.querySelectorAll('.cf').forEach(function(inp){
+        var k = inp.dataset.k;
+        if (k.indexOf('p.') === 0) fields.profile[k.slice(2)] = inp.value.trim();
+        else fields[k] = inp.value.trim();
+      });
+      var st = host.querySelector('.cp-status');
+      st.textContent = 'saving…';
+      opsApi({ action: 'camper_update', id: saveBtn.dataset.id, fields: fields }).then(function(r){
+        if (r.error) { st.textContent = r.error; return; }
+        st.textContent = 'saved';
+        runLoader('campers');
+        setTimeout(function(){ st.textContent = ''; }, 1500);
+      }).catch(function(){ st.textContent = 'network error'; });
+    });
+  }
+  function campEdit(det){
+    var f = det.querySelector('.cp-edit input');
+    if (f) { f.focus(); f.select(); }
+  }
+  $('tblCampers').addEventListener('click', function(e){
+    var open = e.target.closest('.camp-open'), edit = e.target.closest('.camp-edit');
+    var b = open || edit;
+    if (!b) return;
+    var tr = b.closest('tr');
+    toggleCamper(tr, true, !!edit);
+  });
   (function(){
     var t=null;
     $('campQ').addEventListener('input', function(){ clearTimeout(t); t=setTimeout(renderCampers, 150); });
@@ -809,20 +907,22 @@
   // re-proves the caller is an admin and stamps every change into admin_actions.
   // ⋯ menus are position:fixed so no table's overflow can clip them, which
   // means the coordinates have to be set when the menu opens.
-  function wireKebabs(root){
-    root.querySelectorAll('.kb').forEach(function(k){
-      k.addEventListener('click', function(e){
-        e.stopPropagation();
-        var menu = k.nextElementSibling, open = menu.classList.contains('on');
-        document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
-        if (open) return;
-        var r = k.getBoundingClientRect();
-        menu.style.left = Math.max(8, Math.min(window.innerWidth - 226, r.right - 210)) + 'px';
-        menu.style.top = (window.innerHeight - r.bottom < 120 ? r.top - 96 : r.bottom + 4) + 'px';
-        menu.classList.add('on');
-      });
-    });
-  }
+  // One delegated handler for every ⋯ menu on the page, including rows that
+  // get inserted later (rosters, order items, camper panels) — nothing needs
+  // re-wiring after a re-render. Menus are fixed-position, so they are placed
+  // at open time and no table's overflow can clip them.
+  document.addEventListener('click', function(e){
+    var k = e.target.closest('.kb');
+    var menu = k && k.nextElementSibling;
+    var wasOpen = menu && menu.classList.contains('on');
+    document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
+    if (!k || wasOpen) return;
+    e.stopPropagation();
+    var r = k.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(window.innerWidth - 236, r.right - 220)) + 'px';
+    menu.style.top = (window.innerHeight - r.bottom < 140 ? Math.max(8, r.top - 116) : r.bottom + 4) + 'px';
+    menu.classList.add('on');
+  }, true);
   function opsApi(payload){
     return sb.auth.getSession().then(function(res){
       var token = res.data && res.data.session && res.data.session.access_token;
@@ -1080,7 +1180,6 @@
           }).join('') +
         '</div></div>';
     }).join('');
-    wireKebabs($('prodGroups'));
   }
   // ── product card interactions: expand, switch a band on/off, add a band ──
   $('prodGroups').addEventListener('click', function(e){
@@ -1574,9 +1673,6 @@
   }
 
   // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
-  document.addEventListener('click', function(){
-    document.querySelectorAll('.kbmenu.on').forEach(function(m){ m.classList.remove('on'); });
-  });
   $('refAdd').addEventListener('click', function(){
     var who = prompt("Referrer — their email OR their share code (e.g. NEELAF716):");
     if (!who) return;
@@ -1611,7 +1707,6 @@
                    side('New family:', r.referred_email, r.referred_name, r.referred_redeemed_at, 'referred') + '</td></tr>';
       });
       $('tblRefs').innerHTML = html;
-      wireKebabs($('tblRefs'));
       $('tblRefs').querySelectorAll('button[data-red]').forEach(function(b){
         b.addEventListener('click', function(){
           var p = b.dataset.red.split('|'), undo = p[2] === 'undo';
@@ -2399,7 +2494,8 @@
           '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
           '<td class="num">' + usd2(o.total_cents) + '</td>' +
           '<td>' + (o.sawyer_entered ? '<span class="tag ok">✓</span>' : '<span class="tag bad">no</span>') + '</td>' +
-          '<td><button class="tag bad ord-del" data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + orderItemsText(o).slice(0,80)) + '" style="cursor:pointer;border:0">delete</button></td></tr>';
+          '<td>' + kebabHtml([{ label: 'Delete whole order&hellip;', cls: 'ord-del',
+            attrs: ' data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + orderItemsText(o).slice(0,80)) + '"' }]) + '</td></tr>';
       }).join('');
     $('tblOrders').querySelectorAll('.o-camper').forEach(function(a){
       a.addEventListener('click', function(){
@@ -2469,9 +2565,9 @@
           '<td class="num">' + (planTotal(p) ? usd(planTotal(p)) : '<span class="sub">—</span>') + '</td>' +
           '<td style="min-width:320px"><textarea class="ch-note" data-id="' + esc(p.id) +
             '" placeholder="chase status…">' + esc(p.notes || '') + '</textarea></td>' +
-          '<td><button class="tag ' + (resolved ? '' : 'ok') + ' ch-flip" data-id="' + esc(p.id) +
-            '" data-to="' + (resolved ? 'sent' : 'resolved') + '" style="cursor:pointer;border:0">' +
-            (resolved ? 'reopen' : 'mark resolved') + '</button></td></tr>';
+          '<td>' + kebabHtml([{ label: resolved ? 'Reopen this chase' : 'Mark resolved &mdash; they paid',
+            cls: 'ch-flip', attrs: ' data-id="' + esc(p.id) + '" data-to="' + (resolved ? 'sent' : 'resolved') + '"' }]) +
+            '</td></tr>';
       }).join('');
     }
     var head = '<tr><th>family</th><th>terms</th><th class="num">plan total</th><th>notes</th><th></th></tr>';
@@ -2745,9 +2841,22 @@
   // live roster expands underneath it — who, which family, what they paid.
   // Fetched per node on first open (the camper-history pattern), refetched on
   // every open so it never goes stale.
+  // Every row action lives behind a ⋯ menu — nothing destructive sits one
+  // stray click away, and rows stay readable instead of ending in a row of
+  // buttons. Items are built from {label, cls, attrs} so any row can compose
+  // its own menu.
+  function kebabHtml(items){
+    return '<span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
+      items.map(function(it){
+        return '<button class="' + (it.cls || '') + '"' + (it.attrs || '') + '>' + it.label + '</button>';
+      }).join('') + '</div></span>';
+  }
   function rosterActionBtns(itemId, camper){
-    return '<button class="tag r-move" data-item="' + esc(itemId) + '" data-camper="' + esc(camper || '') + '" style="cursor:pointer;border:0">move</button> ' +
-      '<button class="tag bad r-cancel" data-item="' + esc(itemId) + '" data-camper="' + esc(camper || '') + '" style="cursor:pointer;border:0">cancel</button>';
+    var a = ' data-item="' + esc(itemId) + '" data-camper="' + esc(camper || '') + '"';
+    return kebabHtml([
+      { label: 'Move to another session&hellip;', cls: 'r-move', attrs: a },
+      { label: 'Cancel &amp; refund&hellip;', cls: 'r-cancel', attrs: a }
+    ]);
   }
   function rosterHtml(rows){
     if (!rows || !rows.length) return '<div class="sub" style="padding:6px 2px">nobody registered yet</div>';
@@ -2876,7 +2985,18 @@
       var a = e.target.closest('#gRes a');
       if (a) {
         var go = a.dataset.go;
-        if (go === 'camper') { jumpTab('campers'); $('campQ').value = a.dataset.q; renderCampers(); }
+        if (go === 'camper') {
+          // land on the kid with their panel already open — registrations,
+          // family and editable details, no second click needed
+          jumpTab('campers');
+          $('campQ').value = a.dataset.q;
+          renderCampers();
+          var want = (a.dataset.q || '').toLowerCase();
+          var hit = Array.prototype.filter.call($('tblCampers').querySelectorAll('.camp-row'), function(tr){
+            return (tr.dataset.name || '').toLowerCase() === want;
+          })[0];
+          if (hit) { toggleCamper(hit, true); hit.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }
         else if (go === 'program') { jumpTab('products'); $('prodQ').value = a.dataset.q || ''; renderProducts(); }
         else if (go === 'order') { jumpTab('orders'); }
       }

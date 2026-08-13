@@ -275,6 +275,76 @@ export default async (req) => {
       return Response.json({ ...out, refund_id: refundId, refunded_cents: amount });
     }
 
+    // Everything about one camper in a single call: the camper rows that share
+    // the name (families duplicate kids across imports), what they are
+    // registered for with the item ids the move/cancel actions need, and their
+    // pre-platform history. Name-keyed because that is the only join the data
+    // gives us — order_items.camper_name is free text.
+    if (action === "camper_detail") {
+      const name = String(body.name || "").trim();
+      if (!name) return Response.json({ error: "no name" }, { status: 400 });
+      const like = encodeURIComponent(name);
+      const campers = await db(`campers?select=id,family_id,name,birthdate,allergies,emergency_contact,profile,source,day_camp_credits,snow_day_credits&name=ilike.${like}`);
+      const famIds = [...new Set(campers.map((c) => c.family_id).filter(Boolean))];
+      const fams = famIds.length
+        ? await db(`families?select=id,email,parent_name,cc_email&id=in.(${famIds.join(",")})`)
+        : [];
+      const items = await db(`order_items?select=id,show,band,activity_id,unit_price_cents,order_id&camper_name=ilike.${like}`);
+      const orderIds = [...new Set(items.map((i) => i.order_id).filter(Boolean))];
+      const orders = orderIds.length
+        ? await db(`orders?select=id,email,status,plan,created_at,stripe_payment_intent&id=in.(${orderIds.join(",")})`)
+        : [];
+      const actIds = [...new Set(items.map((i) => i.activity_id).filter(Boolean))];
+      const acts = actIds.length
+        ? await db(`activities?select=id,name,schedule_name&id=in.(${actIds.join(",")})`)
+        : [];
+      const actById = Object.fromEntries(acts.map((a) => [a.id, a]));
+      const orderById = Object.fromEntries(orders.map((o) => [o.id, o]));
+      const legacy = await db(`legacy_enrollments?select=source,activity_text,dates,paid_cents&camper_name=ilike.${like}`);
+      return Response.json({
+        campers, families: fams, legacy: legacy || [],
+        registrations: items.map((i) => {
+          const o = orderById[i.order_id] || {};
+          const a = actById[i.activity_id];
+          return {
+            item_id: i.id,
+            what: i.show ? `${i.show} · ${i.band}` : (a ? a.name : "unknown"),
+            schedule: a ? a.schedule_name : null,
+            paid_cents: i.unit_price_cents,
+            order_id: i.order_id, order_status: o.status, plan: o.plan,
+            email: o.email, ordered_at: o.created_at,
+          };
+        }),
+      });
+    }
+
+    // Edit a camper's own details. Profile is merged, not replaced, so an admin
+    // fixing a t-shirt size cannot wipe the medical answers a parent filled in.
+    if (action === "camper_update") {
+      const id = String(body.id || "");
+      if (!/^[0-9a-f-]{36}$/.test(id)) return Response.json({ error: "bad camper id" }, { status: 400 });
+      const cur = (await db(`campers?id=eq.${id}&select=*`))[0];
+      if (!cur) return Response.json({ error: "camper not found" }, { status: 404 });
+      const f = body.fields || {};
+      const patch = {};
+      if ("name" in f && String(f.name).trim()) patch.name = String(f.name).trim();
+      if ("birthdate" in f) patch.birthdate = f.birthdate || null;
+      if ("allergies" in f) patch.allergies = f.allergies || null;
+      if ("emergency_contact" in f) patch.emergency_contact = f.emergency_contact || null;
+      if (f.profile && typeof f.profile === "object") {
+        patch.profile = { ...(cur.profile || {}), ...f.profile };
+        for (const k of Object.keys(patch.profile)) if (patch.profile[k] === "") delete patch.profile[k];
+      }
+      if (!Object.keys(patch).length) return Response.json({ error: "nothing to change" }, { status: 400 });
+      const rows = await db(`campers?id=eq.${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify(patch),
+      });
+      await audit("camper_update", actor, { id, name: cur.name, changed: Object.keys(patch) });
+      return Response.json({ ok: true, camper: (rows || [])[0] || null });
+    }
+
     // Regpack chase list. Deliberately temporary: it dies when the last family
     // converts to our own billing.
     if (action === "chase_list") {
