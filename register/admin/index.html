@@ -83,6 +83,27 @@
     color:#fff; padding:8px 10px; border-radius:7px; cursor:pointer; font-size:12.5px; }
   .kbmenu button:hover { background:rgba(232,184,75,0.12); }
 
+  /* move-camper popover: search-first, no giant list */
+  .mvpop { position:fixed; z-index:80; width:320px; background:#0d1b30; border:1px solid var(--line);
+    border-radius:12px; padding:12px; box-shadow:0 14px 40px rgba(0,0,0,0.55); }
+  .mvpop .mv-head { font-size:13px; margin-bottom:8px; }
+  .mvpop .mv-x { float:right; border:0; background:transparent; color:var(--dim); cursor:pointer; font-size:16px; line-height:1; }
+  .mvpop .mv-x:hover { color:#fff; }
+  .mvpop input { width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font-size:13px; }
+  .mv-chips { display:flex; gap:5px; flex-wrap:wrap; margin:8px 0 0; }
+  .mv-chips button { border:1px solid var(--line); background:transparent; color:var(--dim);
+    border-radius:999px; padding:3px 10px; font-size:11px; cursor:pointer; }
+  .mv-chips button:hover, .mv-chips button.on { color:#E8B84B; border-color:#E8B84B; }
+  .mv-list { max-height:250px; overflow:auto; margin-top:8px; }
+  .mv-list .gt { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); padding:6px 4px 2px; }
+  .mv-list a { display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:7px 8px; border-radius:8px; color:#fff; font-size:12.5px; cursor:pointer; }
+  .mv-list a:hover { background:rgba(232,184,75,0.1); }
+  .mv-list .fill { font-size:11px; color:var(--dim); white-space:nowrap; }
+  .mv-list .fill.full { color:#E8654B; }
+  .mv-hint { font-size:11.5px; color:var(--dim); padding:10px 4px 2px; }
+
   .main { flex:1; padding:26px 30px 60px; min-width:0; }
   .sec { display:none; }
   .sec.on { display:block; }
@@ -811,34 +832,99 @@
   }
 
   // ---- roster row actions: move a camper, cancel + refund a seat ----
-  // The move picker's target list is OVG — the same computed groups the
-  // Overview rings use, so every sellable session is offered with its fill.
-  function moveOptions(){
-    var html = '<option value="">— pick the new session —</option>';
-    (OVG || []).forEach(function(g){
-      html += '<optgroup label="' + esc(g.label) + '">' + (g.items || []).map(function(it){
-        if (it.show) return '<option value="s|' + esc(it.show) + '|' + esc(it.band) + '">' +
-          esc((SHOWL[it.show] || it.show) + ' · ' + it.band) + ' (' + (it.taken || 0) + '/' + (it.cap || 0) + ')</option>';
-        return '<option value="a|' + esc(it.activity_id) + '">' + esc(it.label) +
-          ' (' + (it.taken || 0) + '/' + (it.cap || 0) + ')</option>';
-      }).join('') + '</optgroup>';
-    });
-    return html;
+  // Move opens a small search popover — type a few letters or tap a category
+  // chip, pick the session, confirm. Targets come from OVG (the same computed
+  // groups the Overview rings use), so every sellable session is findable
+  // without ever rendering all 150 of them at once.
+  var MV = null; // { pop, cell, itemId, camper }
+  function mvClose(){
+    if (MV && MV.pop) MV.pop.remove();
+    MV = null;
   }
-  function execMove(cell, itemId, camper, force){
-    var sel = cell.querySelector('.r-move-sel');
-    var v = sel && sel.value;
-    if (!v) return;
-    var p = v.split('|');
+  function mvTargets(){
+    var out = [];
+    (OVG || []).forEach(function(g){
+      (g.items || []).forEach(function(it){
+        var label = it.show ? (SHOWL[it.show] || it.show) + ' · ' + it.band : (it.label || '');
+        out.push({
+          group: g.label, label: label, search: (g.label + ' ' + label).toLowerCase(),
+          taken: it.taken || 0, cap: it.cap || 0,
+          value: it.show ? 's|' + it.show + '|' + it.band : 'a|' + it.activity_id
+        });
+      });
+    });
+    return out;
+  }
+  function mvRender(list){
+    var box = MV.pop.querySelector('.mv-list');
+    if (!list) { box.innerHTML = '<div class="mv-hint">Type a session name, or tap a category.</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="mv-hint">Nothing matches.</div>'; return; }
+    var html = '', lastGroup = null;
+    list.slice(0, 40).forEach(function(t, i){
+      if (t.group !== lastGroup) { html += '<div class="gt">' + esc(t.group) + '</div>'; lastGroup = t.group; }
+      var full = t.cap - t.taken <= 0;
+      html += '<a data-v="' + esc(t.value) + '" data-l="' + esc(t.label) + '">' +
+        '<span>' + esc(t.label) + '</span>' +
+        '<span class="fill' + (full ? ' full' : '') + '">' + (full ? 'FULL · ' : '') + t.taken + '/' + t.cap + '</span></a>';
+    });
+    if (list.length > 40) html += '<div class="mv-hint">' + (list.length - 40) + ' more — keep typing to narrow.</div>';
+    box.innerHTML = html;
+  }
+  function mvOpen(btn){
+    mvClose();
+    var cell = btn.closest('td');
+    var pop = document.createElement('div');
+    pop.className = 'mvpop';
+    var groups = (OVG || []).map(function(g){ return g.label; });
+    pop.innerHTML =
+      '<div class="mv-head"><button class="mv-x">&times;</button>Move <b>' + esc(btn.dataset.camper || 'camper') + '</b> to&hellip;</div>' +
+      '<input class="mv-q" type="text" placeholder="Search sessions&hellip;">' +
+      '<div class="mv-chips">' + groups.map(function(gl){
+        return '<button data-g="' + esc(gl) + '">' + esc(gl) + '</button>';
+      }).join('') + '</div>' +
+      '<div class="mv-list"></div>';
+    document.body.appendChild(pop);
+    var r = btn.getBoundingClientRect();
+    pop.style.left = Math.max(8, Math.min(window.innerWidth - 336, r.left - 260)) + 'px';
+    pop.style.top = Math.min(window.innerHeight - 380, r.bottom + 6) + 'px';
+    MV = { pop: pop, cell: cell, itemId: btn.dataset.item, camper: btn.dataset.camper };
+    mvRender(null);
+    var q = pop.querySelector('.mv-q');
+    q.focus();
+    q.addEventListener('input', function(){
+      pop.querySelectorAll('.mv-chips button').forEach(function(b){ b.classList.remove('on'); });
+      var s = q.value.trim().toLowerCase();
+      mvRender(s ? mvTargets().filter(function(t){ return t.search.indexOf(s) !== -1; }) : null);
+    });
+    pop.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (e.target.closest('.mv-x')) { mvClose(); return; }
+      var chip = e.target.closest('.mv-chips button');
+      if (chip) {
+        q.value = '';
+        pop.querySelectorAll('.mv-chips button').forEach(function(b){ b.classList.toggle('on', b === chip); });
+        mvRender(mvTargets().filter(function(t){ return t.group === chip.dataset.g; }));
+        return;
+      }
+      var pick = e.target.closest('.mv-list a');
+      if (pick) mvExec(pick.dataset.v, pick.dataset.l, false);
+    });
+  }
+  function mvExec(value, label, force){
+    if (!MV) return;
+    var cell = MV.cell, itemId = MV.itemId, camper = MV.camper;
+    if (!force && !confirm('Move ' + camper + ' to ' + label + '?')) return;
+    var p = value.split('|');
     var payload = { action: 'move', item_id: itemId, force: !!force };
     if (p[0] === 's') { payload.show = p[1]; payload.band = p[2]; }
     else payload.activity_id = +p[1];
+    mvClose();
     cell.innerHTML = '<span class="sub">moving…</span>';
     opsApi(payload).then(function(d){
       if (d.needs_force) {
-        if (confirm('That session is FULL. Move ' + camper + ' anyway (oversell by one)?')) {
-          cell.innerHTML = '<select class="r-move-sel" style="display:none"><option value="' + esc(v) + '" selected></option></select>';
-          return execMove(cell, itemId, camper, true);
+        if (confirm(label + ' is FULL. Move ' + camper + ' anyway (oversell by one)?')) {
+          MV = { pop: null, cell: cell, itemId: itemId, camper: camper };
+          return mvExec(value, label, true);
         }
         cell.innerHTML = rosterActionBtns(itemId, camper);
         return;
@@ -850,26 +936,8 @@
   }
   document.addEventListener('click', function(e){
     var mv = e.target.closest('.r-move');
-    if (mv) {
-      var cell = mv.closest('td');
-      cell.innerHTML = '<select class="r-move-sel" style="max-width:260px">' + moveOptions() + '</select> ' +
-        '<button class="tag ok r-move-go" style="cursor:pointer;border:0">go</button> ' +
-        '<button class="tag r-move-abort" style="cursor:pointer;border:0">&times;</button>';
-      cell.dataset.item = mv.dataset.item; cell.dataset.camper = mv.dataset.camper;
-      return;
-    }
-    var go = e.target.closest('.r-move-go');
-    if (go) {
-      var c1 = go.closest('td');
-      execMove(c1, c1.dataset.item, c1.dataset.camper, false);
-      return;
-    }
-    var ab = e.target.closest('.r-move-abort');
-    if (ab) {
-      var c2 = ab.closest('td');
-      c2.innerHTML = rosterActionBtns(c2.dataset.item, c2.dataset.camper);
-      return;
-    }
+    if (mv) { e.stopPropagation(); mvOpen(mv); return; }
+    if (MV && !e.target.closest('.mvpop')) mvClose();
     var cx = e.target.closest('.r-cancel');
     if (cx) runCancel(cx);
   });
