@@ -972,10 +972,12 @@
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { errEl.textContent='Please enter a valid email.'; errEl.classList.add('on'); return; }
     state.email = email.toLowerCase();
     $('emailGo').disabled = true;
+    $('emailGo').textContent = 'Checking…';
     ev('reg_email_submitted');
     sb.rpc('email_known', { p_email: state.email }).then(function(res){
       if (!res.data) {
         $('emailGo').disabled = false;
+        $('emailGo').textContent = 'Continue';
         ev('reg_email_unknown', { email: state.email });
         // bank the lead — dedupes server-side, failure is invisible to the user
         try { sb.rpc('join_waitlist', { p_email: state.email, p_source: 'unknown-email' }); } catch(e){}
@@ -991,11 +993,13 @@
   }
   function sendLink(){
     rememberIntent();
+    var go2 = $('emailGo'); if (go2) { go2.disabled = true; go2.textContent = 'Sending your link…'; }
     sb.auth.signInWithOtp({
       email: state.email,
       options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
     }).then(function(res){
       $('emailGo').disabled = false;
+      $('emailGo').textContent = 'Continue';
       if (res.error) { var e=$('gateErr'); e.textContent = res.error.message || 'Could not send the link — try again shortly.'; e.classList.add('on'); return; }
       $('sentTo').textContent = state.email;
       ev('reg_link_sent');
@@ -1020,10 +1024,12 @@
   }
   function sendLinkNew(){
     rememberIntent();
+    var wj = $('wlJoin'); if (wj) { wj.disabled = true; wj.textContent = 'Sending your link…'; }
     sb.auth.signInWithOtp({
       email: state.email,
       options: { emailRedirectTo: location.origin + '/register/' + location.search, shouldCreateUser: true }
     }).then(function(res){
+      var wj2 = $('wlJoin'); if (wj2) { wj2.disabled = false; wj2.textContent = 'Continue'; }
       if (res.error) { var e=$('wlErr'); e.textContent = res.error.message || 'Could not send the link — try again shortly.'; e.classList.add('on'); return; }
       $('sentTo').textContent = state.email;
       ev('reg_link_sent');
