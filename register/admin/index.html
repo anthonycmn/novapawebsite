@@ -92,8 +92,15 @@
     padding:8px 10px; border-radius:8px; border:1px solid var(--line);
     background:rgba(8,17,31,0.6); color:#fff; font-size:13px; font-family:inherit; }
   .pe input:focus, .pe select:focus, #s-products input:focus, .ch-note:focus { outline:none; border-color:#E8B84B; }
-  .ch-note { font-size:12px; }
+  /* chase notes run to a paragraph — they need to wrap and breathe, not sit
+     in a one-line box that hides everything past the first few words */
+  .ch-note { width:100%; min-height:62px; font-size:12.5px; line-height:1.5; resize:vertical;
+    font-family:inherit; overflow:hidden; }
   .ch-note::placeholder { color:var(--dim); opacity:.7; }
+  .ch-terms { font-size:11.5px; line-height:1.45; color:var(--dim); max-width:340px;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
+  .ch-terms.open { -webkit-line-clamp:unset; }
+  #chaseList td { vertical-align:top; }
   .pe input[type=checkbox] { accent-color:#E8B84B; width:auto; }
   .pe label { user-select:none; }
   .btn2 { border:1px solid #E8B84B; background:rgba(232,184,75,0.12); color:#E8B84B;
@@ -2457,11 +2464,11 @@
         return '<tr data-id="' + esc(p.id) + '">' +
           '<td><b>' + esc(p.family_label || '') + '</b>' +
             '<div class="sub">' + esc(p.cohort || '') + '</div></td>' +
-          '<td class="sub" style="max-width:420px">' + esc(p.terms || '') +
-            (p.stripe_link ? '<div><a href="' + esc(p.stripe_link) + '" target="_blank" rel="noopener">payment link</a></div>' : '') + '</td>' +
+          '<td><div class="ch-terms" title="click to expand">' + esc(p.terms || '') + '</div>' +
+            (p.stripe_link ? '<div style="font-size:11.5px;margin-top:4px"><a href="' + esc(p.stripe_link) + '" target="_blank" rel="noopener">payment link</a></div>' : '') + '</td>' +
           '<td class="num">' + (planTotal(p) ? usd(planTotal(p)) : '<span class="sub">—</span>') + '</td>' +
-          '<td style="min-width:200px"><input class="ch-note" data-id="' + esc(p.id) + '" value="' + esc(p.notes || '') +
-            '" placeholder="chase status…" style="width:100%"></td>' +
+          '<td style="min-width:320px"><textarea class="ch-note" data-id="' + esc(p.id) +
+            '" placeholder="chase status…">' + esc(p.notes || '') + '</textarea></td>' +
           '<td><button class="tag ' + (resolved ? '' : 'ok') + ' ch-flip" data-id="' + esc(p.id) +
             '" data-to="' + (resolved ? 'sent' : 'resolved') + '" style="cursor:pointer;border:0">' +
             (resolved ? 'reopen' : 'mark resolved') + '</button></td></tr>';
@@ -2485,13 +2492,21 @@
     });
     $('chaseList').querySelectorAll('.ch-note').forEach(function(inp){
       var t = null;
+      // grow to fit what is written rather than hiding it behind a scrollbar
+      function fit(){ inp.style.height = 'auto'; inp.style.height = (inp.scrollHeight + 2) + 'px'; }
+      fit();
       inp.addEventListener('input', function(){
+        fit();
         clearTimeout(t);
         t = setTimeout(function(){
           opsApi({ action: 'chase_update', id: inp.dataset.id, notes: inp.value })
             .then(function(){ inp.style.borderColor = 'var(--ok)'; setTimeout(function(){ inp.style.borderColor = ''; }, 900); });
         }, 700);
       });
+    });
+    // terms are reference material: three lines by default, click for the rest
+    $('chaseList').querySelectorAll('.ch-terms').forEach(function(d){
+      d.addEventListener('click', function(){ d.classList.toggle('open'); });
     });
     $('chaseList').querySelectorAll('.ch-flip').forEach(function(b){
       b.addEventListener('click', function(){
