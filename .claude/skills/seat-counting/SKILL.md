@@ -84,8 +84,35 @@ Three sources, and only three:
 | Source | Lands in | Notes |
 |---|---|---|
 | Web portal | `orders` + `order_items`, `activities.sold` | `sold` matches paid order_items on every product — verified Aug 14 2026 |
-| HiSawyer | `legacy_enrollments` (per order) + `booked_offline` | reliable, no new orders since the last import |
-| Regpack | `legacy_enrollments` (86 rows) + `booked_offline` | migration in progress, `migration_plans` tracks it |
+| HiSawyer | `legacy_enrollments` (one row per ORDER) | 727 orders. Mostly SUMMER 2026 and older |
+| Regpack | `regpack_enrollments` (aggregate counts) + 86 rows in `legacy_enrollments` | where the FALL shows actually came from |
+
+**The fall shows were sold through Regpack, not Sawyer.** The Sawyer export
+contains only 3 Frozen Kids, 2 Frozen Teens, 2 Sweeney and 1 Hadestown order in
+total; everything else matching "frozen" is a different product (Combo Class
+Frozen & Heathers, "A Day at the Theatre - A Frozen Adventure"). Do not conclude
+Sawyer data is missing because a fall show has few Sawyer rows — it never had
+many.
+
+`regpack_enrollments` holds **aggregate counts per program** (`cnt`), not people:
+Frozen Jr 19, Sweeney 21, Hadestown 21. `booked_offline` is deliberately LOWER
+than these because it counts Sawyer plus the **cleaned, actually-paid** Regpack
+list, which Jason and Todd worked through. A gap between `regpack_enrollments.cnt`
+and `booked_offline` is that cleanup, not an error.
+
+## Cancellations only exist in the Sawyer export
+
+Nothing in our database records that a Sawyer order was cancelled. The Orders
+Report export (Financials > Orders > Download Reports > Orders Report, emailed
+as a link that expires in 3 hours) has a `Canceled` column: 10 of 727 orders are
+cancelled. Lindsay Rockwood's Frozen JR order is one, which is why a $0 "Ryley
+Rockwood / Broadway Bound | Frozen, Jr" row exists and must NOT be treated as a
+registrant. Pull that export before trusting any row with $0 paid.
+
+The export is order-level, not line-item: `Student Name` and `Activities` are
+comma-joined. Of 717 live orders, 690 are unambiguous (one student, or one
+program) and 27 have several of both, where you cannot tell which kid is in
+which program without opening the order.
 
 Regpack families being migrated still count as registered until told otherwise.
 Their custom Stripe payment links are paid **outside** our checkout, so paying
