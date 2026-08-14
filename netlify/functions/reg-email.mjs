@@ -11,12 +11,24 @@ export function money(cents) {
 // ours did not. The data was already in the catalog; it just never made it
 // into the email. Pulled here rather than crammed into Stripe metadata,
 // which caps at 500 characters per key.
+const TEEN_CONS_IDS = [1960809, 1960811, 1805731]; // Sweeney, Hadestown, Dear Evan Hansen
+
+// "8:30am - 4:00pm EDT" -> true. Evening rehearsals never cross lunch, so the
+// pack-a-lunch note only shows where it applies.
+function spansLunch(w) {
+  if (!w || !w.time) return false;
+  const m = String(w.time).match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm).*?(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+  if (!m) return false;
+  const h = (hh, ap) => (Number(hh) % 12) + (/pm/i.test(ap) ? 12 : 0);
+  return h(m[1], m[3]) <= 12 && h(m[4], m[6]) >= 13;
+}
 const VENUE = "National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176";
 const MAP_URL = "https://maps.google.com/?q=" + encodeURIComponent("18945 Conference Center Drive, Plaza C, Leesburg, VA 20176");
 const ARRIVAL = [
   "We are in the South Building at Plaza C. Park in the south parking lot and take the walkway to the entrance.",
-  "Follow the signs for pick-up and drop-off once you arrive.",
-  "For any all-day program, please pack a lunch and a snack.",
+  "Parking is free. If you are dropping off and going, drop off at Plaza C.",
+  "Pick-up has a fifteen minute grace period, after which a late fee of $15 per fifteen minutes applies. If you are running late, email us rather than letting us wonder.",
+  "Email is our official channel for schedule changes, closures, casting and billing. Please check your spam folder and mark us as safe.",
 ];
 
 async function svcJson(path) {
@@ -52,18 +64,28 @@ export async function itemDetails(m, pi) {
   if (!rows.length) return [];
   const ids = [...new Set(rows.map((r) => r.activity_id).filter(Boolean))];
   const acts = ids.length
-    ? await svcJson(`activities?id=in.(${ids.join(",")})&select=id,name,class_times,location,age_range`)
+    ? await svcJson(`activities?id=in.(${ids.join(",")})&select=id,name,class_times,location,age_range,category,price_cents`)
     : [];
   const byId = Object.fromEntries(acts.map((a) => [a.id, a]));
   return rows.map((r) => {
     const a = r.activity_id ? byId[r.activity_id] : null;
     const w = a ? whenFrom(a.class_times) : null;
+    // A summer camp booked by (show, band) has no activity row, but it is
+    // always an all-day production.
+    const summer = !!r.show;
+    const price = a ? (a.price_cents || 0) : 99500;
+    const cat = a ? a.category : "camp";
     return {
       camper: r.camper_name || "Camper",
       name: a ? a.name : (r.show ? `${r.show} (ages ${r.band})` : "Program"),
       ages: a && a.age_range ? a.age_range : "",
       when: w,
       price: r.unit_price_cents,
+      // Day-1 auditions run for every production. Teen Conservatory casts
+      // audition months ahead, so Sweeney, Hadestown and Dear Evan Hansen are
+      // out — Mean Girls is back on day-1 auditions (Jason, Aug 13).
+      production: summer || (cat === "camp" && price >= 50000 && !TEEN_CONS_IDS.includes(a && a.id)),
+      allDay: summer || spansLunch(w),
     };
   });
 }
@@ -117,6 +139,46 @@ export function confirmationHtml(m, pi, details) {
             ${couponRow ? '<table role="presentation" width="100%">' + couponRow + "</table>" : ""}
             <div style="font-size:15px;color:#2a2a2a"><b>Paid today: ${money(today)}</b>${total > today ? " &nbsp;·&nbsp; Program total: " + money(total) : ""}</div>
             <div style="font-size:13.5px;color:#666;margin-top:6px;line-height:1.5">${planLine}</div>
+          </td></tr>
+        </table>
+      </td></tr>
+
+      ${(details && details.some((d) => d.production)) ? `
+      <tr><td style="padding:14px 32px 4px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fdfbf6;border:1px solid #eee5d2;border-radius:10px">
+          <tr><td style="padding:16px 18px">
+            <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a7a55">Auditions are on day one</div>
+            <p style="margin:8px 0 0;font-size:14px;color:#2a2a2a;line-height:1.6">
+              This is for placement only. <b>Everyone who registered is in the company and everyone is cast.</b>
+              Day one decides where your performer fits best.</p>
+            <p style="margin:10px 0 0;font-size:13.5px;color:#555;line-height:1.6">What to bring to the audition:</p>
+            <ul style="margin:6px 0 0;padding-left:18px;font-size:13.5px;color:#555;line-height:1.6">
+              <li style="margin:4px 0"><b>A song they are confident singing.</b> Sixteen to thirty-two bars is plenty. Sheet music in a binder, or a backing track on a phone with a way to play it.</li>
+              <li style="margin:4px 0"><b>A short monologue</b> if they have one they like. Optional, but it helps us.</li>
+              <li style="margin:4px 0">Themselves, warmed up, having slept.</li>
+            </ul>
+            <p style="margin:10px 0 0;font-size:13.5px;color:#666;line-height:1.6">
+              An audition here is not a test anyone can fail. We already want them. We are listening for where their
+              voice sits and which room will stretch them most.</p>
+          </td></tr>
+        </table>
+      </td></tr>` : ""}
+      <tr><td style="padding:14px 32px 4px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fdfbf6;border:1px solid #eee5d2;border-radius:10px">
+          <tr><td style="padding:16px 18px">
+            <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a7a55">What to bring and wear</div>
+            <ul style="margin:8px 0 0;padding-left:18px;font-size:13.5px;color:#555;line-height:1.6">
+              ${(details && details.some((d) => d.allDay)) ? `<li style="margin:4px 0"><b>A packed lunch and a snack.</b> Lunch is not provided. No delivery during the day, and that one is firm.</li>` : ""}
+              <li style="margin:4px 0">A refillable <b>water bottle</b>, named.</li>
+              <li style="margin:4px 0">A <b>pencil</b>. Not a pen.</li>
+              <li style="margin:4px 0">A <b>layer</b> — the building runs cold.</li>
+              <li style="margin:4px 0">Anything with a name on it stands a much better chance of coming home.</li>
+            </ul>
+            <p style="margin:10px 0 0;font-size:13.5px;color:#555;line-height:1.6">
+              <b>What to wear:</b> modest movement clothes with closed-toed shoes or dance shoes. Leggings, joggers or
+              athletic shorts with a fitted top or t-shirt, things that stay put when you bend, lift your arms or lie on
+              the floor. Hair tied back and off the face. No dangling jewellery or smartwatches. On the build crew,
+              closed-toed shoes are the rule, not a suggestion.</p>
           </td></tr>
         </table>
       </td></tr>
