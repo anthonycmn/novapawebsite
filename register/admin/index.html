@@ -2824,15 +2824,22 @@
     // used to print "0", which reads as "nobody has signed up" when it in fact
     // means "we are not counting this one". Those are opposite pieces of news
     // and the page has to be able to say which one it is.
+    // taken = web orders + booked_offline, matching catalog_list, acquire_hold_v2
+    // and admin_overview_groups. booked_offline IS Sawyer sold + Regpack frozen
+    // at the cutover, so regpack must NOT be added again on top of it.
+    //
+    // This used to infer the offline count as `capacity - open_spots/sessions`.
+    // open_spots is Sawyer's own field and is not a per-show seat count: it
+    // reads 663 for a 50 seat show, so the subtraction went negative, clamped
+    // to 0, and the tab reported Frozen JR as 33 seats open when 20 were. Two
+    // parts of this dashboard disagreed about the same show by 13 seats.
     function countOf(a){
       var cap = a.capacity;
-      var sawyerRemain = (a.open_spots != null && a.sessions) ? Math.round(a.open_spots / a.sessions) : null;
-      var sawyer = (cap != null && sawyerRemain != null) ? Math.max(0, cap - sawyerRemain) : 0;
-      var known = (a.sold != null) || (a.regpack != null) || (sawyerRemain != null);
-      var taken = sawyer + (a.regpack||0) + (a.sold||0);
+      var offline = a.booked_offline || 0;
+      var known = (a.sold != null) || (a.booked_offline != null);
+      var taken = offline + (a.sold||0);
       var parts = [];
-      if (sawyer) parts.push(sawyer + ' sawyer');
-      if (a.regpack) parts.push(a.regpack + ' regpack');
+      if (offline) parts.push(offline + ' sawyer/regpack');
       if (a.sold) parts.push(a.sold + ' web');
       return { cap: cap, taken: taken, known: known,
                left: (cap != null) ? Math.max(0, cap - taken) : null, parts: parts };

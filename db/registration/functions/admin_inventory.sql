@@ -16,6 +16,10 @@ begin
     'activities', (select jsonb_agg(jsonb_build_object('id', a.id, 'name', a.name,
                    'category', a.category, 'schedule', a.schedule_name, 'age', a.age_range,
                    'open_spots', a.open_spots, 'sold', a.sold, 'bb_gated', a.bb_gated,
+                   -- Sawyer sold + Regpack, frozen at the cutover. This is the
+                   -- one true offline count; open_spots below is Sawyer's own
+                   -- field and is unreliable (it reads 663 for a 50 seat show).
+                   'booked_offline', coalesce(a.booked_offline, 0),
                    'price_cents', a.price_cents, 'raw_in_progress', a.raw->>'in_progress',
                    'capacity', a.capacity,
                    'sessions', case when jsonb_typeof(a.raw->'class_times')='array' then jsonb_array_length(a.raw->'class_times') else null end,
