@@ -108,7 +108,7 @@ If this material is close to something in your own life, you are not obliged to 
 
 **Dates and times.** Rehearsals Monday to Friday, 9:00 AM to 4:00 PM, August 3 through August 14. Then performances Friday evening through Sunday afternoon, August 14 to 16.
 
-**Where.** The National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg VA 20175.
+**Where.** The National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg VA 20176.
 
 **Getting in and out.** If your performer drives themselves, or if you are coming in with them, **park in the parking lot** — parking is free. If you are dropping off and going, **drop off at Plaza C**. Same at 4:00.
 
