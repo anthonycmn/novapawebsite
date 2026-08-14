@@ -71,6 +71,22 @@ export default async (req) => {
 
   const pi = event.data.object;
   const m = pi.metadata || {};
+
+  // Ticketing branch (tix-pay.mjs): ticket intents carry tix_hold_id and none
+  // of the camp keys, so they'd otherwise fall out at "no metadata" below.
+  // Same failure contract as camps: 500 -> Stripe retries; tix_confirm is
+  // idempotent on the payment intent id.
+  if (m.tix_hold_id) {
+    try {
+      const { confirmTickets } = await import("./tix-confirm.mjs");
+      await confirmTickets(pi);
+      return new Response("ok", { status: 200 });
+    } catch (err) {
+      console.error("tix confirm error:", err.message);
+      return new Response("error", { status: 500 });
+    }
+  }
+
   if (!m.hold_id || !m.plan) return new Response("no metadata", { status: 200 });
 
   // Duplicate class-enrollment guard (Aug 7 2026): a parent who retried a

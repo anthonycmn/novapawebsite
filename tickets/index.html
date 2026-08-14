@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tickets — NOVAPA Box Office</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<script src="/register/config.js"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  :root {
+    --navy0:#08111F; --navy1:#0F1E36; --gold:#C8892A; --gold2:#E8B84B;
+    --ink:rgba(255,255,255,0.88); --dim:rgba(255,255,255,0.6);
+    --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; color:var(--ink); min-height:100vh;
+    background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%); }
+  .wrap { max-width:980px; margin:0 auto; padding:34px 20px 80px; }
+  h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(28px,5vw,40px); color:#fff; }
+  h1 em { font-style:italic; color:var(--gold2); }
+  .sub { color:var(--dim); margin:6px 0 24px; font-size:15px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:16px; }
+  .label { font-size:11.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--dim); margin-bottom:10px; }
+  .perfs { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
+  .perf { text-align:left; padding:13px 15px; border-radius:12px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.5); color:var(--ink); font-family:inherit; cursor:pointer; }
+  .perf:hover { border-color:var(--gold2); }
+  .perf.on { border-color:var(--gold2); background:rgba(232,184,75,0.12); }
+  .perf b { display:block; font-size:15px; color:#fff; }
+  .perf span { font-size:12.5px; color:var(--dim); }
+  .perf .soldout { color:#E8654B; font-weight:700; }
+  #mapCard { display:none; }
+  #mapScroll { overflow-x:auto; }
+  svg text { font-family:'DM Sans',sans-serif; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; font-size:12.5px; color:var(--dim); }
+  .legend i { display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:5px; vertical-align:-1px; }
+  .bar { position:sticky; bottom:0; margin-top:14px; display:none; align-items:center; gap:14px;
+    background:rgba(8,17,31,0.95); border:1px solid var(--gold2); border-radius:14px; padding:14px 18px; }
+  .bar .picks { flex:1; font-size:14px; }
+  .bar .picks b { color:var(--gold2); }
+  .btn { padding:13px 22px; border:0; border-radius:11px; font-family:inherit; font-weight:700;
+    font-size:15px; cursor:pointer; background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1206; }
+  .btn[disabled] { opacity:.5; cursor:default; }
+  input { width:100%; padding:13px 15px; border-radius:11px; border:1px solid var(--line);
+    background:rgba(8,17,31,0.6); color:#fff; font:inherit; font-size:15px; outline:none; margin-bottom:10px; }
+  input:focus { border-color:var(--gold2); }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:560px){ .row2 { grid-template-columns:1fr; } }
+  .err { color:#E8654B; font-size:13.5px; min-height:18px; margin-top:8px; }
+  .timer { font-size:12.5px; color:var(--dim); }
+  .policy { font-size:12px; color:var(--dim); line-height:1.6; margin-top:14px; }
+  #payEl { background:#fff; border-radius:12px; padding:14px; margin:14px 0; }
+  .done { text-align:center; padding:30px 10px; }
+  .done .code { font-size:34px; font-weight:800; letter-spacing:.2em; color:var(--gold2); margin:12px 0; }
+  .warn { background:rgba(232,101,75,0.12); border:1px solid rgba(232,101,75,0.4);
+    border-radius:12px; padding:12px 16px; font-size:13px; line-height:1.6; margin-bottom:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="title">NOVAPA <em>Box Office</em></h1>
+  <p class="sub" id="subtitle">Loading&hellip;</p>
+
+  <div class="warn" id="contentWarning" style="display:none"></div>
+
+  <div class="card"><div class="label">Choose a performance</div><div class="perfs" id="perfs"></div></div>
+
+  <div class="card" id="mapCard">
+    <div class="label">Pick your seats — <span id="mapPerf"></span></div>
+    <div id="mapScroll"></div>
+    <div class="legend" id="legend"></div>
+    <div class="bar" id="bar">
+      <div class="picks" id="picks"></div>
+      <button class="btn" id="checkoutBtn">CHECKOUT</button>
+    </div>
+  </div>
+
+  <div class="card" id="payCard" style="display:none">
+    <div class="label">Checkout <span class="timer" id="timer"></span></div>
+    <div class="row2">
+      <input id="buyer" placeholder="Your name" autocomplete="name">
+      <input id="email" type="email" placeholder="Email for your tickets" autocomplete="email">
+    </div>
+    <div id="paySummary" style="font-size:14px;color:var(--dim);margin:6px 0"></div>
+    <div id="payEl" style="display:none"></div>
+    <button class="btn" id="payBtn" style="width:100%">CONTINUE</button>
+    <div class="err" id="payErr"></div>
+    <div class="policy" id="policy"></div>
+  </div>
+
+  <div class="card done" id="doneCard" style="display:none">
+    <div class="label">You're going to the show</div>
+    <div id="doneShow" style="font-size:20px;color:#fff;font-weight:700"></div>
+    <div class="code" id="doneCode">&mdash;</div>
+    <div style="font-size:14px;color:var(--dim)">Your tickets and this order code were emailed to
+      <b id="doneEmail" style="color:#fff"></b>.<br>Give the code and your name at the door.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var C = window.NOVAREG;
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; };
+  var money = function(c){ return '$' + (c/100).toLocaleString('en-US',{minimumFractionDigits: c%100?2:0}); };
+
+  var SLUG = new URLSearchParams(location.search).get('show') || 'sweeney-todd';
+  var state = { show:null, tiers:{}, perf:null, seats:[], sel:{}, stripe:null, elements:null, holdExp:0, timerId:0 };
+
+  var SOLD = '#3a4a63', HELD = '#5a6a83';
+  var MAXTICKETS = 12;
+
+  fetch('/api/tix-pay?show=' + encodeURIComponent(SLUG))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d || !d.show) { $('subtitle').textContent = 'Tickets are not on sale yet. Check back soon!'; return; }
+      state.show = d.show;
+      (d.tiers||[]).forEach(function(t){ state.tiers[t.name] = t; });
+      $('title').innerHTML = esc(d.show.title);
+      $('subtitle').textContent = (d.show.subtitle ? d.show.subtitle + ' · ' : '') + d.show.venue_name + (d.show.run_time ? ' · ' + d.show.run_time : '');
+      if (d.show.content_warning) { $('contentWarning').textContent = d.show.content_warning; $('contentWarning').style.display = 'block'; }
+      $('policy').textContent = d.show.policy || '';
+      $('legend').innerHTML = (d.tiers||[]).map(function(t){
+        return '<span><i style="background:' + t.color + '"></i>' + esc(t.name) + ' ' + money(t.price_cents + t.fee_cents) + '</span>';
+      }).join('') + '<span><i style="background:' + SOLD + '"></i>Unavailable</span>';
+      $('perfs').innerHTML = (d.performances||[]).map(function(p){
+        var dt = new Date(p.starts_at);
+        var day = dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'});
+        var tm = dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
+        var soldout = p.sold >= 432 || p.status === 'soldout';
+        return '<button class="perf" data-p="' + p.id + '" data-when="' + day + ' · ' + tm + '"' + (soldout ? ' disabled' : '') + '>' +
+          '<b>' + day + '</b><span>' + tm + (p.label ? ' · ' + esc(p.label) : '') + '</span>' +
+          (soldout ? ' <span class="soldout">SOLD OUT</span>' : '') + '</button>';
+      }).join('');
+    });
+
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('.perf'); if (!b || b.disabled) return;
+    document.querySelectorAll('.perf.on').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    state.perf = { id: +b.getAttribute('data-p'), when: b.getAttribute('data-when') };
+    state.sel = {};
+    $('mapPerf').textContent = state.perf.when;
+    $('mapCard').style.display = 'block';
+    $('payCard').style.display = 'none';
+    loadMap();
+    $('mapCard').scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+
+  function loadMap(){
+    $('mapScroll').innerHTML = '<div style="color:var(--dim);font-size:14px;padding:12px 0">Loading seat map&hellip;</div>';
+    fetch('/api/tix-pay?performance=' + state.perf.id)
+      .then(function(r){ return r.json(); })
+      .then(function(d){ state.seats = d.seats || []; drawMap(); syncBar(); });
+  }
+
+  // Geometry mirrors the house: two banks of 12, centre aisle, stage on top.
+  // Odd seats house left (23 outermost .. 1 at the aisle), even house right
+  // (2 at the aisle .. 24 outermost).
+  function drawMap(){
+    var ROWS = []; var seen = {};
+    state.seats.forEach(function(s){ if (!seen[s.row]) { seen[s.row]=1; ROWS.push(s.row); } });
+    ROWS.sort();
+    var CELL = 26, R = 9, AISLE = 44, LABELW = 26;
+    var W = LABELW*2 + CELL*24 + AISLE, H = 70 + ROWS.length*CELL + 16;
+    var x = function(s){
+      var idx = s.section === 'HL' ? (23 - s.seat)/2 : 12 + (s.seat - 2)/2;
+      return LABELW + idx*CELL + (s.section==='HR' ? AISLE : 0) + CELL/2;
+    };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="min-width:640px;width:100%" role="img" aria-label="Seat map">';
+    svg += '<rect x="' + (W/2-150) + '" y="10" width="300" height="30" rx="4" fill="rgba(255,255,255,0.12)"/>' +
+           '<text x="' + (W/2) + '" y="30" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="13" letter-spacing="6">STAGE</text>';
+    ROWS.forEach(function(row, ri){
+      var y = 70 + ri*CELL;
+      svg += '<text x="10" y="' + (y+4) + '" fill="rgba(255,255,255,0.45)" font-size="11">' + row + '</text>' +
+             '<text x="' + (W-16) + '" y="' + (y+4) + '" fill="rgba(255,255,255,0.45)" font-size="11">' + row + '</text>';
+    });
+    state.seats.forEach(function(s){
+      var ri = ROWS.indexOf(s.row);
+      var cy = 70 + ri*CELL;
+      var tier = state.tiers[s.tier] || {};
+      var fill = s.status === 'sold' ? SOLD : s.status === 'held' ? HELD : (tier.color || '#888');
+      var selected = !!state.sel[s.id];
+      svg += '<circle data-seat="' + s.id + '" cx="' + x(s) + '" cy="' + cy + '" r="' + R + '"' +
+        ' fill="' + (selected ? '#fff' : fill) + '"' +
+        (selected ? ' stroke="' + (tier.color||'#fff') + '" stroke-width="3"' : '') +
+        (s.status === 'open' ? ' style="cursor:pointer"' : ' opacity="0.55"') +
+        '><title>' + (s.section==='HL'?'House Left':'House Right') + ' ' + s.row + s.seat + ' · ' + s.tier +
+        (s.status==='open' ? ' · ' + money((tier.price_cents||0)+(tier.fee_cents||0)) : ' · unavailable') + '</title></circle>';
+    });
+    svg += '</svg>';
+    $('mapScroll').innerHTML = svg;
+  }
+
+  $('mapScroll').addEventListener('click', function(e){
+    var c = e.target.closest('circle[data-seat]'); if (!c) return;
+    var id = +c.getAttribute('data-seat');
+    var seat = state.seats.find(function(s){ return s.id === id; });
+    if (!seat || seat.status !== 'open') return;
+    if (state.sel[id]) delete state.sel[id];
+    else {
+      if (Object.keys(state.sel).length >= MAXTICKETS) return;
+      state.sel[id] = seat;
+    }
+    drawMap(); syncBar();
+  });
+
+  function syncBar(){
+    var picks = Object.values(state.sel);
+    $('bar').style.display = picks.length ? 'flex' : 'none';
+    var total = picks.reduce(function(sum, s){
+      var t = state.tiers[s.tier] || {}; return sum + (t.price_cents||0) + (t.fee_cents||0);
+    }, 0);
+    $('picks').innerHTML = picks.length + ' seat' + (picks.length===1?'':'s') + ' · <b>' + money(total) + '</b> — ' +
+      picks.map(function(s){ return s.row + s.seat; }).join(', ');
+  }
+
+  $('checkoutBtn').addEventListener('click', function(){
+    $('payCard').style.display = 'block';
+    var picks = Object.values(state.sel);
+    var total = picks.reduce(function(sum,s){ var t=state.tiers[s.tier]||{}; return sum+(t.price_cents||0)+(t.fee_cents||0); },0);
+    $('paySummary').textContent = state.show.title + ' · ' + state.perf.when + ' · ' +
+      picks.map(function(s){ return (s.section==='HL'?'L':'R')+' '+s.row+s.seat; }).join(', ') + ' · ' + money(total);
+    $('payCard').scrollIntoView({ behavior:'smooth' });
+  });
+
+  $('payBtn').addEventListener('click', function(){
+    var btn = $('payBtn');
+    if (state.elements) { // second press = confirm payment
+      btn.disabled = true; btn.textContent = 'PROCESSING…';
+      state.stripe.confirmPayment({ elements: state.elements, redirect: 'if_required' }).then(function(res){
+        if (res.error) { btn.disabled = false; btn.textContent = 'PAY NOW';
+          $('payErr').textContent = res.error.message || 'Payment failed.'; return; }
+        clearInterval(state.timerId);
+        $('doneShow').textContent = state.show.title + ' · ' + state.perf.when;
+        $('doneEmail').textContent = $('email').value.trim();
+        $('doneCode').textContent = 'CHECK YOUR EMAIL';
+        $('mapCard').style.display = 'none'; $('payCard').style.display = 'none';
+        $('doneCard').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      return;
+    }
+    var buyer = $('buyer').value.trim(), email = $('email').value.trim();
+    if (!buyer) { $('payErr').textContent = 'Please enter your name.'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('payErr').textContent = 'Please enter a valid email.'; return; }
+    $('payErr').textContent = '';
+    btn.disabled = true; btn.textContent = 'HOLDING YOUR SEATS…';
+    fetch('/api/tix-pay', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ performance_id: state.perf.id, seat_ids: Object.keys(state.sel).map(Number),
+        buyer_name: buyer, email: email })
+    }).then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
+      .then(function(res){
+        btn.disabled = false;
+        if (!res.ok || res.j.error) {
+          btn.textContent = 'CONTINUE';
+          if (res.j.error === 'seat_taken') { $('payErr').textContent = 'Someone just took one of those seats. Pick again.'; state.sel={}; loadMap(); }
+          else $('payErr').textContent = 'Could not start checkout. Try again.';
+          return;
+        }
+        btn.textContent = 'PAY NOW';
+        state.holdExp = Date.now() + res.j.expires_in * 1000;
+        state.timerId = setInterval(function(){
+          var s = Math.max(0, Math.round((state.holdExp - Date.now())/1000));
+          $('timer').textContent = '· seats held for ' + Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+          if (!s) { clearInterval(state.timerId); $('timer').textContent = '· hold expired — reselect seats'; }
+        }, 1000);
+        state.stripe = Stripe(C.STRIPE_PUBLISHABLE_KEY);
+        state.elements = state.stripe.elements({ clientSecret: res.j.client_secret,
+          appearance: { theme:'stripe', variables:{ colorPrimary:'#C8892A' } } });
+        state.elements.create('payment', { layout:'tabs' }).mount('#payEl');
+        $('payEl').style.display = 'block';
+      });
+  });
+})();
+</script>
+</body>
+</html>

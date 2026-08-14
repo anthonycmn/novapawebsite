@@ -157,10 +157,10 @@ function inlineScripts(html) {
 }
 
 function checkUndeclared() {
-  const targets = readdirSync(join(ROOT, "register"))
-    .filter((f) => f.endsWith(".html"))
-    .map((f) => join("register", f))
-    .filter((f) => existsSync(join(ROOT, f)));
+  const targets = ["register", "tickets"].flatMap((dir) =>
+    existsSync(join(ROOT, dir))
+      ? readdirSync(join(ROOT, dir)).filter((f) => f.endsWith(".html")).map((f) => join(dir, f))
+      : []);
 
   for (const rel of targets) {
     const html = readFileSync(join(ROOT, rel), "utf8");
