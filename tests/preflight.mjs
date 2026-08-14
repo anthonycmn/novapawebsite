@@ -269,6 +269,30 @@ checkUndeclared();
 checkFunctions();
 if (LIVE) await checkLive();
 
+// --alert emails on failure, for unattended runs. Silent when healthy, so a
+// message in the inbox always means something is actually wrong.
+async function alertByEmail() {
+  let key;
+  try { key = readFileSync(join(process.env.HOME, ".config/novapa/resend_key"), "utf8").trim(); }
+  catch { console.error("  (--alert: no resend key, skipping email)"); return; }
+  const body = problems.map((p) => `[${p.check}] ${p.msg}`).join("\n");
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "NOVAPA Alerts <alerts@mail.novapa.org>",
+        to: ["jason@novapa.org"],
+        subject: `Registration preflight FAILED — ${problems.length} problem(s)`,
+        text: `Automated check of ${BASE} failed.\n\n${body}\n\n` +
+              `This runs unattended and only emails on failure.\n` +
+              `Reproduce with:  npm run check:live\n`,
+      }),
+    });
+    console.error(r.ok ? "  (--alert: emailed jason@novapa.org)" : `  (--alert: send failed ${r.status})`);
+  } catch (e) { console.error(`  (--alert: send failed ${e.message})`); }
+}
+
 const RULE = "─".repeat(72);
 console.log("\n" + RULE);
 console.log(`  preflight — ${LIVE ? "static + live (" + BASE + ")" : "static"}`);
@@ -280,6 +304,7 @@ if (problems.length) {
   console.log("\n" + RULE);
   console.log(`  ${problems.length} problem(s) — deploy blocked`);
   console.log(RULE + "\n");
+  if (process.argv.includes("--alert")) await alertByEmail();
   process.exit(1);
 }
 console.log("\n" + RULE);
