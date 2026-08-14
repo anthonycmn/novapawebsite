@@ -1504,7 +1504,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
             '<input type="date" class="fallBday" data-i="' + i + '" data-fs="' + sKey + '" max="' + today + '"></div>' : '';
         return '<div class="kid-row">' +
           '<label class="kid-check"><input type="checkbox" data-fall="' + sKey + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' +
-          (inRange ? soloTag : soloTag + ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
+          (eligible ? soloTag : soloTag + ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
       }).join('');
     });
