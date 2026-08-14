@@ -265,6 +265,23 @@
 <link rel="apple-touch-icon" href="/favicon.png">
 <style>html{background:#08111F}</style>
 <link rel="stylesheet" href="/brand.css">
+ <!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2191001311729801');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
 
@@ -1965,6 +1982,9 @@
       state.hold = { id: res.data.hold_id, expires: new Date(res.data.expires_at), items: items };
       startTimer();
       ev('reg_hold_acquired', { items: items.length });
+      // a hold is a real seat taken off the shelf — the strongest intent
+      // signal before payment
+      try { window.fbq && fbq('track', 'InitiateCheckout', { num_items: items.length, content_type: 'product' }); } catch (e) {}
       renderPay();
       go('st-pay');
       schedulePay();
@@ -2927,6 +2947,16 @@
     }
     ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
     try { gtag('event', 'conversion', { send_to: 'AW-18370900407/p5eoCJ3V6tscELfj9rdE', value: (p.total_cents || 0) / 100, currency: 'USD', transaction_id: state.piId || '' }); } catch (e) {}
+    // Value is the whole program commitment, not the deposit taken today, so
+    // Meta optimises toward families worth having rather than cheap first
+    // payments. eventID lets a server-side event dedupe against this one.
+    try {
+      window.fbq && fbq('track', 'Purchase', {
+        value: (p.total_cents || 0) / 100, currency: 'USD',
+        contents: (items || []).map(function(it){ return { id: String(it.activity_id || it.show || ''), quantity: 1 }; }),
+        content_type: 'product', num_items: (items || []).length
+      }, { eventID: state.piId || undefined });
+    } catch (e) {}
     $('doneH1').innerHTML = "One more <em>step!</em>";
     go('st-done');
   }
