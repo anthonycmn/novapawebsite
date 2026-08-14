@@ -22,6 +22,64 @@
     min-height:100vh;
   }
   .wrap { max-width:560px; margin:0 auto; padding:34px 20px 60px; }
+
+  /* ---- portal chrome -----------------------------------------------------
+     The page used to be one narrow column of identical cards, which read as a
+     list rather than a place. This gives it a header that says whose account
+     it is, a row of at-a-glance numbers, and labelled sections so the eye can
+     find "my registrations" separately from "my credits". */
+  .wrap.portal { max-width:920px; }
+  .phead {
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+    padding-bottom:18px; margin-bottom:22px; border-bottom:1px solid var(--line);
+  }
+  .phead h1 { text-align:left; margin:0; font-size:34px; }
+  .phead .who { font-size:13.5px; color:var(--ink-dim); margin-top:4px; }
+  .phead .signout { margin:0; }
+  .stats { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:26px; }
+  .stat {
+    flex:1 1 150px; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:14px 16px;
+  }
+  .stat .n { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:700; color:var(--gold3); line-height:1.1; }
+  .stat .l { font-size:11.5px; letter-spacing:0.09em; text-transform:uppercase; color:var(--ink-dim); margin-top:3px; }
+  .section { margin-bottom:30px; }
+  .secHead { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  .section-label {
+    font-size:11.5px; letter-spacing:0.13em; text-transform:uppercase;
+    color:var(--ink-dim); margin-bottom:10px; padding-left:2px;
+  }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+  .grid .card { margin-bottom:0; }
+
+  /* credit + reward rows: name on its own line, action full width beneath, so
+     nothing collides the way "Ava Smith [PICK YOUR DATES]" used to */
+  .creditRow { padding:14px 0; border-top:1px solid var(--line); }
+  .creditRow:first-of-type { border-top:0; padding-top:0; }
+  .creditRow .kid { font-size:15.5px; color:#fff; font-weight:500; margin-bottom:8px; }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px; }
+  .chip {
+    font-size:12.5px; font-weight:600; padding:5px 11px; border-radius:999px;
+    background:rgba(232,184,75,0.12); border:1px solid rgba(232,184,75,0.32); color:var(--gold2);
+  }
+  .chip.snow { background:rgba(120,180,255,0.12); border-color:rgba(120,180,255,0.34); color:#9CC7FF; }
+  .act {
+    display:block; width:100%; padding:11px 16px; border-radius:11px;
+    border:1px solid rgba(232,184,75,0.5); background:transparent; color:var(--gold2);
+    font-family:inherit; font-weight:700; font-size:13px; letter-spacing:0.06em; cursor:pointer;
+  }
+  .act:hover { background:rgba(232,184,75,0.1); }
+  .act.solid { background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1206; border-color:transparent; }
+  .act[disabled] { opacity:0.45; cursor:default; }
+  .pickList { margin-top:12px; border-top:1px solid var(--line); padding-top:12px; }
+  .pickList label {
+    display:flex; gap:10px; align-items:center; padding:9px 10px; font-size:14px;
+    cursor:pointer; border-radius:10px;
+  }
+  .pickList label:hover { background:rgba(255,255,255,0.04); }
+  .pickList input { width:auto; margin:0; accent-color:var(--gold2); }
+  .pickList .left { margin-left:auto; font-size:12px; color:var(--ink-dim); }
+  @media (max-width:640px){ .phead { flex-direction:column; align-items:flex-start; gap:10px; } .phead h1 { font-size:28px; } }
   h1 {
     font-family:'Cormorant Garamond',serif; font-weight:700; font-size:32px;
     color:#fff; text-align:center; margin-bottom:6px;
@@ -693,9 +751,17 @@
 <body>
 <script src="/nav.js"></script>
 
-<div class="wrap">
-  <h1>My <em>NOVAPA</em></h1>
-  <p class="sub" id="subLine">Everything your family is registered for.</p>
+<div class="wrap" id="wrap">
+  <div class="phead" id="phead" style="display:none">
+    <div>
+      <h1>My <em>NOVAPA</em></h1>
+      <div class="who" id="subLine">Everything your family is registered for.</div>
+    </div>
+    <button class="signout" id="signoutTop" style="display:none">Sign out</button>
+  </div>
+  <h1 id="titleFallback">My <em>NOVAPA</em></h1>
+  <p class="sub" id="subFallback">Everything your family is registered for.</p>
+  <div class="stats" id="stats" style="display:none"></div>
 
   <!-- Login -->
   <div class="card" id="authCard" style="display:none">
@@ -716,7 +782,7 @@
     <button id="tUpcoming" class="on">Upcoming</button>
     <button id="tPast">Past</button>
   </div>
-  <div id="list"></div>
+  <div class="section"><div class="secHead" id="listLabel" style="display:none"><div class="section-label" style="margin:0">Registrations</div><div id="toggleSlot"></div></div><div id="list"></div></div>
   <div id="credits"></div>
   <div id="rewards"></div>
 
@@ -745,6 +811,31 @@
             (it.dates ? '<span>' + esc(it.dates) + '</span>' : '') + '</div>';
         }).join('') + '</div>';
     }).join('');
+    // portal chrome: swap the centred title for the header bar, and show the
+    // at-a-glance numbers once we actually have data to count
+    $('wrap').className = 'wrap portal';
+    $('phead').style.display = 'flex';
+    $('titleFallback').style.display = 'none';
+    $('subFallback').style.display = 'none';
+    $('signoutTop').style.display = PORTAL_TOKEN ? 'none' : 'block';
+    $('listLabel').style.display = 'flex';
+    var slot = $('toggleSlot');
+    if (slot && $('toggle').parentNode !== slot) slot.appendChild($('toggle'));
+    $('toggle').style.marginBottom = '0';
+    var upcoming = 0;
+    DATA.campers.forEach(function(c){ c.items.forEach(function(it){ if (!it.past) upcoming++; }); });
+    var dayCr = (DATA.credits || []).reduce(function(n, c){ return n + (c.day || 0); }, 0);
+    var openRw = (DATA.rewards || []).filter(function(r){ return !r.redeemed_at; }).length;
+    $('stats').style.display = 'flex';
+    $('stats').innerHTML = [
+      { n: DATA.campers.length, l: DATA.campers.length === 1 ? 'Performer' : 'Performers' },
+      { n: upcoming, l: 'Upcoming' },
+      dayCr ? { n: dayCr, l: 'Day camp credits' } : null,
+      openRw ? { n: openRw, l: openRw === 1 ? 'Reward' : 'Rewards' } : null,
+    ].filter(Boolean).map(function(s){
+      return '<div class="stat"><div class="n">' + s.n + '</div><div class="l">' + s.l + '</div></div>';
+    }).join('');
+    if (cards) cards = '<div class="grid">' + cards + '</div>';
     $('list').innerHTML = cards ||
       '<div class="card"><div class="empty">' + (past ? 'No past programs yet.' : 'Nothing upcoming yet. Time to fix that!') + '</div></div>';
     renderCredits();
@@ -771,24 +862,25 @@
     var camps = (DATA && DATA.dayCamps) || [];
     if (!cr.length) { $('credits').innerHTML = ''; return; }
 
-    $('credits').innerHTML = '<div class="card">' +
-      '<div class="camper">&#127958;&#65039; Day Camp Pack</div>' +
+    $('credits').innerHTML =
+      '<div class="section"><div class="section-label">Day Camp Pack</div><div class="card">' +
       cr.map(function(c, i){
-        var bits = [];
-        if (c.day) bits.push('<b>' + c.day + ' day camp credit' + (c.day === 1 ? '' : 's') + '</b>');
-        if (c.snow) bits.push('<b>' + c.snow + ' snow day credit' + (c.snow === 1 ? '' : 's') + '</b>');
-        return '<div class="item">' + bits.join(' &nbsp;·&nbsp; ') +
-          '<span>' + esc(c.name) + '</span>' +
+        var chips = '';
+        if (c.day) chips += '<span class="chip">' + c.day + ' day camp</span>';
+        if (c.snow) chips += '<span class="chip snow">' + c.snow + ' snow day</span>';
+        return '<div class="creditRow">' +
+          '<div class="kid">' + esc(c.name) + '</div>' +
+          '<div class="chips">' + chips + '</div>' +
           (c.day && camps.length
-            ? '<button class="pick-btn" data-kid="' + i + '" style="margin-top:8px;padding:8px 16px;border-radius:10px;border:1px solid #E8B84B;background:transparent;color:#E8B84B;font-weight:700;letter-spacing:0.05em;cursor:pointer">PICK YOUR DATES</button>'
-              + '<div class="picker" data-for="' + i + '" style="display:none;margin-top:10px"></div>'
+            ? '<button class="act pick-btn" data-kid="' + i + '">PICK YOUR DATES</button>' +
+              '<div class="picker" data-for="' + i + '" style="display:none"></div>'
             : c.day
-              ? '<span style="font-size:12px">No dates open yet. We will email you when the calendar is posted.</span>'
+              ? '<span style="font-size:13px;color:var(--ink-dim)">Dates open soon. We will email you when the calendar is posted.</span>'
               : '') +
           '</div>';
       }).join('') +
-      '<div class="empty" style="font-size:12px;margin-top:6px">Credits never expire during the school year. Snow day credits are used automatically when we run a Snow Day Fun Day.</div>' +
-      '</div>';
+      '<div class="empty" style="font-size:12px;margin-top:14px">Credits last the school year. Snow day credits are used automatically when we run a Snow Day Fun Day.</div>' +
+      '</div></div>';
 
     $('credits').querySelectorAll('.pick-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -797,16 +889,16 @@
         var box = $('credits').querySelector('.picker[data-for="' + i + '"]');
         if (box.style.display === 'block') { box.style.display = 'none'; btn.textContent = 'PICK YOUR DATES'; return; }
         box.style.display = 'block'; btn.textContent = 'HIDE DATES';
-        box.innerHTML =
-          '<div style="font-size:12px;margin-bottom:8px">Choose up to <b>' + kid.day + '</b> for ' + esc(kid.name) + '.</div>' +
+        box.innerHTML = '<div class="pickList">' +
+          '<div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:6px">Choose up to <b>' + kid.day + '</b> day' + (kid.day === 1 ? '' : 's') + ' for ' + esc(kid.name) + '.</div>' +
           camps.map(function(a){
-            return '<label style="display:flex;gap:8px;align-items:center;padding:6px 0;font-size:14px;cursor:pointer">' +
-              '<input type="checkbox" value="' + a.id + '" style="accent-color:#E8B84B">' +
-              '<span>' + esc(a.when || a.name) +
-              (a.remaining !== null && a.remaining < 10 ? ' <span style="opacity:.7">(' + a.remaining + ' left)</span>' : '') +
-              '</span></label>';
+            return '<label><input type="checkbox" value="' + a.id + '">' +
+              '<span>' + esc(a.when || a.name) + '</span>' +
+              (a.remaining !== null && a.remaining < 10 ? '<span class="left">' + a.remaining + ' left</span>' : '') +
+              '</label>';
           }).join('') +
-          '<button class="go-btn" style="margin-top:10px;padding:10px 18px;border-radius:10px;border:0;background:#E8B84B;color:#08111F;font-weight:800;cursor:pointer" disabled>SELECT DATES</button>';
+          '<button class="act solid go-btn" style="margin-top:12px" disabled>SELECT DATES</button>' +
+          '</div>';
 
         var boxes = box.querySelectorAll('input[type=checkbox]');
         var go = box.querySelector('.go-btn');
@@ -833,20 +925,23 @@
   function renderRewards(){
     var rws = (DATA && DATA.rewards) || [];
     if (!rws.length) { $('rewards').innerHTML = ''; return; }
-    $('rewards').innerHTML = '<div class="card">' +
-      '<div class="camper">&#127903;&#65039; Referral rewards</div>' +
+    $('rewards').innerHTML =
+      '<div class="section"><div class="section-label">Referral rewards</div><div class="card">' +
       rws.map(function(r){
         var why = r.side === 'referrer'
           ? 'For referring ' + esc(r.other_name)
-          : 'Welcome gift &mdash; you joined through ' + esc(r.other_name) + "'s link";
-        return '<div class="item"><b>2 tickets to any show</b><span>' + why + '</span>' +
+          : 'Welcome gift, you joined through ' + esc(r.other_name) + "'s link";
+        return '<div class="creditRow">' +
+          '<div class="kid">2 tickets to any show</div>' +
+          '<div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">' + why + '</div>' +
           (r.redeemed_at
-            ? '<span style="color:#6BCB77;font-weight:600">&#10003; Redeemed ' + fmtDay(r.redeemed_at) + '</span>'
-            : '<button class="redeem-btn" data-rw="' + esc(r.id) + '" style="margin-top:8px;padding:8px 16px;border-radius:10px;border:1px solid #E8B84B;background:transparent;color:#E8B84B;font-weight:700;letter-spacing:0.05em;cursor:pointer">REDEEM AT BOX OFFICE</button>') +
+            ? '<div style="color:#6BCB77;font-weight:600;font-size:13.5px">&#10003; Redeemed ' + fmtDay(r.redeemed_at) + '</div>'
+            : '<button class="act redeem-btn" data-rw="' + esc(r.id) + '">REDEEM AT BOX OFFICE</button>') +
           '</div>';
       }).join('') +
-      '<div class="empty" style="font-size:12px;margin-top:6px">Tap redeem at the box office with a staff member present &mdash; it can only be used once.</div>' +
-      '</div>';
+      '<div class="empty" style="font-size:12px;margin-top:14px">Tap redeem at the box office with a staff member present. It can only be used once.</div>' +
+      '</div></div>';
+
     $('rewards').querySelectorAll('.redeem-btn').forEach(function(b){
       b.addEventListener('click', function(){
         if (!confirm('Redeem your 2 show tickets now?\n\nOnly tap this at the box office with a staff member watching - once redeemed it cannot be used again.')) return;
@@ -947,6 +1042,7 @@
     });
   };
 
+  $('signoutTop').onclick = function(){ sb.auth.signOut().then(function(){ location.reload(); }); };
   $('signout').onclick = function(){
     sb.auth.signOut().then(function(){ location.reload(); });
   };
