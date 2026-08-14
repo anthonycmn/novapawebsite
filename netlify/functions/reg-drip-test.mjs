@@ -58,7 +58,7 @@ export default async (req) => {
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
   await transporter.sendMail({
-    from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+    from: `Jason from Broadway Bound <${process.env.SMTP_USER}>`,
     replyTo: "info@novapa.org",
     to,
     subject: `[TEST] ${render(step.subject)}`,
