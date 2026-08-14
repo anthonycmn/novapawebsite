@@ -1,10 +1,17 @@
 # Netlify configuration for the NOVAPA website (static HTML site).
-# The site files live in the repository root and need no build step,
-# so there is no build command and the publish directory is ".".
+# The site files live in the repository root and need no build step, so the
+# publish directory is "." and the "build" is only our pre-deploy checks.
+#
+# The command is the deploy gate: a non-zero exit fails the build and the new
+# version never goes live. It exists because on Aug 13 2026 an undeclared
+# identifier shipped to production and silently killed every fall-show
+# registration for four hours while 554 campaign emails pointed families at
+# that page. The page still returned 200 the whole time, so nothing short of
+# parsing the code would have caught it. See tests/preflight.mjs.
 
 [build]
   publish = "."
-  command = ""
+  command = "npm run check"
 
 [functions]
   directory = "netlify/functions"
