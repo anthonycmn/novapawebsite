@@ -138,7 +138,7 @@ export default async (req) => {
   try {
     const fam = (await svc(`families?select=id,parent_name,email&email=eq.${encodeURIComponent(email)}&limit=1`))[0] || null;
     const campers = fam
-      ? await svc(`campers?select=name&family_id=eq.${fam.id}&order=name`)
+      ? await svc(`campers?select=name,day_camp_credits,snow_day_credits&family_id=eq.${fam.id}&order=name`)
       : [];
 
     // Web orders (our checkout)
@@ -177,10 +177,40 @@ export default async (req) => {
     }
     for (const le of legacy) add(le.camper_name, le.activity_text, le.dates);
 
+    // Day Camp Pack credits. A family buys the 5-day pack up front and picks
+    // their dates later, from here. Credits live on the camper row; the picker
+    // hands off to the normal checkout with the chosen dates preselected, so
+    // priceCart applies the credits and the order completes at $0 through the
+    // same money path as everything else.
+    const credits = campers
+      .map((c) => ({ name: c.name, day: c.day_camp_credits || 0, snow: c.snow_day_credits || 0 }))
+      .filter((c) => c.day > 0 || c.snow > 0);
+
+    // Only fetch the date list when somebody can actually use it.
+    let dayCamps = [];
+    if (credits.length) {
+      const rows = await svc(
+        `activities?select=id,name,price_cents,capacity,sold,booked_offline` +
+        `&active=is.true&bookable=is.true&hidden=is.false&name=ilike.*day camp*&order=name`);
+      dayCamps = rows
+        .map((a) => ({
+          id: a.id,
+          name: a.name,
+          remaining: a.capacity == null ? null
+            : Math.max(0, a.capacity - (a.sold || 0) - (a.booked_offline || 0)),
+          // "Ages 5–9 Day Camp · Mar 22, 2027" -> the date half, for sorting
+          when: (a.name.split("·")[1] || "").trim(),
+        }))
+        .filter((a) => a.remaining === null || a.remaining > 0)
+        .sort((a, b) => (Date.parse(a.when) || 0) - (Date.parse(b.when) || 0));
+    }
+
     return Response.json({
       family: fam ? { parent_name: fam.parent_name, email: fam.email } : { email },
       campers: Object.entries(byCamper).map(([name, its]) => ({ name, items: its })),
       rewards: await rewardsFor(email),
+      credits,
+      dayCamps,
     });
   } catch (e) {
     console.error("reg-account", e);

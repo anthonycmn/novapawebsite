@@ -717,6 +717,7 @@
     <button id="tPast">Past</button>
   </div>
   <div id="list"></div>
+  <div id="credits"></div>
   <div id="rewards"></div>
 
   <p class="foot" id="foot" style="display:none">
@@ -746,6 +747,7 @@
     }).join('');
     $('list').innerHTML = cards ||
       '<div class="card"><div class="empty">' + (past ? 'No past programs yet.' : 'Nothing upcoming yet. Time to fix that!') + '</div></div>';
+    renderCredits();
     renderRewards();
   }
 
@@ -756,6 +758,78 @@
     var d = new Date(iso);
     return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
   }
+  // Day Camp Pack: a family buys 5 days up front and picks the dates here,
+  // whenever they know their school calendar. Credits sit on the camper row.
+  //
+  // Picking dates deliberately hands off to the normal checkout with the days
+  // preselected (?activity=id,id,...) rather than booking from this page.
+  // priceCart already zeroes day-camp lines against a camper's credits, so the
+  // order completes at $0 down the same path as every other registration and
+  // this page never has to touch seats, holds or money.
+  function renderCredits(){
+    var cr = (DATA && DATA.credits) || [];
+    var camps = (DATA && DATA.dayCamps) || [];
+    if (!cr.length) { $('credits').innerHTML = ''; return; }
+
+    $('credits').innerHTML = '<div class="card">' +
+      '<div class="camper">&#127958;&#65039; Day Camp Pack</div>' +
+      cr.map(function(c, i){
+        var bits = [];
+        if (c.day) bits.push('<b>' + c.day + ' day camp credit' + (c.day === 1 ? '' : 's') + '</b>');
+        if (c.snow) bits.push('<b>' + c.snow + ' snow day credit' + (c.snow === 1 ? '' : 's') + '</b>');
+        return '<div class="item">' + bits.join(' &nbsp;·&nbsp; ') +
+          '<span>' + esc(c.name) + '</span>' +
+          (c.day && camps.length
+            ? '<button class="pick-btn" data-kid="' + i + '" style="margin-top:8px;padding:8px 16px;border-radius:10px;border:1px solid #E8B84B;background:transparent;color:#E8B84B;font-weight:700;letter-spacing:0.05em;cursor:pointer">PICK YOUR DATES</button>'
+              + '<div class="picker" data-for="' + i + '" style="display:none;margin-top:10px"></div>'
+            : c.day
+              ? '<span style="font-size:12px">No dates open yet. We will email you when the calendar is posted.</span>'
+              : '') +
+          '</div>';
+      }).join('') +
+      '<div class="empty" style="font-size:12px;margin-top:6px">Credits never expire during the school year. Snow day credits are used automatically when we run a Snow Day Fun Day.</div>' +
+      '</div>';
+
+    $('credits').querySelectorAll('.pick-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var i = btn.getAttribute('data-kid');
+        var kid = cr[i];
+        var box = $('credits').querySelector('.picker[data-for="' + i + '"]');
+        if (box.style.display === 'block') { box.style.display = 'none'; btn.textContent = 'PICK YOUR DATES'; return; }
+        box.style.display = 'block'; btn.textContent = 'HIDE DATES';
+        box.innerHTML =
+          '<div style="font-size:12px;margin-bottom:8px">Choose up to <b>' + kid.day + '</b> for ' + esc(kid.name) + '.</div>' +
+          camps.map(function(a){
+            return '<label style="display:flex;gap:8px;align-items:center;padding:6px 0;font-size:14px;cursor:pointer">' +
+              '<input type="checkbox" value="' + a.id + '" style="accent-color:#E8B84B">' +
+              '<span>' + esc(a.when || a.name) +
+              (a.remaining !== null && a.remaining < 10 ? ' <span style="opacity:.7">(' + a.remaining + ' left)</span>' : '') +
+              '</span></label>';
+          }).join('') +
+          '<button class="go-btn" style="margin-top:10px;padding:10px 18px;border-radius:10px;border:0;background:#E8B84B;color:#08111F;font-weight:800;cursor:pointer" disabled>SELECT DATES</button>';
+
+        var boxes = box.querySelectorAll('input[type=checkbox]');
+        var go = box.querySelector('.go-btn');
+        function sync(){
+          var picked = [].filter.call(boxes, function(b){ return b.checked; });
+          // Never let them select more days than they hold credits for; the
+          // extra would silently become a charge at checkout.
+          boxes.forEach(function(b){ b.disabled = !b.checked && picked.length >= kid.day; });
+          go.disabled = picked.length === 0;
+          go.textContent = picked.length
+            ? 'BOOK ' + picked.length + ' DAY' + (picked.length === 1 ? '' : 'S') + ' WITH CREDITS'
+            : 'SELECT DATES';
+        }
+        boxes.forEach(function(b){ b.addEventListener('change', sync); });
+        go.addEventListener('click', function(){
+          var ids = [].filter.call(boxes, function(b){ return b.checked; }).map(function(b){ return b.value; });
+          if (!ids.length) return;
+          location.href = '/register/?activity=' + ids.join(',');
+        });
+      });
+    });
+  }
+
   function renderRewards(){
     var rws = (DATA && DATA.rewards) || [];
     if (!rws.length) { $('rewards').innerHTML = ''; return; }
