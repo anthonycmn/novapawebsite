@@ -7,9 +7,20 @@
 -- Grouping facts (verified Aug 12 2026): the fall shows and teen conservatory
 -- productions are category 'camp', NOT 'performance' — the only 'performance'
 -- rows are three $0 ticket stubs. So shows are picked out of 'camp' by name
--- and excluded from Day Camps. Per-activity taken includes legacy_enrollments
--- so the numbers match what admin_roster shows on drill-in. A group with no
--- matching activities still renders (0/0) instead of disappearing. Admin-gated.
+-- and excluded from Day Camps. A group with no matching activities still
+-- renders (0/0) instead of disappearing. Admin-gated.
+--
+-- taken = sold + booked_offline, and NOTHING else. `booked_offline` already IS
+-- the Sawyer + Regpack count, frozen at the cutover (LAUNCH-CHECKLIST.md), and
+-- legacy_enrollments is that same population stored row by row. This function
+-- originally added a legacy_enrollments count on top, which counted every
+-- Sawyer registration twice and made every fall show read far fuller than it
+-- was: Frozen JR showed 7 seats left when 20 were open, and that number went
+-- into a campaign to 554 families as "down to its last 7 spots" (Aug 13 2026).
+-- Every other consumer — catalog_list, acquire_hold_v2, admin_offering_fill,
+-- reg-admin-ops and the dashboard's own countOf — uses sold + booked_offline.
+-- This is now the same formula, so the storefront, the seat guard and the
+-- dashboard can no longer disagree about how full a show is.
 CREATE OR REPLACE FUNCTION public.admin_overview_groups()
 RETURNS jsonb
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -17,8 +28,7 @@ SET search_path TO 'public'
 AS $function$
   WITH act AS (
     SELECT a.id, a.name, a.capacity, a.category, a.price_cents,
-      a.sold + COALESCE(a.booked_offline, 0)
-        + COALESCE((SELECT count(*) FROM legacy_enrollments le WHERE le.activity_id = a.id), 0) AS taken
+      a.sold + COALESCE(a.booked_offline, 0) AS taken
     FROM activities a
     WHERE a.active
   ),
