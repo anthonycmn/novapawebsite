@@ -104,7 +104,15 @@ export function confirmationHtml(m, pi, details) {
     planLine = `Then ${nInst} monthly payments of ${money(instCents)}, automatic on your card, ` +
       `starting ${months[d.getUTCMonth()]} 1, ${d.getUTCFullYear()} — fully paid before your program begins.`;
   } else if (m.plan === "subscription") {
-    planLine = "Monthly tuition continues automatically on the 1st of each month through June 1, 2027. Cancel anytime with 30 days' notice.";
+    // CJ asked for this to be spelled out: families kept expecting a second
+    // charge in September. The checkout payment IS the first month; the next
+    // pull is Oct 1 and the plan ends itself after June 1, 2027.
+    planLine = m.first_month_free === "1"
+      ? "Your first month is on us. Your card is saved, and monthly tuition starts October 1, then the 1st of each month through June 1, 2027. " +
+        "Nothing is charged in September, and nothing is charged after June — the plan ends itself. Cancel any time with 30 days' notice."
+      : "Today's payment covers your first month, so there is no further charge in September. " +
+        "Monthly tuition then runs October 1 and the 1st of each month through June 1, 2027, and the plan ends itself after that. " +
+        "Cancel any time with 30 days' notice.";
   }
   const esc = (x) => String(x == null ? "" : x).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   const rows = (details && details.length)
