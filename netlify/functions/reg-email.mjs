@@ -207,8 +207,29 @@ export function confirmationHtml(m, pi, details) {
           ${m.__order_id ? `Reference: order ${String(m.__order_id).slice(0, 8).toUpperCase()}<br>` : ""}
           ${m.fsa_eligible === "1" && pi && pi.id ? `Using a Dependent Care FSA? <a href="https://www.northernvirginiaperformingarts.org/api/fsa-receipt?pi=${pi.id}" style="color:${GOLD}">View and print your dependent-care receipt</a> (Tax ID 99-1421341).<br>`
             : m.fsa_eligible === "1" ? 'Using a Dependent Care FSA? Print your dependent-care receipt from your confirmation page (Tax ID 99-1421341).<br>' : ""}
-          All sales are final — full policies at <a href="https://www.northernvirginiaperformingarts.org/policies" style="color:${GOLD}">novapa.org/policies</a>.
         </p>
+      </td></tr>
+      <tr><td style="padding:8px 32px 4px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fdfbf6;border:1px solid #eee5d2;border-radius:10px">
+          <tr><td style="padding:16px 18px">
+            <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a7a55">If plans change</div>
+            <ul style="margin:8px 0 0;padding-left:18px;font-size:13.5px;color:#555;line-height:1.6">
+              <li style="margin:5px 0"><b>All fees are non-refundable</b>, including for missed days or early withdrawal. Registering is a commitment to the full fee.</li>
+              <li style="margin:5px 0"><b>Withdrawals must be in writing, at least one month before the program starts.</b> Email <a href="mailto:info@novapa.org" style="color:${GOLD}">info@novapa.org</a> — only written notice inside that window can be moved to another program.</li>
+              <li style="margin:5px 0">Drop out <b>60 or more days before the start</b> with the balance paid in full and what you paid can go toward a future program as a tuition credit, good for one year, administrative fees apply.</li>
+              <li style="margin:5px 0">Withdrawals <b>inside 30 days</b> are not eligible for a credit, and partial payments are non-transferable.</li>
+              <li style="margin:5px 0">If we cancel for weather or an emergency, a make-up is scheduled rather than a refund issued.</li>
+            </ul>
+            ${m.insured === "1" ? `<p style="margin:10px 0 0;font-size:13.5px;color:#555;line-height:1.6">
+              <b>You bought tuition insurance</b>, so a withdrawal refunds 100% at 90&ndash;76 days before the start,
+              75% at 75&ndash;51 days, 50% at 50&ndash;31 days, and 0% inside 30 days. Email us to start a claim.
+              The premium itself is non-refundable and is deducted from the refund.</p>` : ""}
+            <p style="margin:10px 0 0;font-size:13px;color:#777;line-height:1.6">
+              This is a summary. The full terms are at
+              <a href="https://www.northernvirginiaperformingarts.org/policies#refunds" style="color:${GOLD}">novapa.org/policies</a>
+              and they govern.</p>
+          </td></tr>
+        </table>
       </td></tr>
       <tr><td style="padding:20px 32px 26px">
         <p style="margin:0;font-size:13px;color:#999;line-height:1.6;border-top:1px solid #eee8dd;padding-top:16px">
