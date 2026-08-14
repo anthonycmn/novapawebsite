@@ -255,6 +255,80 @@ async function ccFor(email) {
   } catch { return null; }
 }
 
+// ---- DC Unifieds ---------------------------------------------------------
+// dcunifieds.com sells through the same Stripe account and the same webhook,
+// but it is a separate brand to the public: different name, palette and venue,
+// and buyers who are not NOVAPA families. Orders carry brand:"dcu" in their
+// Stripe metadata and render this template instead of the camp one. The camp
+// path is untouched — anything without the flag falls through unchanged.
+const DCU_PINK = "#ff2d8f", DCU_INK = "#0d0d0d";
+const DCU_VENUE = "The National Conference Center, 18665 Conference Center Drive, Leesburg, VA 20176";
+const DCU_TRACKS = {
+  970601: { when: "October 15–18, 2026", where: DCU_VENUE, note: null },
+  970602: { when: "October 24–25, 2026", where: "Online — live callback weekend",
+            note: "Your join details will be emailed to you before the event." },
+  // No submission deadline is published on the site, so this promises a
+  // follow-up rather than inventing a date.
+  970603: { when: "Asynchronous — submit on your own schedule", where: "Online",
+            note: "Your upload link and submission window will be emailed to you." },
+};
+
+export function dcuConfirmationHtml(m, pi) {
+  const paid = pi ? (pi.amount_received ?? pi.amount ?? 0) : 0;
+  const total = parseInt(m.total_cents || "0", 10) || 0;
+  const nInst = parseInt(m.n_installments || "0", 10) || 0;
+  const instCents = parseInt(m.installment_cents || "0", 10) || 0;
+  const firstInst = parseInt(m.first_installment_utc || "0", 10) || 0;
+  const track = DCU_TRACKS[parseInt(m.activity_id || "0", 10)] || {};
+  const fmt = (t) => new Date(t * 1000).toLocaleDateString("en-US",
+    { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+  const row = (k, v) =>
+    `<tr><td style="padding:7px 16px 7px 0;color:#666;font-size:14px">${k}</td>` +
+    `<td style="padding:7px 0;font-size:14px;font-weight:600">${v}</td></tr>`;
+
+  const facts = [
+    row("Student", m.student_name || "—"),
+    row("Track", (m.order_desc || "").split(" — ").slice(1).join(" — ") || "DC Unifieds 2026"),
+    track.when ? row("When", track.when) : "",
+    track.where ? row("Where", track.where) : "",
+  ].join("");
+
+  const money2 = [
+    row("Total", money(total)),
+    row("Paid today", money(paid)),
+    nInst ? row("Remaining",
+      `${nInst} × ${money(instCents)}, charged automatically starting ${fmt(firstInst)}`) : "",
+  ].join("");
+
+  return `<div style="font-family:Helvetica,Arial,sans-serif;background:#f4f4f5;padding:28px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
+<tr><td style="background:${DCU_INK};padding:26px 28px">
+  <div style="color:#fff;font-size:20px;font-weight:800;letter-spacing:.14em">DC UNIFIEDS</div>
+  <div style="color:${DCU_PINK};font-size:13px;font-weight:700;margin-top:5px">COLLEGE AUDITIONS 2026</div>
+</td></tr>
+<tr><td style="padding:28px">
+  <div style="font-size:23px;font-weight:800;color:${DCU_INK};margin-bottom:6px">You're registered.</div>
+  <p style="font-size:15px;color:#444;line-height:1.6;margin:0 0 22px">
+    Thanks${m.parent_name ? ", " + m.parent_name : ""} — your spot is confirmed. Here are the details.</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">${facts}</table>
+  ${track.note ? `<p style="font-size:14px;color:#444;line-height:1.6;margin:18px 0 0">${track.note}</p>` : ""}
+  <div style="height:1px;background:#e5e5e5;margin:22px 0"></div>
+  <div style="font-size:12px;font-weight:800;letter-spacing:.1em;color:#888;margin-bottom:8px">PAYMENT</div>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse">${money2}</table>
+  ${nInst ? `<p style="font-size:13px;color:#666;line-height:1.6;margin:14px 0 0">
+    Installments are charged to the card you used today. All installments are paid in full before the event.</p>` : ""}
+  <div style="height:1px;background:#e5e5e5;margin:22px 0"></div>
+  <p style="font-size:14px;color:#444;line-height:1.6;margin:0">
+    Questions about your registration, or need to change something?
+    Email <a href="mailto:support@dcunifieds.com" style="color:${DCU_PINK};font-weight:700">support@dcunifieds.com</a>.</p>
+</td></tr>
+<tr><td style="padding:18px 28px 24px;background:#fafafa;color:#888;font-size:12px;line-height:1.6">
+  DC Unifieds · ${DCU_VENUE}<br>All sales final. Installment plans must be paid in full prior to the event.
+</td></tr>
+</table></div>`;
+}
+
 export async function sendConfirmationEmail(m, pi) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !m.email) return;
   const { default: nodemailer } = await import("nodemailer");
@@ -262,6 +336,16 @@ export async function sendConfirmationEmail(m, pi) {
     host: "smtp.gmail.com", port: 465, secure: true,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
+  if (m.brand === "dcu") {
+    await transporter.sendMail({
+      from: `DC Unifieds <${process.env.SMTP_USER}>`,
+      replyTo: "support@dcunifieds.com",
+      to: m.email,
+      subject: "You're registered — DC Unifieds 2026",
+      html: dcuConfirmationHtml(m, pi),
+    });
+    return;
+  }
   const cc = await ccFor(m.email);
   let details = [];
   try { details = await itemDetails(m, pi); } catch (e) { console.error("item details failed:", e.message); }

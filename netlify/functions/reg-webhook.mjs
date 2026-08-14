@@ -9,6 +9,10 @@ import {
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
 const CLASS_PRODUCT_ID = "novapa-class-monthly";
+// dcunifieds.com sells through this same account and webhook but is a separate
+// public brand. Its installments need their own Stripe product because the
+// product name is what the customer sees on the invoice and the charge.
+const DCU_INSTALLMENT_PRODUCT_ID = "dcunifieds-2026-installments";
 
 async function serviceRpc(fn, args) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -179,7 +183,11 @@ export default async (req) => {
     }
 
     if (m.plan === "deposit" && parseInt(m.installment_cents || "0", 10) > 0) {
-      await ensureProduct(stripe, INSTALLMENT_PRODUCT_ID, "NOVAPA Program — Monthly Installment");
+      const isDcu = m.brand === "dcu";
+      const instProductId = isDcu ? DCU_INSTALLMENT_PRODUCT_ID : INSTALLMENT_PRODUCT_ID;
+      await ensureProduct(stripe, instProductId, isDcu
+        ? "DC Unifieds 2026 — Monthly Installment"
+        : "NOVAPA Program — Monthly Installment");
       const paymentMethod = typeof pi.payment_method === "string"
         ? pi.payment_method : pi.payment_method?.id;
       const nInst = parseInt(m.n_installments || "0", 10) || 0;
@@ -201,7 +209,7 @@ export default async (req) => {
             quantity: 1,
             price_data: {
               currency: "usd",
-              product: INSTALLMENT_PRODUCT_ID,
+              product: instProductId,
               recurring: { interval: "month" },
               unit_amount: parseInt(m.installment_cents, 10),
             },
@@ -306,9 +314,10 @@ export default async (req) => {
         await t2.sendMail({
           from: `NOVAPA Registrations <${process.env.SMTP_USER}>`,
           to: admins.join(", "),
-          subject: `New registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
+          subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
           html: [
-            `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt; · plan: <b>${m.plan}</b>`,
+            `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt;` +
+            `${m.phone ? ` · ${m.phone}` : ""} · plan: <b>${m.plan}</b>`,
             `<table style="border-collapse:collapse;font-size:14px">${itemRows}<tr><td colspan="2" style="border-top:1px solid #ddd;padding:0;height:6px"></td></tr>${moneyRows}</table>`,
             `<a href="https://dashboard.stripe.com/payments/${pi.id}">View payment in Stripe</a> · ` +
             `<a href="https://www.northernvirginiaperformingarts.org/register/admin/">Admin dashboard</a>`,
