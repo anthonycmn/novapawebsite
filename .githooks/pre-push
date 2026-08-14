@@ -1,0 +1,27 @@
+#!/bin/sh
+# Blocks a push when the static checks fail.
+#
+# Netlify runs the same checks and will refuse to publish a broken build, but
+# that feedback arrives minutes later and after the commit is already public.
+# This catches it in about a second, before it leaves the machine.
+#
+# Enable once per clone:   git config core.hooksPath .githooks
+# Bypass in an emergency:  git push --no-verify
+
+repo="$(git rev-parse --show-toplevel)"
+cd "$repo" || exit 0
+
+# No node_modules yet (fresh clone) — don't block the push over tooling.
+if [ ! -d node_modules/acorn ]; then
+  echo "pre-push: acorn not installed, skipping checks (run: npm install)" >&2
+  exit 0
+fi
+
+echo "pre-push: running preflight checks…"
+if ! npm run --silent check; then
+  echo "" >&2
+  echo "pre-push: BLOCKED — preflight failed. Fix the problems above." >&2
+  echo "          To override anyway: git push --no-verify" >&2
+  exit 1
+fi
+exit 0
