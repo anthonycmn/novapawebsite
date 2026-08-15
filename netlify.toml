@@ -17,6 +17,32 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# ---------------------------------------------------------------------------
+# Domain move (Aug 14 2026): novapa.org is the primary domain. Netlify only
+# auto-redirects the primary's own www counterpart; other custom domains are
+# ALIASES, which serve content rather than redirect. These host-based rules
+# make every old URL 301 to novapa.org with path and query preserved, so
+# campaign links (utm_*, pe=) keep attributing. Jason: "we can't have any of
+# those old urls be stale."
+
+[[redirects]]
+  from = "https://www.northernvirginiaperformingarts.org/*"
+  to = "https://novapa.org/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://northernvirginiaperformingarts.org/*"
+  to = "https://novapa.org/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.novapa.org/*"
+  to = "https://novapa.org/:splat"
+  status = 301
+  force = true
+
 # Old Summer 2026 camp page is retired — send stale links/bookmarks to the
 # current summer funnel.
 [[redirects]]
