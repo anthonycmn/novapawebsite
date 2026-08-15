@@ -936,10 +936,11 @@
           '<div style="font-size:13px;color:var(--ink-dim);margin-bottom:12px">' + why + '</div>' +
           (r.redeemed_at
             ? '<div style="color:#6BCB77;font-weight:600;font-size:13.5px">&#10003; Redeemed ' + fmtDay(r.redeemed_at) + '</div>'
-            : '<button class="act redeem-btn" data-rw="' + esc(r.id) + '">REDEEM AT BOX OFFICE</button>') +
+            : '<a class="act solid" style="text-align:center;text-decoration:none" href="/tickets/">USE FOR SHOW TICKETS</a>' +
+              '<button class="act redeem-btn" data-rw="' + esc(r.id) + '" style="margin-top:8px">REDEEM IN PERSON AT BOX OFFICE</button>') +
           '</div>';
       }).join('') +
-      '<div class="empty" style="font-size:12px;margin-top:14px">Tap redeem at the box office with a staff member present. It can only be used once.</div>' +
+      '<div class="empty" style="font-size:12px;margin-top:14px">Buying online? Your free tickets apply automatically at checkout while you are signed in. In-person redemption needs a staff member present — either way the pass is used once.</div>' +
       '</div></div>';
 
     $('rewards').querySelectorAll('.redeem-btn').forEach(function(b){
