@@ -101,11 +101,13 @@
   </div>
 
   <div class="card done" id="doneCard" style="display:none">
-    <div class="label">You're going to the show</div>
-    <div id="doneShow" style="font-size:20px;color:#fff;font-weight:700"></div>
-    <div class="code" id="doneCode">&mdash;</div>
-    <div style="font-size:14px;color:var(--dim)">Your tickets and this order code were emailed to
-      <b id="doneEmail" style="color:#fff"></b>.<br>Give the code and your name at the door.</div>
+    <div class="label">Order confirmed</div>
+    <div style="font-size:24px;color:#fff;font-weight:700;font-family:'Cormorant Garamond',serif">Your tickets are in your email</div>
+    <div style="font-size:15px;color:var(--dim);margin-top:10px">Sent to <b id="doneEmail" style="color:#fff"></b></div>
+    <div id="doneCodeWrap" style="display:none;margin-top:18px">
+      <div class="label" style="margin-bottom:4px">Door code</div>
+      <div class="code" id="doneCode" style="margin:0"></div>
+    </div>
   </div>
 </div>
 
@@ -287,9 +289,7 @@
         if (res.error) { btn.disabled = false; btn.textContent = 'PAY NOW';
           $('payErr').textContent = res.error.message || 'Payment failed.'; return; }
         clearInterval(state.timerId);
-        $('doneShow').textContent = state.show.title + ' · ' + state.perf.when;
         $('doneEmail').textContent = $('email').value.trim();
-        $('doneCode').textContent = 'CHECK YOUR EMAIL';
         $('mapCard').style.display = 'none'; $('payCard').style.display = 'none';
         $('doneCard').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -314,9 +314,8 @@
         btn.disabled = false;
         // Credits covered everything: confirmed server-side, no payment step.
         if (res.ok && res.j.confirmed) {
-          $('doneShow').textContent = state.show.title + ' · ' + state.perf.when;
           $('doneEmail').textContent = email;
-          $('doneCode').textContent = res.j.code || 'CHECK YOUR EMAIL';
+          if (res.j.code) { $('doneCode').textContent = res.j.code; $('doneCodeWrap').style.display = 'block'; }
           $('mapCard').style.display = 'none'; $('payCard').style.display = 'none';
           $('doneCard').style.display = 'block';
           window.scrollTo({ top: 0, behavior: 'smooth' });
