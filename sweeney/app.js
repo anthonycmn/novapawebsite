@@ -1470,8 +1470,7 @@
   }
 
   function loadPortalBudget() {
-    api('budget_get', {}).then(function (r) {
-      var b = r && r.ok && r.data;
+    api('budget_get', {}).then(function (b) {
       if (!b || !(b.set || b.prop || b.costume)) return;
       BUDGET = { set: b.set || 0, prop: b.prop || 0, costume: b.costume || 0 };
       BUDGET_TOTAL = BUDGET.set + BUDGET.prop + BUDGET.costume;
