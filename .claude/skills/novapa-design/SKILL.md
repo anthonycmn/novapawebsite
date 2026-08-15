@@ -49,6 +49,14 @@ like a playbill, not a group chat.
   My NOVAPA credits card).
 - Names and context on their own lines; actions below them.
 
+## Copy length
+
+UI copy is terse. One line where one line works. "You have 2 free tickets",
+not a sentence with the account email, the source of the credit, and a
+question mark (Jason, Aug 14: "you always put too much text in our UI, no
+need to overexplain"). Mechanics the buyer does not need to act on stay out
+of the interface. Policy text is the exception — policies are stated in full.
+
 ## Voice
 
 - Confident, warm, specific. "Reserved seating from $20", not

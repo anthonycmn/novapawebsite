@@ -87,9 +87,8 @@
     <div id="creditBox" style="display:none;background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.35);border-radius:11px;padding:12px 15px;margin:4px 0 10px;font-size:14px">
       <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
         <input type="checkbox" id="useReward" checked style="width:auto;margin:0;accent-color:#E8B84B">
-        <span><b id="creditWho"></b> — you have <b>2 free show tickets</b> from a referral. Apply them to this order?</span>
+        <span>You have <b>2 free tickets</b></span>
       </label>
-      <div id="creditNote" style="font-size:12px;color:var(--dim);margin-top:6px"></div>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:4px">
       <input id="code" placeholder="Credit or promo code (optional)" style="margin:0;text-transform:uppercase" autocomplete="off">
@@ -268,17 +267,11 @@
         ? '<s style="opacity:.6">' + money(e.list) + '</s> <b style="color:var(--gold2)">' + money(e.due) + '</b>'
         : money(e.list)) +
       (($('code').value || '').trim() ? ' · code applied at payment' : '');
-    if (state.freeTickets) {
-      $('creditNote').textContent = e.picks.length < 2
-        ? 'Your pass covers 2 tickets — this order only uses ' + e.picks.length + ' of them, and the pass is spent either way.'
-        : 'Covers your 2 priciest seats.';
-    }
   }
   $('checkoutBtn').addEventListener('click', function(){
     $('payCard').style.display = 'block';
     if (state.freeTickets) {
       $('creditBox').style.display = 'block';
-      $('creditWho').textContent = state.sessionEmail;
     }
     syncSummary();
     $('payCard').scrollIntoView({ behavior:'smooth' });
