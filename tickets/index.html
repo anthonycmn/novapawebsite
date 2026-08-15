@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://js.stripe.com/v3/"></script>
 <style>
   :root {
@@ -83,6 +84,16 @@
       <input id="buyer" placeholder="Your name" autocomplete="name">
       <input id="email" type="email" placeholder="Email for your tickets" autocomplete="email">
     </div>
+    <div id="creditBox" style="display:none;background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.35);border-radius:11px;padding:12px 15px;margin:4px 0 10px;font-size:14px">
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer">
+        <input type="checkbox" id="useReward" checked style="width:auto;margin:0;accent-color:#E8B84B">
+        <span>&#127903;&#65039; <b id="creditWho"></b> — you have <b>2 free show tickets</b> from a referral. Apply them to this order?</span>
+      </label>
+      <div id="creditNote" style="font-size:12px;color:var(--dim);margin-top:6px"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:4px">
+      <input id="code" placeholder="Credit or promo code (optional)" style="margin:0;text-transform:uppercase" autocomplete="off">
+    </div>
     <div id="paySummary" style="font-size:14px;color:var(--dim);margin:6px 0"></div>
     <div id="payEl" style="display:none"></div>
     <button class="btn" id="payBtn" style="width:100%">CONTINUE</button>
@@ -108,7 +119,27 @@
   var money = function(c){ return '$' + (c/100).toLocaleString('en-US',{minimumFractionDigits: c%100?2:0}); };
 
   var SLUG = new URLSearchParams(location.search).get('show') || 'sweeney-todd';
-  var state = { show:null, tiers:{}, perf:null, seats:[], sel:{}, stripe:null, elements:null, holdExp:0, timerId:0 };
+  var state = { show:null, tiers:{}, perf:null, seats:[], sel:{}, stripe:null, elements:null, holdExp:0, timerId:0,
+                jwt:null, freeTickets:0, sessionEmail:'' };
+
+  // Silent session pickup: if this browser is signed into My NOVAPA (same
+  // origin), reuse the session to surface the account's credits. Never a
+  // login wall — signed-out buyers see nothing different.
+  try {
+    var sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+    sb.auth.getSession().then(function(res){
+      var s = res.data && res.data.session;
+      if (!s) return;
+      state.jwt = s.access_token;
+      return fetch('/api/tix-pay?credits=1', { headers: { Authorization: 'Bearer ' + state.jwt } })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          state.freeTickets = d.free_tickets || 0;
+          state.sessionEmail = d.email || '';
+          if (state.sessionEmail && !$('email').value) $('email').value = state.sessionEmail;
+        });
+    });
+  } catch (e) {}
 
   var SOLD = '#3a4a63', HELD = '#5a6a83';
   var MAXTICKETS = 12;
@@ -218,14 +249,42 @@
       picks.map(function(s){ return s.row + s.seat; }).join(', ');
   }
 
+  function estimate(){
+    var picks = Object.values(state.sel);
+    var prices = picks.map(function(s){ var t=state.tiers[s.tier]||{}; return (t.price_cents||0)+(t.fee_cents||0); })
+      .sort(function(a,b){ return b-a; });
+    var total = prices.reduce(function(a,b){ return a+b; }, 0);
+    var rewardOff = 0;
+    if (state.freeTickets && $('useReward').checked) {
+      rewardOff = prices.slice(0, 2).reduce(function(a,b){ return a+b; }, 0);
+    }
+    return { picks: picks, list: total, rewardOff: rewardOff, due: total - rewardOff };
+  }
+  function syncSummary(){
+    var e = estimate();
+    $('paySummary').innerHTML = esc(state.show.title) + ' · ' + esc(state.perf.when) + ' · ' +
+      e.picks.map(function(s){ return (s.section==='HL'?'L':'R')+' '+s.row+s.seat; }).join(', ') +
+      ' · ' + (e.rewardOff
+        ? '<s style="opacity:.6">' + money(e.list) + '</s> <b style="color:var(--gold2)">' + money(e.due) + '</b>'
+        : money(e.list)) +
+      (($('code').value || '').trim() ? ' · code applied at payment' : '');
+    if (state.freeTickets) {
+      $('creditNote').textContent = e.picks.length < 2
+        ? 'Your pass covers 2 tickets — this order only uses ' + e.picks.length + ' of them, and the pass is spent either way.'
+        : 'Covers your 2 priciest seats.';
+    }
+  }
   $('checkoutBtn').addEventListener('click', function(){
     $('payCard').style.display = 'block';
-    var picks = Object.values(state.sel);
-    var total = picks.reduce(function(sum,s){ var t=state.tiers[s.tier]||{}; return sum+(t.price_cents||0)+(t.fee_cents||0); },0);
-    $('paySummary').textContent = state.show.title + ' · ' + state.perf.when + ' · ' +
-      picks.map(function(s){ return (s.section==='HL'?'L':'R')+' '+s.row+s.seat; }).join(', ') + ' · ' + money(total);
+    if (state.freeTickets) {
+      $('creditBox').style.display = 'block';
+      $('creditWho').textContent = state.sessionEmail;
+    }
+    syncSummary();
     $('payCard').scrollIntoView({ behavior:'smooth' });
   });
+  $('useReward') && $('useReward').addEventListener('change', syncSummary);
+  $('code').addEventListener('input', syncSummary);
 
   $('payBtn').addEventListener('click', function(){
     var btn = $('payBtn');
@@ -249,16 +308,32 @@
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('payErr').textContent = 'Please enter a valid email.'; return; }
     $('payErr').textContent = '';
     btn.disabled = true; btn.textContent = 'HOLDING YOUR SEATS…';
+    var hdrs = { 'Content-Type':'application/json' };
+    if (state.jwt) hdrs.Authorization = 'Bearer ' + state.jwt;
     fetch('/api/tix-pay', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers: hdrs,
       body: JSON.stringify({ performance_id: state.perf.id, seat_ids: Object.keys(state.sel).map(Number),
-        buyer_name: buyer, email: email })
+        buyer_name: buyer, email: email,
+        apply_reward: !!(state.freeTickets && $('useReward').checked),
+        coupon: ($('code').value || '').trim() })
     }).then(function(r){ return r.json().then(function(j){ return { ok:r.ok, j:j }; }); })
       .then(function(res){
         btn.disabled = false;
+        // Credits covered everything: confirmed server-side, no payment step.
+        if (res.ok && res.j.confirmed) {
+          $('doneShow').textContent = state.show.title + ' · ' + state.perf.when;
+          $('doneEmail').textContent = email;
+          $('doneCode').textContent = res.j.code || 'CHECK YOUR EMAIL';
+          $('mapCard').style.display = 'none'; $('payCard').style.display = 'none';
+          $('doneCard').style.display = 'block';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
         if (!res.ok || res.j.error) {
           btn.textContent = 'CONTINUE';
           if (res.j.error === 'seat_taken') { $('payErr').textContent = 'Someone just took one of those seats. Pick again.'; state.sel={}; loadMap(); }
+          else if (res.j.error === 'bad_coupon') $('payErr').textContent = 'That code is not valid.';
+          else if (res.j.error === 'credit_leaves_tiny_total') $('payErr').textContent = 'That credit leaves a total under 50¢ — add a seat or contact the box office.';
           else $('payErr').textContent = 'Could not start checkout. Try again.';
           return;
         }

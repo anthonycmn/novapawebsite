@@ -27,6 +27,30 @@ export async function confirmTickets(pi) {
   });
 
   if (!res.duplicate) {
+    // Settle credits only on first confirmation, never on Stripe redeliveries.
+    // Both settlements are failure-isolated: the buyer keeps their tickets
+    // even if a credit write hiccups (we would rather eat a reward than
+    // strand a paid order).
+    if (m.reward_id && m.reward_side && m.reward_email) {
+      try {
+        const col = m.reward_side === "referrer" ? "referrer_redeemed_at" : "referred_redeemed_at";
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        // Conditional on still-unredeemed — same guard as the box-office
+        // button, so racing redemptions cannot double-spend one reward.
+        await fetch(`${SUPABASE_URL}/rest/v1/referral_rewards?id=eq.${m.reward_id}&${col}=is.null`, {
+          method: "PATCH",
+          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ [col]: new Date().toISOString() }),
+        });
+      } catch (e) { console.error("reward settle failed:", e.message); }
+    }
+    if (m.coupon && parseInt(m.coupon_cents || "0", 10) > 0) {
+      try {
+        await svcRpc("redeem_coupon", {
+          p_code: m.coupon, p_applied_cents: parseInt(m.coupon_cents, 10),
+        });
+      } catch (e) { console.error("ticket coupon settle failed:", e.message); }
+    }
     try { await sendTicketEmail(m, res.code); }
     catch (e) { console.error("ticket email failed:", e.message); }
   }
@@ -65,6 +89,8 @@ async function sendTicketEmail(m, code) {
   </div>
   <div style="font-size:12px;letter-spacing:.1em;color:#888;margin-bottom:6px">YOUR SEATS (${seats.length})</div>
   ${seats.map((s) => `<div style="padding:8px 0;border-bottom:1px solid #eee;font-size:15px;color:#1a1a1a">${s}</div>`).join("")}
+  ${m.reward_cents ? `<div style="padding:8px 0;font-size:14px;color:#2e7d4f">Referral reward — 2 free tickets: −${usd(m.reward_cents)}</div>` : ""}
+  ${m.coupon_cents ? `<div style="padding:8px 0;font-size:14px;color:#2e7d4f">Credit ${m.coupon || ""}: −${usd(m.coupon_cents)}</div>` : ""}
   <div style="padding:12px 0;font-size:15px"><b>Total paid: ${usd(m.total_cents)}</b></div>
   <p style="font-size:13px;color:#666;line-height:1.6;margin-top:16px">
     The auditorium is between the ballroom and the hotel lobby at the Northern Virginia Conference Center,

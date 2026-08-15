@@ -7,13 +7,53 @@
 // pricing is computed here from the database — the client's numbers are
 // display only. Deliberately imports nothing from reg-config: no edit to this
 // file can move a camp price, and vice versa.
+// Credits (Jason, Aug 14): a generic "apply credits" step at checkout.
+// Priority 1: an unredeemed referral reward ("2 tickets to any show") on the
+// signed-in account frees the two priciest seats in the cart. Priority 2: a
+// credit/coupon code deducts from what remains, spending down partially like
+// everywhere else. If the total reaches $0 we skip Stripe entirely and
+// confirm directly, mirroring the camps free-order path. Sign-in is never
+// required — the page silently reuses an existing My NOVAPA session because
+// it lives on the same origin.
 import Stripe from "stripe";
 
 const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
+// Publishable by design (shipped to every browser in register/config.js).
+const SUPABASE_ANON_KEY = "sb_publishable_8ar97CkK-C0YlWuOGtI_tA_mwTDVE6H";
 
 function svcHeaders() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+}
+
+// Resolve a Supabase session token to an email; null on anything invalid.
+async function emailFromJwt(req) {
+  const jwt = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!jwt) return null;
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${jwt}` },
+  });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return (u.email || "").toLowerCase() || null;
+}
+
+// The first unredeemed referral reward for this account, either side of it.
+async function rewardFor(email) {
+  const enc = encodeURIComponent(email);
+  const rows = await (await fetch(
+    `${SUPABASE_URL}/rest/v1/referral_rewards?select=*&status=eq.earned` +
+    `&or=(referrer_email.ilike.${enc},referred_email.ilike.${enc})&order=created_at`,
+    { headers: svcHeaders() })).json();
+  for (const r of rows || []) {
+    if (r.referrer_email?.toLowerCase() === email && !r.referrer_redeemed_at) {
+      return { id: r.id, side: "referrer" };
+    }
+    if (r.referred_email?.toLowerCase() === email && !r.referred_redeemed_at) {
+      return { id: r.id, side: "referred" };
+    }
+  }
+  return null;
 }
 async function rpc(fn, args) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
@@ -35,6 +75,13 @@ export default async (req) => {
     const slug = u.searchParams.get("show");
     const perf = parseInt(u.searchParams.get("performance") || "0", 10);
     try {
+      // GET ?credits=1 with a session token -> what this account can apply.
+      if (u.searchParams.get("credits")) {
+        const email = await emailFromJwt(req);
+        if (!email) return Response.json({ free_tickets: 0 });
+        const reward = await rewardFor(email);
+        return Response.json({ email, free_tickets: reward ? 2 : 0 });
+      }
       if (slug) {
         const show = await rpc("tix_show", { p_slug: clean(slug, 60) });
         if (!show) return Response.json({ error: "not_found" }, { status: 404 });
@@ -84,15 +131,44 @@ export default async (req) => {
     { headers: svcHeaders() })).json();
   const tierBy = Object.fromEntries(tiers.map((t) => [t.name, t]));
 
-  let total = 0;
-  const lines = rows.map((s) => {
+  const priced = rows.map((s) => {
     const t = tierBy[s.tier];
     if (!t) throw new Error(`no tier ${s.tier}`);
-    const cents = t.price_cents + t.fee_cents;
-    total += cents;
-    return `${s.section === "HL" ? "House Left" : "House Right"} ${s.row_label}${s.seat_no}`;
+    return {
+      cents: t.price_cents + t.fee_cents,
+      line: `${s.section === "HL" ? "House Left" : "House Right"} ${s.row_label}${s.seat_no}`,
+    };
   });
-  if (total < 50) return Response.json({ error: "bad_total" }, { status: 500 });
+  let total = priced.reduce((n, p) => n + p.cents, 0);
+  const listTotal = total;
+  const lines = priced.map((p) => p.line);
+
+  // --- credits, in priority order -----------------------------------------
+  // 1. Referral reward: only for a verified session, never for a typed email —
+  //    otherwise anyone who knows a member's address could spend their reward.
+  let reward = null, rewardCents = 0;
+  if (body.apply_reward) {
+    const sessionEmail = await emailFromJwt(req);
+    if (sessionEmail) reward = await rewardFor(sessionEmail);
+    if (reward) {
+      const byPrice = [...priced].sort((a, b) => b.cents - a.cents);
+      rewardCents = byPrice.slice(0, 2).reduce((n, p) => n + p.cents, 0);
+      total -= rewardCents;
+      reward.email = sessionEmail;
+    }
+  }
+  // 2. Credit / coupon code. Invalid codes are a hard error so the client can
+  //    never show a discount and then silently charge full price (reg-pay rule).
+  const couponCode = clean(body.coupon, 20).toUpperCase();
+  let couponCents = 0;
+  if (couponCode) {
+    const c = await rpc("check_coupon", { p_code: couponCode });
+    if (!c || (!c.pct && !c.amount_cents)) {
+      return Response.json({ error: "bad_coupon" }, { status: 400 });
+    }
+    couponCents = c.pct ? Math.round(total * c.pct / 100) : Math.min(c.amount_cents, total);
+    total -= couponCents;
+  }
 
   // Hold the seats (atomic; races answer SEAT_TAKEN cleanly).
   let hold;
@@ -111,6 +187,41 @@ export default async (req) => {
     hour: "numeric", minute: "2-digit", timeZone: "America/New_York",
   });
 
+  const creditMeta = {
+    list_cents: String(listTotal),
+    ...(reward ? { reward_id: String(reward.id), reward_side: reward.side,
+                   reward_email: reward.email, reward_cents: String(rewardCents) } : {}),
+    ...(couponCode && couponCents ? { coupon: couponCode, coupon_cents: String(couponCents) } : {}),
+  };
+
+  // Fully covered by credits: nothing to charge, so Stripe never enters the
+  // picture. Confirm immediately through the same idempotent path the webhook
+  // uses, keyed by a synthetic intent id, then settle the credits.
+  if (total === 0) {
+    try {
+      const { confirmTickets } = await import("./tix-confirm.mjs");
+      const res = await confirmTickets({
+        id: "free_" + hold.hold_id,
+        metadata: {
+          tix_hold_id: hold.hold_id,
+          tix_performance_id: String(performanceId),
+          email, buyer_name: buyerName,
+          total_cents: "0",
+          seats: lines.join(", ").slice(0, 480),
+          show_title: perf.tix_shows.title.slice(0, 100),
+          performance_when: when,
+          ...creditMeta,
+        },
+      });
+      return Response.json({ confirmed: true, code: res.code,
+        pricing: { total_cents: 0, list_cents: listTotal, seats: lines } });
+    } catch (e) {
+      console.error("free ticket order failed:", e.message);
+      return Response.json({ error: "confirm_failed" }, { status: 500 });
+    }
+  }
+  if (total < 50) return Response.json({ error: "credit_leaves_tiny_total" }, { status: 400 });
+
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const pi = await stripe.paymentIntents.create({
     amount: total,
@@ -128,6 +239,7 @@ export default async (req) => {
       seats: lines.join(", ").slice(0, 480),
       show_title: perf.tix_shows.title.slice(0, 100),
       performance_when: when,
+      ...creditMeta,
     },
   });
 
@@ -135,7 +247,8 @@ export default async (req) => {
     client_secret: pi.client_secret,
     hold_id: hold.hold_id,
     expires_in: hold.expires_in,
-    pricing: { total_cents: total, seats: lines },
+    pricing: { total_cents: total, list_cents: listTotal,
+      reward_cents: rewardCents, coupon_cents: couponCents, seats: lines },
   });
 };
 
