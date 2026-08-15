@@ -291,6 +291,36 @@ function wordOk(given) {
   return diff === 0;
 }
 
+
+// ── The budget bridge ────────────────────────────────────────────────────
+// The dashboard's department budgets come from the STAFF PORTAL's budget
+// worksheet (staff_portal.show_budget_lines), which Tony fills in with
+// Todd. Read-only: SETS -> set, PROPS -> prop, COSTUMES -> costume,
+// summing the section's expense lines. Amounts are dollars in the portal;
+// the dashboard thinks in cents. Returns null when nothing is entered yet
+// so the page keeps its defaults.
+const PORTAL_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
+async function budgetGet() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return null;
+  const H = { apikey: key, Authorization: `Bearer ${key}`, "Accept-Profile": "staff_portal" };
+  const pr = await fetch(`${PORTAL_URL}/rest/v1/productions?title=eq.${encodeURIComponent("Sweeney Todd: School Edition")}&select=id`, { headers: H });
+  if (!pr.ok) return null;
+  const prods = await pr.json();
+  if (!prods.length) return null;
+  const lr = await fetch(`${PORTAL_URL}/rest/v1/show_budget_lines?production_id=eq.${prods[0].id}&kind=eq.expense&select=section,budget_amount`, { headers: H });
+  if (!lr.ok) return null;
+  const lines = await lr.json();
+  const MAP = { SETS: "set", PROPS: "prop", COSTUMES: "costume" };
+  const out = { set: 0, prop: 0, costume: 0 };
+  for (const l of lines) {
+    const k = MAP[String(l.section || "").toUpperCase()];
+    const n = Number(l.budget_amount);
+    if (k && Number.isFinite(n)) out[k] += Math.round(n * 100);
+  }
+  return (out.set || out.prop || out.costume) ? out : null;
+}
+
 export default async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
@@ -298,6 +328,10 @@ export default async (req) => {
   try { body = await req.json(); } catch { return new Response("Bad JSON", { status: 400 }); }
 
   if (!wordOk(body.word)) return Response.json({ ok: false, error: "not-authorised" }, { status: 403 });
+  if (body.op === "budget_get") {
+    try { return Response.json({ ok: true, data: await budgetGet() }); }
+    catch { return Response.json({ ok: true, data: null }); }
+  }
   if (!BLOBS[body.op]) return Response.json({ ok: false, error: "unknown-op" }, { status: 400 });
 
   try {

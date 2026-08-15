@@ -122,7 +122,10 @@
   ];
   var VENDORS = ['Amazon', 'In stock', 'Build in shop', 'Facebook Marketplace', 'Thrift / consignment', 'Local store', 'Borrowed'];
   var CATS = { set: 'Set', prop: 'Props', costume: 'Costumes' };
-  // Department budgets, in cents (CJ, Jul 31). $500 each.
+  // Department budgets, in cents. These are FALLBACKS: the real numbers
+  // live in the staff portal's budget worksheet (filled in with Todd) and
+  // are fetched at boot via budget_get — update them there and this page
+  // follows on the next load.
   var BUDGET = { set: 50000, prop: 50000, costume: 50000 };
   var BUDGET_TOTAL = BUDGET.set + BUDGET.prop + BUDGET.costume;
 
@@ -1466,6 +1469,15 @@
       'item and every total here fills in on its own.</p>';
   }
 
+  function loadPortalBudget() {
+    api('budget_get', {}).then(function (r) {
+      var b = r && r.ok && r.data;
+      if (!b || !(b.set || b.prop || b.costume)) return;
+      BUDGET = { set: b.set || 0, prop: b.prop || 0, costume: b.costume || 0 };
+      BUDGET_TOTAL = BUDGET.set + BUDGET.prop + BUDGET.costume;
+      renderBudget(); renderBuy(); renderScenes();
+    }).catch(function () {});
+  }
   function renderAll() { renderSchedule(); renderScenes(); renderBudget(); renderBuy(); renderStrike(); }
 
   // ---------- strike ----------
@@ -2273,6 +2285,7 @@
 
   // ---------- gate ----------
   function openGate() {
+    setTimeout(loadPortalBudget, 0);
     $('gate').classList.remove('show');
     $('app').style.display = '';
     boot();
