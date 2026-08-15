@@ -30,7 +30,7 @@ export function unsubToken(email) {
     .update(email.toLowerCase()).digest("hex").slice(0, 24);
 }
 export function unsubUrl(email) {
-  return `https://www.northernvirginiaperformingarts.org/api/unsubscribe?e=${encodeURIComponent(email.toLowerCase())}&t=${unsubToken(email)}`;
+  return `https://novapa.org/api/unsubscribe?e=${encodeURIComponent(email.toLowerCase())}&t=${unsubToken(email)}`;
 }
 
 // Campaign bodies are markdown-lite: a [TEXT](url) alone on a line renders as
