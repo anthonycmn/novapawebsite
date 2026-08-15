@@ -75,6 +75,42 @@ for (const [show, stated, page, prose] of REHEARSALS) {
 A(!/August 17|Aug 17/.test(read('sweeney-todd.html') + read('teen-conservatory.html')),
   'nothing still says Sweeney rehearsals start 17 August');
 
+// ── class catalogue ─────────────────────────────────────────────────────
+// classes.html is a hand-written catalogue and the registration portal is the
+// thing that actually sells. On 12 Aug 2026 the page still advertised eleven
+// classes the portal would not sell: three Ballet, two Hip-Hop, K-Pop, the
+// Wednesday Triple Threat, Adult Dance, Adult Musical Theatre, and two
+// Saturday cards with no register link at all.
+//
+// These checks are self-consistency only — they cannot see Supabase. To
+// refresh the snapshot, run:
+//   select id from activities where category='class' and bookable order by id;
+console.log('\nCLASS CATALOGUE');
+const classes = read('classes.html');
+const CARD = /<div class="card" data-day="(\w+)"[\s\S]*?<\/div>\s*(?=<div class="card"|<\/div>)/g;
+const cardIds = [...classes.matchAll(/<div class="card" data-day="(\w+)"[^>]*>\s*<a[^>]*activity=(\d+)/g)];
+const cardCount = (classes.match(/<div class="card" data-day=/g) || []).length;
+A(cardIds.length === cardCount,
+  'every class card links to a registration activity — ' + cardIds.length + ' of ' + cardCount +
+  (cardIds.length === cardCount ? '' : '; a card with no link advertises something nobody can book'));
+
+// the ids the portal listed as bookable on 12 Aug 2026
+const PORTAL_CLASS_IDS = ['1960867', '1960898', '1960924', '1960925', '1960927', '1960936',
+  '1960939', '1960945', '1960959', '1960961', '1962562', '1962566', '1962567', '1962568'];
+const onPage = [...new Set(cardIds.map((m) => m[2]))].sort();
+const extra = onPage.filter((id) => !PORTAL_CLASS_IDS.includes(id));
+A(extra.length === 0, 'no class card sells something the portal does not' +
+  (extra.length ? ' — orphan activity ids: ' + extra.join(', ') : ''));
+
+// each day heading states how many classes are under it
+const perDay = {};
+for (const [, day] of cardIds) perDay[day] = (perDay[day] || 0) + 1;
+const stated = [...classes.matchAll(/(\d+) weekly class(?:es)?/g)].map((m) => Number(m[1]));
+const realCounts = ['mon', 'tue', 'wed', 'thu', 'sat'].map((d) => perDay[d] || 0);
+A(JSON.stringify(stated) === JSON.stringify(realCounts),
+  'each day says how many classes it has — page says [' + stated.join(', ') +
+  '], cards are [' + realCounts.join(', ') + ']');
+
 // ── licensed titles ─────────────────────────────────────────────────────
 // We license Frozen KIDS, Frozen JR., Little Mermaid KIDS and Little Mermaid
 // JR. There is no teen edition of either title. Our teen band performs the JR.
