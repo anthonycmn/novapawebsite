@@ -783,6 +783,7 @@
     <button id="tPast">Past</button>
   </div>
   <div class="section"><div class="secHead" id="listLabel" style="display:none"><div class="section-label" style="margin:0">Registrations</div><div id="toggleSlot"></div></div><div id="list"></div></div>
+  <div id="tix"></div>
   <div id="credits"></div>
   <div id="rewards"></div>
 
@@ -838,6 +839,7 @@
     if (cards) cards = '<div class="grid">' + cards + '</div>';
     $('list').innerHTML = cards ||
       '<div class="card"><div class="empty">' + (past ? 'No past programs yet.' : 'Nothing upcoming yet. Time to fix that!') + '</div></div>';
+    renderTickets();
     renderCredits();
     renderRewards();
   }
@@ -857,6 +859,24 @@
   // priceCart already zeroes day-camp lines against a camper's credits, so the
   // order completes at $0 down the same path as every other registration and
   // this page never has to touch seats, holds or money.
+  function renderTickets(){
+    var tx = (DATA && DATA.tickets) || [];
+    if (!tx.length) { $('tix').innerHTML = ''; return; }
+    $('tix').innerHTML =
+      '<div class="section"><div class="section-label">Show Tickets</div><div class="card">' +
+      tx.map(function(t){
+        var when = t.starts_at ? new Date(t.starts_at).toLocaleDateString('en-US',
+          { weekday:'short', month:'short', day:'numeric' }) + ' · ' +
+          new Date(t.starts_at).toLocaleTimeString('en-US',{ hour:'numeric', minute:'2-digit' }) : '';
+        return '<div class="creditRow">' +
+          '<div class="kid">' + esc(t.show) + '</div>' +
+          '<div style="font-size:13px;color:var(--ink-dim);margin-bottom:8px">' + esc(when) +
+            ' · ' + t.seats.map(esc).join(', ') + '</div>' +
+          '<div class="chips"><span class="chip">Door code ' + esc(t.code) + '</span></div>' +
+          '</div>';
+      }).join('') + '</div></div>';
+  }
+
   function renderCredits(){
     var cr = (DATA && DATA.credits) || [];
     var camps = (DATA && DATA.dayCamps) || [];

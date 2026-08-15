@@ -238,7 +238,7 @@ export function confirmationHtml(m, pi, details) {
         </p>
       </td></tr>
     </table>
-  </td></tr></table></body></html>`;
+  </td></tr></table><table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px auto 0"><tr><td style="background:${GOLD};border-radius:8px"><a href="https://www.northernvirginiaperformingarts.org/register/account.html" style="display:inline-block;padding:12px 26px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;font-family:Georgia,serif">View or update in My NOVAPA</a></td></tr></table><p style="font-size:12px;color:#999;text-align:center;margin-top:8px;font-family:Georgia,serif">Your registrations, tickets, and credits live in your account.</p></body></html>`;
 }
 // Some families want a second parent on every receipt (families.cc_email).
 // Looked up here rather than threaded through every caller.

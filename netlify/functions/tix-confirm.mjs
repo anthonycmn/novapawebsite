@@ -80,8 +80,10 @@ async function sendTicketEmail(m, code) {
   <div style="color:${GOLD};font-size:13px;letter-spacing:.12em;margin-top:4px">BOX OFFICE</div>
 </td></tr>
 <tr><td style="padding:28px">
-  <div style="font-size:22px;font-weight:700;color:#1a1a1a">${m.show_title}</div>
+  <div style="font-size:12px;letter-spacing:.14em;color:#888">THIS IS YOUR TICKET</div>
+  <div style="font-size:22px;font-weight:700;color:#1a1a1a;margin-top:6px">${m.show_title}</div>
   <div style="font-size:15px;color:#444;margin-top:4px">${m.performance_when} · Loudoun Auditorium</div>
+  <div style="font-size:13.5px;color:#666;margin-top:6px">Show this email at the door. No printing needed.</div>
   <div style="margin:22px 0;padding:18px;background:#f8f5ef;border-radius:10px;text-align:center">
     <div style="font-size:12px;letter-spacing:.14em;color:#888">ORDER CODE</div>
     <div style="font-size:32px;font-weight:800;letter-spacing:.18em;color:#0F1E36;margin-top:4px">${code}</div>
@@ -96,6 +98,13 @@ async function sendTicketEmail(m, code) {
     The auditorium is between the ballroom and the hotel lobby at the Northern Virginia Conference Center,
     18980 West Belmont Place, Leesburg. Park in the garage. House opens 15 minutes before curtain.
     All sales are final; tickets are non-refundable and non-transferable.</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px auto 0"><tr><td
+    style="background:${GOLD};border-radius:8px">
+    <a href="https://www.northernvirginiaperformingarts.org/register/account.html"
+       style="display:inline-block;padding:12px 26px;color:#fff;text-decoration:none;font-weight:700;font-size:14px">
+      View in My NOVAPA</a></td></tr></table>
+  <p style="font-size:12px;color:#999;text-align:center;margin-top:8px">
+    Your tickets are always available in your account.</p>
 </td></tr>
 </table></div>`,
   });

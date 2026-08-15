@@ -60,6 +60,25 @@ async function rewardsFor(email) {
   });
 }
 
+// Show tickets bought with this email (tix_orders is keyed by email, not
+// family, because ticket buyers are often not registration families).
+async function ticketsFor(email) {
+  try {
+    const orders = await svc(
+      `tix_orders?select=id,code,total_cents,created_at,performance_id,` +
+      `tix_performances(starts_at,label,tix_shows(title)),` +
+      `tix_tickets(seat_id,tix_seats(section,row_label,seat_no))` +
+      `&email=eq.${encodeURIComponent(email.toLowerCase())}&status=eq.paid&order=created_at.desc`);
+    return (orders || []).map((o) => ({
+      code: o.code,
+      show: o.tix_performances?.tix_shows?.title || "Performance",
+      starts_at: o.tix_performances?.starts_at || null,
+      seats: (o.tix_tickets || []).map((t) =>
+        `${t.tix_seats.section === "HL" ? "L" : "R"} ${t.tix_seats.row_label}${t.tix_seats.seat_no}`),
+    }));
+  } catch (e) { console.error("ticketsFor:", e.message); return []; }
+}
+
 const fmtDate = (iso) => {
   const [y, m, d] = iso.split("-").map(Number);
   const MO = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -209,6 +228,7 @@ export default async (req) => {
       family: fam ? { parent_name: fam.parent_name, email: fam.email } : { email },
       campers: Object.entries(byCamper).map(([name, its]) => ({ name, items: its })),
       rewards: await rewardsFor(email),
+      tickets: await ticketsFor(email),
       credits,
       dayCamps,
     });
