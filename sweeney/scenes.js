@@ -293,3 +293,17 @@ window.SWEENEYSCENES = {
       ] }
   ]
 };
+
+/* Flattened view the buy list and budget iterate: every item once, tagged
+   with the scene it belongs to. Standing items read as "Whole show". */
+window.SWEENEYSCENES.allItems = (function () {
+  var out = window.SWEENEYSCENES.standing.map(function (it) {
+    return Object.assign({}, it, { scene: 'Whole show', sceneId: 'ALL' });
+  });
+  window.SWEENEYSCENES.scenes.forEach(function (s) {
+    s.items.forEach(function (it) {
+      out.push(Object.assign({}, it, { scene: 'Act ' + s.act + ' Sc ' + s.sc, sceneId: s.id }));
+    });
+  });
+  return out;
+})();
