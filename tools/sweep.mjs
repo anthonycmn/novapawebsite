@@ -173,6 +173,22 @@ if (salePages.length) {
   }
 }
 
+// Sale copy that names no date is invisible to the check above — the tier
+// percentages come straight from perKidRate(), which returns 0 the moment
+// EARLYBIRD_END passes, so "15% off each" is as perishable as "through
+// August 15" and was sitting on two pages with no date on it at all.
+const TIER_COPY = /Off One Show|Each for Two Shows|Each for Three Shows|Save <span[^>]*>15% OFF|Register for Both &mdash; Save|save 15% on each|20% off everything/i;
+const tierPages = htmlFiles().filter((f) => TIER_COPY.test(read(f)));
+if (tierPages.length) {
+  add(NOW > EARLYBIRD_END ? 'ask' : 'watch', 'sale',
+    'these pages advertise the multi-show discount tiers. They are paid by ' +
+    'perKidRate(), which returns 0 after ' +
+    EARLYBIRD_END.toLocaleString('en-US', { timeZone: 'America/New_York' }) + ' ET — ' +
+    (NOW > EARLYBIRD_END ? 'that has passed, so the copy is promising a discount checkout will not give'
+                         : 'no date appears in the copy, so nothing will look stale when it lapses'),
+    tierPages);
+}
+
 // ── 4. the house ────────────────────────────────────────────────────────
 // One rule, every production, and it is printed by hand on every show page.
 const HOUSE = shows.houseOpensMinutes;
