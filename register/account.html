@@ -1109,14 +1109,10 @@
   $('password').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('loginBtn').click(); });
 
   $('codeBtn').onclick = function(){ sendCode(); };
-  $('forgotBtn').onclick = function(){
-    sb.auth.resetPasswordForEmail(theEmail(), {
-      redirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html')
-    }).then(function(r){
-      if (r.error) { authMsg(r.error.message); return; }
-      authMsg('', 'Check your email for a reset link.');
-    });
-  };
+  // Forgot password = sign in with a code, then the password offer reappears
+  // so they can set a fresh one. One flow, no separate reset machinery.
+  var FORGOT = false;
+  $('forgotBtn').onclick = function(){ FORGOT = true; sendCode(); };
 
   $('codeGo').onclick = function(){
     var token = ($('codeInput').value || '').replace(/\D/g, '');
@@ -1141,6 +1137,7 @@
 
   // Optional password after a code sign-in — offered once, never required.
   function offerPassword(){
+    if (FORGOT) { $('nudge').style.display = ''; return; }
     try { if (localStorage.getItem('nv_pw_nudge')) return; } catch(e){}
     if (PROBE && PROBE.password) return;
     $('nudge').style.display = '';
@@ -1149,7 +1146,9 @@
     var pw = $('nudgePw').value;
     if (!pw || pw.length < 8) { $('nudgeErr').textContent = '8 characters or more.'; return; }
     var b = this; b.disabled = true;
-    sb.auth.updateUser({ password: pw }).then(function(res){
+    // pw_set is what the login card's probe trusts — encrypted_password is a
+    // placeholder for every user and says nothing about a real password.
+    sb.auth.updateUser({ password: pw, data: { pw_set: '1' } }).then(function(res){
       b.disabled = false;
       if (res.error) { $('nudgeErr').textContent = res.error.message; return; }
       try { localStorage.setItem('nv_pw_nudge', '1'); } catch(e){}
