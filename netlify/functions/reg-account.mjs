@@ -57,24 +57,61 @@ async function paymentsFor(email) {
       `customers/search?query=${encodeURIComponent(`email:'${email.replace(/'/g, "")}'`)}&limit=5`);
     const customers = search.data || [];
     const upcoming = [], history = [];
+    // Invoice line descriptions ("Park Payment Plan - Classes") beat charge
+    // descriptions ("Subscription creation") — cache per invoice id.
+    const invDesc = {};
+    const descOf = async (invId) => {
+      if (!invId) return null;
+      if (!(invId in invDesc)) {
+        try {
+          const inv = await stripe(`invoices/${invId}`);
+          invDesc[invId] = (inv.lines?.data?.[0]?.description || "")
+            .replace(/^1 × /, "").replace(/\s*\(at .*\)$/, "") || null;
+        } catch (e) { invDesc[invId] = null; }
+      }
+      return invDesc[invId];
+    };
     for (const c of customers) {
       const subs = await stripe(`subscriptions?customer=${c.id}&status=active&limit=10`);
       for (const s of subs.data || []) {
-        try {
-          const inv = await stripe(`invoices/upcoming?customer=${c.id}&subscription=${s.id}`);
-          upcoming.push({
-            date: (inv.next_payment_attempt || inv.period_end) * 1000,
-            amount_cents: inv.amount_due,
-            desc: (inv.lines?.data?.[0]?.description || s.description || "Payment plan").replace(/^1 × /, ""),
-            // schedule-run plans stop on their own; open subscriptions run
-            // until cancelled — the card words these differently
-            ends: s.cancel_at ? s.cancel_at * 1000 : null,
-          });
-        } catch (e) { /* sub with no upcoming invoice (final period) */ }
+        // invoices/upcoming is deprecated on current API versions, and the
+        // period fields moved onto subscription items — compute the next
+        // charge from the subscription itself.
+        const itemList = s.items?.data || [];
+        const nextTs = itemList[0]?.current_period_end || s.current_period_end;
+        if (!nextTs) continue;
+        if (s.cancel_at && s.cancel_at <= nextTs) continue; // final period billed
+        upcoming.push({
+          date: nextTs * 1000,
+          amount_cents: itemList.reduce((n, x) => n + (x.price?.unit_amount || 0) * (x.quantity || 1), 0),
+          desc: (await descOf(s.latest_invoice)) || s.description || "Payment plan",
+          // open subscriptions run until cancelled; scheduled ones show an end
+          ends: s.cancel_at ? s.cancel_at * 1000 : null,
+        });
+      }
+      // Charges no longer carry an invoice reference on this API version (and
+      // invoices no longer carry a charge), so history rows come from paid
+      // invoices — the good descriptions live there — and card charges merge
+      // in by amount + hour window, contributing their last4. One-off web
+      // payments have no invoice and land as plain charge rows.
+      const invoices = await stripe(`invoices?customer=${c.id}&status=paid&limit=10`);
+      for (const inv of invoices.data || []) {
+        invDesc[inv.id] = (inv.lines?.data?.[0]?.description || "")
+          .replace(/^1 × /, "").replace(/\s*\(at .*\)$/, "") || null;
+        history.push({
+          date: (inv.status_transitions?.paid_at || inv.created) * 1000,
+          amount_cents: inv.amount_paid,
+          desc: invDesc[inv.id] || "Payment plan",
+          last4: null,
+          _inv: true,
+        });
       }
       const charges = await stripe(`charges?customer=${c.id}&limit=10`);
       for (const ch of charges.data || []) {
         if (ch.status !== "succeeded" || ch.refunded) continue;
+        const twin = history.find((h) =>
+          h._inv && h.amount_cents === ch.amount && Math.abs(h.date - ch.created * 1000) < 3600000);
+        if (twin) { twin.last4 = ch.payment_method_details?.card?.last4 || null; continue; }
         history.push({
           date: ch.created * 1000,
           amount_cents: ch.amount,
@@ -83,6 +120,7 @@ async function paymentsFor(email) {
         });
       }
     }
+    for (const h of history) delete h._inv;
     upcoming.sort((a, b) => a.date - b.date);
     history.sort((a, b) => b.date - a.date);
     return { upcoming, history: history.slice(0, 12) };
