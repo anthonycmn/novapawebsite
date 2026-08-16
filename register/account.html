@@ -1063,9 +1063,13 @@
   function theEmail(){ return $('email').value.trim().toLowerCase(); }
 
   function sendCode(){
+    // emailRedirectTo is the FINAL destination: the email template routes
+    // through signin.html itself and passes this value as `next`. Handing it
+    // another signin.html URL sends the parent in a circle that ends at the
+    // registration funnel instead of the dashboard.
     sb.auth.signInWithOtp({
       email: theEmail(),
-      options: { shouldCreateUser: false, emailRedirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html') }
+      options: { shouldCreateUser: false, emailRedirectTo: location.origin + '/register/account.html' }
     }).then(function(res){
       if (res.error) { authMsg(res.error.message || 'Could not send the code. Try again shortly.'); return; }
       $('codeSentTo').textContent = theEmail();
