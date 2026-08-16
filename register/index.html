@@ -1221,12 +1221,16 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       FALL_SHOWS.forEach(function(s){ if (fallCastOn(i, s.key)) fallN++; });
     });
     if (!byKid.length) {
+      // This branch runs before the saleOn() gate below, so it kept promising
+      // the tier discount after the launch sale ended (CJ, 16 Aug 2026).
       t.textContent = fallN
-        ? '$695 per show \u00b7 add a summer camp and save 15% on everything (both shows + a camp = 20%).'
+        ? (saleOn()
+            ? '$695 per show \u00b7 add a summer camp and save 15% on everything (both shows + a camp = 20%).'
+            : '$695 per show \u00b7 every child after the first saves 5%.')
         : 'Check a camper into a show to see your price.';
       return;
     }
-    if (!saleOn()) { t.textContent = '$995 per two-week camp.'; return; }
+    if (!saleOn()) { t.textContent = '$995 per two-week camp \u00b7 every child after the first saves 5%.'; return; }
     function rateOf(e, n){ return discRate(n); }
     function label(e){ return e.n + ' show' + (e.n > 1 ? 's' : '') + ' selected, ' + Math.round(discRate(e.n) * 100) + '% off'; }
     function nudge(e){
