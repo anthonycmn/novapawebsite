@@ -151,7 +151,13 @@ if (NOW >= PUBLIC_OPEN_AT) {
 // ── 3. the launch sale ──────────────────────────────────────────────────
 // The sale date is in the copy on two dozen pages and in no script. Nothing
 // flips it, so it has to be a person, and they need warning.
-const saleDays = Math.ceil((EARLYBIRD_END - NOW) / 86400000);
+const saleMs = EARLYBIRD_END - NOW;
+const saleDays = Math.ceil(saleMs / 86400000);
+// Under two days, say it in hours. Rounding 3 hours up to "1 day" reads like
+// next week, and the sale copy is on pages nobody flips automatically.
+const saleLeft = saleMs < 0 ? null
+  : saleMs < 172800000 ? Math.round(saleMs / 3600000) + ' hour(s)'
+  : saleDays + ' day(s)';
 const salePages = htmlFiles().filter((f) => /through August 15|by August 15|Register by August 15/i
   .test(visible(read(f))));
 if (salePages.length) {
@@ -160,8 +166,10 @@ if (salePages.length) {
       'but these pages still advertise it — decide whether to extend the date in ' +
       'register/config.js and reg-config.mjs, or take the copy down', salePages);
   } else if (saleDays <= WARN_DAYS) {
-    add('watch', 'sale', `the launch sale ends in ${saleDays} day(s) and is written into the copy ` +
-      `on ${salePages.length} pages — nothing flips it automatically`, salePages);
+    add(saleMs < 172800000 ? 'ask' : 'watch', 'sale',
+      `the launch sale ends in ${saleLeft} (${EARLYBIRD_END.toLocaleString('en-US', { timeZone: 'America/New_York' })} ET) ` +
+      `and is written into the copy on ${salePages.length} page(s) — nothing flips it automatically, ` +
+      'so it is wrong the minute it lapses', salePages);
   }
 }
 
