@@ -33,6 +33,65 @@ async function svcPatch(path, body) {
   return r.json();
 }
 
+// Live billing for this family, straight from Stripe: upcoming charges and
+// recent payments. Uses STRIPE_READ_KEY — a read-only restricted key that can
+// see customers/subscriptions/invoices/charges and nothing else; the main
+// stripe key deliberately cannot read these. Families asked for this
+// (Haemy Park, Aug 16 2026: "the payment plan (all payment transactions)").
+// Whole section is skipped when the key is absent, so the portal degrades
+// to exactly what it showed before.
+async function paymentsFor(email) {
+  const key = process.env.STRIPE_READ_KEY;
+  if (!key) return null;
+  const stripe = async (path) => {
+    const r = await fetch(`https://api.stripe.com/v1/${path}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!r.ok) throw new Error(`stripe ${r.status} ${path.split("?")[0]}`);
+    return r.json();
+  };
+  try {
+    // Payment links mint a fresh customer per checkout, so one family can
+    // legitimately own several customer records.
+    const search = await stripe(
+      `customers/search?query=${encodeURIComponent(`email:'${email.replace(/'/g, "")}'`)}&limit=5`);
+    const customers = search.data || [];
+    const upcoming = [], history = [];
+    for (const c of customers) {
+      const subs = await stripe(`subscriptions?customer=${c.id}&status=active&limit=10`);
+      for (const s of subs.data || []) {
+        try {
+          const inv = await stripe(`invoices/upcoming?customer=${c.id}&subscription=${s.id}`);
+          upcoming.push({
+            date: (inv.next_payment_attempt || inv.period_end) * 1000,
+            amount_cents: inv.amount_due,
+            desc: (inv.lines?.data?.[0]?.description || s.description || "Payment plan").replace(/^1 × /, ""),
+            // schedule-run plans stop on their own; open subscriptions run
+            // until cancelled — the card words these differently
+            ends: s.cancel_at ? s.cancel_at * 1000 : null,
+          });
+        } catch (e) { /* sub with no upcoming invoice (final period) */ }
+      }
+      const charges = await stripe(`charges?customer=${c.id}&limit=10`);
+      for (const ch of charges.data || []) {
+        if (ch.status !== "succeeded" || ch.refunded) continue;
+        history.push({
+          date: ch.created * 1000,
+          amount_cents: ch.amount,
+          desc: ch.description || ch.calculated_statement_descriptor || "Payment",
+          last4: ch.payment_method_details?.card?.last4 || null,
+        });
+      }
+    }
+    upcoming.sort((a, b) => a.date - b.date);
+    history.sort((a, b) => b.date - a.date);
+    return { upcoming, history: history.slice(0, 12) };
+  } catch (e) {
+    console.error("reg-account payments", e.message);
+    return null; // billing display must never break the portal
+  }
+}
+
 // Referral tickets for this family: every earned reward where they are the
 // referrer or the referred side, one entry per side they own.
 async function rewardsFor(email) {
@@ -253,6 +312,7 @@ export default async (req) => {
       tickets: await ticketsFor(email),
       credits,
       dayCamps,
+      payments: await paymentsFor(email),
     });
   } catch (e) {
     console.error("reg-account", e);

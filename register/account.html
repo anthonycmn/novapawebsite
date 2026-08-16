@@ -814,6 +814,7 @@
   <div class="section"><div class="secHead" id="listLabel" style="display:none"><div class="section-label" style="margin:0">Registrations</div><div id="toggleSlot"></div></div><div id="list"></div></div>
   <div id="tix"></div>
   <div id="credits"></div>
+  <div id="payments"></div>
   <div id="rewards"></div>
 
   <p class="foot" id="foot" style="display:none">
@@ -870,7 +871,33 @@
       '<div class="card"><div class="empty">' + (past ? 'No past programs yet.' : 'Nothing upcoming yet. Time to fix that!') + '</div></div>';
     renderTickets();
     renderCredits();
+    renderPayments();
     renderRewards();
+  }
+
+  // Live billing from Stripe: what will be charged and what has been. The
+  // server omits the whole block when the read-only Stripe key is not
+  // configured, and this renders nothing — never a broken section.
+  function money(c){ return '$' + (c / 100).toFixed(2); }
+  function renderPayments(){
+    var p = DATA && DATA.payments;
+    if (!p || (!p.upcoming.length && !p.history.length)) { $('payments').innerHTML = ''; return; }
+    var html = '<div class="section"><div class="section-label">Payments</div><div class="card">';
+    if (p.upcoming.length) {
+      html += p.upcoming.map(function(u){
+        return '<div class="item"><b>' + money(u.amount_cents) + ' on ' + fmtDay(u.date) + '</b>' +
+          '<span>' + esc(u.desc) + '</span></div>';
+      }).join('');
+    }
+    if (p.history.length) {
+      html += '<div class="section-label" style="margin-top:' + (p.upcoming.length ? '18px' : '0') + ';font-size:12px">Past payments</div>' +
+        p.history.map(function(h){
+          return '<div class="item past"><b>' + money(h.amount_cents) + '</b>' +
+            '<span>' + fmtDay(h.date) + ' · ' + esc(h.desc) +
+            (h.last4 ? ' · card ending ' + esc(h.last4) : '') + '</span></div>';
+        }).join('');
+    }
+    $('payments').innerHTML = html + '</div></div>';
   }
 
   // ── referral tickets: earned by sharing your link (or by joining through
