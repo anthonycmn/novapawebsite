@@ -26,7 +26,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LIVE = process.argv.includes("--live");
 const BASE = (() => {
   const i = process.argv.indexOf("--base");
-  return i > -1 ? process.argv[i + 1] : "https://www.northernvirginiaperformingarts.org";
+  // Must be the primary domain: the old domain 301s, and a 301 rewrites POST
+  // probes into GETs — every function probe then reads 405 instead of 401.
+  return i > -1 ? process.argv[i + 1] : "https://novapa.org";
 })();
 
 const problems = [];
@@ -222,10 +224,21 @@ function checkFunctions() {
 // broken shared import looks like from outside.
 
 async function probe(path, opts = {}) {
-  const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), 20000);
-  try { return await fetch(BASE + path, { ...opts, signal: ctl.signal }); }
-  finally { clearTimeout(t); }
+  // Retry network-level failures once after a pause. An HTTP error (500, 404)
+  // comes back on attempt one and is real signal; "fetch failed" is usually
+  // the MONITOR's network blinking, not the site — on Aug 16 2026 one DNS
+  // blip failed all six probes at once, static pages included, and paged
+  // Jason for a site that was up the whole time.
+  for (let attempt = 1; ; attempt++) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 20000);
+    try { return await fetch(BASE + path, { ...opts, signal: ctl.signal }); }
+    catch (e) {
+      if (attempt >= 2) throw e;
+      await new Promise((res) => setTimeout(res, 15000));
+    }
+    finally { clearTimeout(t); }
+  }
 }
 
 async function checkLive() {
