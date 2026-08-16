@@ -86,6 +86,55 @@ const visible = (s) => s
   .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&rsquo;/g, '’')
   .replace(/\s+/g, ' ');
 
+// Script copy is conditional, and a flat text scan cannot tell a live promise
+// from one already behind a date gate. Blank the parts of each function that
+// only run while the sale is on, so the checks below stop reporting copy that
+// is already gated (register/index.html, 16 Aug 2026).
+//
+// Two things gate a line, and it must be both, not either: an early-return
+// `if (!saleOn()) return` makes everything BELOW it sale-only, and a saleOn()
+// ternary gates the branches just under it. Blanking the whole function
+// instead — the first thing tried here — hid the very bug this check exists
+// to find, because the ungated line shared a function with an unrelated gate.
+const ungated = (s) => {
+  let out = s;
+  for (const m of [...s.matchAll(/\bfunction\s+\w*\s*\([^)]*\)\s*\{/g)]) {
+    const open = m.index + m[0].length - 1;
+    let depth = 0, i = open, q = null;
+    for (; i < s.length; i++) {
+      const c = s[i];
+      if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
+      if (c === '"' || c === "'") { q = c; continue; }
+      if (c === '{') depth++;
+      else if (c === '}' && --depth === 0) break;
+    }
+    if (i >= s.length) continue;
+    // Read from the copy already masked, not the original: a nested function
+    // declared below a gate would otherwise splice its own unmasked body back
+    // over the outer function's mask (nudge() inside updateTicker).
+    let body = out.slice(open, i + 1);
+    // Judge gating on code only. A comment that merely explains a gate is not
+    // one, and a comment naming saleOn() next to ungated copy would otherwise
+    // suppress the finding — the failure mode this check was written for.
+    let bare = body
+      .replace(/\/\/[^\n]*/g, (c) => ' '.repeat(c.length))
+      .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+    const guard = bare.search(/if\s*\(\s*!\s*saleOn\s*\(\s*\)\s*\)[^\n]*return/);
+    if (guard >= 0) {
+      body = body.slice(0, guard) + ' '.repeat(body.length - guard);
+      bare = bare.slice(0, guard) + ' '.repeat(bare.length - guard);
+    }
+    const lines = body.split('\n');
+    const bareLines = bare.split('\n');
+    body = lines
+      .map((ln, n) => (/\bsaleOn\s*\(/.test(bareLines.slice(Math.max(0, n - 3), n + 1).join('\n'))
+        ? ' '.repeat(ln.length) : ln))
+      .join('\n');
+    out = out.slice(0, open) + body + out.slice(i + 1);
+  }
+  return out;
+};
+
 const findings = [];
 const fixed = [];
 // level: 'fix'  — one provably right answer, --fix applies it
@@ -151,7 +200,13 @@ if (NOW >= PUBLIC_OPEN_AT) {
 // ── 3. the launch sale ──────────────────────────────────────────────────
 // The sale date is in the copy on two dozen pages and in no script. Nothing
 // flips it, so it has to be a person, and they need warning.
-const saleDays = Math.ceil((EARLYBIRD_END - NOW) / 86400000);
+const saleMs = EARLYBIRD_END - NOW;
+const saleDays = Math.ceil(saleMs / 86400000);
+// Under two days, say it in hours. Rounding 3 hours up to "1 day" reads like
+// next week, and the sale copy is on pages nobody flips automatically.
+const saleLeft = saleMs < 0 ? null
+  : saleMs < 172800000 ? Math.round(saleMs / 3600000) + ' hour(s)'
+  : saleDays + ' day(s)';
 const salePages = htmlFiles().filter((f) => /through August 15|by August 15|Register by August 15/i
   .test(visible(read(f))));
 if (salePages.length) {
@@ -160,9 +215,37 @@ if (salePages.length) {
       'but these pages still advertise it — decide whether to extend the date in ' +
       'register/config.js and reg-config.mjs, or take the copy down', salePages);
   } else if (saleDays <= WARN_DAYS) {
-    add('watch', 'sale', `the launch sale ends in ${saleDays} day(s) and is written into the copy ` +
-      `on ${salePages.length} pages — nothing flips it automatically`, salePages);
+    add(saleMs < 172800000 ? 'ask' : 'watch', 'sale',
+      `the launch sale ends in ${saleLeft} (${EARLYBIRD_END.toLocaleString('en-US', { timeZone: 'America/New_York' })} ET) ` +
+      `and is written into the copy on ${salePages.length} page(s) — nothing flips it automatically, ` +
+      'so it is wrong the minute it lapses', salePages);
   }
+}
+
+// Sale copy that names no date is invisible to the check above — the tier
+// percentages come straight from perKidRate(), which returns 0 the moment
+// EARLYBIRD_END passes, so "15% off each" is as perishable as "through
+// August 15" and was sitting on two pages with no date on it at all.
+// Hand-listed phrases missed the real thing twice: the ungated line found on
+// 16 Aug read "save 15% on everything", which was on none of them. Match the
+// shape of a tier promise — a percentage off a multi-item purchase — instead
+// of the wordings that happened to exist when this was written.
+const TIER_COPY = new RegExp([
+  'sav(?:e|ing) \\d{1,2}% on',
+  '\\d{1,2}% off (?:both|each|all|everything|the second|the third)',
+  'Off One Show', 'Each for Two Shows', 'Each for Three Shows',
+  'Save <span[^>]*>\\d{1,2}% OFF',
+  'Register for Both &mdash; Save',
+].join('|'), 'i');
+const tierPages = htmlFiles().filter((f) => TIER_COPY.test(ungated(read(f))));
+if (tierPages.length) {
+  add(NOW > EARLYBIRD_END ? 'ask' : 'watch', 'sale',
+    'these pages advertise the multi-show discount tiers. They are paid by ' +
+    'perKidRate(), which returns 0 after ' +
+    EARLYBIRD_END.toLocaleString('en-US', { timeZone: 'America/New_York' }) + ' ET — ' +
+    (NOW > EARLYBIRD_END ? 'that has passed, so the copy is promising a discount checkout will not give'
+                         : 'no date appears in the copy, so nothing will look stale when it lapses'),
+    tierPages);
 }
 
 // ── 4. the house ────────────────────────────────────────────────────────

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sweeney Todd Staff Schedule</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#08111F">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sweeney Staff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
+    --gold:#C8892A; --gold2:#E8B84B; --gold3:#E8B84B;
+    --ink:rgba(255,255,255,0.90); --dim:rgba(255,255,255,0.60); --dim2:rgba(255,255,255,0.42);
+    --line:rgba(255,255,255,0.13); --card:rgba(22,43,82,0.42);
+    --stage:#E8B84B; --music:#B48CE8; --costume:#E8788C; --tech:#4FC3D9; --study:#8FCF9A; --co:#9FB2D6; --perf:#FF9B4A;
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{background:var(--navy0)}
+  body{font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);
+    background:radial-gradient(1100px 620px at 72% -12%, #1b3563 0%, var(--navy1) 46%, var(--navy0) 100%);
+    background-attachment:fixed; min-height:100vh; font-size:16px; line-height:1.45;
+    padding-bottom:calc(28px + var(--safe-b))}
+
+  /* ── gate ─────────────────────────────────────────────────────────── */
+  #gate{display:none;min-height:100vh;place-items:center;padding:40px 22px}
+  #gate.show{display:grid}
+  .gate-box{width:100%;max-width:340px;text-align:center}
+  .gate-box h1{font-family:'Cormorant Garamond',serif;font-size:30px;color:#fff;margin-bottom:6px}
+  .gate-box p{color:var(--dim);font-size:14px;margin-bottom:22px}
+  .gate-box input{width:100%;padding:15px 18px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.6);color:#fff;font:inherit;font-size:17px;text-align:center;margin-bottom:12px}
+  .gate-box button{width:100%;padding:15px;border:0;border-radius:12px;font:inherit;font-weight:700;font-size:16px;
+    background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206;cursor:pointer}
+  #gateErr{color:#FF9B9B;font-size:13.5px;min-height:20px;margin-top:10px}
+
+  /* ── header ───────────────────────────────────────────────────────── */
+  header{position:sticky;top:0;z-index:40;padding:14px 16px 12px;
+    background:rgba(8,17,31,0.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .eyebrow{font-size:10.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold2);font-weight:700}
+  header h1{font-family:'Cormorant Garamond',serif;font-size:23px;color:#fff;line-height:1.15;margin:2px 0 10px}
+  .showbar{display:flex;align-items:center;gap:11px}
+  .bar{flex:1;height:9px;border-radius:4px;background:rgba(255,255,255,0.11);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:4px;
+    background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .3s ease}
+  #showPct{font-weight:700;color:var(--gold2);font-size:15px;min-width:44px;text-align:right}
+  .showsub{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--dim2);margin-top:6px}
+
+  /* name + sync */
+  .mebar{display:flex;align-items:center;gap:9px;margin-top:11px}
+  .mebar label{font-size:12px;color:var(--dim);white-space:nowrap}
+  .mebar input{flex:1;min-width:0;padding:9px 13px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.6);color:#fff;font:inherit;font-size:15px}
+  #syncNote{font-size:11.5px;color:var(--dim2);margin-top:6px;min-height:16px}
+
+  /* ── day chips ────────────────────────────────────────────────────── */
+  #dayChips{display:flex;gap:8px;overflow-x:auto;padding:14px 16px 4px;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch}
+  #dayChips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:1px;
+    padding:9px 15px;border-radius:13px;border:1px solid var(--line);background:rgba(22,43,82,0.4);
+    color:var(--dim);font:inherit;cursor:pointer}
+  .chip-d{font-size:13.5px;font-weight:700;white-space:nowrap}
+  .chip-p{font-size:11px;color:var(--dim2)}
+  .chip.sel{background:var(--gold2);border-color:var(--gold2);color:#1a1206}
+  .chip.sel .chip-p{color:rgba(26,18,6,0.7)}
+  .chip.full{border-color:rgba(143,207,154,0.6)}
+  .chip.full .chip-p{color:var(--study)}
+  .chip.sel.full .chip-p{color:rgba(26,18,6,0.7)}
+
+  /* ── views ────────────────────────────────────────────────────────── */
+  .view{display:none;padding:4px 14px 24px}
+  .view.on{display:block}
+
+  .dayhead{padding:12px 2px 10px}
+  .dayhead-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .dayhead h2{font-family:'Cormorant Garamond',serif;font-size:25px;color:#fff;display:flex;align-items:baseline;gap:9px}
+  .daycode{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.13em;color:var(--dim2);font-weight:700}
+  .daypct{font-size:14px;font-weight:700;color:var(--gold2)}
+
+  .cov{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
+  .cov summary{padding:12px 15px;font-size:14px;font-weight:700;color:var(--gold3);cursor:pointer;list-style:none}
+  .cov summary::-webkit-details-marker{display:none}
+  .cov summary::after{content:'▾';float:right;color:var(--dim2)}
+  .cov[open] summary::after{content:'▴'}
+  .whos{display:flex;flex-direction:column;gap:5px;padding:0 15px 12px}
+  .who{font-size:13.5px;color:var(--dim)}
+  .who b{color:#fff;font-weight:700;margin-right:6px}
+  .who.out{color:#FFB4B4}
+  .gap{margin:0 12px 12px;padding:11px 13px;border-radius:10px;font-size:13px;line-height:1.5;
+    background:rgba(232,184,75,0.09);border:1px dashed rgba(232,184,75,0.45);color:var(--gold3)}
+  .gap b{display:block;color:var(--gold2);margin-bottom:3px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase}
+
+  /* ── attendance ───────────────────────────────────────────────────── */
+  .at{margin-bottom:14px;border:1px solid var(--line);border-radius:13px;background:var(--card)}
+  .at summary{padding:12px 15px;font-size:14px;font-weight:700;color:var(--gold3);cursor:pointer;
+    list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .at summary::-webkit-details-marker{display:none}
+  .at summary b{color:#fff;font-weight:700}
+  .at summary::after{content:'▾';margin-left:auto;color:var(--dim2)}
+  .at[open] summary::after{content:'▴'}
+  .at-pill{font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+    padding:3px 9px;border-radius:8px}
+  .at-pill.out{background:rgba(255,140,140,0.16);color:#FFB4B4}
+  .at-pill.late{background:rgba(232,184,75,0.16);color:var(--gold2)}
+  .at-pill.todo{background:rgba(255,255,255,0.07);color:var(--dim2)}
+  .at-bd{padding:0 12px 12px}
+  .at-grp{font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim2);
+    font-weight:700;margin:12px 0 6px}
+  .at-row{display:flex;align-items:center;gap:8px;padding:5px 0;flex-wrap:wrap}
+  .at-st{flex:0 0 34px;height:34px;border-radius:9px;border:1px solid var(--line);cursor:pointer;
+    font:inherit;font-size:15px;font-weight:700;background:rgba(255,255,255,0.05);color:var(--dim)}
+  .at-st.s-present{background:rgba(120,220,160,0.16);border-color:rgba(120,220,160,0.5);color:#8FE3B4}
+  .at-st.s-late{background:rgba(232,184,75,0.18);border-color:rgba(232,184,75,0.55);color:var(--gold2)}
+  .at-st.s-absent{background:rgba(255,120,120,0.18);border-color:rgba(255,120,120,0.55);color:#FFB4B4}
+  .at-st.s-excused{background:rgba(150,170,255,0.16);border-color:rgba(150,170,255,0.5);color:#B9C6FF}
+  .at-name{flex:1 1 130px;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--line);
+    border-radius:9px;padding:8px 10px;color:#fff;font:inherit;font-size:14px}
+  .at-name::placeholder{color:var(--dim2);font-style:italic}
+  /* Role sits under the name rather than beside it — at 390px there is not
+     room for both on one line, and it was running off the right edge. */
+  .at-role{flex:1 1 100%;padding-left:42px;margin-top:-3px;font-size:11.5px;color:var(--dim2);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .at-note{flex:1 1 100%;background:rgba(255,255,255,0.04);border:1px dashed var(--line);
+    border-radius:9px;padding:7px 10px;color:var(--gold3);font:inherit;font-size:13px}
+  .at-add{display:flex;gap:7px;margin-top:14px;flex-wrap:wrap}
+  .at-add input{flex:1 1 130px;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--line);
+    border-radius:9px;padding:9px 11px;color:#fff;font:inherit;font-size:14px}
+  .at-add select{background:var(--navy2);border:1px solid var(--line);border-radius:9px;
+    padding:9px 8px;color:#fff;font:inherit;font-size:13px}
+  .at-hint{font-size:11.5px;color:var(--dim2);line-height:1.5;margin:11px 0 0}
+
+  /* ── rehearsal notes ──────────────────────────────────────────────── */
+  /* One box per department, laid out like the paper report it replaces, so a
+     stage manager can work down it live instead of choosing from a dropdown
+     every time the director says something. */
+  .notes{margin-top:20px;padding-top:4px;border-top:1px solid var(--line)}
+  .notes h3{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--gold3);margin:16px 0 6px}
+  .nt-lead{font-size:12.5px;color:var(--dim2);line-height:1.55;margin:0 0 12px}
+  .dnlist{display:flex;flex-direction:column;gap:7px}
+  .dn{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .dn>summary{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
+    list-style:none;-webkit-tap-highlight-color:transparent}
+  .dn>summary::-webkit-details-marker{display:none}
+  .dn>summary::after{content:'+';margin-left:auto;color:var(--dim2);font-size:17px;line-height:1}
+  .dn[open]>summary::after{content:'\2212'}
+  .dn-n{font-size:14px;font-weight:700;color:var(--ink)}
+  .dn-c{min-width:21px;height:21px;border-radius:8px;display:inline-flex;align-items:center;
+    justify-content:center;font-size:11.5px;font-weight:700;padding:0 6px;
+    background:rgba(232,184,75,0.16);color:var(--gold2)}
+  .dn-c.none{background:none;color:var(--dim2);font-weight:400}
+  .dn.has{border-color:rgba(232,184,75,0.34)}
+  .dn.has .dn-n{color:#fff}
+  /* Text typed but not yet added. Visible from the closed summary, because
+     that is exactly when it would otherwise be forgotten. */
+  .dn.pending{border-color:rgba(232,184,75,0.75)}
+  .dn.pending>summary::before{content:'unsent';font-size:9.5px;letter-spacing:0.1em;
+    text-transform:uppercase;font-weight:700;color:#1a1206;background:var(--gold2);
+    border-radius:8px;padding:2px 7px;order:3}
+  .dn-bd{padding:0 14px 13px;display:flex;flex-direction:column;gap:8px}
+  .dn-bd textarea{background:rgba(255,255,255,0.05);border:1px solid var(--line);
+    border-radius:10px;padding:10px 11px;color:#fff;font:inherit;font-size:14px;width:100%;
+    resize:vertical;line-height:1.5}
+  .dn-bd textarea::placeholder{color:var(--dim2)}
+  .dn-add{align-self:flex-start;font-size:13px;padding:9px 14px}
+  .nt{background:rgba(8,17,31,0.5);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .nt-h{display:flex;align-items:center;gap:8px}
+  .nt-a{font-size:11.5px;color:var(--dim2)}
+  .nt-x{margin-left:auto;background:none;border:0;color:var(--dim2);font-size:19px;line-height:1;
+    cursor:pointer;padding:0 2px}
+  .nt-b{font-size:14px;line-height:1.55;color:var(--ink);white-space:pre-wrap}
+  .btn{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206;border:0;
+    border-radius:10px;padding:11px 16px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+
+  /* ── end-of-day report ────────────────────────────────────────────── */
+  /* The report bar sticks to the bottom of the day view, so the last of the
+     notes needs room to scroll clear of it. */
+  #day{padding-bottom:4px}
+  .notes{padding-bottom:6px}
+  .rep{position:sticky;bottom:0;margin:18px -14px 0;padding:13px 14px calc(13px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(8,17,31,0.75),var(--navy0) 45%);
+    border-top:1px solid var(--line);display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .rep-go{flex:1 1 190px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206;
+    border:0;border-radius:11px;padding:14px 16px;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
+  .rep-go[disabled]{opacity:0.55}
+  .rep-pv{background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--dim);
+    border-radius:11px;padding:14px 14px;font:inherit;font-size:14px;cursor:pointer}
+  .rep-sent{flex:1 1 100%;font-size:12.5px;color:#8FE3B4}
+  .rep-sent b{color:#fff}
+  .rep-note{flex:1 1 100%;font-size:12.5px;color:var(--gold3);line-height:1.5}
+  .rep-note a{color:var(--gold2)}
+
+  /* ── buy list ─────────────────────────────────────────────────────── */
+  .buy-acts{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:14px 0 16px}
+  .buy-hint{flex:1 1 100%;font-size:12px;color:var(--dim2);line-height:1.5}
+  /* The one button on this page that sends money out of the door. Gold, so it
+     reads as deliberate, and disabled until something actually has a link. */
+  .buy-send{flex:0 0 auto;padding:11px 17px;border-radius:10px;border:0;font:inherit;font-size:13.5px;
+    font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206}
+  .buy-send:active{transform:translateY(1px)}
+  .buy-send[disabled]{opacity:0.45;cursor:default;transform:none}
+  /* Copying is harmless; sending is not. Only one of them gets to be gold. */
+  .buy-copy{background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--dim)}
+  .buy-copy:hover{color:var(--gold2);border-color:rgba(232,184,75,0.5)}
+  .buy-note{flex:1 1 100%;font-size:12.5px;color:var(--gold3);line-height:1.5}
+  .buy-note a{color:var(--gold2)}
+  .ven{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:11px}
+  .ven-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px;
+    padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .ven-h b{font-size:15px;color:#fff}
+  .ven-h span{font-size:12px;color:var(--gold2);white-space:nowrap}
+  .ven-i{display:flex;align-items:flex-start;gap:9px;padding:7px 0}
+  .ven-tick{flex:0 0 28px;height:28px;border-radius:8px;border:1px solid var(--line);cursor:pointer;
+    background:rgba(255,255,255,0.05);color:var(--dim2);font-size:14px;line-height:1}
+  .ven-tick:hover{color:#8FE3B4;border-color:rgba(120,220,160,0.5)}
+  .ven-t{flex:1;min-width:0;font-size:14px;line-height:1.45;color:var(--ink)}
+  .ven-t a{color:var(--gold3)}
+  .ven-s{display:block;font-size:11.5px;color:var(--dim2);margin-top:2px}
+  /* Links two and up. The item name is link one. */
+  .ven-more{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+  .ven-more a{font-size:11px;font-weight:700;letter-spacing:0.04em;color:var(--gold2);
+    text-decoration:none;background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.32);
+    border-radius:12px;padding:2px 9px}
+  .ven-more a:hover{color:#fff;border-color:rgba(232,184,75,0.7)}
+  /* Already with Todd. The line through it is the whole point. */
+  .ven-i.sent .ven-t a,.ven-i.sent .ven-t{color:var(--dim2);text-decoration:line-through}
+  .ven-i.sent .ven-s,.ven-i.sent .ven-c{text-decoration:none;color:var(--dim2)}
+  .ven-i.sent .ven-more{display:none}
+  .ven-sent{color:#8FE3B4;font-weight:700}
+  .ven-c{font-size:13px;color:var(--gold2);white-space:nowrap}
+  .ven-c i{color:var(--dim2);font-size:11.5px}
+  .ven-open{width:100%;margin-top:9px;background:rgba(232,184,75,0.1);border:1px solid rgba(232,184,75,0.4);
+    color:var(--gold2);border-radius:10px;padding:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+
+  /* ── strike ───────────────────────────────────────────────────────── */
+  /* A job, whose name is against it, and a box to tick on the night. The
+     name field is the reason this tab exists, so it gets real width rather
+     than being tucked under the text. */
+  .stk{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:11px}
+  .stk.full{border-color:rgba(120,220,160,0.42)}
+  .stk-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px;
+    padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .stk-h b{font-size:15px;color:#fff}
+  .stk-h span{font-size:12px;color:var(--gold2);white-space:nowrap}
+  .stk.full .stk-h span{color:#8FE3B4}
+  .stk-none{font-size:12.5px;color:var(--dim2);margin:0 0 9px}
+  /* Grid, not flex-wrap: the tick, the job, the name and the delete each own a
+     cell, so nothing can end up sitting on top of the tick button. */
+  .stk-i{display:grid;grid-template-columns:28px minmax(0,1fr) 116px auto;
+    align-items:start;gap:9px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .stk-i:last-of-type{border-bottom:0}
+  .stk-tick{flex:0 0 28px;height:28px;border-radius:8px;border:1px solid var(--line);cursor:pointer;
+    background:rgba(255,255,255,0.05);color:#8FE3B4;font-size:14px;line-height:1;padding:0}
+  .stk-tick:hover{border-color:rgba(120,220,160,0.5)}
+  .stk-i.done .stk-tick{background:rgba(120,220,160,0.18);border-color:rgba(120,220,160,0.55)}
+  .stk-t{flex:1 1 auto;min-width:0}
+  .stk-b{font-size:14px;line-height:1.45;color:var(--ink)}
+  .stk-i.done .stk-b{color:var(--dim2);text-decoration:line-through}
+  .stk-by{display:block;font-size:11px;color:var(--study);margin-top:2px}
+  .stk-who{width:100%;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.55);color:#fff;font:inherit;font-size:13px}
+  .stk-who::placeholder{color:var(--dim2)}
+  .stk-x{background:none;border:0;color:var(--dim2);font-size:19px;line-height:1;
+    cursor:pointer;padding:2px 3px}
+  .stk-x:hover{color:#FFB4B4}
+  .stk-add{display:flex;gap:7px;margin-top:10px}
+  .stk-add input{flex:1;min-width:0;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,0.05);color:#fff;font:inherit;font-size:14px}
+  .stk-go{flex:0 0 auto;font-size:13px;padding:9px 14px}
+  /* On a phone the name drops to its own row under the job, still inside its
+     own cell — it lines up with the text rather than with the tick. */
+  @media (max-width:520px){
+    .stk-i{grid-template-columns:28px minmax(0,1fr) auto;row-gap:7px}
+    .stk-who{grid-column:2 / 4;grid-row:2}
+  }
+
+  /* ── blocks ───────────────────────────────────────────────────────── */
+  .rest{display:flex;justify-content:center;gap:10px;padding:9px;margin:8px 0;
+    font-size:12.5px;color:var(--dim2);letter-spacing:0.04em}
+  .blk{display:flex;gap:12px;padding:13px 14px;margin-bottom:9px;border-radius:14px;
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--co)}
+  .blk.stage{border-left-color:var(--stage)} .blk.music{border-left-color:var(--music)}
+  .blk.costume{border-left-color:var(--costume)} .blk.tech{border-left-color:var(--tech)}
+  .blk.study{border-left-color:var(--study)} .blk.perf{border-left-color:var(--perf)}
+  .blk.done{background:rgba(143,207,154,0.07);border-color:rgba(143,207,154,0.3)}
+  .blk.done .act{color:var(--dim);text-decoration:line-through;text-decoration-color:rgba(255,255,255,0.3)}
+  .blk-bd{flex:1;min-width:0}
+  .tick{flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:2px solid rgba(255,255,255,0.25);
+    background:none;color:#1a1206;font-size:18px;font-weight:700;line-height:1;cursor:pointer;
+    display:grid;place-items:center;margin-top:1px}
+  .blk.done .tick{background:var(--study);border-color:var(--study)}
+  .blk-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px}
+  .time{font-size:15px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+  .tag{font-size:9.5px;letter-spacing:0.09em;text-transform:uppercase;font-weight:700;
+    padding:3px 8px;border-radius:8px;background:rgba(255,255,255,0.09);color:var(--dim)}
+  .blk.stage .tag{background:rgba(232,184,75,0.16);color:var(--stage)}
+  .blk.music .tag{background:rgba(180,140,232,0.16);color:var(--music)}
+  .blk.costume .tag{background:rgba(232,120,140,0.16);color:var(--costume)}
+  .blk.tech .tag{background:rgba(79,195,217,0.16);color:var(--tech)}
+  .blk.study .tag{background:rgba(143,207,154,0.16);color:var(--study)}
+  .blk.perf .tag{background:rgba(255,155,74,0.18);color:var(--perf)}
+  .act{font-size:15px;line-height:1.42;color:var(--ink)}
+  /* details stay collapsed until the card is tapped — the phone view is the
+     time, the track, and what is happening, nothing else */
+  .meta{display:none;flex-direction:column;gap:5px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+  .blk.open .meta{display:flex}
+  .m{display:flex;gap:9px;font-size:13px;line-height:1.4}
+  .mk{flex:0 0 82px;color:var(--dim2);font-size:11px;letter-spacing:0.07em;text-transform:uppercase;
+    font-weight:700;padding-top:2px}
+  .mv{flex:1;color:var(--dim)}
+  .stamp{margin-top:8px;font-size:12px;color:var(--study)}
+  .stamp b{color:#fff}
+
+  /* ── reference views ──────────────────────────────────────────────── */
+  .view h3{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold3);margin:20px 0 8px}
+  .sc{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px;margin-bottom:10px}
+  .sc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+  .sc-h b{font-size:16px;color:#fff}
+  .sc-when{font-size:11.5px;color:var(--gold2);font-weight:700;white-space:nowrap}
+  .sc-song{font-size:13.5px;color:var(--music);margin-bottom:7px;font-style:italic}
+  .sc-l{display:flex;gap:9px;font-size:13px;line-height:1.45;margin-top:4px;color:var(--dim)}
+  .sc-l span:first-child{flex:0 0 60px;color:var(--dim2);font-size:11px;letter-spacing:0.07em;
+    text-transform:uppercase;font-weight:700;padding-top:2px}
+  .sc-l.tech{color:var(--gold3)} .sc-l.need{color:var(--perf)}
+  .kv{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .kv-k{flex:0 0 120px;font-weight:700;color:#fff}
+  .kv-v{flex:1;color:var(--dim);line-height:1.5}
+
+  /* ── run blocks read louder than everything else ──────────────────── */
+  .blk.run{border-left-color:var(--perf);background:rgba(255,155,74,0.09)}
+  .blk.run .tag{background:rgba(255,155,74,0.2);color:var(--perf)}
+  .blk.run .act{font-weight:700}
+
+  /* back button (scene detail) */
+  .back{background:none;border:1px solid var(--line);border-radius:12px;padding:7px 15px;
+    color:var(--dim);font:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px}
+  .back:hover{color:var(--gold2);border-color:rgba(232,184,75,0.5)}
+
+  /* step from scene to scene without going back to the list */
+  /* The scene stepper stays put. Working down a long scene, the way back to
+     the previous scene or out to the list should never be a scroll away.
+     --topbar-h is measured in app.js, because the header's height changes
+     with the width and with how long the day label is. */
+  .scnav{display:flex;align-items:center;gap:8px;margin-bottom:6px;
+    position:sticky;top:var(--topbar-h,190px);z-index:30;
+    margin-left:-14px;margin-right:-14px;padding:8px 14px;
+    background:rgba(8,17,31,0.96);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line)}
+  /* The one at the foot is a full-width "next scene" button, not a bar. */
+  .scnav.foot{position:static;background:none;backdrop-filter:none;border-bottom:0;
+    margin-left:0;margin-right:0;padding:0}
+  .scnav .back{margin-bottom:0;flex:0 0 auto;white-space:nowrap}
+  .scstep{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px;
+    background:rgba(232,184,75,0.07);border:1px solid var(--line);border-radius:12px;
+    padding:7px 12px;color:var(--gold3);font:inherit;font-size:12.5px;font-weight:700;
+    cursor:pointer;white-space:nowrap;overflow:hidden}
+  .scstep:hover{background:rgba(232,184,75,0.16);border-color:rgba(232,184,75,0.5);color:var(--gold2)}
+  .scstep-l{overflow:hidden;text-overflow:ellipsis}
+  .scstep-ar{color:var(--gold2);font-weight:700}
+  .scstep.empty{flex:1 1 0;border:0;background:none;pointer-events:none}
+  .scpos{font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim2);
+    text-align:center;margin:10px 0 12px}
+  .scnav.foot{margin:22px 0 4px}
+  .scstep.wide{flex:1 1 100%;padding:12px 16px;font-size:14px}
+  @media (max-width:520px){
+    .scnav .back{padding:7px 11px;font-size:12px}
+    .scstep{font-size:12px;padding:7px 9px}
+  }
+
+  /* the day rail belongs to the schedule only */
+  body:not(.on-day) #dayChips{display:none}
+
+  /* ── who-completed-it menu ────────────────────────────────────────── */
+  .whomenu{position:absolute;z-index:80;min-width:190px;padding:6px;border-radius:13px;
+    background:rgba(12,24,44,0.98);border:1px solid rgba(232,184,75,0.4);
+    box-shadow:0 16px 44px rgba(0,0,0,0.6)}
+  .wm-h{font-size:11px;letter-spacing:0.09em;text-transform:uppercase;color:var(--gold2);
+    font-weight:700;padding:7px 10px 8px}
+  .wm-b{display:block;width:100%;text-align:left;padding:11px 12px;border:0;border-radius:9px;
+    background:none;color:var(--ink);font:inherit;font-size:15px;cursor:pointer}
+  .wm-b:hover{background:rgba(232,184,75,0.14);color:#fff}
+  .wm-other{color:var(--dim);border-top:1px solid var(--line);margin-top:4px;border-radius:0 0 9px 9px}
+
+  /* ── scene breakdown ──────────────────────────────────────────────── */
+  .sc-summary{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:15px 16px;margin:10px 0 16px}
+  .ss-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    font-size:13.5px;color:var(--dim);margin-bottom:8px}
+  .ss-row b{color:#fff;font-weight:700}
+  .ss-row.big{font-size:15px;margin:12px 0 0}
+  .ss-row.big b{color:var(--gold2);font-size:22px;font-family:'Cormorant Garamond',serif}
+  .ss-note{font-size:12px;color:var(--dim2);line-height:1.55;margin-top:12px}
+
+  .scenecard{background:var(--card);border:1px solid var(--line);border-radius:13px;
+    padding:13px 15px;margin-bottom:9px;cursor:pointer}
+  .scenecard:hover{border-color:rgba(232,184,75,0.45)}
+  .scenecard.full{border-color:rgba(143,207,154,0.4);background:rgba(143,207,154,0.06)}
+  .sch{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .sch b{font-size:16px;color:#fff}
+  .scsub{display:block;font-size:12.5px;color:var(--dim);margin-top:2px;line-height:1.4}
+  .sccost{font-weight:700;color:var(--gold2);white-space:nowrap;font-size:15px}
+  .scmeta{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--dim2);margin-top:7px}
+
+  #v-scene1 h1{font-family:'Cormorant Garamond',serif;font-size:26px;color:#fff;margin:4px 0 3px}
+  #v-scene1 .sub{font-size:14px;color:var(--dim);line-height:1.5;margin-bottom:10px}
+  .sc-song{font-size:14px;color:var(--music);font-style:italic;margin-bottom:12px}
+  .sc-cast{margin-bottom:12px}
+  .sc-cast .mk{display:block;margin-bottom:6px}
+  .castpill{display:inline-block;font-size:12px;padding:5px 11px;border-radius:8px;margin:0 5px 5px 0;
+    background:rgba(255,255,255,0.07);border:1px solid var(--line);color:var(--ink)}
+  .sc-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    padding:13px 15px;border-radius:12px;margin:14px 0 18px;
+    background:rgba(232,184,75,0.09);border:1px solid rgba(232,184,75,0.35);font-size:14px;color:var(--gold3)}
+  .sc-total b{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--gold2)}
+
+  .itgrp{margin-bottom:22px}
+  .itgrp h4{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold3);margin-bottom:10px;
+    padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .itgrp h4 span{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:var(--gold2)}
+
+  .it{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:10px}
+  .it.it-done{background:rgba(143,207,154,0.07);border-color:rgba(143,207,154,0.32)}
+  .it.it-arrived{border-color:rgba(79,195,217,0.35)}
+  .it-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+  .it-cat{font-size:9.5px;letter-spacing:0.09em;text-transform:uppercase;font-weight:700;
+    padding:3px 8px;border-radius:8px;background:rgba(255,255,255,0.09);color:var(--dim)}
+  .it-cat.it-set{background:rgba(79,195,217,0.16);color:var(--tech)}
+  .it-cat.it-prop{background:rgba(232,184,75,0.16);color:var(--stage)}
+  .it-cat.it-costume{background:rgba(232,120,140,0.16);color:var(--costume)}
+  .it-who{font-size:11.5px;font-weight:700;color:#fff}
+  .pv{font-size:9px;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;padding:3px 7px;border-radius:8px}
+  .pv-script{background:rgba(143,207,154,0.16);color:var(--study)}
+  .pv-proposed{background:rgba(255,155,74,0.16);color:var(--perf)}
+  .it-cost{margin-left:auto;font-weight:700;color:var(--gold2);font-size:14px;white-space:nowrap}
+  .it-n{font-size:15px;line-height:1.42;color:var(--ink);margin-bottom:4px}
+  .it-note{font-size:12.5px;color:var(--dim);line-height:1.5;margin-bottom:9px}
+  .it-ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:9px}
+  .it-ctl label{display:flex;flex-direction:column;gap:4px;font-size:10.5px;letter-spacing:0.07em;
+    text-transform:uppercase;font-weight:700;color:var(--dim2)}
+  .it-ctl input,.it-ctl select{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.55);color:#fff;font:inherit;font-size:14px;text-transform:none;letter-spacing:0}
+  .it-ctl select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),
+    linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 18px,calc(100% - 11px) 18px;background-size:5px 5px;background-repeat:no-repeat}
+  /* Links. An item can hold several — a costume look is a top from one shop,
+     shoes from another. Saved ones are listed with a remove button; the field
+     underneath adds the next. There is an Add button because on a phone "blur
+     to commit" is not a thing anyone trusts. */
+  .lks{margin-top:11px;padding-top:10px;border-top:1px solid var(--line)}
+  .lks-h{font-size:10.5px;letter-spacing:0.07em;text-transform:uppercase;font-weight:700;
+    color:var(--dim2);margin-bottom:7px}
+  .lks-h b{color:var(--gold2)}
+  .lks-h .lks-tot{margin-left:auto;color:var(--gold2)}
+  .lks-h{display:flex;align-items:baseline;gap:8px}
+  .lks-l{list-style:none;margin:0 0 9px;padding:0;display:flex;flex-direction:column;gap:7px}
+  /* Each link is its own line with its own price and count. A costume look is
+     three shops, and one figure for the whole item could never say which of
+     them went up. */
+  .lkx{background:rgba(255,255,255,0.035);border:1px solid var(--line);
+    border-radius:10px;padding:8px 9px 9px 11px}
+  .lkx.priced{background:rgba(120,220,160,0.09);border-color:rgba(120,220,160,0.42)}
+  .lkx-top{display:flex;align-items:center;gap:8px}
+  .lkx-i{flex:0 0 auto;font-size:10.5px;font-weight:700;color:var(--dim2);min-width:11px}
+  .lkx.priced .lkx-i{color:#8FE3B4}
+  .lkx a{flex:1;min-width:0;font-size:12.5px;color:var(--gold3);text-decoration:none;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lkx.priced a{color:#CFF3DF}
+  .lkx a:hover{color:#fff;text-decoration:underline}
+  .lkx-x{flex:0 0 auto;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);
+    background:rgba(255,255,255,0.05);color:var(--dim);font:inherit;font-size:16px;line-height:1;
+    cursor:pointer;padding:0}
+  .lkx-x:hover{color:#FFB4B4;border-color:rgba(255,140,140,0.6)}
+  .lkx-n{display:flex;align-items:flex-end;gap:7px;margin-top:7px;padding-left:19px}
+  .lkx-n label{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:3px;
+    font-size:9.5px;letter-spacing:0.07em;text-transform:uppercase;font-weight:700;color:var(--dim2)}
+  .lkx-n input{width:100%;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.55);color:#fff;font:inherit;font-size:13.5px;
+    text-transform:none;letter-spacing:0}
+  .lkx-n label:last-of-type{flex:0 0 68px}
+  .lkx-c{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--dim2);padding-bottom:8px;
+    min-width:52px;text-align:right}
+  .lkx.priced .lkx-c{color:#8FE3B4}
+  .lks-note{font-size:11.5px;color:var(--dim2);line-height:1.5;margin:0 0 10px}
+  .lks-none{font-size:12px;color:var(--dim);margin:0}
+  .lk{display:block}
+  .lk>input[data-nl]{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.55);color:#fff;font:inherit;font-size:14px}
+  .lk-num{margin-top:6px}
+  .lk-num input{flex:1 1 0;min-width:0}
+  .lk-num input[data-nlq]{flex:0 0 64px}
+  /* The item-level price is still there and still saved; it just is not what
+     the item costs while the links carry prices. */
+  .it-ctl label.muted{opacity:0.45}
+  .lk-lab{display:block;font-size:10.5px;letter-spacing:0.07em;text-transform:uppercase;
+    font-weight:700;color:var(--dim2);margin-bottom:4px}
+  .lk-row{display:flex;gap:6px;align-items:stretch}
+  .lk-row input{flex:1;min-width:0;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(8,17,31,0.55);color:#fff;font:inherit;font-size:14px}
+  .lk-go{flex:0 0 auto;padding:0 14px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,0.07);color:var(--dim);font:inherit;font-size:12px;
+    font-weight:700;cursor:pointer;letter-spacing:0.04em}
+  .lk-go:hover{color:var(--gold2);border-color:rgba(232,184,75,0.5)}
+  .lk.bad .lk-row input{border-color:rgba(255,140,140,0.7);background:rgba(255,120,120,0.10)}
+  .lk.bad .lk-go{color:#FFB4B4;border-color:rgba(255,140,140,0.6)}
+
+  /* Per-item save. The row commits on blur too, but a button is what people
+     actually believe, and it confirms in place. */
+  .it-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px;
+    padding-top:10px;border-top:1px solid var(--line)}
+  .it-save{flex:0 0 auto;padding:9px 15px;border-radius:9px;border:0;font:inherit;font-size:13px;
+    font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1206}
+  .it-save:active{transform:translateY(1px)}
+  .it.just-saved{border-color:rgba(120,220,160,0.6);box-shadow:0 0 0 1px rgba(120,220,160,0.25)}
+  .it.just-saved .it-save{background:linear-gradient(135deg,#5FBF8A,#8FE3B4);color:#08210f}
+
+  /* Already emailed to Todd. Struck through and greyed everywhere it appears,
+     so nobody buys it twice, and frozen so nobody edits a price out from under
+     an order already in flight. */
+  .it.sent{border-color:rgba(255,255,255,0.10);background:rgba(8,17,31,0.35)}
+  .it.sent .it-n{color:var(--dim);text-decoration:line-through}
+  .it.sent .it-ctl input,.it.sent .it-ctl select{opacity:0.5;cursor:not-allowed}
+  .it-lock{font-size:11.5px;font-weight:700;letter-spacing:0.04em;color:#8FE3B4;
+    background:rgba(120,220,160,0.10);border:1px solid rgba(120,220,160,0.34);
+    border-radius:8px;padding:7px 10px;margin-bottom:9px}
+  .it-unlock{flex:0 0 auto;padding:9px 14px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,0.05);color:var(--dim);font:inherit;font-size:12.5px;
+    font-weight:700;cursor:pointer}
+  .it-unlock:hover{color:var(--gold2);border-color:rgba(232,184,75,0.5)}
+  .it-by{flex:1;min-width:0;font-size:11.5px;color:var(--study)}
+  .it-by b{color:#fff}
+
+  .budrow{align-items:baseline}
+  .budrow .kv-k{flex:0 0 auto;min-width:112px}
+  .budrow .kv-c{font-weight:700;color:var(--gold2);white-space:nowrap;margin-left:auto}
+  .budrow{cursor:pointer}
+  .budrow:hover .kv-k{color:var(--gold2)}
+
+  /* ── support tab ──────────────────────────────────────────────────── */
+  .crisis{background:rgba(255,120,120,0.08);border:1px solid rgba(255,140,140,0.4);
+    border-radius:14px;padding:15px 16px;margin:10px 0 22px}
+  #v-support .crisis h3{margin:0 0 12px;font-size:19px;color:#FFB4B4;
+    border-bottom:1px solid rgba(255,140,140,0.25);padding-bottom:9px}
+  .cr{display:flex;flex-direction:column;gap:2px;padding:12px 14px;margin-bottom:8px;border-radius:11px;
+    background:rgba(8,17,31,0.5);border:1px solid rgba(255,140,140,0.28);text-decoration:none}
+  .cr b{font-size:19px;color:#fff;font-variant-numeric:tabular-nums}
+  .cr span{font-size:12.5px;color:var(--dim);line-height:1.45}
+  .cr.urgent{border-color:rgba(255,140,140,0.6);background:rgba(255,120,120,0.12)}
+  .cr-note{font-size:13px;color:var(--dim);line-height:1.6;margin-top:10px}
+  .cr-note b{color:#fff}
+  #v-support h3{font-family:'Cormorant Garamond',serif;font-size:21px;color:var(--gold3);
+    margin:26px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .sup-p{font-size:13.5px;color:var(--dim);line-height:1.6;margin:0 0 12px}
+  .sup{display:flex;flex-direction:column;gap:9px}
+  .sup-i{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    font-size:13.5px;line-height:1.62;color:var(--dim)}
+  .sup-i b{color:#fff}
+  .sup-i a{color:var(--gold2)}
+
+  /* ── department budgets ───────────────────────────────────────────── */
+  .dept{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:9px}
+  .dept.over{border-color:rgba(255,140,140,0.5);background:rgba(255,120,120,0.07)}
+  .dept-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+  .dept-h b{font-size:15px;color:#fff}
+  .dept-h span{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .dept.over .bar i{background:linear-gradient(90deg,#C05050,#FF8C8C)}
+  .dept-f{font-size:12px;color:var(--dim2);margin-top:6px}
+  .over{color:#FFB4B4}
+  .under{color:var(--study)}
+  .ss-row b.over{color:#FFB4B4} .ss-row b.under{color:var(--study)}
+
+  /* ── bottom nav ───────────────────────────────────────────────────── */
+  .topbar{position:sticky;top:0;z-index:40;background:rgba(8,17,31,0.96);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar header{position:static;background:none;backdrop-filter:none;border-bottom:0;padding-bottom:8px}
+  /* Six tabs will not fit across a 390px phone, and squeezing them ran the
+     labels into each other. The row scrolls instead; on a wide screen there
+     is room for all of them, so they spread out and the scroll never shows. */
+  nav{display:flex;gap:4px;padding:0 8px 9px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  .navbtn{flex:0 0 auto;padding:9px 11px;border:0;background:none;font:inherit;font-size:13px;
+    font-weight:700;color:var(--dim2);cursor:pointer;border-radius:10px;letter-spacing:0;white-space:nowrap}
+  @media (min-width:700px){ nav{overflow-x:visible} .navbtn{flex:1 1 0;font-size:13.5px;padding:10px} }
+  .navbtn.sel{color:#1a1206;background:linear-gradient(135deg,var(--gold),var(--gold2))}
+
+  @media (min-width:720px){
+    body{padding-bottom:calc(32px + var(--safe-b))}
+    .view{max-width:760px;margin:0 auto}
+    header{padding:18px 22px 14px}
+    header h1{font-size:27px}
+    #dayChips{max-width:760px;margin:0 auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- Passcode is a curtain, not a lock: it keeps this page from being read by
+     anyone who stumbles on the URL. Nothing sensitive lives here. -->
+<div id="gate" class="show">
+  <div class="gate-box">
+    <h1>Sweeney Todd: School Edition</h1>
+    <p>Staff schedule. Enter the company word.</p>
+    <input id="gateWord" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="company word" aria-label="Company word">
+    <button id="gateGo" type="button">Open</button>
+    <div id="gateErr" role="alert"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+
+  <div class="topbar">
+  <header>
+    <div class="eyebrow">Aug 24 &ndash; Nov 1, 2026 &middot; Staff Only</div>
+    <h1>Sweeney Todd: School Edition</h1>
+    <div class="showbar">
+      <div class="bar"><i id="showFill" style="width:0%"></i></div>
+      <span id="showPct">0%</span>
+    </div>
+    <div class="showsub"><span id="showCount"></span><span id="showDays"></span></div>
+    <div id="syncNote"></div>
+  </header>
+
+  <nav>
+    <button class="navbtn sel" data-v="day" type="button">Schedule</button>
+    <button class="navbtn" data-v="scenes" type="button">Scenes</button>
+    <button class="navbtn" data-v="buy" type="button">Buy</button>
+    <button class="navbtn" data-v="budget" type="button">Cost</button>
+    <button class="navbtn" data-v="crews" type="button">Crews</button>
+    <button class="navbtn" data-v="strike" type="button">Strike</button>
+    <button class="navbtn" data-v="support" type="button">Support</button>
+  </nav>
+  </div>
+
+  <div id="dayChips"></div>
+
+  <section class="view on" id="v-day"><div id="day"></div></section>
+  <section class="view" id="v-scenes"><h3>Scene breakdown</h3><div id="scenes"></div></section>
+  <section class="view" id="v-scene1"><div id="sceneDetail"></div></section>
+  <section class="view" id="v-buy"><h3>Still to buy</h3><div id="buy"></div></section>
+  <section class="view" id="v-budget"><h3>Cost analysis</h3><div id="budget"></div></section>
+  <section class="view" id="v-crews"><div id="refCrews"></div></section>
+  <section class="view" id="v-strike"><h3>Strike</h3><div id="strike"></div></section>
+  <section class="view" id="v-support">
+
+    <div class="crisis">
+      <h3>If someone is in crisis right now</h3>
+      <a class="cr" href="tel:988"><b>988</b><span>Suicide &amp; Crisis Lifeline &middot; call or text, 24/7</span></a>
+      <a class="cr" href="sms:741741&body=HOME"><b>Text HOME to 741741</b><span>Crisis Text Line &middot; 24/7</span></a>
+      <a class="cr" href="tel:18664887386"><b>1-866-488-7386</b><span>The Trevor Project &middot; LGBTQ+ young people &middot; or text START to 678-678</span></a>
+      <a class="cr urgent" href="tel:911"><b>911</b><span>If there is immediate danger to life</span></a>
+      <p class="cr-note">Then tell <b>Katie Rivers</b>, our Director of Health and Safety and a Licensed
+      Clinical Social Worker, and tell <b>CJ</b>. Same day, not the next morning. Katie's role here is
+      safety and operations, not clinical care &mdash; a student who needs a therapist still needs an
+      outside referral.</p>
+    </div>
+
+    <h3>The hardware rules &mdash; non-negotiable</h3>
+    <p class="sup-p">This show has razors, a trick chair, a body chute and stage blood, performed by
+    teenagers. Every one of those is a planned, rehearsed effect or it does not happen.</p>
+    <div class="sup">
+      <div class="sup-i"><b>No sharpened blade ever enters the building.</b> Prop razors are blunted or retractable, live in locked storage, and are signed in and out of every call by one named tracker. A missing razor stops rehearsal until it is found.</div>
+      <div class="sup-i"><b>The chair and the chute are stage combat.</b> Choreographed, slow-tempo first (from 9/20), crash mat and a named spotter on every single run including tech. The full safety review on <b>Sun Oct 4</b> clears them for performance tempo &mdash; nothing unreviewed goes further.</div>
+      <div class="sup-i"><b>Blood is a planned effect.</b> One method, chosen early, tested on costume fabric before it goes near a performer, with a laundry cycle between performances.</div>
+      <div class="sup-i"><b>No flame anywhere.</b> The oven glows with LEDs. Lanterns are battery practicals. An extinguisher lives on the deck, and first aid plus eye wash live at the trap.</div>
+      <div class="sup-i"><b>The same two named people run the chair and spot the trap at every performance.</b> No substitutions without a rehearsed handoff.</div>
+    </div>
+
+    <h3>The violence, and the Poor Thing flashback</h3>
+    <p class="sup-p">The murders are choreography. The flashback in Act I Sc 2 depicts an assault,
+    performed by minors, and it is staged with the same protocol as intimacy: like a fight &mdash;
+    choreographed, repeatable, and consented to every single time.</p>
+    <div class="sup">
+      <div class="sup-i"><b>Closed call.</b> Only the performers involved, the choreographer who owns the staging, and one other adult.</div>
+      <div class="sup-i"><b>Choreograph it exactly.</b> Where the hands go, how long, how it ends. Nothing improvised, nothing "found in the moment."</div>
+      <div class="sup-i"><b>Consent is asked before every call, not once.</b> Yes yesterday is not yes today.</div>
+      <div class="sup-i"><b>Either performer can stop or renegotiate at any point</b>, with no explanation owed and no consequence to their role.</div>
+      <div class="sup-i"><b>Parents know how these moments are staged before the first rehearsal of them</b>, not after they see the show.</div>
+    </div>
+
+    <h3>How we talk about it, on stage and off</h3>
+    <div class="sup">
+      <div class="sup-i"><b>The show is about what revenge does to the person carrying it.</b> The murders are consequences &mdash; not comedy, not cool &mdash; and our publicity does not glamorise the razor.</div>
+      <div class="sup-i"><b>What happens in a rehearsal about an assault or a murder does not become a group chat.</b> We do not joke about the subject matter in the room.</div>
+      <div class="sup-i"><b>The School Edition exists so young companies can do this show.</b> Trust its cuts. We do not add material back &mdash; that is also the licence.</div>
+      <div class="sup-i"><b>Content notes go to families before tickets go on sale:</b> stage violence, stage blood, themes of revenge and loss. No surprises in the house.</div>
+    </div>
+
+    <h3>If a student tells you something</h3>
+    <div class="sup">
+      <div class="sup-i"><b>Stay with them.</b> Do not leave them alone to go find someone. Bring the help to them, or take them with you.</div>
+      <div class="sup-i"><b>You are not their therapist, and you should not try to be.</b> Listen, take it seriously, hand it to Katie. That is enough. That is the whole job.</div>
+      <div class="sup-i"><b>Do not promise to keep it secret.</b> Say: "I care too much about you to keep this to myself. I am going to bring in someone who can help, and I will tell you who." Then do exactly that.</div>
+      <div class="sup-i"><b>Write it down.</b> As soon as you are out of the room, in their words, with the time and who else was present.</div>
+      <div class="sup-i"><b>Then hand off, same day.</b> Katie first, CJ second. Do not carry it home and do not sit on it over a weekend.</div>
+    </div>
+
+    <h3>Getting out of the material</h3>
+    <p class="sup-p">Todd, Lovett, the Beggar Woman and Toby spend eight weeks inside obsession, grief
+    and violence. Teenagers do not automatically leave that at the door.</p>
+    <div class="sup">
+      <div class="sup-i"><b>Close every heavy call properly.</b> A minute at the end, out of character, in their own name: what they are taking home and what they are leaving here.</div>
+      <div class="sup-i"><b>Check in on Todd, Lovett, the Beggar Woman and Young Lucy by name.</b> A real question, from an adult, once a week, in private &mdash; not "you okay?" in a corridor.</div>
+      <div class="sup-i"><b>Watch the ensemble members inside the dark material with no acting task to hold on to.</b> Sitting through the bakehouse scene for the fifth time is its own weight.</div>
+      <div class="sup-i"><b>Tech week is when it surfaces.</b> Long days, tired kids, the effects at full volume for the first time. Watch harder that week, not less.</div>
+    </div>
+
+    <h3>Signs worth acting on</h3>
+    <div class="sup">
+      <div class="sup-i">Talking or writing about wanting to die, being a burden, or having no way out &mdash; including in a joke.</div>
+      <div class="sup-i">Withdrawing from the company, or a sudden change in someone who had been fine.</div>
+      <div class="sup-i">Sleep gone, eating gone, appearance changed noticeably across the run.</div>
+      <div class="sup-i">A student identifying hard with Todd's rage or the Beggar Woman's ruin in a way that stops feeling like acting.</div>
+      <div class="sup-i" style="color:var(--gold3)">If you are not sure whether it counts, it counts. Tell Katie. Being wrong costs a five-minute conversation.</div>
+    </div>
+
+    <h3>Where to read more</h3>
+    <div class="sup">
+      <div class="sup-i"><b><a href="https://afsp.org" target="_blank" rel="noopener">American Foundation for Suicide Prevention</a></b> &mdash; "Talk Saves Lives" and safe-messaging guidance for staff.</div>
+      <div class="sup-i"><b><a href="https://988lifeline.org" target="_blank" rel="noopener">988 Lifeline</a></b> &mdash; what happens when you call, so you can tell a student honestly.</div>
+      <div class="sup-i"><b><a href="https://jedfoundation.org" target="_blank" rel="noopener">The Jed Foundation</a></b> &mdash; teen and young adult mental health, written for the adults around them.</div>
+      <div class="sup-i"><b>MTI</b> &mdash; the School Edition materials ship with production guidance for this title. If it is not in our packet, ring (212) 541-4684 and ask.</div>
+    </div>
+
+    <div class="crisis" style="margin-top:22px">
+      <h3>For the adults</h3>
+      <p class="cr-note" style="margin-top:0">Running a show about violence is heavy for staff too.
+      Nobody has to work on material that is not safe for them to work on. Tell CJ and it will be
+      handled quietly, without a reason being asked for.</p>
+    </div>
+
+  </section>
+
+  <datalist id="vendorList">
+    <option value="Amazon"><option value="In stock"><option value="Build in shop">
+    <option value="Facebook Marketplace"><option value="Thrift / consignment">
+    <option value="Local store"><option value="Borrowed">
+  </datalist>
+
+  <!-- Filled from the roster, so a strike job can be claimed by picking a name
+       rather than spelling it. Still a free field: parents and alumni turn up
+       to strike and none of them are on the company list. -->
+  <datalist id="strikeWho"></datalist>
+
+
+</div>
+
+<script src="/sweeney/data.js"></script>
+<script src="/sweeney/scenes.js"></script>
+<script src="/sweeney/app.js"></script>
+</body>
+</html>

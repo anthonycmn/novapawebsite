@@ -251,7 +251,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <div class="audition-banner-text">
      <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Registration Now Open</div>
      <div class="audition-banner-title">Broadway Bound <span>Shows and Camps</span></div>
-     <div class="audition-banner-sub">Get up to 20% off through Saturday, August 15.</div>
+     <div class="audition-banner-sub">Every child after the first saves 5%.</div>
     </div>
     <div class="audition-banner-cta">
      <span>Register Now</span>
@@ -331,69 +331,28 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 // Weekly recurring classes: [dayOfWeek(0=Sun), timeLabel, className, agesLabel, discipline]
 // These repeat every week classes are in session (Sep 14 2026 – Jun 11 2027, minus breaks)
 const WEEKLY_CLASSES = [
-  // Generated from staff_portal.classes by `npm run gen:site-calendar`.
-  // Do not hand-edit the rows below: the portal is the source of truth for
-  // the weekly timetable, so a correction made here is a correction that
-  // disappears the next time anybody regenerates. Fix it in the portal.
-  // MONDAY
-  [1,'9:30–10:15am','Parent & Me Dance','Ages 2–4','Dance'],
-  [1,'10:30–11:15am','Pre-Ballet & Mini Movers','Ages 4–5','Dance'],
-  [1,'5:00–6:00pm','Ballet for Musical Theatre','Ages 5–8','Dance'],
-  [1,'6:00–7:00pm','Acting','Ages 5–8','Theatre'],
-  [1,'6:00–7:00pm','Ballet for Musical Theatre I','Ages 9–11','Dance'],
-  [1,'7:00–8:00pm','Ballet for Musical Theatre II','Ages 9–11','Dance'],
+  // Weekly classes, matched to the registration portal (16 Aug 2026).
+  // Anything not sold in /register/ does not belong here — a family reading
+  // this grid is reading a schedule they expect to be able to book.
+  [1,'6:00–6:55pm','Acting','Ages 5–8','Theatre'],
   [1,'7:00–8:30pm','Triple Threat Musical Theatre Training','Ages 13–17','Voice'],
-  [1,'8:00–8:50pm','Film & TV Class','Ages 11–17','Film/TV'],
-  // TUESDAY
-  [2,'9:30–10:15am','Tots Dance – Tap & Tumble','Ages 3–5','Dance'],
-  [2,'5:00–6:00pm','Musical Theatre','Ages 5–8','Musical Theatre'],
-  [2,'6:05–6:55pm','K-Pop Dance','Ages 5–8','Dance'],
-  [2,'7:00–8:00pm','Musical Theatre Dance','Ages 13–17','Musical Theatre'],
-  [2,'7:30–8:30pm','Adult Acting Class','Ages 18+','Theatre'],
-  [2,'8:00–9:00pm','Musical Theatre Acting','Ages 13–17','Musical Theatre'],
-  [2,'9:00–9:50pm','Adult Voice & Choir','Ages 18+','Voice'],
-  // WEDNESDAY
-  [3,'1:00–2:00pm','Homeschool Musical Theatre','Ages 9–13','Musical Theatre'],
-  [3,'2:00–3:00pm','Homeschool Theatre','Ages 9–13','Theatre'],
-  [3,'5:15–6:15pm','Acting','Ages 9–12','Theatre'],
-  [3,'6:00–7:00pm','Triple Threat Musical Theatre Training','Ages 13–17','Voice'],
-  [3,'6:15–7:15pm','Musical Theatre Dance','Ages 9–12','Musical Theatre'],
-  [3,'7:15–8:05pm','Bollywood Dance','Ages 10–12','Dance'],
-  [3,'7:15–8:15pm','Musical Theatre Acting','Ages 9–12','Musical Theatre'],
-  // THURSDAY
-  [4,'9:30–10:15am','Tots Dance – Ballet Morning','Ages 2–4','Dance'],
-  [4,'10:30–11:15am','Tiny Tots Improv & Play','Ages 4–6','Theatre'],
-  [4,'5:00–5:50pm','Boys Hip-Hop & Street Dance','Ages 7–14','Dance'],
-  [4,'5:00–6:00pm','Hip-Hop for Musical Theatre','Ages 5–8','Dance'],
-  [4,'5:00–5:50pm','MT/Jazz','Ages 5–8','Musical Theatre'],
-  [4,'6:00–7:00pm','Hip-Hop for Musical Theatre','Ages 9–12','Dance'],
-  [4,'6:30–7:30pm','Improv for Actors','Ages 9–12','Theatre'],
-  [4,'6:30–7:50pm','Technical Theatre','Ages 12+','Design / Tech'],
-  [4,'7:00–8:20pm','Teen Conservatory','Ages 13–18','Conservatory'],
-  [4,'7:30–8:30pm','Adult Dance for Musical Theatre','Ages 18+','Dance'],
-  [4,'7:30–8:30pm','Improv for Actors','Ages 13–17','Theatre'],
-  [4,'8:30–9:30pm','Adult Acting & Improv','Ages 18+','Theatre'],
-  // SATURDAY
-  [6,'9:00–10:00am','Adult Musical Theatre Class','Ages 18+','Musical Theatre'],
-  [6,'9:00–9:50am','Ballet','Ages 5–8','Dance'],
-  [6,'9:00–11:00am','Technical Theatre Lab','Ages 12–17','Design / Tech'],
-  [6,'9:00am–1:00pm','Teen Conservatory','Ages 13–18','Conservatory'],
-  [6,'10:00–11:00am','Acting','Ages 5–8','Theatre'],
-  [6,'10:00–11:30am','Improv Theatre Troupe','Ages 13+','Theatre'],
-  [6,'10:00–10:50am','K-Pop Dance','Ages 5–8','Dance'],
-  [6,'11:00am–12:00pm','K-Pop Stage Performance','Ages 9–12','Dance'],
-  [6,'11:00am–12:00pm','Musical Theatre','Ages 5–8','Musical Theatre'],
-  [6,'12:00–1:00pm','Acting & Musical Theatre','Ages 9–12','Musical Theatre'],
-  [6,'12:00–1:30pm','Junior Thespian Troupe','Ages 10–17','Theatre'],
-  // ---- not classes, and therefore kept by hand ----------------------------
-  // Production rehearsals. They are deliberately absent from
-  // staff_portal.classes, which models a production once with its own
-  // assignments and schedule — listing them as weekly classes would give each
-  // show a second, rival existence. They stay here because a family reading
-  // this page wants to know when the building is busy.
+  [2,'5:00–5:50pm','Musical Theatre','Ages 5–8','Musical Theatre'],
   [2,'6:15–7:45pm','Broadway Bound Jr. Rehearsal','Ages 9–12','Production'],
+  [2,'7:00–7:50pm','Musical Theatre Dance','Ages 13–17','Musical Theatre'],
+  [2,'7:30–8:20pm','Adult Acting Class','Ages 18+','Theatre'],
+  [2,'8:00–8:50pm','Musical Theatre Acting','Ages 13–17','Musical Theatre'],
+  [3,'1:00–1:50pm','Homeschool Musical Theatre','Ages 9–13','Musical Theatre'],
+  [3,'2:00–2:50pm','Homeschool Theatre','Ages 9–13','Theatre'],
+  [3,'5:15–6:05pm','Acting','Ages 9–12','Theatre'],
   [3,'5:15–6:45pm','Broadway Bound Kids Rehearsal','Ages 5–9','Production'],
+  [3,'6:15–7:05pm','Musical Theatre Dance','Ages 9–12','Musical Theatre'],
   [3,'7:00–9:00pm','Teen Conservatory Rehearsal','Ages 13–18','Production'],
+  [3,'7:15–8:05pm','Musical Theatre Acting','Ages 9–12','Musical Theatre'],
+  [4,'6:30–7:20pm','Improv for Actors','Ages 9–12','Theatre'],
+  [4,'7:00–8:20pm','Teen Conservatory','Ages 13–18','Conservatory'],
+  [4,'7:30–8:20pm','Improv for Actors','Ages 13–17','Theatre'],
+  [6,'9:00am–1:00pm','Teen Conservatory','Ages 13–18','Conservatory'],
+  [6,'12:00–12:50pm','Acting & Musical Theatre','Ages 9–12','Musical Theatre']
 ];
 
 // Class session date ranges (start inclusive, end inclusive)
@@ -1218,7 +1177,7 @@ buildList();
     // === Classes / Disciplines ===
     classes: {
       keywords: ['classes', 'class', 'what do you teach', 'disciplines', 'discipline', 'lessons', 'training', 'schedule', 'weekly', 'curriculum'],
-      response: `<strong>Weekly classes Monday through Saturday, September–June 🎭</strong><br><br><strong>What we teach:</strong><br>• 💃 <strong>Dance</strong> — Ballet, Tap, Jazz (Ages 2+)<br>• 🎭 <strong>Theatre</strong> — Acting, Scene Study (Ages 5+)<br>• 🎵 <strong>Voice</strong> — Vocal Technique, Triple Threat (Ages 8+)<br>• 🎪 <strong>Musical Theatre</strong> — Song & Dance (Ages 5+)<br>• 🎬 <strong>Film & TV</strong> — On-Camera Acting (Ages 11+)<br>• 🔧 <strong>Technical Theatre</strong> — Set, Lights, Sound, Stage Crew (Ages 10+)<br><br><strong>By age:</strong><br>• <strong>Tiny Tots</strong> (2–5) — Parent & Me, Pre-Ballet, Mini Movers<br>• <strong>Ages 5–8</strong> — Ballet, Acting, MT, Dance<br>• <strong>Ages 9–12</strong> — Ballet I & II, Acting, Voice, MT<br>• <strong>Ages 13–17</strong> — Conservatory Track, Voice & Triple Threat, Film & TV<br>• <strong>Adults 18+</strong> — Acting Fundamentals, Dance, MT<br><br>👉 <a href="https://www.northernvirginiaperformingarts.org/classes">View full schedule →</a>`
+      response: `<strong>Weekly classes Monday through Saturday, September–June — $90/month per class</strong><br><br><strong>What we teach:</strong><br>• <strong>Theatre &amp; Acting</strong> — Acting, Improv for Actors, Homeschool Theatre<br>• <strong>Musical Theatre</strong> — Musical Theatre, Musical Theatre Dance, Musical Theatre Acting, Acting &amp; Musical Theatre, Homeschool Musical Theatre<br>• <strong>Triple Threat</strong> — Triple Threat Musical Theatre Training<br><br><strong>By age:</strong><br>• <strong>Ages 5–8</strong> — Acting (Mondays), Musical Theatre (Tuesdays)<br>• <strong>Ages 9–12</strong> — Acting, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors, Acting &amp; Musical Theatre<br>• <strong>Ages 9–13</strong> — Daytime homeschool classes (Wednesdays)<br>• <strong>Ages 13–17</strong> — Triple Threat Musical Theatre Training, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors<br>• <strong>Adults 18+</strong> — Adult Acting Class (Tuesdays)<br><br><a href="https://www.northernvirginiaperformingarts.org/classes">View full schedule →</a>`
     },
 
     // === Shows / Productions ===
@@ -1230,7 +1189,7 @@ buildList();
     // === Ages / Who can join ===
     ages: {
       keywords: ['age', 'ages', 'how old', 'tiny tots', 'toddler', 'preschool', 'kids', 'children', 'teens', 'adult', 'adults', 'too old', 'too young'],
-      response: `<strong>Programs for every age! 🎭</strong><br><br>• <strong>Tiny Tots (2–5)</strong> — Parent & Me, Pre-Ballet, Mini Movers<br>• <strong>Ages 5–8</strong> — Ballet, Acting, Musical Theatre, Dance<br>• <strong>Ages 9–12</strong> — Ballet I & II, Acting, Voice, Musical Theatre<br>• <strong>Ages 13–17</strong> — Conservatory Track, Voice & Triple Threat, Film & TV<br>• <strong>Adults 18+</strong> — Acting Fundamentals, Dance, Musical Theatre, Spring Cabaret<br><br>It's never too late (or too early!) to take the stage. 🌟<br><br>What age group can I tell you more about?`
+      response: `<strong>Programs for every age</strong><br><br>• <strong>Ages 5–8</strong> — Acting (Mondays), Musical Theatre (Tuesdays)<br>• <strong>Ages 9–12</strong> — Acting, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors, Acting &amp; Musical Theatre<br>• <strong>Ages 9–13</strong> — Daytime homeschool theatre and musical theatre (Wednesdays)<br>• <strong>Ages 13–17</strong> — Triple Threat Musical Theatre Training, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors<br>• <strong>Adults 18+</strong> — Adult Acting Class (Tuesdays)<br><br>Classes start at age 5. Younger performers are welcome at our summer day camps.<br><br>What age group can I tell you more about?`
     },
 
     // === Adult programs ===
@@ -1284,7 +1243,7 @@ buildList();
     // === About NoVAPA ===
     about: {
       keywords: ['about', 'who are you', 'what is novapa', 'what is nvpa', 'northern virginia performing arts', 'tell me about', 'history', 'mission'],
-      response: `<strong>About Northern Virginia Performing Arts (NoVAPA) ✨</strong><br><br>We're Northern Virginia's most passionate performing arts conservatory — offering dance, theatre, voice, musical theatre, and film training from Tiny Tots to adult performers.<br><br><strong>Our Mission:</strong> <em>Create. Belong. Inspire.</em><br><br>Changing lives & building futures. It's more than a show.<br><br>From first steps on stage to professional-level conservatory training — every program is built to ignite a lifelong love of performing arts.<br><br>Want to explore a specific program?`
+      response: `<strong>About Northern Virginia Performing Arts (NoVAPA) ✨</strong><br><br>We're Northern Virginia's most passionate performing arts conservatory — offering acting, musical theatre, and performance training for ages 5 to adult.<br><br><strong>Our Mission:</strong> <em>Create. Belong. Inspire.</em><br><br>Changing lives & building futures. It's more than a show.<br><br>From first steps on stage to professional-level conservatory training — every program is built to ignite a lifelong love of performing arts.<br><br>Want to explore a specific program?`
     }
   };
 
