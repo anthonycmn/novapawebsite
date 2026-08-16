@@ -107,6 +107,9 @@
     margin-top:12px;
   }
   .minor { background:none; border:0; color:var(--ink-dim); font-size:13px; text-decoration:underline; cursor:pointer; display:block; margin:14px auto 0; font-family:inherit; }
+  .codeNote { font-size:14px; color:var(--ink-dim); margin:0 0 12px; }
+  .codeNote a { color:inherit; }
+  .gHint { font-size:12px; color:var(--ink-dim); text-align:center; margin:8px 0 0; }
   .err { color:var(--danger); font-size:13.5px; margin-top:10px; min-height:17px; }
   .ok { color:#5BC98C; font-size:13.5px; margin-top:10px; }
   .toggle { display:flex; justify-content:center; gap:8px; margin-bottom:18px; }
@@ -763,18 +766,44 @@
   <p class="sub" id="subFallback">Everything your family is registered for.</p>
   <div class="stats" id="stats" style="display:none"></div>
 
-  <!-- Login -->
+  <!-- Login: email first, then the card decides which sign-in applies -->
   <div class="card" id="authCard" style="display:none">
-    <input type="email" id="email" placeholder="Email address" autocomplete="email">
-    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-    <button class="btn" id="loginBtn">LOG IN</button>
+    <div id="aEmail">
+      <input type="email" id="email" placeholder="Email address" autocomplete="email">
+      <button class="btn" id="contBtn">CONTINUE</button>
+    </div>
+    <div id="aPw" style="display:none">
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+      <button class="btn" id="loginBtn">LOG IN</button>
+      <button class="minor" id="codeBtn">Email me a sign-in code instead</button>
+      <button class="minor" id="forgotBtn">Forgot password?</button>
+    </div>
+    <div id="aCode" style="display:none">
+      <p class="codeNote">Enter the 8 digit code we emailed to <b id="codeSentTo"></b>.</p>
+      <input type="text" id="codeInput" inputmode="numeric" autocomplete="one-time-code" placeholder="8 digit code">
+      <button class="btn" id="codeGo">SIGN IN</button>
+      <button class="minor" id="resendCode">Resend code</button>
+    </div>
+    <div id="aNew" style="display:none">
+      <p class="codeNote">We couldn't find that email. Try the address from your registration confirmation, or <a href="/register/">register here</a>.</p>
+    </div>
+    <button class="minor" id="backBtn" style="display:none">Use a different email</button>
     <button class="btn google" id="googleBtn">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C41.4 35.4 44 30.1 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
       Sign in with Google
     </button>
-    <button class="minor" id="firstTimeBtn">First time here? Set up your password</button>
+    <p class="gHint">Use the same email you registered with.</p>
     <div class="err" id="authErr"></div>
     <div class="ok" id="authOk"></div>
+  </div>
+
+  <!-- Optional password, offered once after a code sign-in -->
+  <div class="card" id="nudge" style="display:none">
+    <p class="codeNote">Want a password for next time? Optional.</p>
+    <input type="password" id="nudgePw" placeholder="New password (8+ characters)" autocomplete="new-password">
+    <button class="btn" id="nudgeSave">SAVE PASSWORD</button>
+    <button class="minor" id="nudgeSkip">Skip</button>
+    <div class="err" id="nudgeErr"></div>
   </div>
 
   <!-- Registrations -->
@@ -1013,44 +1042,119 @@
     $('list').innerHTML = '';
     $('toggle').style.display = 'none';
     $('authCard').style.display = 'block';
+    authStep('aEmail');
     $('authErr').textContent = msg && msg !== 'sign in required' ? msg : '';
   }
 
   function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
+  // Email first, then the card decides. The probe (reg-account action:probe)
+  // answers "does this email exist, and does it have a password" — so an
+  // OTP-era family is routed straight to the code flow they already know,
+  // and never has to guess whether they count as "first time".
+  var PROBE = null;
+
+  function authMsg(err, ok){ $('authErr').textContent = err || ''; $('authOk').textContent = ok || ''; }
+  function authStep(step){
+    ['aEmail','aPw','aCode','aNew'].forEach(function(id){ $(id).style.display = id === step ? '' : 'none'; });
+    $('backBtn').style.display = step === 'aEmail' ? 'none' : '';
+    authMsg('', '');
+  }
+  function theEmail(){ return $('email').value.trim().toLowerCase(); }
+
+  function sendCode(){
+    sb.auth.signInWithOtp({
+      email: theEmail(),
+      options: { shouldCreateUser: false, emailRedirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html') }
+    }).then(function(res){
+      if (res.error) { authMsg(res.error.message || 'Could not send the code. Try again shortly.'); return; }
+      $('codeSentTo').textContent = theEmail();
+      authStep('aCode');
+      $('codeInput').focus();
+    });
+  }
+
+  $('contBtn').onclick = function(){
+    if (!validEmail(theEmail())) { authMsg('Enter a valid email.'); return; }
+    var b = this; b.disabled = true; b.textContent = 'ONE MOMENT…';
+    fetch('/api/reg-account', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'probe', email: theEmail() })
+    }).then(function(r){ return r.json(); }).then(function(p){
+      b.disabled = false; b.textContent = 'CONTINUE';
+      PROBE = p;
+      if (!p.known) { authStep('aNew'); return; }
+      if (p.password) { authStep('aPw'); $('password').focus(); return; }
+      sendCode();
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'CONTINUE';
+      authMsg('Something went wrong. Try again.');
+    });
+  };
+  $('email').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('contBtn').click(); });
+
   $('loginBtn').onclick = function(){
-    var email = $('email').value.trim().toLowerCase(), pw = $('password').value;
-    $('authOk').textContent = '';
-    if (!validEmail(email)) { $('authErr').textContent = 'Enter a valid email.'; return; }
-    if (!pw) { $('authErr').textContent = 'Enter your password, or use "First time here" below.'; return; }
+    if (!$('password').value) { authMsg('Enter your password.'); return; }
     var b = this; b.disabled = true; b.textContent = 'LOGGING IN…';
-    sb.auth.signInWithPassword({ email: email, password: pw }).then(function(res){
+    sb.auth.signInWithPassword({ email: theEmail(), password: $('password').value }).then(function(res){
       b.disabled = false; b.textContent = 'LOG IN';
-      if (res.error) { $('authErr').textContent = 'That login didn\'t work. If you haven\'t set a password yet, use "First time here" below.'; return; }
+      if (res.error) { authMsg('That password didn\'t work. You can email yourself a sign-in code instead.'); return; }
       load(res.data.session.access_token);
     });
   };
+  $('password').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('loginBtn').click(); });
 
-  // First-time password setup: brand-new emails get an account immediately;
-  // families who already exist (OTP-era accounts) get a set-password email.
-  $('firstTimeBtn').onclick = function(){
-    var email = $('email').value.trim().toLowerCase(), pw = $('password').value;
-    $('authOk').textContent = ''; $('authErr').textContent = '';
-    if (!validEmail(email)) { $('authErr').textContent = 'Enter your email above first.'; return; }
-    if (!pw || pw.length < 8) { $('authErr').textContent = 'Type the password you want (8+ characters) above, then tap this again.'; return; }
-    var b = this; b.disabled = true;
-    sb.auth.signUp({ email: email, password: pw }).then(function(res){
-      if (!res.error && res.data.session) { b.disabled = false; load(res.data.session.access_token); return; }
-      // Existing account (or confirmation required): fall back to an emailed
-      // set-password link that lands back here.
-      sb.auth.resetPasswordForEmail(email, {
-        redirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html')
-      }).then(function(r2){
-        b.disabled = false;
-        if (r2.error) { $('authErr').textContent = r2.error.message; return; }
-        $('authOk').textContent = 'Check your email! Follow the link there once and your password will be active.';
-      });
+  $('codeBtn').onclick = function(){ sendCode(); };
+  $('forgotBtn').onclick = function(){
+    sb.auth.resetPasswordForEmail(theEmail(), {
+      redirectTo: location.origin + '/register/signin.html?next=' + encodeURIComponent('/register/account.html')
+    }).then(function(r){
+      if (r.error) { authMsg(r.error.message); return; }
+      authMsg('', 'Check your email for a reset link.');
     });
+  };
+
+  $('codeGo').onclick = function(){
+    var token = ($('codeInput').value || '').replace(/\D/g, '');
+    // OTP length is a project setting (8 digits here) — accept a range.
+    if (token.length < 6 || token.length > 12) { authMsg('Enter the code exactly as it appears in the email.'); return; }
+    var b = this; b.disabled = true;
+    sb.auth.verifyOtp({ email: theEmail(), token: token, type: 'email' }).then(function(res){
+      b.disabled = false;
+      if (res.error) {
+        authMsg(/expired|invalid/i.test(res.error.message || '')
+          ? 'That code has expired or does not match. Resend and try again.'
+          : (res.error.message || 'That did not work.'));
+        return;
+      }
+      offerPassword();
+      load(res.data.session.access_token);
+    });
+  };
+  $('codeInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('codeGo').click(); });
+  $('resendCode').onclick = function(){ sendCode(); authMsg('', 'New code sent.'); };
+  $('backBtn').onclick = function(){ authStep('aEmail'); $('email').focus(); };
+
+  // Optional password after a code sign-in — offered once, never required.
+  function offerPassword(){
+    try { if (localStorage.getItem('nv_pw_nudge')) return; } catch(e){}
+    if (PROBE && PROBE.password) return;
+    $('nudge').style.display = '';
+  }
+  $('nudgeSave').onclick = function(){
+    var pw = $('nudgePw').value;
+    if (!pw || pw.length < 8) { $('nudgeErr').textContent = '8 characters or more.'; return; }
+    var b = this; b.disabled = true;
+    sb.auth.updateUser({ password: pw }).then(function(res){
+      b.disabled = false;
+      if (res.error) { $('nudgeErr').textContent = res.error.message; return; }
+      try { localStorage.setItem('nv_pw_nudge', '1'); } catch(e){}
+      $('nudge').style.display = 'none';
+    });
+  };
+  $('nudgeSkip').onclick = function(){
+    try { localStorage.setItem('nv_pw_nudge', '1'); } catch(e){}
+    $('nudge').style.display = 'none';
   };
 
   $('googleBtn').onclick = function(){

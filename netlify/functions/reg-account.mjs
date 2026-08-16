@@ -113,6 +113,28 @@ export default async (req) => {
   let email = "";
   let body = {};
   try { body = await req.json(); } catch {}
+
+  // Unauthenticated probe for the email-first login card: which sign-in
+  // options apply to this address? Returns only { known, password } — the
+  // same information the checkout flow already reveals about an email.
+  if (body.action === "probe") {
+    const probeEmail = String(body.email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(probeEmail))
+      return Response.json({ error: "bad email" }, { status: 400 });
+    try {
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/auth_probe`, {
+        method: "POST",
+        headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_email: probeEmail }),
+      });
+      if (!r.ok) throw new Error(`probe ${r.status}`);
+      return Response.json(await r.json());
+    } catch (e) {
+      console.error("reg-account probe", e);
+      return Response.json({ error: "server error" }, { status: 500 });
+    }
+  }
   if (body.portal_token && /^[0-9a-f-]{36}$/.test(body.portal_token)) {
     const fams = await svc(`families?select=email&portal_token=eq.${body.portal_token}&limit=1`);
     email = (fams[0]?.email || "").toLowerCase();
