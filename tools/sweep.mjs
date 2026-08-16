@@ -86,6 +86,55 @@ const visible = (s) => s
   .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&rsquo;/g, '’')
   .replace(/\s+/g, ' ');
 
+// Script copy is conditional, and a flat text scan cannot tell a live promise
+// from one already behind a date gate. Blank the parts of each function that
+// only run while the sale is on, so the checks below stop reporting copy that
+// is already gated (register/index.html, 16 Aug 2026).
+//
+// Two things gate a line, and it must be both, not either: an early-return
+// `if (!saleOn()) return` makes everything BELOW it sale-only, and a saleOn()
+// ternary gates the branches just under it. Blanking the whole function
+// instead — the first thing tried here — hid the very bug this check exists
+// to find, because the ungated line shared a function with an unrelated gate.
+const ungated = (s) => {
+  let out = s;
+  for (const m of [...s.matchAll(/\bfunction\s+\w*\s*\([^)]*\)\s*\{/g)]) {
+    const open = m.index + m[0].length - 1;
+    let depth = 0, i = open, q = null;
+    for (; i < s.length; i++) {
+      const c = s[i];
+      if (q) { if (c === '\\') i++; else if (c === q) q = null; continue; }
+      if (c === '"' || c === "'") { q = c; continue; }
+      if (c === '{') depth++;
+      else if (c === '}' && --depth === 0) break;
+    }
+    if (i >= s.length) continue;
+    // Read from the copy already masked, not the original: a nested function
+    // declared below a gate would otherwise splice its own unmasked body back
+    // over the outer function's mask (nudge() inside updateTicker).
+    let body = out.slice(open, i + 1);
+    // Judge gating on code only. A comment that merely explains a gate is not
+    // one, and a comment naming saleOn() next to ungated copy would otherwise
+    // suppress the finding — the failure mode this check was written for.
+    let bare = body
+      .replace(/\/\/[^\n]*/g, (c) => ' '.repeat(c.length))
+      .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+    const guard = bare.search(/if\s*\(\s*!\s*saleOn\s*\(\s*\)\s*\)[^\n]*return/);
+    if (guard >= 0) {
+      body = body.slice(0, guard) + ' '.repeat(body.length - guard);
+      bare = bare.slice(0, guard) + ' '.repeat(bare.length - guard);
+    }
+    const lines = body.split('\n');
+    const bareLines = bare.split('\n');
+    body = lines
+      .map((ln, n) => (/\bsaleOn\s*\(/.test(bareLines.slice(Math.max(0, n - 3), n + 1).join('\n'))
+        ? ' '.repeat(ln.length) : ln))
+      .join('\n');
+    out = out.slice(0, open) + body + out.slice(i + 1);
+  }
+  return out;
+};
+
 const findings = [];
 const fixed = [];
 // level: 'fix'  — one provably right answer, --fix applies it
@@ -177,8 +226,18 @@ if (salePages.length) {
 // percentages come straight from perKidRate(), which returns 0 the moment
 // EARLYBIRD_END passes, so "15% off each" is as perishable as "through
 // August 15" and was sitting on two pages with no date on it at all.
-const TIER_COPY = /Off One Show|Each for Two Shows|Each for Three Shows|Save <span[^>]*>15% OFF|Register for Both &mdash; Save|save 15% on each|20% off everything/i;
-const tierPages = htmlFiles().filter((f) => TIER_COPY.test(read(f)));
+// Hand-listed phrases missed the real thing twice: the ungated line found on
+// 16 Aug read "save 15% on everything", which was on none of them. Match the
+// shape of a tier promise — a percentage off a multi-item purchase — instead
+// of the wordings that happened to exist when this was written.
+const TIER_COPY = new RegExp([
+  'sav(?:e|ing) \\d{1,2}% on',
+  '\\d{1,2}% off (?:both|each|all|everything|the second|the third)',
+  'Off One Show', 'Each for Two Shows', 'Each for Three Shows',
+  'Save <span[^>]*>\\d{1,2}% OFF',
+  'Register for Both &mdash; Save',
+].join('|'), 'i');
+const tierPages = htmlFiles().filter((f) => TIER_COPY.test(ungated(read(f))));
 if (tierPages.length) {
   add(NOW > EARLYBIRD_END ? 'ask' : 'watch', 'sale',
     'these pages advertise the multi-show discount tiers. They are paid by ' +
