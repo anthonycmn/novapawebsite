@@ -246,7 +246,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
 <section class="sc-hero sc-wrap">
   <div class="sc-eyebrow">Broadway Bound Summer Camp</div>
   <h1 class="sc-h1">2027 registration is <em>open to everyone.</em></h1>
-  <p class="sc-promo">Get <span>up to 20% off</span> through Saturday, August 15.</p>
+  <p class="sc-promo">Every child after the first saves <span>5%</span>.</p>
   <div class="sc-count" id="scCount" data-deadline="2026-08-01T10:00:00-04:00">
     <div class="sc-cell"><div class="sc-tiles" id="scDays"></div><div class="sc-unit">Days</div></div>
     <div class="sc-colon">:</div>
@@ -405,11 +405,11 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   var cd = document.getElementById('scCount');
   if (cd) cd.dataset.deadline = '2026-08-15T23:59:59-04:00';
   var promo = document.querySelector('.sc-promo');
-  if (promo) promo.textContent = 'Launch sale \u2014 up to 20% off \u2014 ends Saturday, August 15 at 11:59 PM.';
+  if (promo) promo.textContent = 'Every child after the first saves 5%.';
   document.querySelectorAll('.sc-a').forEach(function(el){
     el.innerHTML = el.innerHTML
       .replace('Open now for returning NOVAPA families. New families: public registration opens <strong>August 1 at 10 AM</strong> \u2014 join the waitlist when you register for early access.',
-               'Open to everyone. The launch sale \u2014 up to 20% off \u2014 runs through <strong>Saturday, August 15 at 11:59 PM</strong>.');
+               'Open to everyone. Every child after the first saves 5%, applied automatically at checkout.');
   });
 })();
 </script>
@@ -497,9 +497,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <div class="pb-acct">
       <div>
         <h3>Ready to grab <em style="font-style:normal;color:#E8B84B">their spot</em>?</h3>
-        <p>Registration takes about two minutes, payment plans are built in, and the launch sale
-          runs through Saturday, August 15 at 11:59 PM: 10% off one program, 15% off two, 20% off three or more,
-          applied automatically at checkout.</p>
+        <p>Registration takes about two minutes and payment plans are built in. Every child after
+          the first saves 5%, applied automatically at checkout.</p>
       </div>
       <a class="pb-acct-btn" href="/register/">Register now
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
