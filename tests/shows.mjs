@@ -111,6 +111,25 @@ A(JSON.stringify(stated) === JSON.stringify(realCounts),
   'each day says how many classes it has — page says [' + stated.join(', ') +
   '], cards are [' + realCounts.join(', ') + ']');
 
+// The calendar's weekly grid is the third place classes are listed, after
+// classes.html and the chat script. On 16 Aug 2026 it carried 48 rows: the 14
+// real ones plus 34 that no longer exist anywhere — Tiny Tots, Bollywood,
+// Film & TV, K-Pop, Ballet, Hip-Hop, Adult Voice & Choir, two troupes. A
+// family reads that grid expecting to be able to book what is on it.
+const cal = read('calendar.html');
+const weekly = (cal.match(/WEEKLY_CLASSES = \[[\s\S]*?\];/) || [''])[0];
+const weeklyRows = (weekly.match(/\[\d,'/g) || []).length;
+A(weeklyRows === 19,
+  'the weekly grid holds 19 rows: 14 classes plus 5 rehearsal/conservatory — got ' + weeklyRows);
+for (const dead of ['Tiny Tots', 'Bollywood', 'K-Pop', 'Hip-Hop', 'Film & TV',
+  'Ballet', 'Junior Thespian', 'Adult Voice']) {
+  A(!weekly.includes(dead), '  …and does not list ' + dead);
+}
+// the classes on the grid and the classes on classes.html are the same set
+const gridNames = [...weekly.matchAll(/\[\d,'[^']*','([^']*)','[^']*','(?!Production|Conservatory)[^']*'\]/g)]
+  .map((m) => m[1]);
+A(gridNames.length === 14, 'the grid lists exactly the 14 sold classes — got ' + gridNames.length);
+
 // ── licensed titles ─────────────────────────────────────────────────────
 // We license Frozen KIDS, Frozen JR., Little Mermaid KIDS and Little Mermaid
 // JR. There is no teen edition of either title. Our teen band performs the JR.
