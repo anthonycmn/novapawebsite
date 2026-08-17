@@ -124,6 +124,14 @@ export const CAMP_START = {
 // program it pays for. For the Teen Conservatory shows that anchor is opening
 // night, not the first rehearsal — both casts are already set and rehearsing,
 // so the thing we are collecting against is the run, not the start date.
+// A FALLBACK since Aug 17 2026, not the answer. A listing now carries its own
+// starts_on and reg-pay passes it as `start`, which priceCart prefers. This
+// list only still exists for the shows that predate that column.
+//
+// It mattered more than it looks. A show whose name matched nothing here
+// returned null, installmentDates returned no dates, and the family was
+// silently refused a payment plan and charged in full — a $995 surprise caused
+// by a regex not recognising a title nobody had added to this file.
 export function showStartFor(name) {
   if (/frozen/i.test(name)) return "2026-09-15";
   if (/mermaid/i.test(name)) return "2027-02-03";
@@ -174,7 +182,23 @@ export const COACHING_ID_MIN = 970000;
 export const COACHING_ID_MAX = 979999;
 export const isCoachingId = (id) =>
   Number.isFinite(id) && id >= COACHING_ID_MIN && id <= COACHING_ID_MAX;
-const isCoaching = (it) => isCoachingId(it.activity_id);
+
+// ---------------------------------------------------------------------------
+// What KIND of thing an item is (Aug 17 2026 — portal authoring)
+// ---------------------------------------------------------------------------
+// The two rules below used to infer the kind from something that is merely
+// true rather than something that is a rule: coaching from an id range, a day
+// camp from costing less than $200. Both hold for every listing that exists
+// today. Neither survives contact with a $250 day camp — which the staff
+// portal can now create — and getting it wrong finances a one-day event over
+// eight months and drops it off a family's Dependent Care FSA statement.
+//
+// So the LISTING answers first, and the old inference is the fallback.
+// activities.offering_kind is null on all 141 rows that predate the portal, so
+// those take the fallback and behave exactly as they always have.
+const kindOf = (it) => it.offering_kind || null;
+const isCoaching = (it) =>
+  kindOf(it) ? kindOf(it) === "coaching" : isCoachingId(it.activity_id);
 
 export function perKidRate(nCampsForKid, now = new Date()) {
   if (now > new Date(EARLYBIRD_END)) return 0;
@@ -251,7 +275,9 @@ export function priceCart(cart, plan, opts = {}) {
   // camp, and without this a $120 acting session would inherit the day-camp
   // sibling 5%.
   const isDayCampItem = (it) =>
-    !it.show && !isCoaching(it) && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
+    kindOf(it)
+      ? kindOf(it) === "day_camp"
+      : !it.show && !isCoaching(it) && (it.price_cents || 0) <= DAY_CAMP_MAX_CENTS;
   // Every Broadway Bound program counts, including the teen intensives and the
   // teen mainstage shows (CJ, Jul 31 — this supersedes the flat rules those
   // two carried through July). Day camps, classes, and coaching stay outside.
