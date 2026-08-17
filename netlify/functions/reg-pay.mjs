@@ -149,9 +149,40 @@ export default async (req) => {
   let byId = {};
   if (activityItems.length) {
     const ids = [...new Set(activityItems.map((it) => it.activity_id))];
-    const acts = await anonRpc("activity_prices", { p_ids: ids });
-    if (!acts || acts.length !== ids.length) {
+    // activity_facts, not activity_prices: same rows, plus the offering kind,
+    // the date a payment plan is anchored to, and whether the listing is
+    // inside its selling window. It returns a strict superset of the columns
+    // activity_prices did.
+    //
+    // DEPLOY ORDER MUST NOT MATTER. If this code ever reaches production
+    // before the migration that creates activity_facts, the RPC 404s — and an
+    // unguarded call would turn that into "unknown_activity" on EVERY order.
+    // So a missing function falls back to activity_prices, which has always
+    // been there, and the three new answers degrade to the old behaviour:
+    // no offering_kind, no starts_on (showStartFor picks it up downstream),
+    // and sells_now undefined so the window check below refuses nothing.
+    let acts = await anonRpc("activity_facts", { p_ids: ids });
+    if (!Array.isArray(acts)) {
+      console.warn("activity_facts unavailable — falling back to activity_prices");
+      acts = await anonRpc("activity_prices", { p_ids: ids });
+    }
+    if (!Array.isArray(acts) || acts.length !== ids.length) {
       return Response.json({ error: "unknown_activity" }, { status: 400 });
+    }
+    // The catalogue is not the only way in: /register/?activity=<id> is a
+    // direct link, and those get forwarded between families long after a
+    // deadline. The till has to be the one that refuses.
+    //
+    // sells_now deliberately does NOT consider `hidden`. Four listings are
+    // hidden AND bookable on purpose — Sweeney Todd, Hadestown, the Dear Evan
+    // Hansen intensive and the Day Camp Credit Pack — and a direct link is
+    // exactly how they are sold.
+    const closed = acts.filter((a) => a.sells_now === false);
+    if (closed.length) {
+      return Response.json(
+        { error: "registration_closed", activities: closed.map((a) => a.name) },
+        { status: 400 }
+      );
     }
     byId = Object.fromEntries(acts.map((a) => [a.id, a]));
   }
@@ -235,7 +266,14 @@ export default async (req) => {
         ...it,
         name: byId[it.activity_id].name,
         price_cents: byId[it.activity_id].price_cents,
-        start: showStartFor(byId[it.activity_id].name),
+        // The listing's own start date, and only then the hardcoded name list.
+        // A show created in the staff portal is not on that list and never
+        // will be; without starts_on it got null here, installmentDates
+        // returned no dates, and the family was silently refused a payment
+        // plan and charged $995 in full.
+        start: byId[it.activity_id].starts_on || showStartFor(byId[it.activity_id].name),
+        // Lets priceCart stop inferring a day camp from its price.
+        offering_kind: byId[it.activity_id].offering_kind || null,
       })),
     ];
     const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid, special, creditsByKid });
@@ -453,9 +491,21 @@ export default async (req) => {
       // eligible (checkout collects birthdays; fail closed on a tax flag).
       fsa_eligible: (
         summerItems.some((it) => fsaUnder13(bdayByKid[kidKey(it)], CAMP_STARTS[it.show])) ||
-        showItems.some((it) => (byId[it.activity_id].price_cents || 0) <= DAY_CAMP_MAX_CENTS &&
-          !isCoachingId(it.activity_id) &&
-          fsaUnder13(bdayByKid[kidKey(it)], null))
+        showItems.some((it) => {
+          const a = byId[it.activity_id];
+          // Asks the listing first, falls back to the old price rule — the
+          // same order priceCart uses. It matters more here than anywhere
+          // else: this flag is what puts a line on a family's Dependent Care
+          // FSA statement, and a $250 day camp failing the <= $200 test would
+          // cost them the claim with nobody noticing.
+          const isDayCamp = a.offering_kind
+            ? a.offering_kind === "day_camp"
+            : (a.price_cents || 0) <= DAY_CAMP_MAX_CENTS && !isCoachingId(it.activity_id);
+          // "Under 13 when the care starts" wants the date the care starts.
+          // Rows predating the portal have no starts_on and keep passing null,
+          // so they are judged exactly as before.
+          return isDayCamp && fsaUnder13(bdayByKid[kidKey(it)], a.starts_on || null);
+        })
       ) ? "1" : "0",
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
