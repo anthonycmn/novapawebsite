@@ -273,7 +273,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);o
   font-family:'DM Sans',sans-serif;
   font-size:14px;
   font-weight:600;
-  color:var(--navy);
+  /* brand.css paints every h4 near-white !important for the dark navy pages.
+     This page is cream, so that law renders these headings invisible — beat it
+     on specificity rather than weakening the sitewide rule. */
+  color:var(--navy) !important;
   text-transform:uppercase;
   letter-spacing:0.08em;
   margin:28px 0 10px;
