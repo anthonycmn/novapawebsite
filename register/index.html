@@ -432,6 +432,24 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
           <div class="kids" data-fallshow="mermaid"></div>
         </div>
       </div>
+      <!-- Teen Conservatory mainstage shows. Cast by audition earlier in the
+           year; open registration joins the ensemble (CJ, Aug 17). -->
+      <div class="showb" data-fall="sweeney">
+        <div class="poster" style="background-image:url('/register/img/sweeney.jpg')"></div>
+        <div class="bd">
+          <div class="t">Sweeney Todd &mdash; Teen Conservatory</div>
+          <div class="d">Ages 12&ndash;18 · Performs Oct 23 &ndash; Nov 1, 2026 · $895<br><span style="color:var(--gold3)">Cast by audition &middot; only ensemble roles remain</span></div>
+          <div class="kids" data-fallshow="sweeney"></div>
+        </div>
+      </div>
+      <div class="showb" data-fall="hadestown">
+        <div class="poster" style="background-image:url('/register/img/hadestown.jpg')"></div>
+        <div class="bd">
+          <div class="t">Hadestown &mdash; Teen Conservatory</div>
+          <div class="d">Ages 13&ndash;18 · Performs March 5&ndash;21, 2027 · $895<br><span style="color:var(--gold3)">Cast by audition &middot; only ensemble roles remain</span></div>
+          <div class="kids" data-fallshow="hadestown"></div>
+        </div>
+      </div>
       <!-- Teens summer intensive. No data-fall, so the season filter counts it
            as Summer (it runs June 2027) while the fall-cast renderer still
            drives its checkboxes via data-fallshow. -->
@@ -653,7 +671,16 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     // standard cast pills render.
     { key:'meangirls', title:'Mean Girls \u2014 Teens', img:'/register/img/meangirls.jpg',
       date:'Ages 13\u201318 \u00b7 June 14\u201324, 2027 \u00b7 $995', re:/mean girls/i,
-      start:'2027-06-14', ages:'13\u201318' }
+      start:'2027-06-14', ages:'13\u201318' },
+    // Teen Conservatory mainstage: cast by audition, open registration joins
+    // the ensemble. Unhidden Aug 17 (CJ) after families could not find where
+    // to pay \u2014 the ?activity= link stays valid alongside these cards.
+    { key:'sweeney', title:'Sweeney Todd \u2014 Teen Conservatory', img:'/register/img/sweeney.jpg',
+      date:'Ages 12\u201318 \u00b7 Performs Oct 23 \u2013 Nov 1, 2026 \u00b7 $895', re:/sweeney/i,
+      start:'2026-10-23', ages:'12\u201318' },
+    { key:'hadestown', title:'Hadestown \u2014 Teen Conservatory', img:'/register/img/hadestown.jpg',
+      date:'Ages 13\u201318 \u00b7 Performs March 5\u201321, 2027 \u00b7 $895', re:/hadestown/i,
+      start:'2027-03-05', ages:'13\u201318' }
   ];
   function fallActsFor(showKey){
     var s = FALL_SHOWS.filter(function(x){ return x.key === showKey; })[0];
