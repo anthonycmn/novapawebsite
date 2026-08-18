@@ -59,14 +59,12 @@ async function paymentsFor(email) {
     const upcoming = [], history = [];
     // Invoice line descriptions ("Park Payment Plan - Classes") beat charge
     // descriptions ("Subscription creation") — cache per invoice id.
-    // Product names carry internal labels (the family surname, a "- Classes"
-    // suffix); families should read "Payment plan (classes)", not our
-    // bookkeeping (Jason, Aug 17).
-    const pretty = (d) => {
-      if (!d) return d;
-      const m = d.match(/^.*?payment plan\s*-?\s*(.*)$/i);
-      return m ? `Payment plan${m[1] ? ` (${m[1].trim().toLowerCase()})` : ""}` : d;
-    };
+    // Product names carry internal bookkeeping ("Park Payment Plan -
+    // Classes") and the suffixes aren't even reliable — the Park plan pays
+    // for two classes AND a summer camp. A payoff plan is just "Payment
+    // plan"; anything that isn't one (class memberships etc.) keeps its own
+    // name (Jason, Aug 17).
+    const pretty = (d) => (d && /payment plan/i.test(d) ? "Payment plan" : d);
     const invDesc = {};
     const descOf = async (invId) => {
       if (!invId) return null;
