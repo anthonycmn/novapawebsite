@@ -1,14 +1,12 @@
 User-agent: *
 Allow: /
 
-# Retired and staff-only pages. These are also noindexed in their own markup;
-# blocking them here keeps them out of results while the redirects settle.
-Disallow: /camp-info-2026-archive.html
-Disallow: /register/admin/
-Disallow: /press-submit.html
-Disallow: /deh/
-
-# Faculty page is written but parked until it is fully built out (CJ).
-Disallow: /faculty.html
+# Retired and staff-only pages are kept out of the index by a noindex tag in
+# their own markup, NOT by Disallow. The two cannot be combined: blocking the
+# crawl stops Googlebot from ever reading the noindex, so the URL can still
+# surface as a bare, description-less result. Crawling has to stay open for
+# the tag to do its job.
+#   /camp-info-2026-archive.html  /faculty.html  /press-submit.html
+#   /deh/  /sweeney/  /register/ (account, signin, catalog, admin)
 
 Sitemap: https://www.northernvirginiaperformingarts.org/sitemap.xml
