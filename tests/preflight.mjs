@@ -271,7 +271,10 @@ async function checkLive() {
   try {
     const SB = "https://tlkuqwsqicxcjdmumkje.supabase.co";
     const AK = "sb_publishable_8ar97CkK-C0YlWuOGtI_tA_mwTDVE6H";
-    const DIRECT_LINK_IDS = [1960809, 1960811, 1805731, 990010];
+    // DEH (1805731) left this list 17 Aug: its show runs that week and
+    // registration was closed on purpose (bookable=false, audit trail
+    // confirms). Only listings that SHOULD currently sell belong here.
+    const DIRECT_LINK_IDS = [1960809, 1960811, 990010];
     const r = await fetch(`${SB}/rest/v1/rpc/activity_facts`, {
       method: "POST",
       headers: { apikey: AK, Authorization: `Bearer ${AK}`, "Content-Type": "application/json" },
