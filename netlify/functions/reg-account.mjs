@@ -59,14 +59,22 @@ async function paymentsFor(email) {
     const upcoming = [], history = [];
     // Invoice line descriptions ("Park Payment Plan - Classes") beat charge
     // descriptions ("Subscription creation") — cache per invoice id.
+    // Product names carry internal labels (the family surname, a "- Classes"
+    // suffix); families should read "Payment plan (classes)", not our
+    // bookkeeping (Jason, Aug 17).
+    const pretty = (d) => {
+      if (!d) return d;
+      const m = d.match(/^.*?payment plan\s*-?\s*(.*)$/i);
+      return m ? `Payment plan${m[1] ? ` (${m[1].trim().toLowerCase()})` : ""}` : d;
+    };
     const invDesc = {};
     const descOf = async (invId) => {
       if (!invId) return null;
       if (!(invId in invDesc)) {
         try {
           const inv = await stripe(`invoices/${invId}`);
-          invDesc[invId] = (inv.lines?.data?.[0]?.description || "")
-            .replace(/^1 × /, "").replace(/\s*\(at .*\)$/, "") || null;
+          invDesc[invId] = pretty((inv.lines?.data?.[0]?.description || "")
+            .replace(/^1 × /, "").replace(/\s*\(at .*\)$/, "")) || null;
         } catch (e) { invDesc[invId] = null; }
       }
       return invDesc[invId];
@@ -75,19 +83,27 @@ async function paymentsFor(email) {
       const subs = await stripe(`subscriptions?customer=${c.id}&status=active&limit=10`);
       for (const s of subs.data || []) {
         // invoices/upcoming is deprecated on current API versions, and the
-        // period fields moved onto subscription items — compute the next
-        // charge from the subscription itself.
+        // period fields moved onto subscription items — compute the schedule
+        // from the subscription itself.
         const itemList = s.items?.data || [];
         const nextTs = itemList[0]?.current_period_end || s.current_period_end;
         if (!nextTs) continue;
         if (s.cancel_at && s.cancel_at <= nextTs) continue; // final period billed
-        upcoming.push({
-          date: nextTs * 1000,
-          amount_cents: itemList.reduce((n, x) => n + (x.price?.unit_amount || 0) * (x.quantity || 1), 0),
-          desc: (await descOf(s.latest_invoice)) || s.description || "Payment plan",
-          // open subscriptions run until cancelled; scheduled ones show an end
-          ends: s.cancel_at ? s.cancel_at * 1000 : null,
-        });
+        const amount = itemList.reduce((n, x) => n + (x.price?.unit_amount || 0) * (x.quantity || 1), 0);
+        const desc = (await descOf(s.latest_invoice)) || s.description || "Payment plan";
+        // A plan with an end date shows EVERY remaining charge — a family
+        // watching their list shrink month by month is what "how do I know
+        // it stops" actually wants (Haemy Park, Aug 17). Open subscriptions
+        // (class memberships) show the next charge marked as renewing.
+        if (s.cancel_at) {
+          let d = new Date(nextTs * 1000);
+          for (let i = 0; d.getTime() < s.cancel_at * 1000 && i < 24; i++) {
+            upcoming.push({ date: d.getTime(), amount_cents: amount, desc, ends: s.cancel_at * 1000 });
+            d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes()));
+          }
+        } else {
+          upcoming.push({ date: nextTs * 1000, amount_cents: amount, desc, ends: null, renews: true });
+        }
       }
       // Charges no longer carry an invoice reference on this API version (and
       // invoices no longer carry a charge), so history rows come from paid

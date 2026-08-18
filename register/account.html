@@ -886,8 +886,13 @@
     if (p.upcoming.length) {
       html += p.upcoming.map(function(u){
         return '<div class="item"><b>' + money(u.amount_cents) + ' on ' + fmtDay(u.date) + '</b>' +
-          '<span>' + esc(u.desc) + '</span></div>';
+          '<span>' + esc(u.desc) + (u.renews ? ' · renews monthly' : '') + '</span></div>';
       }).join('');
+      // The last row of a finite plan is the finish line — name it.
+      var last = p.upcoming[p.upcoming.length - 1];
+      if (last && last.ends) {
+        html += '<div class="empty" style="font-size:12.5px;margin-top:10px">That last one is your final payment. Nothing is charged after it.</div>';
+      }
     }
     if (p.history.length) {
       html += '<div class="section-label" style="margin-top:' + (p.upcoming.length ? '18px' : '0') + ';font-size:12px">Past payments</div>' +
