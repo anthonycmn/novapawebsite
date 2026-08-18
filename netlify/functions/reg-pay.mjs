@@ -102,8 +102,14 @@ export default async (req) => {
     }
     couponPct = c.pct || 0;
     couponFixedCents = c.amount_cents || 0;
-    if (special && special.email.toLowerCase() !== email) {
-      return Response.json({ error: "bad_coupon" }, { status: 400 });
+    // One family can hold several addresses (whoever paid for summer vs
+    // whoever emails us) — a special may lock to one email or a list.
+    if (special) {
+      const locks = (Array.isArray(special.email) ? special.email : [special.email])
+        .map((e) => e.toLowerCase());
+      if (!locks.includes(email)) {
+        return Response.json({ error: "bad_coupon" }, { status: 400 });
+      }
     }
   }
 

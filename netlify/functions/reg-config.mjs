@@ -69,6 +69,16 @@ export const SPECIAL_PLANS = {
     // show+camp combo now — this code only waives the plan fee and
     // stretches her schedule to 10 months.
   },
+  "SMITH20": {
+    // Jamie + Christie Smith — Grace. Todd approved 20% off (Aug 5 2026) for
+    // Grace doing four productions across summer, fall and spring; the launch
+    // ladder lapsed Aug 15 before they registered Frozen + Mermaid, and CJ
+    // extended the discount (Aug 17, "Voice Classes" thread). Both household
+    // emails are unlocked: the paid summer order lives under Christie's
+    // address, the email thread under Jamie's.
+    email: ["christieamstadt@gmail.com", "jcs@smith82.com"],
+    pctOffList: 20,
+  },
   "ANSELL0": {
     email: "ajansell@gmail.com",
     waivePlanFee: true, months: 5,
