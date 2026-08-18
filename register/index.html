@@ -739,6 +739,10 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   function $(id){ return document.getElementById(id); }
   function ev(name, props){ try { window.posthog && window.posthog.capture(name, props||{}); } catch(e){} }
   function go(stepId){
+    // The "New or returning?" gate is dead UI once a guest has entered — a
+    // stray Back button (sign-in step, coaching pane) must land them on the
+    // picker they came from, never on the retired front door.
+    if (stepId === 'st-gate' && state.guest) stepId = isCatMode() ? 'st-assign' : 'st-shows';
     document.querySelectorAll('.step').forEach(function(s){ s.classList.remove('on'); });
     $(stepId).classList.add('on');
     if (stepId !== 'st-shows' && $('toast')) $('toast').classList.remove('on');
