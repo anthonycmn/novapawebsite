@@ -261,6 +261,36 @@ async function checkLive() {
     } catch (err) { fail("live", `${e.label} (${e.path}) -> ${err.message}`); }
   }
 
+  // The four listings that are hidden AND bookable on purpose — Sweeney Todd,
+  // Hadestown, the DEH intensive, the Day Camp Credit Pack — are sold by
+  // direct /register/?activity= link, and reg-pay refuses anything whose
+  // sells_now is false. A version of activity_facts that folds `hidden` into
+  // sells_now (the exact near-miss caught by hand on 17 Aug 2026) would kill
+  // all four sales paths while every page still answers 200. So ask the
+  // function itself, every run.
+  try {
+    const SB = "https://tlkuqwsqicxcjdmumkje.supabase.co";
+    const AK = "sb_publishable_8ar97CkK-C0YlWuOGtI_tA_mwTDVE6H";
+    const DIRECT_LINK_IDS = [1960809, 1960811, 1805731, 990010];
+    const r = await fetch(`${SB}/rest/v1/rpc/activity_facts`, {
+      method: "POST",
+      headers: { apikey: AK, Authorization: `Bearer ${AK}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_ids: DIRECT_LINK_IDS }),
+    });
+    if (r.status === 404) {
+      ok("activity_facts not deployed yet — reg-pay falls back to activity_prices");
+    } else if (!r.ok) {
+      fail("live", `activity_facts -> HTTP ${r.status}`);
+    } else {
+      const rows = await r.json();
+      const dead = rows.filter((a) => a.sells_now === false).map((a) => a.name);
+      const missing = DIRECT_LINK_IDS.length - rows.length;
+      if (dead.length) fail("live", `direct-link listings refuse to sell (sells_now=false): ${dead.join(", ")}`);
+      else if (missing) fail("live", `activity_facts returned ${rows.length}/${DIRECT_LINK_IDS.length} direct-link listings`);
+      else ok(`direct-link listings all sell (Sweeney, Hadestown, DEH, credit pack)`);
+    }
+  } catch (err) { fail("live", `activity_facts probe -> ${err.message}`); }
+
   // A half-deployed or truncated page still answers 200.
   try {
     const html = await (await probe("/register/")).text();
