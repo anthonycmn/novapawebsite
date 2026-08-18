@@ -112,8 +112,8 @@ async function paymentsFor(email) {
       // payments have no invoice and land as plain charge rows.
       const invoices = await stripe(`invoices?customer=${c.id}&status=paid&limit=10`);
       for (const inv of invoices.data || []) {
-        invDesc[inv.id] = (inv.lines?.data?.[0]?.description || "")
-          .replace(/^1 × /, "").replace(/\s*\(at .*\)$/, "") || null;
+        invDesc[inv.id] = pretty((inv.lines?.data?.[0]?.description || "")
+          .replace(/^1 × /, "").replace(/\s*\(at .*\)$/, "")) || null;
         history.push({
           date: (inv.status_transitions?.paid_at || inv.created) * 1000,
           amount_cents: inv.amount_paid,
