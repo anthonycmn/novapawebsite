@@ -101,7 +101,12 @@ export const SPECIAL_PLANS = {
 
 export const CLASS_PRICE_CENTS = 9000;
 export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;  // Oct 1 2026
-export const CLASS_SEASON_END_UTC = Date.UTC(2027, 6, 1, 4, 0, 0) / 1000;   // Jul 1 2027 (last pull Jun 1)
+// Jun 30, NOT Jul 1: monthly pulls fire at 04:00 UTC on the 1st, and a
+// cancel_at of exactly Jul 1 04:00 ties with a would-be July pull — if the
+// invoice wins the race, a family pays for a month after the season ended.
+// Jun 30 keeps the last pull at Jun 1 with a full day of margin (Jason,
+// Aug 17: "all class subscriptions should end on June 30th").
+export const CLASS_SEASON_END_UTC = Date.UTC(2027, 5, 30, 4, 0, 0) / 1000;
 export const SIBLING_PCT = 5;
 export const INSURANCE_PCT = 10;
 export const PLAN_FEE_PCT = 5;   // surcharge for choosing a payment plan
