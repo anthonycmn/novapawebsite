@@ -18,11 +18,14 @@
   --gold:#C8892A; --gold2:#E8B84B; --gold3:#E8B84B;
   --crimson:#8B1A2F;
   --paper:#F7F1E4;
-  --ink:#0B1424; --ink2:#3A4668; --ink3:#7080A0;
+  /* --p-ink, not --ink: brand.css declares :root{--ink:rgba(255,255,255,.88)}
+     for the dark navy pages and is linked AFTER this block, so an --ink here
+     loses the cascade and silently turns this cream page's text white. */
+  --p-ink:#0B1424; --ink2:#3A4668; --ink3:#7080A0;
   --rule:rgba(11,20,36,0.10);
 }
 html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);overflow-x:hidden;line-height:1.55}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--p-ink);overflow-x:hidden;line-height:1.55}
 
 /* ── HERO ── */
 .p-hero{
@@ -149,10 +152,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);o
   transform-origin:left;
   transition:transform 0.25s ease;
 }
-.p-tab:hover{color:var(--ink)}
+.p-tab:hover{color:var(--p-ink)}
 .p-tab:hover::after,
 .p-tab.active::after{transform:scaleX(1)}
-.p-tab.active{color:var(--ink)}
+.p-tab.active{color:var(--p-ink)}
 
 /* ── MAIN LAYOUT ── */
 .p-main{
@@ -191,7 +194,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);o
   line-height:1.4;
 }
 .p-side a:hover{color:var(--gold);border-left-color:var(--gold2)}
-.p-side a.active{color:var(--ink);border-left-color:var(--gold);font-weight:500}
+.p-side a.active{color:var(--p-ink);border-left-color:var(--gold);font-weight:500}
 
 .p-content{min-width:0}
 .p-section{
@@ -431,7 +434,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);o
   font-family:'Cormorant Garamond',serif;
   font-size:24px;
   font-weight:700;
-  color:#fff;
+  /* !important to outrank the .p-content h4 rule above: this card is the one
+     dark island in the cream column, so navy-on-navy would be invisible. */
+  color:#fff !important;
   margin-bottom:6px;
   text-transform:none;
   letter-spacing:0;
