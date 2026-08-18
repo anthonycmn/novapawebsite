@@ -15,6 +15,10 @@ LASTNAME + digit) and any of:
 - `plan_months` (stretched schedule: exactly N monthly firsts)
 - `amount_cents`/`balance_cents` (a dollar credit that stacks WITH the terms
   above — on a special row the balance rides as the special's credit)
+- `scope_activity_ids` (bigint[]) / `scope_shows` (text[]) — restrict the
+  pct_off_list to specific products (Todd's rule: codes are show-scoped, not
+  sitewide, unless the approval explicitly says otherwise). Fall casts and
+  classes are activity ids; summer camps are show slugs (httyd/charlie/trolls).
 Set `max_uses: 1`, `active: true`, `pct` display-only (or NULL). The family
 enters the code at the payment step. Server mapping: `specialFromCouponRow`
 in reg-config.mjs; reg-pay reads the row with the service role. Precedent:
