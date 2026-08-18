@@ -386,6 +386,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   <section class="step" id="st-shows">
     <h1>Choose your <em>shows.</em></h1>
     <p class="sub">Check each camper into their shows.</p>
+    <p class="tiny" id="guestReturnRow" style="display:none;margin:-6px 0 14px">Registered with us before? <a href="#" id="guestReturnLink">Sign in</a> to load your campers.</p>
     <div class="season-chips" id="seasonChips">
       <span class="schip" data-f="summer">Summer</span>
       <span class="schip" data-f="year">Year Round</span>
@@ -603,6 +604,11 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     <p class="tiny" style="text-align:left;margin-top:8px">Your receipt and camper details go here. No password needed.</p>
     <input type="email" id="guestEmailInput" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
     <div class="err" id="guestEmailErr"></div>
+    <div id="guestWelcomeBack" style="display:none">
+      <p class="tiny" style="text-align:left;margin:10px 0 4px"><b>Welcome back!</b> This email has a NOVAPA family. Sign in with a quick emailed code and your campers load themselves — your picks here are kept either way.</p>
+      <button class="btn" id="gwbSignin">Load my family</button>
+      <button class="btn btn-ghost" id="gwbGuest">Continue as guest</button>
+    </div>
     <button class="btn" id="guestEmailGo">Continue</button>
     <button class="btn btn-ghost" id="guestEmailCancel">Back</button>
   </div>
@@ -931,11 +937,15 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       state.kids = [];
       $('whoami').textContent = 'guest checkout';
       $('whoami2').innerHTML = 'guest checkout · <a href="#" id="guestSignin">been here before? Sign in</a>';
-      var gs = $('guestSignin');
-      if (gs) gs.addEventListener('click', function(e){
+      var toSignin = function(e){
         e.preventDefault();
+        ev('reg_guest_to_signin', {});
         go('st-remail'); var inp = $('emailInput'); if (inp) inp.focus();
-      });
+      };
+      var gs = $('guestSignin');
+      if (gs) gs.addEventListener('click', toSignin);
+      $('guestReturnRow').style.display = '';
+      $('guestReturnLink').addEventListener('click', toSignin);
       ev('reg_guest_entered', {});
       restoreCart();
       if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
@@ -1235,16 +1245,47 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   // Parents add a kid IN CONTEXT of the thing they're buying (Jason, Aug 18).
   var addKidTarget = null;
   $('guestEmailCancel').addEventListener('click', function(){ $('guestEmailModal').classList.remove('on'); });
-  $('guestEmailGo').addEventListener('click', function(){
-    var v = $('guestEmailInput').value.trim().toLowerCase();
-    var ge = $('guestEmailErr'); ge.classList.remove('on');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { ge.textContent = 'A valid email, please — your confirmation goes there.'; ge.classList.add('on'); return; }
+  function guestEmailProceed(v){
     state.email = v;
     $('whoami2').innerHTML = esc(v) + ' · guest checkout';
     $('guestEmailModal').classList.remove('on');
     ev('reg_guest_email_captured', {});
     saveCart();
     acquireHold();
+  }
+  $('guestEmailGo').addEventListener('click', function(){
+    var v = $('guestEmailInput').value.trim().toLowerCase();
+    var ge = $('guestEmailErr'); ge.classList.remove('on');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { ge.textContent = 'A valid email, please — your confirmation goes there.'; ge.classList.add('on'); return; }
+    // A known email means a returning family mid-guest-flow: offer to load
+    // their saved campers with one emailed code before they retype anything.
+    // The offer must never block checkout — any hiccup just proceeds as guest.
+    var b = $('guestEmailGo'); b.disabled = true; b.textContent = 'One moment…';
+    sb.rpc('email_known', { p_email: v }).then(function(res){
+      b.disabled = false; b.textContent = 'Continue';
+      if (res && res.data) {
+        $('guestWelcomeBack').style.display = '';
+        $('guestEmailGo').style.display = 'none';
+        ev('reg_guest_known_email', {});
+        return;
+      }
+      guestEmailProceed(v);
+    }).catch(function(){ b.disabled = false; b.textContent = 'Continue'; guestEmailProceed(v); });
+  });
+  $('gwbSignin').addEventListener('click', function(){
+    var v = $('guestEmailInput').value.trim().toLowerCase();
+    state.email = ''; // startEmail sets it; the sign-in flow takes over
+    $('guestEmailModal').classList.remove('on');
+    saveCart();       // cart is saved under 'guest' and restores after sign-in
+    go('st-remail');
+    $('emailInput').value = v;
+    startEmail(v);
+  });
+  $('gwbGuest').addEventListener('click', function(){
+    var v = $('guestEmailInput').value.trim().toLowerCase();
+    $('guestWelcomeBack').style.display = 'none';
+    $('guestEmailGo').style.display = '';
+    guestEmailProceed(v);
   });
   $('guestEmailInput') && $('guestEmailInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('guestEmailGo').click(); });
 
