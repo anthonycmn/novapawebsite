@@ -5,13 +5,24 @@ description: "Set up a Todd/CJ-approved exception for one family: waive the 5% p
 
 ## Pick the right mechanism
 
-**1. Plan-fee waiver or stretched schedule (checkout-native, preferred)**
-`SPECIAL_PLANS` in [netlify/functions/reg-config.mjs](../../netlify/functions/reg-config.mjs):
-add an entry keyed by a code (convention: LASTNAME + digit), locked to the
-family's email, with any of `waivePlanFee: true`, `months: N`, `pctOffList: N`.
-A matching `coupons` row MUST exist and stay active (`max_uses: 1`, `pct` is
-display-only — use NULL when there is no price discount). Deploy reg-config,
-then the family enters the code at the payment step. Precedents: SOK20, ANSELL0.
+**1. Special deal code — one INSERT, no deploy (preferred since Aug 18 2026)**
+The `coupons` row itself carries the terms. Insert with code (convention:
+LASTNAME + digit) and any of:
+- `email_lock` (text[] — every address the household might check out with;
+  families often pay from one email and write from another)
+- `pct_off_list` (flat % off list, REPLACES tier/bundle/sibling math)
+- `waive_plan_fee` (boolean — no 5% plan fee)
+- `plan_months` (stretched schedule: exactly N monthly firsts)
+- `amount_cents`/`balance_cents` (a dollar credit that stacks WITH the terms
+  above — on a special row the balance rides as the special's credit)
+Set `max_uses: 1`, `active: true`, `pct` display-only (or NULL). The family
+enters the code at the payment step. Server mapping: `specialFromCouponRow`
+in reg-config.mjs; reg-pay reads the row with the service role. Precedent:
+the schema file db/registration/tables/coupon_special_terms.sql.
+
+`SPECIAL_PLANS` in reg-config.mjs is the LEGACY map (SOK20, ANSELL0,
+SMITH20) — it still wins over the row when both exist. Don't add to it;
+new deals go on the row.
 
 **2. Dollar credit code**
 Insert into `coupons` with `pct = NULL` (the CHECK requires pct > 0 when set),
