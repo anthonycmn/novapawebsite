@@ -243,7 +243,10 @@ async function probe(path, opts = {}) {
 
 async function checkLive() {
   const expectations = [
-    { path: "/api/reg-pay", method: "POST", want: [401], label: "checkout function loads" },
+    // 400 became a healthy answer with guest checkout (Aug 18): an empty
+    // body hits bad_request before the identity check. A broken shared
+    // import still shows as 500/502 — that's what this probe exists to catch.
+    { path: "/api/reg-pay", method: "POST", want: [400, 401], label: "checkout function loads" },
     { path: "/api/reg-account", method: "POST", want: [401], label: "account function loads" },
     { path: "/api/dcu-pay?activity_id=970601", method: "GET", want: [200], label: "DC Unifieds quote" },
     { path: "/register/", method: "GET", want: [200], label: "registration page" },
