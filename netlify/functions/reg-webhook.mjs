@@ -149,6 +149,45 @@ export default async (req) => {
       p_unit_prices: unitPrices,
     });
 
+    // Guest orders are how a brand-new family enters the system: mint the
+    // family and camper rows so their portal isn't empty, future checkouts
+    // see priors, and the account-create step has something to land on.
+    // Idempotent by lookup: the webhook retries, and a second guest order
+    // reuses the same family.
+    if (m.guest === "1" && m.email) {
+      try {
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const hdrs = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+        let fam = (await (await fetch(
+          `${SUPABASE_URL}/rest/v1/families?or=(email.ilike.${encodeURIComponent(m.email)},cc_email.ilike.${encodeURIComponent(m.email)})&select=id&limit=1`,
+          { headers: hdrs })).json())[0];
+        if (!fam) {
+          const made = await (await fetch(`${SUPABASE_URL}/rest/v1/families`, {
+            method: "POST", headers: { ...hdrs, Prefer: "return=representation" },
+            body: JSON.stringify({ email: m.email, parent_name: m.parent_name || null, source: "web" }),
+          })).json();
+          fam = Array.isArray(made) ? made[0] : null;
+        }
+        if (fam) {
+          const holdRows = await (await fetch(
+            `${SUPABASE_URL}/rest/v1/holds?id=eq.${m.hold_id}&select=items&limit=1`, { headers: hdrs })).json();
+          const names = [...new Set((holdRows?.[0]?.items || [])
+            .map((it) => String(it.camper || "").trim()).filter(Boolean))];
+          let bdays = {};
+          try { bdays = JSON.parse(m.kid_bdays || "{}"); } catch {}
+          const existing = await (await fetch(
+            `${SUPABASE_URL}/rest/v1/campers?family_id=eq.${fam.id}&select=name`, { headers: hdrs })).json();
+          const have = new Set((existing || []).map((c) => String(c.name).toLowerCase()));
+          const fresh = names.filter((n) => !have.has(n.toLowerCase())).map((n) => ({
+            family_id: fam.id, name: n, birthdate: bdays[n] || null, source: "web",
+          }));
+          if (fresh.length) {
+            await fetch(`${SUPABASE_URL}/rest/v1/campers`, { method: "POST", headers: hdrs, body: JSON.stringify(fresh) });
+          }
+        }
+      } catch (e) { console.error("guest family upsert failed:", e.message); }
+    }
+
     // Save the parent's name so future checkouts prefill it.
     if (m.parent_name && m.email) {
       try {

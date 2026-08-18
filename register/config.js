@@ -19,4 +19,9 @@ window.NOVAREG = {
   LAST_INSTALLMENT: "2027-05-01T04:00:00Z",
   EARLYBIRD_END: "2026-08-15T23:59:59-04:00",
   PUBLIC_OPEN_AT: "2026-08-01T10:00:00-04:00",
+
+  // Guest checkout (Aug 18 2026): browse and pick first, email captured at
+  // the cart step, no sign-in round trip. false = the old email gate — this
+  // flag is the one-line rollback lever while Meta traffic proves the flow.
+  GUEST_CHECKOUT: true,
 };

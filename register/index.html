@@ -596,6 +596,18 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   </div>
 </div>
 
+<!-- guest email modal: the cart is built, now we need somewhere to send it -->
+<div class="modal-back" id="guestEmailModal">
+  <div class="modal" style="width:100%;max-width:420px;text-align:left">
+    <h3 style="text-align:center">Where should we send your confirmation?</h3>
+    <p class="tiny" style="text-align:left;margin-top:8px">Your receipt and camper details go here. No password needed.</p>
+    <input type="email" id="guestEmailInput" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
+    <div class="err" id="guestEmailErr"></div>
+    <button class="btn" id="guestEmailGo">Continue</button>
+    <button class="btn btn-ghost" id="guestEmailCancel">Back</button>
+  </div>
+</div>
+
 <!-- upsell toast -->
 <div id="toast">
   <span id="toastMsg" class="tmsg"></span>
@@ -893,11 +905,48 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     // explanation would never be seen.
     if (!linkError && !location.search && !location.hash) location.replace('/summer-2027');
     // Registration is public now, so the old "new or returning?" gate is one
-    // tap of dead weight — everyone starts at the email step, which handles
-    // both (known emails sign in, new ones sign up). linkError keeps its own
-    // routing to the resend screen.
-    if (!linkError) openEmailSignup();
+    // tap of dead weight. With GUEST_CHECKOUT on, even the email step waits
+    // until the cart is built — cold traffic browses first and types an email
+    // only when it's time to pay. Flag off = the email step front door.
+    // linkError keeps its own routing to the resend screen.
+    if (!linkError) { if (C.GUEST_CHECKOUT) enterGuest(); else openEmailSignup(); }
   });
+
+  // ---------- guest entry: browse first, email at the cart step ----------
+  function enterGuest(){
+    if (entered) return;
+    entered = true;
+    state.guest = true;
+    state.email = '';
+    go('st-loading');
+    Promise.all([
+      sb.rpc('inventory_status'),
+      sb.rpc('catalog_list', { p_ids: state.catIds })
+    ]).then(function(results){
+      (results[0].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
+      state.allCat = results[1].data || [];
+      state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
+      state.family = { campers: [] };
+      state.kids = [];
+      $('whoami').textContent = 'guest checkout';
+      $('whoami2').innerHTML = 'guest checkout · <a href="#" id="guestSignin">been here before? Sign in</a>';
+      var gs = $('guestSignin');
+      if (gs) gs.addEventListener('click', function(e){
+        e.preventDefault();
+        go('st-remail'); var inp = $('emailInput'); if (inp) inp.focus();
+      });
+      ev('reg_guest_entered', {});
+      restoreCart();
+      if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
+      go('st-shows'); renderShowKids(); startSoftTimer();
+    }).catch(function(){
+      // network hiccup on the two catalog calls — fall back to the email
+      // front door rather than a dead screen
+      entered = false; state.guest = false;
+      openEmailSignup();
+    });
+  }
 
 
   // ---------- cart cache ----------
@@ -917,7 +966,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
   function saveCart(){
     try {
-      if (!state.email) return;
+      // guests have a cart before they have an email — key it on 'guest'
+      // until the address arrives, so a refresh mid-browse keeps their picks
+      if (!cartOwner()) return;
       var sel = [];
       Object.keys(state.assign).forEach(function(k){
         var a = state.assign[k];
@@ -928,21 +979,39 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       });
       if (!sel.length && !state.coupon) { localStorage.removeItem(CART_KEY); return; }
       localStorage.setItem(CART_KEY, JSON.stringify({
-        e: state.email, t: Date.now(), sel: sel, sc: cartScope(),
+        e: cartOwner(), t: Date.now(), sel: sel, sc: cartScope(),
         season: state.seasonFilter, ins: !!state.insurance,
-        plan: state.plan, coupon: state.coupon ? state.coupon.code : null
+        plan: state.plan, coupon: state.coupon ? state.coupon.code : null,
+        // guests' campers exist nowhere but this browser — a refresh must
+        // not orphan the selections by losing the kids they point at
+        gk: state.guest ? state.kids.map(function(k){ return { n: k.name, b: k.bday || null }; }) : undefined
       }));
     } catch(e){}
   }
+  function guestBdays(){
+    var m = {};
+    state.kids.forEach(function(k){ if (k.sel && k.bday) m[k.name] = k.bday; });
+    return m;
+  }
+  function cartOwner(){ return state.email || (state.guest ? 'guest' : ''); }
   function clearCart(){ try { localStorage.removeItem(CART_KEY); } catch(e){} }
   function restoreCart(){
     try {
       var raw = localStorage.getItem(CART_KEY);
       if (!raw) return 0;
       var c = JSON.parse(raw);
-      if (!c || c.e !== state.email) return 0;              // different account
+      // a guest cart also restores after they sign in or type their email —
+      // the picks were theirs either way
+      if (!c || (c.e !== cartOwner() && c.e !== 'guest')) return 0;   // different account
       if (c.sc !== cartScope()) return 0;                   // a different checkout — leave it be
       if (Date.now() - (c.t || 0) > CART_TTL) { clearCart(); return 0; }
+      if (state.guest && Array.isArray(c.gk)) {
+        c.gk.forEach(function(g){
+          if (!g || !g.n) return;
+          if (state.kids.some(function(k){ return k.name === g.n; })) return;
+          state.kids.push({ name: g.n, age: g.b ? ageOn(g.b, '2027-07-05') : null, bday: g.b, already: [], sel: true });
+        });
+      }
       var n = 0;
       (c.sel || []).forEach(function(x){
         var i = -1;
@@ -992,7 +1061,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       var rows = (res.data || []).filter(function(a){ return state.catIds.indexOf(a.id) !== -1; });
       if (rows.length && rows.every(function(a){ return !a.bb_gated; })) {
         state.openReg = true;
-        if (!state.email) openEmailSignup();
+        if (!state.email && !C.GUEST_CHECKOUT) openEmailSignup();
       }
     });
   }
@@ -1094,7 +1163,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       if (pn && !$('parentName').value) $('parentName').value = pn;
       $('parentName').addEventListener('change', function(){
         var n = $('parentName').value.trim();
-        if (n) sb.rpc('set_my_parent_name', { p_name: n });
+        if (n) state.guest || sb.rpc('set_my_parent_name', { p_name: n });
       });
       var shirts = results[6] && results[6].data ? results[6].data : {};
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
@@ -1165,6 +1234,20 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   // from a card's own "+ Add a camper" instead of the page-bottom button.
   // Parents add a kid IN CONTEXT of the thing they're buying (Jason, Aug 18).
   var addKidTarget = null;
+  $('guestEmailCancel').addEventListener('click', function(){ $('guestEmailModal').classList.remove('on'); });
+  $('guestEmailGo').addEventListener('click', function(){
+    var v = $('guestEmailInput').value.trim().toLowerCase();
+    var ge = $('guestEmailErr'); ge.classList.remove('on');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { ge.textContent = 'A valid email, please — your confirmation goes there.'; ge.classList.add('on'); return; }
+    state.email = v;
+    $('whoami2').innerHTML = esc(v) + ' · guest checkout';
+    $('guestEmailModal').classList.remove('on');
+    ev('reg_guest_email_captured', {});
+    saveCart();
+    acquireHold();
+  });
+  $('guestEmailInput') && $('guestEmailInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('guestEmailGo').click(); });
+
   $('sKidOpen').addEventListener('click', function(){
     addKidTarget = null;
     $('kidErr').classList.remove('on');
@@ -1232,7 +1315,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       }
       saveCart();
     }
-    sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday }).then(function(res){
+    state.guest || sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday }).then(function(res){
       if (res.error) ev('reg_save_failed', { fn: 'add_camper_bday', kid: name, msg: String(res.error.message || '').slice(0, 120) });
     });
     $('sKidName').value=''; $('sKidBday').value=''; $('sKidBday').classList.add('isEmpty');
@@ -1620,7 +1703,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         if (!kid || !inp.value) return;
         if (kid.bday === inp.value) return;
         kid.bday = inp.value;
-        sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday })
+        state.guest || sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday })
           .then(function(res){
             if (res && res.error) ev('reg_save_failed', { fn: 'fall_bday', kid: kid.name });
           });
@@ -1910,7 +1993,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         if (!kid || !inp.value) return;
         if (kid.bday === inp.value) return;
         kid.bday = inp.value;
-        sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday })
+        state.guest || sb.rpc('set_my_camper_birthdate', { p_name: kid.name, p_birthdate: kid.bday })
           .then(function(res){
             if (res && res.error) ev('reg_save_failed', { fn: 'cat_bday', kid: kid.name });
           });
@@ -1997,7 +2080,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         var sel = state.assign['act' + a.id + '|' + i];
         if (sel && sel.on && k.bday && !seen[i]) {
           seen[i] = 1;
-          sb.rpc('set_my_camper_birthdate', { p_name: k.name, p_birthdate: k.bday });
+          state.guest || sb.rpc('set_my_camper_birthdate', { p_name: k.name, p_birthdate: k.bday });
         }
       });
     });
@@ -2013,8 +2096,23 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       return FALL_SHOWS.some(function(s){ return fallCastOn(i, s.key); });
     });
     if (missingB) { errEl.textContent = 'Add a birthday for each performer \u2014 it\u2019s under their show card.'; errEl.classList.add('on'); return; }
+    // Guests pick first and only now tell us where the confirmation goes \u2014
+    // the email is what the hold gets bound to.
+    if (state.guest && !state.email) {
+      try {
+        var gpe = new URLSearchParams(location.search).get('pe');
+        if (gpe && gpe.indexOf('@') !== -1 && !$('guestEmailInput').value) $('guestEmailInput').value = gpe.trim();
+      } catch(e){}
+      $('guestEmailErr').classList.remove('on');
+      $('guestEmailModal').classList.add('on');
+      $('guestEmailInput').focus();
+      return;
+    }
     $('assignNext').disabled = true; $('catNext').disabled = true;
-    sb.rpc('acquire_hold_v3', { p_items: items }).then(function(res){
+    (state.guest
+      ? sb.rpc('acquire_hold_guest', { p_items: items, p_email: state.email })
+      : sb.rpc('acquire_hold_v3', { p_items: items })
+    ).then(function(res){
       $('assignNext').disabled = false; $('catNext').disabled = false;
       if (res.error) {
         var msg = res.error.message || '';
@@ -2649,10 +2747,12 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     $('payStart').disabled = true;
     sb.auth.getSession().then(function(res){
       var token = res.data && res.data.session && res.data.session.access_token;
+      var hdrs = { 'Content-Type': 'application/json' };
+      if (token) hdrs['Authorization'] = 'Bearer ' + token;
       return fetch('/api/reg-pay', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, ref: refCode() })
+        headers: hdrs,
+        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, ref: refCode(), email: token ? undefined : state.email, bdays: token ? undefined : guestBdays() })
       });
     }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
     .then(function(res){
@@ -2765,7 +2865,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         if (shirtsBlocked()) return;      // no resolve() → wallet sheet stays closed
         if (policyBlocked()) return;
         var n = $('parentName').value.trim();
-        if (n) sb.rpc('set_my_parent_name', { p_name: n });
+        if (n) state.guest || sb.rpc('set_my_parent_name', { p_name: n });
         persistKidData();
         ev('reg_wallet_clicked');
         e.resolve();
@@ -2798,16 +2898,18 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     if (shirtsBlocked()) return;
     if (policyBlocked()) return;
     var pnv = $('parentName').value.trim();
-    if (pnv) sb.rpc('set_my_parent_name', { p_name: pnv });
+    if (pnv) state.guest || sb.rpc('set_my_parent_name', { p_name: pnv });
     persistKidData();
     $('paySubmit').disabled = true;
     if (state.freeOrder) {
       sb.auth.getSession().then(function(res){
         var token = res.data && res.data.session && res.data.session.access_token;
+        var fh = { 'Content-Type': 'application/json' };
+        if (token) fh['Authorization'] = 'Bearer ' + token;
         return fetch('/api/reg-pay', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: pnv, insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, confirm_free: true, ref: refCode() })
+          headers: fh,
+          body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: pnv, insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, confirm_free: true, ref: refCode(), email: token ? undefined : state.email, bdays: token ? undefined : guestBdays() })
         });
       }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
       .then(function(res){

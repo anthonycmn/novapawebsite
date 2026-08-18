@@ -62,7 +62,6 @@ export default async (req) => {
   }
 
   const jwt = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (!jwt) return Response.json({ error: "unauthorized" }, { status: 401 });
 
   let body;
   try { body = await req.json(); } catch { return Response.json({ error: "bad_json" }, { status: 400 }); }
@@ -73,18 +72,56 @@ export default async (req) => {
     return Response.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${jwt}` },
-  });
-  if (!userRes.ok) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const user = await userRes.json();
-  const email = (user.email || "").toLowerCase();
-  if (!email) return Response.json({ error: "unauthorized" }, { status: 401 });
-
-  const hold = await anonRpc("get_my_hold", { p_hold_id: hold_id }, jwt);
+  // Two identities: a session (returning families), or a typed email plus a
+  // hold that was ACQUIRED for that same email (guest checkout — the hold id
+  // is unguessable and acquire_hold_guest bound it to the address, so the
+  // pair proves as much as the old email gate did without a session). Every
+  // pricing lookup below already keys on the email string via the service
+  // role, so returning-family discounts still apply to a typed address.
+  let email = "";
+  let guest = false;
+  let hold = null;
+  if (jwt) {
+    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${jwt}` },
+    });
+    if (!userRes.ok) return Response.json({ error: "unauthorized" }, { status: 401 });
+    const user = await userRes.json();
+    email = (user.email || "").toLowerCase();
+    if (!email) return Response.json({ error: "unauthorized" }, { status: 401 });
+    hold = await anonRpc("get_my_hold", { p_hold_id: hold_id }, jwt);
+  } else {
+    guest = true;
+    email = String((body || {}).email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return Response.json({ error: "unauthorized" }, { status: 401 });
+    }
+    if (!/^[0-9a-f-]{36}$/.test(String(hold_id))) {
+      return Response.json({ error: "hold_not_found" }, { status: 404 });
+    }
+    const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const rows = await (await fetch(
+      `${SUPABASE_URL}/rest/v1/holds?id=eq.${hold_id}&email=eq.${encodeURIComponent(email)}&select=id,items,status,expires_at&limit=1`,
+      { headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` } }
+    )).json();
+    hold = rows?.[0] || null;
+  }
   if (!hold || !hold.items) return Response.json({ error: "hold_not_found" }, { status: 404 });
   if (hold.status !== "active" || new Date(hold.expires_at) < new Date()) {
     return Response.json({ error: "hold_expired" }, { status: 409 });
+  }
+
+  // Guest campers exist only in the browser until the webhook mints their
+  // rows — carry their birthdays through metadata so those rows are born
+  // complete. Signed-in flows keep reading campers.birthdate as before.
+  const kidBdays = {};
+  if (guest) {
+    const kb = (body || {}).bdays;
+    if (kb && typeof kb === "object") {
+      for (const [k, v] of Object.entries(kb)) {
+        if (typeof k === "string" && /^\d{4}-\d{2}-\d{2}$/.test(String(v))) kidBdays[k.slice(0, 60)] = v;
+      }
+    }
   }
 
   // coupon: validated server-side; invalid codes are a hard error so the
@@ -420,7 +457,7 @@ export default async (req) => {
       customer: customerS.id,
       payment_method_types: ["card", "link"],
       metadata: {
-        hold_id, plan, email,
+        hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
         parent_name: (parent_name || "").slice(0, 100),
         total_cents: "0", installment_cents: "0", n_installments: "0",
         first_installment_utc: "0", insurance_cents: "0", insured: "0",
@@ -494,7 +531,7 @@ export default async (req) => {
       : plan === "subscription" ? "class enrollment (first month)" : "paid in full"}`,
     statement_descriptor_suffix: "NOVAPA",
     metadata: {
-      hold_id, plan, email,
+      hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
       parent_name: (parent_name || "").slice(0, 100),
       total_cents: String(pricing.totalCents),
       installment_cents: String(pricing.installmentCents),
