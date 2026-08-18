@@ -78,6 +78,11 @@ export const SPECIAL_PLANS = {
     // address, the email thread under Jamie's.
     email: ["christieamstadt@gmail.com", "jcs@smith82.com"],
     pctOffList: 20,
+    // Plus the retro true-up Todd approved Aug 10: their summer camps were
+    // paid at the 15% two-show rate, and with four productions the whole set
+    // is 20% — $49.75 x 2 = $99.50 back, delivered as a credit on this
+    // checkout (the coupons row has carried the amount since Aug 10).
+    creditCents: 9950,
   },
   "ANSELL0": {
     email: "ajansell@gmail.com",
@@ -271,7 +276,13 @@ export function priceCart(cart, plan, opts = {}) {
   // vehicle; its numbers live in the special, not the coupons row)
   const special = opts.special || null;
   const couponPct = special ? 0 : Math.min(100, Math.max(0, opts.couponPct || 0));
-  const couponFixed = special ? 0 : Math.max(0, opts.couponFixedCents || 0);
+  // A special may carry a fixed credit of its own (creditCents) — e.g. a
+  // retro true-up approved alongside a discount. It rides the exact same
+  // rails a fixed coupon would; an ordinary coupon's amount still never
+  // stacks on a special.
+  const couponFixed = special
+    ? Math.max(0, special.creditCents || 0)
+    : Math.max(0, opts.couponFixedCents || 0);
   // Unified show tiers (CJ, Jul 31 — supersedes camp tiers, the 10% show
   // bundle, and the Jul 30 show+camp combo): every Broadway Bound show counts
   // the same, summer camp or school-year. Per registrant, through Aug 15:
