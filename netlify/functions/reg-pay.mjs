@@ -14,7 +14,7 @@ import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
-  SPECIAL_PLANS, isCoachingId,
+  SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
   DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CREDITS, DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END,
 } from "./reg-config.mjs";
 
@@ -97,14 +97,28 @@ export default async (req) => {
     // A special code is valid with a bare row (its pct is display-only, often
     // absent); ordinary coupons must actually carry a discount.
     special = SPECIAL_PLANS[couponCode.toUpperCase()] || null;
+    // Row-driven deals: the coupons row itself can carry the special terms
+    // (one INSERT, no deploy). Read with the SERVICE role — email_lock must
+    // never travel through anon-callable check_coupon into a browser.
+    if (!special && c) {
+      try {
+        const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const rows = await (await fetch(
+          `${SUPABASE_URL}/rest/v1/coupons?code=ilike.${encodeURIComponent(couponCode)}&select=email_lock,pct_off_list,waive_plan_fee,plan_months,balance_cents&limit=1`,
+          { headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` } }
+        )).json();
+        special = specialFromCouponRow(rows?.[0]);
+      } catch (e) { console.error("special row lookup", e.message); }
+    }
     if (!c || (!special && !c.pct && !c.amount_cents)) {
       return Response.json({ error: "bad_coupon" }, { status: 400 });
     }
     couponPct = c.pct || 0;
     couponFixedCents = c.amount_cents || 0;
     // One family can hold several addresses (whoever paid for summer vs
-    // whoever emails us) — a special may lock to one email or a list.
-    if (special) {
+    // whoever emails us) — a special may lock to one email or a list. A
+    // special with no lock at all is usable by anyone holding the code.
+    if (special && special.email) {
       const locks = (Array.isArray(special.email) ? special.email : [special.email])
         .map((e) => e.toLowerCase());
       if (!locks.includes(email)) {

@@ -220,6 +220,24 @@ const kindOf = (it) => it.offering_kind || null;
 const isCoaching = (it) =>
   kindOf(it) ? kindOf(it) === "coaching" : isCoachingId(it.activity_id);
 
+// A coupons row can carry a whole special deal (email_lock, pct_off_list,
+// waive_plan_fee, plan_months) — one INSERT instead of a SPECIAL_PLANS edit
+// and a deploy. The map above still wins when both exist. An amount on a
+// special row rides as the special's credit; a plain coupon's amount is
+// zeroed once a special exists, so without this the credit would vanish.
+export function specialFromCouponRow(row) {
+  if (!row) return null;
+  const locked = Array.isArray(row.email_lock) && row.email_lock.length > 0;
+  if (!row.pct_off_list && !row.waive_plan_fee && !row.plan_months && !locked) return null;
+  const s = {};
+  if (locked) s.email = row.email_lock;
+  if (row.pct_off_list) s.pctOffList = row.pct_off_list;
+  if (row.waive_plan_fee) s.waivePlanFee = true;
+  if (row.plan_months) s.months = row.plan_months;
+  if (row.balance_cents) s.creditCents = row.balance_cents;
+  return s;
+}
+
 export function perKidRate(nCampsForKid, now = new Date()) {
   if (now > new Date(EARLYBIRD_END)) return 0;
   if (nCampsForKid >= 3) return 0.20;
