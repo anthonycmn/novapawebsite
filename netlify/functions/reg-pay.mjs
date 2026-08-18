@@ -141,7 +141,7 @@ export default async (req) => {
       try {
         const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         const rows = await (await fetch(
-          `${SUPABASE_URL}/rest/v1/coupons?code=ilike.${encodeURIComponent(couponCode)}&select=email_lock,pct_off_list,waive_plan_fee,plan_months,balance_cents&limit=1`,
+          `${SUPABASE_URL}/rest/v1/coupons?code=ilike.${encodeURIComponent(couponCode)}&select=email_lock,pct_off_list,waive_plan_fee,plan_months,balance_cents,scope_activity_ids,scope_shows&limit=1`,
           { headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` } }
         )).json();
         special = specialFromCouponRow(rows?.[0]);

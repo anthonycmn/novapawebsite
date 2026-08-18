@@ -235,7 +235,23 @@ export function specialFromCouponRow(row) {
   if (row.waive_plan_fee) s.waivePlanFee = true;
   if (row.plan_months) s.months = row.plan_months;
   if (row.balance_cents) s.creditCents = row.balance_cents;
+  // Todd (Aug 18): a code must be restrictable to one show/product, not
+  // sitewide. Items outside the scope keep their normal pricing.
+  if (Array.isArray(row.scope_activity_ids) && row.scope_activity_ids.length) s.scopeActivityIds = row.scope_activity_ids;
+  if (Array.isArray(row.scope_shows) && row.scope_shows.length) s.scopeShows = row.scope_shows;
   return s;
+}
+
+// Does this cart item fall inside a special's product scope? An unscoped
+// special covers everything (the pre-scoping behavior).
+export function specialCovers(special, it) {
+  if (!special) return false;
+  const scoped = (special.scopeActivityIds && special.scopeActivityIds.length) ||
+                 (special.scopeShows && special.scopeShows.length);
+  if (!scoped) return true;
+  if (it.activity_id && (special.scopeActivityIds || []).includes(it.activity_id)) return true;
+  if (it.show && (special.scopeShows || []).includes(it.show)) return true;
+  return false;
 }
 
 export function perKidRate(nCampsForKid, now = new Date()) {
@@ -381,9 +397,10 @@ export function priceCart(cart, plan, opts = {}) {
     }
     return { ...it, unit, rate };
   }).map((it) => {
-    // special: flat pct off LIST on every camp/show, REPLACING the
-    // tier/bundle/trio/sibling math above — never stacking on it
-    if (!special || !special.pctOffList || it.daycamp) return it;
+    // special: flat pct off LIST on every camp/show IN SCOPE, REPLACING the
+    // tier/bundle/trio/sibling math above — never stacking on it. Items
+    // outside a scoped special keep their normal pricing.
+    if (!special || !special.pctOffList || it.daycamp || !specialCovers(special, it)) return it;
     const list = it.show ? PRICE_CENTS : (it.price_cents || 0);
     const rate = special.pctOffList / 100;
     return { ...it, unit: Math.round(list * (1 - rate)), rate };
