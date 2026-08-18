@@ -112,6 +112,8 @@
   /* campers / assignment */
   .kid-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--line); }
   .kid-row:last-child { border-bottom:none; }
+  .kid-add-here { background:none; border:0; color:var(--ink-dim); font-size:13px; text-decoration:underline; cursor:pointer; display:block; padding:8px 0 2px; font-family:inherit; }
+  .kid-add-here:hover { color:var(--gold2); }
   .kid-check { display:flex; align-items:center; gap:10px; cursor:pointer; min-width:170px; font-weight:500; }
   .kid-check input { width:19px; height:19px; accent-color:var(--gold2); }
   .badge-done { font-size:11.5px; color:var(--ok); font-weight:700; }
@@ -1159,7 +1161,25 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   $('signout2').addEventListener('click', function(e){
     e.preventDefault(); clearCart(); sb.auth.signOut().then(function(){ location.href='/register/'; });
   });
+  // Where the new camper should be auto-checked, when the modal was opened
+  // from a card's own "+ Add a camper" instead of the page-bottom button.
+  // Parents add a kid IN CONTEXT of the thing they're buying (Jason, Aug 18).
+  var addKidTarget = null;
   $('sKidOpen').addEventListener('click', function(){
+    addKidTarget = null;
+    $('kidErr').classList.remove('on');
+    $('kidModal').classList.add('on');
+    $('sKidName').focus();
+  });
+  $('showBlocks').addEventListener('click', function(e){
+    var b = e.target && e.target.closest ? e.target.closest('.kid-add-here') : null;
+    if (!b) return;
+    addKidTarget =
+      b.dataset.addshow ? { type: 'show', show: b.dataset.addshow } :
+      b.dataset.addfall ? { type: 'fall', key: b.dataset.addfall } :
+      b.dataset.addday  ? { type: 'day', when: b.dataset.addday } :
+      b.dataset.addcls  ? { type: 'cls', id: +b.dataset.addcls } : null;
+    ev('reg_addkid_from_card', { t: addKidTarget ? addKidTarget.type : '?' });
     $('kidErr').classList.remove('on');
     $('kidModal').classList.add('on');
     $('sKidName').focus();
@@ -1187,6 +1207,31 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       errEl.classList.add('on'); return;
     }
     state.kids.push({ name:name, age:age, bday:bday, already:[], sel:true });
+    // Opened from a card: check the new camper straight into that card, the
+    // same way ticking their checkbox by hand would. Ineligible picks
+    // self-heal on render (age gates uncheck them and show the age badge).
+    if (addKidTarget) {
+      var t = addKidTarget; addKidTarget = null;
+      var ni = state.kids.length - 1, nk = state.kids[ni];
+      if (t.type === 'show') {
+        var db = bandsFor(campAge(nk)).filter(function(b){ return b !== 'tech'; });
+        state.assign[t.show + '|' + ni] = { on: true, band: db[0] || '9-12' };
+      } else if (t.type === 'fall') {
+        var fsd = FALL_SHOWS.filter(function(x){ return x.key === t.key; })[0];
+        var facts = fallActsFor(t.key);
+        if (fsd && facts.length) setFallCast(ni, t.key, defaultCastFor(t.key, ageOn(nk.bday, fsd.start)) || facts[0].id);
+      } else if (t.type === 'day') {
+        var dg = dayGroups().filter(function(x){ return x.when === t.when; })[0];
+        if (dg) {
+          var dAge = campAge(nk);
+          var fit = dg.acts.filter(function(a){ var r = castRange(a); return (dAge == null || (dAge >= r.min - 1 && dAge <= r.max)) && !(a.remaining != null && a.remaining <= 0); })[0];
+          if (fit) setDay(ni, dg, fit.id);
+        }
+      } else if (t.type === 'cls') {
+        state.assign['cls' + t.id + '|' + ni] = { on: true };
+      }
+      saveCart();
+    }
     sb.rpc('set_my_camper_birthdate', { p_name: name, p_birthdate: bday }).then(function(res){
       if (res.error) ev('reg_save_failed', { fn: 'add_camper_bday', kid: name, msg: String(res.error.message || '').slice(0, 120) });
     });
@@ -1311,7 +1356,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
           (already ? ' <span class="badge-done">\u2713 already registered</span>' :
            noBand ? ' <span class="badge-done" style="opacity:.65">camps are for ages 5\u201315</span>' : '') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + showT + '</div>';
-      }).join('');
+      }).join('') +
+      '<button type="button" class="kid-add-here" data-addshow="' + esc(show) + '">+ Add a camper to this camp</button>';
     });
     var blocks = $('showBlocks');
     blocks.querySelectorAll('input[type=checkbox][data-key]').forEach(function(cb){
@@ -1415,7 +1461,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
           '<div class="bd"><div class="t">' + esc(g.title) + '</div>' +
           '<div class="d">' + esc(g.when) + ' \u00b7 Ages ' + ages +
             (dayPriceLabel(g.acts) ? ' \u00b7 ' + dayPriceLabel(g.acts) : '') + '</div>' +
-          '<div class="kids">' + kidRows + '</div></div></div>';
+          '<div class="kids">' + kidRows +
+          '<button type="button" class="kid-add-here" data-addday="' + esc(g.when) + '">+ Add a camper to this day</button>' +
+          '</div></div></div>';
       }).join('');
     var groupsRef = groups;
     host.querySelectorAll('input[data-dayg]').forEach(function(cb){
@@ -1487,7 +1535,9 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
           '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
           '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
           '<div class="d">' + esc(classWhen(a)) + (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/,'')) : '') + ' \u00b7 $90/mo</div>' +
-          '<div class="kids">' + kidRows + '</div></div></div>';
+          '<div class="kids">' + kidRows +
+          '<button type="button" class="kid-add-here" data-addcls="' + a.id + '">+ Add a camper to this class</button>' +
+          '</div></div></div>';
       }).join('');
     host.querySelectorAll('input[data-cls]').forEach(function(cb){
       cb.addEventListener('change', function(){
@@ -1537,7 +1587,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
           '<label class="kid-check"><input type="checkbox" data-fall="' + sKey + '" data-i="' + i + '" ' + (onCast ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' +
           (eligible ? soloTag : soloTag + ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
-      }).join('');
+      }).join('') +
+      '<button type="button" class="kid-add-here" data-addfall="' + esc(sKey) + '">+ Add a camper to this show</button>';
     });
     var blocks = $('showBlocks');
     blocks.querySelectorAll('input[type=checkbox][data-fall]').forEach(function(cb){
@@ -1870,6 +1921,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     });
     var addBtn = $('cKidAdd');
     if (addBtn) addBtn.addEventListener('click', function(){
+      addKidTarget = null;
       $('kidErr').classList.remove('on');
       $('kidModal').classList.add('on');
       $('sKidName').focus();
