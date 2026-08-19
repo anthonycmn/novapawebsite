@@ -110,7 +110,14 @@ async function paymentsFor(email) {
             const phases = (sch.phases || []).filter((p) => p.end_date);
             if (sch.end_behavior === "cancel" && phases.length) {
               const endAll = phases[phases.length - 1].end_date;
-              const amtCache = {};
+              // STRIPE_READ_KEY has no Prices read scope, so the two final-
+              // installment prices are seeded by id (created 18 Aug 2026,
+              // prod). A phase with any other price falls back to the plan's
+              // monthly amount; add Prices:Read to the key to generalize.
+              const amtCache = {
+                price_1U6CmTGWP2ZbtaszBGFK2QN0: 5650,
+                price_1U6CmTGWP2ZbtaszDlvrhumq: 20434,
+              };
               let d = new Date(nextTs * 1000);
               // probe at tick + 12h: billing ticks and phase boundaries can
               // differ by seconds, and an exact comparison put the final tick
