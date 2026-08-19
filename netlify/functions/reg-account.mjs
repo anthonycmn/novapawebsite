@@ -112,9 +112,12 @@ async function paymentsFor(email) {
               const endAll = phases[phases.length - 1].end_date;
               const amtCache = {};
               let d = new Date(nextTs * 1000);
-              for (let i = 0; d.getTime() / 1000 < endAll && i < 24; i++) {
-                const t = d.getTime() / 1000;
-                const ph = phases.find((p) => t >= p.start_date && t < p.end_date) || phases[phases.length - 1];
+              // probe at tick + 12h: billing ticks and phase boundaries can
+              // differ by seconds, and an exact comparison put the final tick
+              // in the wrong phase and invented a charge at the cancel moment
+              for (let i = 0; d.getTime() / 1000 + 43200 < endAll && i < 24; i++) {
+                const t = d.getTime() / 1000, probe = t + 43200;
+                const ph = phases.find((p) => probe >= p.start_date && probe < p.end_date) || phases[phases.length - 1];
                 const pid = ph.items?.[0]?.price;
                 if (pid && !(pid in amtCache)) {
                   try { amtCache[pid] = (await stripe(`prices/${pid}`)).unit_amount; } catch (e) { amtCache[pid] = amount; }
