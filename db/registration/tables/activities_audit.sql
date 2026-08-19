@@ -49,6 +49,11 @@ create trigger trg_activities_audit
   after update on public.activities
   for each row execute function public.log_activity_change();
 
--- Reads for both sides' tooling; writes only through the trigger.
-revoke all on table public.activities_audit from anon;
-grant select on table public.activities_audit to authenticated, service_role;
+-- RLS on, no policies: the API roles (anon, authenticated) can read and
+-- write NOTHING here. The trigger writes through its SECURITY DEFINER
+-- function and both sides' tooling reads with the service role, which
+-- bypasses RLS. (Enabled 18 Aug after the Supabase advisor flagged the
+-- table — created the night before without it.)
+alter table public.activities_audit enable row level security;
+revoke all on table public.activities_audit from anon, authenticated;
+grant select on table public.activities_audit to service_role;
