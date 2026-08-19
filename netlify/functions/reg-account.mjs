@@ -99,6 +99,33 @@ async function paymentsFor(email) {
             upcoming.push({ date: d.getTime(), amount_cents: amount, desc, ends: s.cancel_at * 1000 });
             d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes()));
           }
+        } else if (s.schedule) {
+          // Schedule-run plans (migration finals, Aug 18): phases can change
+          // the amount — the last one is the partial final payment. Enumerate
+          // every remaining charge with its phase's own price so the family
+          // sees "$125 ... $125 ... $56.50, then nothing".
+          let listed = false;
+          try {
+            const sch = await stripe(`subscription_schedules/${s.schedule}`);
+            const phases = (sch.phases || []).filter((p) => p.end_date);
+            if (sch.end_behavior === "cancel" && phases.length) {
+              const endAll = phases[phases.length - 1].end_date;
+              const amtCache = {};
+              let d = new Date(nextTs * 1000);
+              for (let i = 0; d.getTime() / 1000 < endAll && i < 24; i++) {
+                const t = d.getTime() / 1000;
+                const ph = phases.find((p) => t >= p.start_date && t < p.end_date) || phases[phases.length - 1];
+                const pid = ph.items?.[0]?.price;
+                if (pid && !(pid in amtCache)) {
+                  try { amtCache[pid] = (await stripe(`prices/${pid}`)).unit_amount; } catch (e) { amtCache[pid] = amount; }
+                }
+                upcoming.push({ date: d.getTime(), amount_cents: (pid && amtCache[pid]) || amount, desc, ends: endAll * 1000 });
+                listed = true;
+                d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes()));
+              }
+            }
+          } catch (e) { /* schedule unreadable — fall through to the open row */ }
+          if (!listed) upcoming.push({ date: nextTs * 1000, amount_cents: amount, desc, ends: null, renews: true });
         } else {
           upcoming.push({ date: nextTs * 1000, amount_cents: amount, desc, ends: null, renews: true });
         }
