@@ -736,6 +736,15 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
   function isCatMode(){ return state.catItems.length > 0; }
   function catAllClasses(){ return state.catItems.length > 0 && state.catItems.every(function(a){ return a.category === 'class'; }); }
+  // Catalog carts holding a real program (Teen Conservatory shows, any
+  // non-class item priced above day-camp range) get the standard payment
+  // plan toggle. Classes keep their subscription flow, coaching and day
+  // camps stay pay-in-full (Jason, Aug 20).
+  function catPlanEligible(){
+    return state.catItems.some(function(a){
+      return a.category !== 'class' && !(a.id >= 970000 && a.id <= 979999) && (a.price_cents || 0) > 20000;
+    });
+  }
   function $(id){ return document.getElementById(id); }
   function ev(name, props){ try { window.posthog && window.posthog.capture(name, props||{}); } catch(e){} }
   function go(stepId){
@@ -936,7 +945,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       (results[0].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[1].data || [];
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
-      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
       state.family = { campers: [] };
       state.kids = [];
       $('whoami').textContent = 'guest checkout';
@@ -1180,7 +1189,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         if (n) state.guest || sb.rpc('set_my_parent_name', { p_name: n });
       });
       var shirts = results[6] && results[6].data ? results[6].data : {};
-      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
         return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], verified:c.verified||[], sel:true,
@@ -2550,7 +2559,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   }
 
   function renderPay(){
-    if (isCatMode()) { renderCatPay(); return; }
+    if (isCatMode() && !catPlanEligible()) { renderCatPay(); return; }
     var p = localPricing();
     var items = p.items;
     var byKid = {};
@@ -2776,7 +2785,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
   function schedulePay(){ clearTimeout(payTimer); payTimer = setTimeout(startPayment, 350); }
   function setPayH1(cents){
     var n = state.hold ? state.hold.items.length : 1;
-    $('payH1').innerHTML = (!isCatMode() && state.plan === 'deposit')
+    $('payH1').innerHTML = (state.plan === 'deposit')
       ? 'Reserve your spot' + (n > 1 ? 's' : '') + ' for <em>' + money(cents) + '</em> today'
       : 'Pay <em>' + money(cents) + '</em> today';
   }
@@ -2928,8 +2937,8 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
       $('payStart').style.display = 'none';
       $('paySubmit').innerHTML = state.setupMode
         ? 'Enroll \u2014 $0 today'
-        : (!isCatMode() && state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
-          money(state.pricing.today_cents) + (!isCatMode() && state.plan === 'deposit' ? ' today' : '');
+        : (state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
+          money(state.pricing.today_cents) + (state.plan === 'deposit' ? ' today' : '');
       $('paySubmit').style.display = '';
     }
     if (window.Stripe) return ready();
