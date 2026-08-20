@@ -207,6 +207,14 @@ export default async () => {
     if (batch.length < 200) break;
   }
 
+  // guest carts (no auth user): the hold is their sign-in signal — feed them
+  // through the exact same enrollment pipe as everyone else
+  const known = new Set(users.map((u) => String(u.email || "").toLowerCase()));
+  for (const h of holds) {
+    const e = String(h.email || "").toLowerCase();
+    if (e && !known.has(e)) { known.add(e); users.push({ email: e, last_sign_in_at: h.created_at }); }
+  }
+
   // current state
   const states = await svcAll("retarget_state?select=*&order=email");
   const stateByEmail = {};
