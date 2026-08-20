@@ -774,7 +774,11 @@
     host.innerHTML =
       '<div class="camp-panel">' +
         '<div class="cp-block"><b>Registered for</b>' +
-          (regs.length ? '<table style="margin-top:6px">' +
+          // One list, one truth. A Regpack or Sawyer registration IS a
+          // registration — the only difference worth showing is where the
+          // money was paid (Jason, Aug 20: "show this as an official sign up
+          // same as others, note on the billing side").
+          ((regs.length || leg.length) ? '<table style="margin-top:6px">' +
             '<tr><th>program</th><th class="num">paid</th><th>order</th><th></th></tr>' +
             regs.map(function(r){
               return '<tr><td><b>' + esc(r.what) + '</b>' +
@@ -782,10 +786,17 @@
                 '<td class="num">' + (r.paid_cents != null ? usd(r.paid_cents) : '—') + '</td>' +
                 '<td class="sub">' + esc(r.plan || '') + (r.ordered_at ? '<div>' + dt(r.ordered_at) + '</div>' : '') + '</td>' +
                 '<td>' + rosterActionBtns(r.item_id, name) + '</td></tr>';
-            }).join('') + '</table>'
-            : '<div class="sub" style="padding:4px 0">nothing on our platform</div>') +
-          (leg.length ? '<div class="sub" style="margin-top:8px"><b>Before the platform:</b> ' +
-            leg.map(function(l){ return esc(l.activity_text || '') + (l.paid_cents ? ' (' + usd(l.paid_cents) + ')' : ''); }).join(' · ') + '</div>' : '') +
+            }).join('') +
+            leg.map(function(l){
+              var src = /sawyer/i.test(l.source || '') ? 'Sawyer' : 'RegPack';
+              return '<tr><td><b>' + esc(l.activity_text || '') + '</b>' +
+                (l.dates ? '<div class="sub">' + esc(l.dates) + '</div>' : '') + '</td>' +
+                '<td class="num">' + (l.paid_cents != null ? usd(l.paid_cents) : '—') + '</td>' +
+                '<td class="sub">Paid on ' + src + '</td>' +
+                '<td></td></tr>';
+            }).join('') +
+            '</table>'
+            : '<div class="sub" style="padding:4px 0">not registered for anything</div>') +
         '</div>' +
         '<div class="cp-block"><b>Family</b>' +
           (fams.length ? fams.map(function(f){
