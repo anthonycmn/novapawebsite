@@ -42,14 +42,15 @@
   .quotebox span { display:block; margin-top:8px; font-size:13px; color:var(--dim); }
   .map { width:100%; height:280px; border:1px solid var(--line); border-radius:16px; display:block; }
   .urgent { text-align:center; font-size:15px; color:var(--gold); font-weight:700; margin-top:26px; }
-  .expect { margin:34px 0 4px; text-align:center; }
-  .step { padding:20px 0 8px; }
-  .stepn { width:44px; height:44px; border-radius:50%; background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1608; font-weight:800; font-size:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; }
-  .step b { display:block; color:var(--gold); font-size:17px; font-weight:800; margin-bottom:5px; }
-  .step div.t2 { font-size:15px; color:var(--ink); max-width:440px; margin:0 auto; }
-  .snap { width:100%; border-radius:14px; display:block; margin:14px 0; }
-  .snapcap { font-size:12px; color:var(--dim); text-align:center; margin:-6px 0 10px; }
-  .reviews { margin:34px 0 6px; }
+  .expect { margin:34px auto 4px; text-align:center; }
+  .exgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px; }
+  @media (max-width:680px) { .exgrid { grid-template-columns:1fr; } }
+  .excell { text-align:center; }
+  .excell img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:14px; display:block; margin-bottom:12px; }
+  .stepn { width:40px; height:40px; border-radius:50%; background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1608; font-weight:800; font-size:19px; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; }
+  .excell b { display:block; color:var(--gold); font-size:16px; font-weight:800; margin-bottom:5px; }
+  .excell p { font-size:14px; color:var(--ink); line-height:1.55; }
+  .reviews { margin:34px auto 6px; text-align:center; }
   .rev { background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:12px; text-align:center; }
   .rev .stars { color:var(--gold); font-size:13px; letter-spacing:2px; margin-bottom:7px; }
   .rev blockquote { font-size:15px; line-height:1.6; }
@@ -87,15 +88,28 @@
   </div>
 </div>
 
-<div class="wrap expect">
+<div class="wrap expect" style="max-width:980px">
   <h2>What to expect</h2>
-  <img class="snap" src="/register/img/rehearsal-2026.jpg" alt="NOVAPA kids rehearsing choreography" loading="lazy">
-  <p class="snapcap">A real NOVAPA rehearsal, summer 2026</p>
-  <div class="step"><div class="stepn">1</div><b>Auditions on day one</b><div class="t2">Every child gets a role. The first rehearsal decides which one, and nobody goes home without a part.</div></div>
-  <div class="step"><div class="stepn">2</div><b>Rehearse one evening a week</b><div class="t2">September through January: songs, scenes, and choreography, taught step by step by working theatre professionals. Tech Week with costumes and lights comes the week of the show.</div></div>
-  <div class="step"><div class="stepn">3</div><b>The full production</b><div class="t2">January 29 to February 6 at the Loudoun Auditorium. Each cast performs three real shows with family and friends in the seats.</div></div>
-  <img class="snap" src="/register/img/show-2026.jpg" alt="NOVAPA performers in full costume on stage" loading="lazy">
-  <p class="snapcap">Opening night, full costumes, real set &mdash; this is where it ends up</p>
+  <div class="exgrid">
+    <div class="excell">
+      <img src="/register/img/firstday-2026.jpg" alt="Day one: kids with scripts at a NOVAPA first rehearsal" loading="lazy">
+      <div class="stepn">1</div>
+      <b>Auditions on day one</b>
+      <p>Every child gets a role. The first rehearsal decides which one, and nobody goes home without a part.</p>
+    </div>
+    <div class="excell">
+      <img src="/register/img/rehearsal-2026.jpg" alt="NOVAPA kids rehearsing choreography" loading="lazy">
+      <div class="stepn">2</div>
+      <b>Rehearse one evening a week</b>
+      <p>September through January: songs, scenes, and choreography taught by working theatre professionals. Tech Week with costumes and lights comes the week of the show.</p>
+    </div>
+    <div class="excell">
+      <img src="/register/img/show-2026.jpg" alt="NOVAPA performers in full costume on stage" loading="lazy">
+      <div class="stepn">3</div>
+      <b>The full production</b>
+      <p>January 29 to February 6 at the Loudoun Auditorium. Each cast performs three real shows with family and friends in the seats.</p>
+    </div>
+  </div>
 </div>
 
 <div class="wrap reviews">
