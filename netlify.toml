@@ -51,6 +51,12 @@
   status = 301
   force = true
 
+# Ad landing page for the Frozen fall production — clean URL for Meta ads.
+[[redirects]]
+  from = "/be-in-frozen"
+  to = "/be-in-frozen.html"
+  status = 200
+
 # Printed on the back of playbills — short, typeable, and tagged so we can
 # see exactly how many registrations the print piece drives.
 [[redirects]]
