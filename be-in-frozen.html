@@ -26,6 +26,11 @@
   .sub { color:var(--dim); font-size:17px; margin:14px auto 0; max-width:480px; }
   .btn { display:block; width:100%; max-width:420px; margin:26px auto 0; background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1608; font-weight:800; font-size:18px; text-align:center; padding:17px 20px; border-radius:14px; text-decoration:none; }
   .tiny { font-size:13px; color:var(--dim); text-align:center; margin-top:10px; }
+  .cd { display:flex; justify-content:center; gap:12px; margin:22px auto 0; }
+  .cd .u { background:rgba(255,255,255,0.06); border:1px solid var(--line); border-radius:12px; padding:10px 0; width:72px; text-align:center; }
+  .cd .n { font-size:24px; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; }
+  .cd .l { font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+  .cdcap { text-align:center; font-size:13px; color:var(--dim); margin-top:8px; }
   .band { background:var(--navy2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin:36px 0; padding:30px 0; }
   h2 { font-size:22px; margin-bottom:14px; }
   .fact { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:16px; text-align:left; }
@@ -67,6 +72,13 @@
   <p class="sub">One evening a week from September to February, ending in a full production on a real stage in Leesburg. No experience needed. Every child who wants a part gets one.</p>
   <a class="btn" data-reg href="/register/?season=fall">Save my kid&rsquo;s spot</a>
   <p class="tiny">$695 for the full season &middot; split into two payments at checkout &middot; siblings save 5%</p>
+  <div class="cd" id="cd">
+    <div class="u"><div class="n" id="cdD">--</div><div class="l">days</div></div>
+    <div class="u"><div class="n" id="cdH">--</div><div class="l">hours</div></div>
+    <div class="u"><div class="n" id="cdM">--</div><div class="l">min</div></div>
+    <div class="u"><div class="n" id="cdS">--</div><div class="l">sec</div></div>
+  </div>
+  <p class="cdcap">until the first rehearsal</p>
 </div>
 
 <div class="wrap expect" style="max-width:980px">
@@ -132,7 +144,7 @@
 <div class="wrap">
   <img class="photo" src="/register/img/cast-summer-2026.jpg" alt="Hundreds of NOVAPA kids on stage" loading="lazy">
   <p class="quotebox">Hundreds of Northern Virginia kids take our stage every year. The shy ones find their voice. The loud ones find their craft. All of them find their people.<span>NOVAPA Broadway Bound &middot; 21st season</span></p>
-  <p class="urgent">Rehearsals begin September 16. The 9 to 12 cast is already over two thirds full.</p>
+  <p class="urgent">Rehearsals begin the week of September 15. The 9 to 12 cast is already over two thirds full.</p>
   <a class="btn" data-reg href="/register/?season=fall">Register now &mdash; takes 2 minutes</a>
   <p class="tiny">No account needed. Pay in full or in two payments.</p>
 </div>
@@ -150,6 +162,20 @@
 </footer>
 
 <script>
+  (function(){
+    var t = new Date('2026-09-15T18:15:00-04:00').getTime();
+    var el = { d: document.getElementById('cdD'), h: document.getElementById('cdH'), m: document.getElementById('cdM'), s: document.getElementById('cdS') };
+    function tick(){
+      var ms = t - Date.now();
+      if (ms <= 0) { var c = document.getElementById('cd'); c.style.display = 'none'; c.nextElementSibling.style.display = 'none'; return; }
+      el.d.textContent = Math.floor(ms / 86400000);
+      el.h.textContent = String(Math.floor(ms / 3600000) % 24).padStart(2, '0');
+      el.m.textContent = String(Math.floor(ms / 60000) % 60).padStart(2, '0');
+      el.s.textContent = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
+      setTimeout(tick, 1000);
+    }
+    tick();
+  })();
   // forward the ad's utm/fbclid params into registration so attribution
   // survives the hop from ad -> this page -> checkout
   (function(){
