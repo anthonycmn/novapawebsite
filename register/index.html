@@ -711,6 +711,10 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     var m = String(a.age_range||'').match(/(\d+)\s*[\u2013\u2014-]\s*(\d+)/);
     return m ? { min:+m[1], max:+m[2] } : { min:5, max:17 };
   }
+  function castTop(a){
+    // admit through this age; display strings stay on castRange().max
+    return a.id === 1959805 ? 18 : castRange(a).max;
+  }
   function castLabel(a){
     if (/tech/i.test(String(a.name||''))) {
       var tr = castRange(a);
@@ -727,11 +731,11 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
     if (age == null) return acts.length === 1 ? acts[0].id : null;
     // default = the band whose range strictly contains the age; the one-year
     // grace band is offered as a pill but never auto-picked
-    var fit = acts.filter(function(a){ var r = castRange(a); return age >= r.min && age <= r.max; });
+    var fit = acts.filter(function(a){ var r = castRange(a); return age >= r.min && age <= castTop(a); });
     var perf = fit.filter(function(a){ return !/tech/i.test(a.name); });
     if (perf.length) return perf[perf.length - 1].id;
     if (fit.length) return fit[fit.length - 1].id;
-    var near = acts.filter(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= r.max; });
+    var near = acts.filter(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= castTop(a); });
     return near.length ? near[0].id : null;
   }
   function isCatMode(){ return state.catItems.length > 0; }
@@ -1697,7 +1701,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         if (!k.sel) return '';
         var age = ageOn(k.bday, s.start);
         var onCast = fallCastOn(i, sKey);
-        var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= r.max; });
+        var eligible = age == null || acts.some(function(a){ var r = castRange(a); return age >= r.min - 1 && age <= castTop(a); });
         if (!eligible && onCast) { setFallCast(i, sKey, null); onCast = null; }
         // single-cast programs (Mean Girls) have no choice to make — skip the
         // pill row and surface any scarcity on the checkbox line instead
@@ -1710,7 +1714,7 @@ src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"
         if (onCast && eligible && acts.length > 1) {
           pills = acts.map(function(a){
             var r = castRange(a);
-            if (age != null && !(age >= r.min - 1 && age <= r.max)) return '';
+            if (age != null && !(age >= r.min - 1 && age <= castTop(a))) return '';
             var left = a.remaining;
             var full = left != null && left <= 0;
             var leftTag = (left != null && left < 20) ? ' <span class="left">' + (full ? 'Full' : left + ' more spots available') + '</span>' : '';

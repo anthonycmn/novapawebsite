@@ -28,7 +28,7 @@
   .tiny { font-size:13px; color:var(--dim); text-align:center; margin-top:10px; }
   .band { background:var(--navy2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin:36px 0; padding:30px 0; }
   h2 { font-size:22px; margin-bottom:14px; }
-  .fact { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:16px; }
+  .fact { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:16px; text-align:left; }
   .fact:last-child { border-bottom:none; }
   .fact b { color:var(--gold); min-width:96px; flex-shrink:0; font-weight:700; }
   .casts { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px; }
@@ -42,12 +42,11 @@
   .quotebox span { display:block; margin-top:8px; font-size:13px; color:var(--dim); }
   .map { width:100%; height:280px; border:1px solid var(--line); border-radius:16px; display:block; }
   .urgent { text-align:center; font-size:15px; color:var(--gold); font-weight:700; margin-top:26px; }
-  .expect { margin:34px 0 4px; }
-  .expect h2 { text-align:center; }
-  .step { display:flex; gap:14px; padding:13px 0; border-bottom:1px solid var(--line); }
-  .step:last-of-type { border-bottom:none; }
-  .step b { color:var(--gold); min-width:118px; flex-shrink:0; font-weight:800; font-size:14px; line-height:1.4; }
-  .step div { font-size:15px; }
+  .expect { margin:34px 0 4px; text-align:center; }
+  .step { padding:20px 0 8px; }
+  .stepn { width:44px; height:44px; border-radius:50%; background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1608; font-weight:800; font-size:20px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; }
+  .step b { display:block; color:var(--gold); font-size:17px; font-weight:800; margin-bottom:5px; }
+  .step div.t2 { font-size:15px; color:var(--ink); max-width:440px; margin:0 auto; }
   .snap { width:100%; border-radius:14px; display:block; margin:14px 0; }
   .snapcap { font-size:12px; color:var(--dim); text-align:center; margin:-6px 0 10px; }
   .reviews { margin:34px 0 6px; }
@@ -92,10 +91,9 @@
   <h2>What to expect</h2>
   <img class="snap" src="/register/img/rehearsal-2026.jpg" alt="NOVAPA kids rehearsing choreography" loading="lazy">
   <p class="snapcap">A real NOVAPA rehearsal, summer 2026</p>
-  <div class="step"><b>September</b><div>First rehearsals. Your child meets their cast and directors, and every child gets a role.</div></div>
-  <div class="step"><b>October to December</b><div>The show comes together one evening a week: songs, scenes, and choreography, taught step by step by working theatre professionals.</div></div>
-  <div class="step"><b>January</b><div>Tech Week, the week of the show: evening rehearsals with costumes, lights, and full run-throughs on the real stage.</div></div>
-  <div class="step"><b>January 29 to February 6</b><div>Show time. Each cast performs three shows at the Loudoun Auditorium, with family and friends in the seats.</div></div>
+  <div class="step"><div class="stepn">1</div><b>Auditions on day one</b><div class="t2">Every child gets a role. The first rehearsal decides which one, and nobody goes home without a part.</div></div>
+  <div class="step"><div class="stepn">2</div><b>Rehearse one evening a week</b><div class="t2">September through January: songs, scenes, and choreography, taught step by step by working theatre professionals. Tech Week with costumes and lights comes the week of the show.</div></div>
+  <div class="step"><div class="stepn">3</div><b>The full production</b><div class="t2">January 29 to February 6 at the Loudoun Auditorium. Each cast performs three real shows with family and friends in the seats.</div></div>
   <img class="snap" src="/register/img/show-2026.jpg" alt="NOVAPA performers in full costume on stage" loading="lazy">
   <p class="snapcap">Opening night, full costumes, real set &mdash; this is where it ends up</p>
 </div>
