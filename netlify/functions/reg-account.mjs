@@ -117,6 +117,9 @@ async function paymentsFor(email) {
               const amtCache = {
                 price_1U6CmTGWP2ZbtaszBGFK2QN0: 5650,
                 price_1U6CmTGWP2ZbtaszDlvrhumq: 20434,
+                // Surla TC restructure (Aug 21): Sep 1 $201.85, Oct-Feb $201.83
+                price_1U6zSwGWP2ZbtaszOukbSGyT: 20185,
+                price_1U6zSwGWP2ZbtaszHBcqIreW: 20183,
               };
               let d = new Date(nextTs * 1000);
               // probe at tick + 12h: billing ticks and phase boundaries can
