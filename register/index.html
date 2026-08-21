@@ -2455,17 +2455,19 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       // special-plan carts keep their quoted legacy $180-deposit shape
       var deposit = Math.min(C.DEPOSIT_PER_CAMP * 100 * (n - dayN) + dayCents, net);
       if (net - deposit <= 0) return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
+      var spMonths = sp.months || planMonthsFor(items) || C.INSTALLMENTS;
       return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
-               today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / (sp.months || C.INSTALLMENTS)) };
+               today: deposit + ins, inst: Math.ceil((net + planFee - deposit) / spMonths), nInst: spMonths };
     }
     // even split (Jason + CJ, Aug 1): financed balance over N+1 EQUAL payments,
-    // first at checkout — mirrors priceCart; server count reconciles at pay
+    // first at checkout — mirrors priceCart, INCLUDING the real installment
+    // window (planMonthsFor), so the number shown here is the number charged
+    var months = planMonthsFor(items);
     var fin = net - dayCents + planFee;
-    var pmts = C.INSTALLMENTS + 1;
-    var even = Math.floor(fin / pmts);
+    var even = months > 0 ? Math.floor(fin / (months + 1)) : 0;
     if (even <= 0) return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:planFee, total:net + planFee + ins,
-             today: (fin - even * C.INSTALLMENTS) + ins + dayCents, inst: even };
+             today: (fin - even * months) + ins + dayCents, inst: even, nInst: months };
   }
 
   var CAMP_START = { httyd:'2027-07-05', charlie:'2027-07-19', trolls:'2027-08-02' };
@@ -2477,7 +2479,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var n = actualN != null ? actualN : sq.now;
     return '<p class="tiny" style="text-align:left;margin-top:8px;padding:9px 11px;border:1px solid rgba(232,184,75,0.35);border-radius:9px;background:rgba(232,184,75,0.07)">' +
       '<b>' + esc(sq.names) + '</b> begins ' + sq.starts + ', and a payment plan has to finish before your first program starts \u2014 ' +
-      'so this cart is ' + n + ' payment' + (n === 1 ? '' : 's') + ' instead of ' + sq.could + '. ' +
+      'so this cart is ' + (n + 1) + ' equal payments (the first at checkout) instead of ' + (sq.could + 1) + '. ' +
       'Checking out ' + esc(sq.names) + ' separately would let your other programs spread over ' + sq.could + ' months.</p>';
   }
   function instCountFor(startDate){
@@ -2490,6 +2492,28 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       n++; d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 4, 0, 0));
     }
     return n;
+  }
+  // How many monthly installments this cart's plan really gets — the earliest
+  // program start caps the window, mirroring priceCart's starts[0] +
+  // installmentDates() on the server. The display MUST divide by this, not by
+  // a flat C.INSTALLMENTS: a Sweeney+Hadestown cart was quoted "about $97/mo"
+  // here while Stripe correctly split it into 3 payments of $605.50 (Surla,
+  // Aug 21 2026). 0 means no plan window (server returns payFullOnly).
+  function planMonthsFor(items){
+    var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
+    var starts = [];
+    items.forEach(function(it){
+      if (it.show && CAMP_START[it.show]) { starts.push(CAMP_START[it.show]); return; }
+      if (!it.activity_id) return;
+      var nm = (byIdAll[it.activity_id] || {}).name || '';
+      if (/frozen/i.test(nm)) starts.push('2026-09-15');
+      else if (/mermaid/i.test(nm)) starts.push('2027-02-03');
+      else if (/mean girls/i.test(nm)) starts.push('2027-06-14');
+      else if (/sweeney/i.test(nm)) starts.push('2026-10-23');
+      else if (/hadestown/i.test(nm)) starts.push('2027-03-05');
+    });
+    starts.sort();
+    return starts[0] ? instCountFor(new Date(starts[0] + 'T00:00:00-04:00')) : 0;
   }
   // A cart's plan length is set by its EARLIEST program, so one autumn show can
   // compress payments for camps eleven months out. Detect only that case.
@@ -2631,7 +2655,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var squeeze = state.plan === 'deposit' ? planSqueeze(items) : null;
     $('payBreakdown').innerHTML = state.plan === 'deposit'
       ? '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
-        '<p class="tiny" style="text-align:left;margin-top:2px">Then monthly payments of about ' + money(p.inst) + ', automatic on this card.</p>' +
+        '<p class="tiny" style="text-align:left;margin-top:2px">Then ' + (p.nInst === 1 ? 'one more payment' : p.nInst + ' monthly payments') + ' of about ' + money(p.inst) + ', automatic on this card.</p>' +
         (squeeze ? squeezeNote(squeeze) : '')
       : '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today) + '</span></div>' +
         '<p class="tiny" style="text-align:left;margin-top:2px">That\'s it — one payment, no future charges.</p>';
