@@ -481,7 +481,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <div class="err" id="assignErr"></div>
     <!-- Sticky so a long show list never hides the way forward; the upsell
          toast is pinned higher up so the two never overlap. -->
-    <button class="btn" id="assignNext" style="position:sticky;bottom:10px;z-index:60">Continue →</button>
+    <button class="btn" id="assignNext" style="position:sticky;bottom:10px;z-index:60;display:none">Continue →</button>
     <p class="tiny">Nothing is charged yet. Signed in as <span id="whoami2"></span> · <a href="#" id="signout2">not you?</a></p>
   </section>
 
@@ -1429,6 +1429,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
   }
   function updateTicker(){
+    // The sticky Continue earns its place: hidden until something is in the
+    // cart, so an empty shows list isn't dominated by a dead gold button.
+    var an = $('assignNext');
+    if (an) an.style.display = buildItems().length ? '' : 'none';
     var t = $('tierTicker');
     var byKid = [];
     state.kids.forEach(function(k, i){
