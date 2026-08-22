@@ -112,12 +112,14 @@
   /* campers / assignment */
   .kid-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--line); }
   .kid-row:last-child { border-bottom:none; }
-  .kid-add-here { display:block; width:100%; text-align:center; border:0; cursor:pointer;
-    background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206;
+  /* Gray on purpose: gold is reserved for the one Continue button per step
+     (Jason, Aug 21) so the primary action never competes with add-a-camper. */
+  .kid-add-here { display:block; width:100%; text-align:center; cursor:pointer;
+    background:rgba(255,255,255,0.08); color:var(--ink); border:1px solid var(--line);
     font-family:'DM Sans',sans-serif; font-weight:700; font-size:14.5px;
     padding:12px 18px; border-radius:11px; margin:10px 0 4px;
-    box-shadow:0 6px 20px rgba(232,184,75,0.25); transition:transform .15s; }
-  .kid-add-here:hover { transform:translateY(-1px); }
+    transition:transform .15s, background .15s; }
+  .kid-add-here:hover { transform:translateY(-1px); background:rgba(255,255,255,0.14); }
   .kid-check { display:flex; align-items:center; gap:10px; cursor:pointer; min-width:170px; font-weight:500; }
   .kid-check input { width:19px; height:19px; accent-color:var(--gold2); }
   .badge-done { font-size:11.5px; color:var(--ok); font-weight:700; }
@@ -213,15 +215,16 @@
   #sKidBday{ display:flex; align-items:center; }
   #sKidBday::-webkit-date-and-time-value{ text-align:left; }
   /* upsell toast */
+  /* sits above the sticky Continue bar on the shows step */
   #toast {
-    display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:80;
+    display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:92px; z-index:80;
     width:min(480px, calc(100vw - 32px)); background:var(--navy1);
     border:1px solid rgba(232,184,75,0.55); border-radius:14px; padding:14px 16px;
     box-shadow:0 12px 40px rgba(0,0,0,0.5); font-size:14.5px; line-height:1.45;
   }
   #toast .tmsg { flex:1; }
   @media (max-width: 640px) {
-    #toast { left:8px; right:8px; bottom:8px; transform:none; width:auto; }
+    #toast { left:8px; right:8px; bottom:88px; transform:none; width:auto; }
   }
   #toast.on { display:flex; align-items:center; gap:12px; animation:fade .3s ease; }
   #toast b { color:var(--gold3); }
@@ -476,7 +479,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
     <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; equal monthly payments, the first at checkout and the rest on autopay.</p>
     <div class="err" id="assignErr"></div>
-    <button class="btn" id="assignNext">Continue →</button>
+    <!-- Sticky so a long show list never hides the way forward; the upsell
+         toast is pinned higher up so the two never overlap. -->
+    <button class="btn" id="assignNext" style="position:sticky;bottom:10px;z-index:60">Continue →</button>
     <p class="tiny">Nothing is charged yet. Signed in as <span id="whoami2"></span> · <a href="#" id="signout2">not you?</a></p>
   </section>
 
@@ -604,12 +609,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <!-- guest email modal: the cart is built, now we need somewhere to send it -->
 <div class="modal-back" id="guestEmailModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
-    <h3 style="text-align:center">Where should we send your confirmation?</h3>
-    <p class="tiny" style="text-align:left;margin-top:8px">Your receipt and camper details go here. No password needed.</p>
+    <h3 id="gemTitle" style="text-align:center">Where should we send your confirmation?</h3>
+    <p class="tiny" id="gemSub" style="text-align:left;margin-top:8px">Your receipt and camper details go here. No password needed.</p>
     <input type="email" id="guestEmailInput" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
     <div class="err" id="guestEmailErr"></div>
     <div id="guestWelcomeBack" style="display:none">
-      <p class="tiny" style="text-align:left;margin:10px 0 4px"><b>Welcome back!</b> This email has a NOVAPA family. Sign in with a quick emailed code and your campers load themselves — your picks here are kept either way.</p>
       <button class="btn" id="gwbSignin">Load my family</button>
       <button class="btn btn-ghost" id="gwbGuest">Continue as guest</button>
     </div>
@@ -1285,6 +1289,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     sb.rpc('email_known', { p_email: v }).then(function(res){
       b.disabled = false; b.textContent = 'Continue';
       if (res && res.data) {
+        // Returning family: say it in the header, not in fine print (Jason, Aug 21)
+        $('gemTitle').textContent = 'Welcome back!';
+        $('gemSub').textContent = 'This email already has a NOVAPA family. Load your campers with a quick emailed code, or continue as a guest — your picks are kept either way.';
         $('guestWelcomeBack').style.display = '';
         $('guestEmailGo').style.display = 'none';
         ev('reg_guest_known_email', {});
@@ -1302,10 +1309,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     $('emailInput').value = v;
     startEmail(v);
   });
-  $('gwbGuest').addEventListener('click', function(){
-    var v = $('guestEmailInput').value.trim().toLowerCase();
+  function gemReset(){
+    $('gemTitle').textContent = 'Where should we send your confirmation?';
+    $('gemSub').textContent = 'Your receipt and camper details go here. No password needed.';
     $('guestWelcomeBack').style.display = 'none';
     $('guestEmailGo').style.display = '';
+  }
+  $('gwbGuest').addEventListener('click', function(){
+    var v = $('guestEmailInput').value.trim().toLowerCase();
+    gemReset();
     guestEmailProceed(v);
   });
   $('guestEmailInput') && $('guestEmailInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('guestEmailGo').click(); });
@@ -2163,6 +2175,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         if (gpe && gpe.indexOf('@') !== -1 && !$('guestEmailInput').value) $('guestEmailInput').value = gpe.trim();
       } catch(e){}
       $('guestEmailErr').classList.remove('on');
+      gemReset();
       $('guestEmailModal').classList.add('on');
       $('guestEmailInput').focus();
       return;
