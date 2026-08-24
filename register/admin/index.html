@@ -273,6 +273,7 @@
       <a data-g="families">Families</a>
       <a data-g="money">Money</a>
       <a data-g="rewards">Credits &amp; Referrals</a>
+      <a data-s="dcu">DC Unifieds</a>
       <a data-s="starpages">Star Pages</a>
       <a data-s="hiring">Hiring</a>
     </div>
@@ -293,6 +294,15 @@
     <section class="sec" id="s-orders">
       <h2>Web Orders</h2>
       <div class="wrap-scroll"><table id="tblOrders"></table></div>
+    </section>
+
+    <section class="sec" id="s-dcu">
+      <h2>DC Unifieds</h2>
+      <p class="sub" style="margin:-6px 0 12px">College audition weekend, Oct 15&ndash;18. Sold through dcunifieds.com
+      on our own checkout &mdash; same Stripe, same books. Marketing prices on that site are separate from these
+      database prices.</p>
+      <div id="dcuTiles" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div class="wrap-scroll"><table id="tblDcu"></table></div>
     </section>
 
     <section class="sec" id="s-balances">
@@ -582,6 +592,7 @@
     balances:  function(){ loadChase(); },
     inventory: loadInventory,
     campers:   function(){ rload('campers', 'admin_campers', function(d){ CAMPERS = d || []; renderCampers(); }); },
+    dcu:       function(){ rload('dcu', 'admin_dcu', function(d){ if (d) renderDcu(d); }); },
     cashflow:  function(){ loadCashflow(); },
     starpages: function(){ loadStars(); },
     referrals: function(){ loadRefs(); },
@@ -660,7 +671,7 @@
     // preload EVERY tab, staggered so the heavy calls don't race one another —
     // no tab should ever greet you with a Load button or an empty table
     ['overview','orders','balances','inventory','products','campers','hiring','referrals',
-     'credits','cashflow','insurance','accounting','starpages']
+     'credits','cashflow','insurance','accounting','starpages','dcu']
       .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
   // the tab you're looking at quietly refreshes itself once a minute, so the
@@ -2660,6 +2671,30 @@
   function orderItemsText(o){
     return (o.items || []).map(function(i){ return (i.camper || '') + ' - ' + (i.what || ''); }).join(' | ');
   }
+  function renderDcu(d){
+    var tracks = d.tracks || [], rev = d.revenue || {}, regs = d.regs || [];
+    $('dcuTiles').innerHTML =
+      stat(rev.orders || 0, 'registrations', 'gold') +
+      stat(usd(rev.committed_cents), 'committed', 'ok') +
+      stat(usd(rev.collected_today_cents), 'collected at checkout') +
+      tracks.map(function(t){
+        var short = (t.name || '').replace('DC Unifieds 2026 | ', '');
+        return stat((t.seats || 0) + ' · ' + usd(t.price_cents), short);
+      }).join('');
+    if (!regs.length) { $('tblDcu').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
+    $('tblDcu').innerHTML =
+      '<tr><th>date</th><th>student</th><th>family</th><th>track</th><th>plan</th><th class="num">paid at checkout</th><th class="num">total</th></tr>' +
+      regs.map(function(r){
+        return '<tr><td>' + new Date(r.created_at).toLocaleDateString() + '</td>' +
+          '<td>' + esc(r.student || '') + '</td>' +
+          '<td>' + esc(r.parent || '') + '<br><span style="color:var(--dim);font-size:12px">' + esc(r.email || '') + '</span></td>' +
+          '<td>' + esc((r.track || '').replace('DC Unifieds 2026 | ', '')) + '</td>' +
+          '<td>' + esc(r.plan || '') + '</td>' +
+          '<td class="num">' + usd2(r.paid_today_cents) + '</td>' +
+          '<td class="num">' + usd2(r.total_cents) + '</td></tr>';
+      }).join('');
+  }
+
   function renderOrders(rows){
     if (!rows.length) { $('tblOrders').innerHTML = '<tr><td class="empty">none yet</td></tr>'; return; }
     $('tblOrders').innerHTML =
