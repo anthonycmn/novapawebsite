@@ -328,13 +328,30 @@ export default async (req) => {
   }
 
   try {
-    const fam = (await svc(`families?select=id,parent_name,email&email=eq.${encodeURIComponent(email)}&limit=1`))[0] || null;
-    const campers = fam
-      ? await svc(`campers?select=name,day_camp_credits,snow_day_credits&family_id=eq.${fam.id}&order=name`)
-      : [];
+    // A household can sign in from two addresses (families.cc_email — see
+    // reg-pay.mjs). Some also carry TWO family rows cross-linked as aliases
+    // (the Smiths, Aug 2026), so gather every row the address touches and
+    // union their campers, orders, and history — both logins see one account.
+    const enc = encodeURIComponent(email);
+    const famRows = await svc(`families?select=id,parent_name,email,cc_email&or=(email.ilike.${enc},cc_email.ilike.${enc})`);
+    const fam = famRows.find((f) => (f.email || "").toLowerCase() === email) || famRows[0] || null;
+    const famEmails = [...new Set(
+      famRows.flatMap((f) => [f.email, f.cc_email]).filter(Boolean).map((e) => e.toLowerCase()).concat([email])
+    )];
+    const emailList = famEmails.map(encodeURIComponent).join(",");
+    let campers = [];
+    if (famRows.length) {
+      const all = await svc(`campers?select=name,day_camp_credits,snow_day_credits&family_id=in.(${famRows.map((f) => f.id).join(",")})&order=name`);
+      const seen = new Set();
+      for (const c of all) {
+        const k = c.name.trim().toLowerCase();
+        if (seen.has(k)) continue;
+        seen.add(k); campers.push(c);
+      }
+    }
 
-    // Web orders (our checkout)
-    const orders = await svc(`orders?select=id&email=eq.${encodeURIComponent(email)}&status=in.(paid,confirmed,complete,succeeded)`);
+    // Web orders (our checkout) — under any of the household's addresses
+    const orders = await svc(`orders?select=id&email=in.(${emailList})&status=in.(paid,confirmed,complete,succeeded)`);
     let items = [];
     if (orders.length) {
       const ids = orders.map((o) => o.id).join(",");
@@ -348,7 +365,7 @@ export default async (req) => {
 
     // Imported enrollments (Sawyer / Regpack history and transfers)
     const names = campers.map((c) => `"${c.name.replace(/"/g, "")}"`);
-    const orClauses = [`email.eq.${encodeURIComponent(email)}`];
+    const orClauses = [`email.in.(${emailList})`];
     if (names.length) orClauses.push(`camper_name.in.(${names.join(",")})`);
     const legacy = await svc(`legacy_enrollments?select=camper_name,activity_text,dates&or=(${orClauses.join(",")})`);
 
