@@ -83,6 +83,10 @@ export const SPECIAL_PLANS = {
     // is 20% — $49.75 x 2 = $99.50 back, delivered as a credit on this
     // checkout (the coupons row has carried the amount since Aug 10).
     creditCents: 9950,
+    // months: 5 spreads the Frozen+Mermaid cart Sep-Jan instead of the
+    // 1-payment collapse the Sep-15 Frozen start forces — same concession
+    // as ANSELL0. Jamie asked Aug 24; Jason approved same day.
+    months: 5,
   },
   "ANSELL0": {
     email: "ajansell@gmail.com",
