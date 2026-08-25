@@ -679,7 +679,17 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // SPECIAL_PLANS in reg-config.mjs (pct = flat off list replacing all other
   // discounts, nofee = no 5% plan fee, months = stretched schedule; server
   // enforces the email lock)
-  var SPECIALS = { 'SOK20': { months: 10, nofee: true } };
+  // Client mirror of SPECIAL_PLANS in reg-config.mjs — every legacy special
+  // the server honors MUST appear here too, or the checkout summary shows
+  // plain-coupon math while the server charges special math (Jamie Smith saw
+  // a $1,355 summary for a $1,063 charge, Aug 24). `credit: true` keeps the
+  // coupon row's dollar amount visible on top of the special's pct.
+  var SPECIALS = {
+    'SOK20':   { months: 10, nofee: true },
+    'SMITH20': { pct: 20, credit: true },
+    'ANSELL0': { months: 5, nofee: true },
+    'ANSELLO': { months: 5, nofee: true }
+  };
   // Closing-weekend showtimes (CJ) — same pattern every camp, second Friday
   // and Saturday, split by age group.
   var SHOWTIMES = {
@@ -2736,12 +2746,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       }
       var sp = SPECIALS[code.toUpperCase()];
       state.coupon = sp
-        ? { code: res.data.code, pct: 0, amount_cents: 0, special: sp }
+        ? { code: res.data.code, pct: 0, amount_cents: sp.credit ? (res.data.amount_cents || 0) : 0, special: sp }
         : { code: res.data.code, pct: res.data.pct || 0, amount_cents: res.data.amount_cents || 0 };
       msg.style.color = 'var(--ok)';
       msg.textContent = sp
         ? res.data.code + ' applied \u2014 ' + [
             sp.pct ? sp.pct + '% off your whole order' : '',
+            sp.credit && res.data.amount_cents ? money(res.data.amount_cents) + ' credit' : '',
             sp.nofee ? 'payment plan fee waived' : '',
             sp.months ? sp.months + ' monthly payments' : '',
           ].filter(Boolean).join(', ') + '.'
