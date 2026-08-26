@@ -146,19 +146,84 @@ for (const [key, title] of Object.entries(LICENSED)) {
   A(S.byKey(key).title === title,
     key + ' is billed as "' + title + '" — got "' + S.byKey(key).title + '"');
 }
-for (const key of ['frozen-teen', 'mermaid-teen']) {
-  A(S.byKey(key).ages === '12–15', key + ' is the 12–15 band');
+// The two teen bands no longer share a range: Frozen's was widened to 12–17
+// on 26 Aug 2026 and Little Mermaid's was not. They are asserted separately so
+// that a later change to one cannot quietly drag the other with it.
+const TEEN_AGES = { 'frozen-teen': '12–17', 'mermaid-teen': '12–15' };
+for (const [key, ages] of Object.entries(TEEN_AGES)) {
+  A(S.byKey(key).ages === ages,
+    key + ' is the ' + ages + ' band — got ' + S.byKey(key).ages);
   A(/Broadway Bound Teen/.test(S.byKey(key).company),
     key + ' names the band, not an edition: ' + S.byKey(key).company);
 }
+// ── printed age bands ───────────────────────────────────────────────────
+// shows.js was the only copy of a cast's age band that anything checked, so
+// when Frozen's teen band widened to 12–17 (CJ, 26 Aug 2026) every hand-set
+// "Ages 12–15" on the show pages and season cards could have been left behind
+// and this suite would still have gone green. The printed strings are checked
+// against shows.js too now, the same way the dates already are.
+console.log('\nPRINTED AGE BANDS');
+// longest name first: "Frozen JR. — Broadway Bound Teen" also contains
+// "Frozen JR.", so the teen patterns have to win.
+const CARD_KEY = [
+  [/Frozen JR\.[\s\S]*Broadway Bound Teen/, 'frozen-teen'],
+  [/Little Mermaid JR\.[\s\S]*Broadway Bound Teen/, 'mermaid-teen'],
+  [/Little Mermaid JR\./, 'mermaid-jr'],
+  [/Little Mermaid KIDS/, 'mermaid-kids'],
+  [/Frozen JR\./, 'frozen-jr'],
+  [/Frozen KIDS/, 'frozen-kids'],
+];
+let cardsChecked = 0;
+for (const file of ['broadway-bound.html', 'summer-2027.html']) {
+  const src = read(file).replace(/"data:[^"]*"/g, '""');
+  for (const card of src.match(/<article class="pgm-card[\s\S]*?<\/article>/g) || []) {
+    const name = (card.match(/<h3 class="pgm-name">([\s\S]*?)<\/h3>/) || [])[1];
+    const ages = (card.match(/<div class="pgm-ages">([\s\S]*?)<\/div>/) || [])[1];
+    if (!name || !ages) continue;
+    const hit = CARD_KEY.find(([re]) => re.test(plain(name)));
+    if (!hit) continue;                      // camp cards list several bands
+    cardsChecked++;
+    const want = 'Ages ' + S.byKey(hit[1]).ages;
+    A(plain(ages).trim() === want,
+      file + ' · ' + plain(name).trim() + ' prints "' + want + '" — got "' +
+      plain(ages).trim() + '"');
+  }
+}
+A(cardsChecked === 12, 'all 12 Broadway Bound season cards were checked — got ' + cardsChecked);
+
+const PAGE_CASTS = {
+  'frozen-kids.html': { 'Frozen KIDS Cast': 'frozen-kids' },
+  'frozen-jr.html': { 'Junior Cast': 'frozen-jr', 'Broadway Bound Teen Cast': 'frozen-teen' },
+  'little-mermaid-jr.html': {
+    'Kids Cast': 'mermaid-kids', 'Junior Cast': 'mermaid-jr',
+    'Broadway Bound Teen Cast': 'mermaid-teen',
+  },
+};
+for (const [file, casts] of Object.entries(PAGE_CASTS)) {
+  const pairs = [...read(file).matchAll(
+    /<div class="perf-cast-name">([\s\S]*?)<\/div>\s*<div class="perf-cast-tag">([\s\S]*?)<\/div>/g)];
+  A(pairs.length === Object.keys(casts).length,
+    file + ' has ' + Object.keys(casts).length + ' cast blocks — found ' + pairs.length);
+  for (const [, rawName, rawTag] of pairs) {
+    const name = plain(rawName).trim();
+    const key = casts[name];
+    A(!!key, file + ' names a known cast — got "' + name + '"');
+    if (!key) continue;
+    const want = 'Performers Ages ' + S.byKey(key).ages;
+    A(plain(rawTag).trim() === want,
+      file + ' · ' + name + ' prints "' + want + '" — got "' + plain(rawTag).trim() + '"');
+  }
+}
+
 // Two names, two programs, and they are not interchangeable (CJ, 9 Aug 2026):
 //   Teen Conservatory     — the audition-based track, ages 13–18: Dear Evan
 //                           Hansen, Sweeney Todd, A Christmas Carol, Hadestown,
 //                           Mean Girls.
-//   Broadway Bound Teen   — the 12–15 cast inside the Broadway Bound JR. shows,
-//                           Frozen JR. and The Little Mermaid JR.
+//   Broadway Bound Teen   — the teen cast inside the Broadway Bound JR. shows:
+//                           Frozen JR. (12–17) and The Little Mermaid JR.
+//                           (12–15).
 // The site briefly used "Broadway Bound Teen" for both, which put a 13–18
-// audition track and a 12–15 junior cast under one name.
+// audition track and a junior cast under one name.
 for (const key of ['deh', 'sweeney', 'carol', 'hadestown', 'mean-girls']) {
   A(S.byKey(key).season === 'Teen Conservatory',
     key + ' belongs to the Teen Conservatory — got "' + S.byKey(key).season + '"');

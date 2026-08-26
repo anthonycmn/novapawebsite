@@ -71,8 +71,10 @@
       // nothing else, so this cast performs Frozen JR. exactly like the 9–12
       // cast does — the only difference is who is in it. "Broadway Bound Teen"
       // is our age band, never a version of the show. (CJ, 9 Aug 2026.)
+      // Widened from 12–15 to 12–17 (CJ, 26 Aug 2026). Frozen's teen band
+      // only — Little Mermaid's is still 12–15 below.
       key: 'frozen-teen', season: 'Broadway Bound', title: 'Frozen JR.',
-      company: 'Frozen JR. (Broadway Bound Teen)', ages: '12–15', runMinutes: 90,
+      company: 'Frozen JR. (Broadway Bound Teen)', ages: '12–17', runMinutes: 90,
       page: 'frozen-jr.html',
       performances: [
         { at: '2027-02-05 19:00' },
