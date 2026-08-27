@@ -17,6 +17,12 @@ const SITE = "https://www.northernvirginiaperformingarts.org";
 // Drip is the only bursty sender on the shared Gmail 2k/day budget — cap each
 // 15-min run. Magic links are Supabase-side and untouched by this.
 const MAX_SENDS_PER_RUN = 25;
+// MAX_SENDS_PER_RUN was doing its job while this engine sent 425 emails in one
+// afternoon: 25 per run x 4 runs an hour x 3 hours. A per-run cap cannot see a
+// burst. This is the ceiling that can — normal days here are 1-6 sends, so 60
+// is roughly a 10x anomaly, and hitting it stops the engine and emails Jason
+// instead of continuing.
+const MAX_SENDS_PER_DAY = Number(process.env.DRIP_DAILY_CAP || 60);
 // linkexpired only applies to requests made after this moment (Jason 7/22:
 // "only new ones" — the old backlog moved on days ago and stays untouched)
 const LINKEXPIRED_EPOCH = Date.parse("2026-07-22T22:00:00Z"); // 6pm ET Jul 22
@@ -147,6 +153,36 @@ async function stopRepliers(states) {
   return stopped;
 }
 
+// One alert per day, deduped through Netlify Blobs so a halted engine does not
+// mail Jason every 15 minutes for the rest of the day.
+async function alertSpike(sentToday) {
+  try {
+    const { getStore } = await import("@netlify/blobs");
+    const store = getStore("lead-alerts");
+    const key = "drip-spike-" + new Date().toISOString().slice(0, 10);
+    if (await store.get(key)) return;
+    await store.set(key, String(sentToday));
+    const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "NOVAPA Alerts <leads@mail.novapa.org>",
+        to,
+        subject: `Drip halted: ${sentToday} emails sent today`,
+        html: `<div style="max-width:560px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif;color:#0B1422">
+<div style="font:700 20px/1.3 Helvetica,Arial,sans-serif">The retargeting drip stopped itself</div>
+<div style="font:15px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:10px">
+It has sent <b>${sentToday}</b> emails today, at or past the daily ceiling of <b>${MAX_SENDS_PER_DAY}</b>.
+A normal day is a handful. Nothing further will send until someone looks.</div>
+<div style="font:14px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:16px">
+Most likely something enrolled a batch of people at once. Check the Leads tab and
+<code>retarget_state</code> for today before raising the cap or setting DRIP_ENABLED back on.</div></div>`,
+      }),
+    });
+  } catch (e) { console.error("spike alert failed:", e.message); }
+}
+
 export default async () => {
   // KILL SWITCH — unset means OFF. Added Aug 27 2026 after this engine mailed
   // people who had unsubscribed and people who never requested a sign-in link
@@ -168,6 +204,18 @@ export default async () => {
   catch (e) { console.error("sequences missing:", e.message); return new Response("no sequences", { status: 200 }); }
   const stepsBySeq = {};
   for (const s of steps) (stepsBySeq[s.seq] = stepsBySeq[s.seq] || []).push(s);
+
+  // Anomaly brake. Counted from retarget_state, which is the send ledger: a row
+  // is written before each send, so this is what actually went out today.
+  const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+  let sentToday = 0;
+  try {
+    sentToday = (await svcAll(`retarget_state?select=email&created_at=gte.${midnight.toISOString()}`)).length;
+  } catch (e) { console.error("daily count failed:", e.message); }
+  if (sentToday >= MAX_SENDS_PER_DAY) {
+    await alertSpike(sentToday);
+    return new Response(`halted: ${sentToday} sends today >= cap ${MAX_SENDS_PER_DAY}`, { status: 200 });
+  }
 
   // all orders (suppression) + holds + families/campers context
   const [orders, holds, families, activities, suppressions] = await Promise.all([
