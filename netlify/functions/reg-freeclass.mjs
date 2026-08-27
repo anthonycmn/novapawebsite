@@ -114,6 +114,7 @@ function confirmationHtml(b, cls) {
   </table>
   <p style="margin:18px 0 0"><b>What to bring:</b> comfortable clothes your child can move in, sneakers, and a water bottle. Nothing else is needed. No preparation, no audition, no experience.</p>
   <p style="margin:16px 0 0">We are in the South Building at Plaza C. Park free in the south lot and take the walkway to the entrance. An instructor will greet ${b.child_name} by name.</p>
+  <p style="margin:16px 0 0"><b>Two minutes before the day:</b> tell us your emergency contact and any allergies, and sign the release, at <a href="https://novapa.org/free-class/details.html?e=${encodeURIComponent(b.email)}&n=${encodeURIComponent(b.child_name)}" style="color:#C8892A;font-weight:700">novapa.org/free-class/details</a>. Check in takes seconds when this is done.</p>
   <p style="margin:16px 0 0">Life happens. If you need a different date or class, reply to this email and we will move the seat.</p>
   <div style="height:1px;background:#e5e5e5;margin:22px 0"></div>
   <p style="font-size:14px;color:#444;margin:0">Questions before the day? Call (571) 571-2120 or reply here. A person answers.</p>
@@ -153,6 +154,38 @@ export default async (req) => {
 
   let body;
   try { body = await req.json(); } catch { return Response.json({ error: "bad json" }, { status: 400 }); }
+
+  // "Before the day" details: emergency contact, allergies, waiver agreement.
+  // Attached to the booked row; check-in needs these before the visit.
+  if (body.action === "details") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const child = String(body.child_name || "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !child)
+      return Response.json({ error: "We could not match your booking. Use the link from your confirmation email." }, { status: 400 });
+    if (body.agreed !== true)
+      return Response.json({ error: "The agreement checkbox is required." }, { status: 400 });
+    const details = {
+      emergency_name: String(body.emergency_name || "").trim().slice(0, 120),
+      emergency_phone: String(body.emergency_phone || "").trim().slice(0, 40),
+      allergies: String(body.allergies || "").trim().slice(0, 400) || "None",
+      epipen: body.epipen === true,
+      agreed_terms_photo_release: true,
+      agreed_at: new Date().toISOString(),
+    };
+    if (!details.emergency_name || !details.emergency_phone)
+      return Response.json({ error: "Emergency contact name and phone are required." }, { status: 400 });
+    try {
+      const rows = await db("PATCH",
+        `free_class_bookings?status=eq.booked&email=eq.${encodeURIComponent(email)}&child_name=ilike.${encodeURIComponent(child)}`,
+        { notes: JSON.stringify(details) });
+      if (!rows || !rows.length)
+        return Response.json({ error: "We could not find a booking for that email and name. Reply to your confirmation email and we will sort it." }, { status: 404 });
+      return Response.json({ ok: true });
+    } catch (e) {
+      console.error("reg-freeclass details", e);
+      return Response.json({ error: "server error" }, { status: 500 });
+    }
+  }
 
   const parent = String(body.parent_name || "").trim().slice(0, 120);
   const email = String(body.email || "").trim().toLowerCase();

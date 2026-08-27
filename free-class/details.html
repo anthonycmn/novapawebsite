@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Before the day — NOVAPA free class</title>
+<meta name="robots" content="noindex">
+<!-- Free class funnel: post-booking details. Collects what check-in needs
+     before a visit (emergency contact, allergies, terms + photo release),
+     stored on the booking via /api/reg-freeclass action:details. Linked
+     from the confirmation page and email; the front desk keeps a paper
+     waiver as fallback for anyone who skips it. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+  :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --line:#E4E7ED; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:#fff; font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .logo { text-align:center; padding-top:34px; }
+  .logo img { height:24px; margin:0 auto; display:block; }
+  .head { text-align:center; max-width:560px; margin:28px auto 0; padding:0 22px; }
+  h1 { font-weight:700; letter-spacing:-0.045em; line-height:1.2; font-size:clamp(28px,4.4vw,42px); }
+  .head p { color:rgba(255,255,255,0.72); font-size:14.5px; margin-top:14px; }
+  .widget { background:#fff; color:var(--ink); border-radius:20px; max-width:620px; margin:34px auto 90px; padding:40px 42px; }
+  label { display:block; font-size:13.5px; font-weight:700; margin:0 0 6px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .field { margin-bottom:16px; }
+  .field input, .field textarea { width:100%; border:1.5px solid var(--line); background:#F5F7FA; border-radius:8px; padding:12px 14px; font-family:inherit; font-size:15px; color:var(--ink); }
+  .field input:focus, .field textarea:focus { outline:none; border-color:var(--gold); background:#fff; }
+  .seg { display:flex; gap:10px; }
+  .seg button { flex:1; border:1.5px solid var(--line); background:#FAFBFC; border-radius:8px; padding:11px; font-family:inherit; font-size:14.5px; font-weight:700; cursor:pointer; color:var(--ink); }
+  .seg button.on { border-color:#B07B1E; background:var(--gold); }
+  .agree { display:flex; gap:10px; align-items:flex-start; font-size:13.5px; margin:18px 0 6px; }
+  .agree input { margin-top:3px; width:16px; height:16px; }
+  .agree a { color:inherit; font-weight:700; }
+  .submit { display:inline-block; border:0; background:var(--gold); color:var(--navy); font-family:inherit; font-weight:700; font-size:16px; padding:14px 32px; border-radius:999px; cursor:pointer; margin-top:12px; }
+  .submit[disabled] { opacity:0.6; cursor:wait; }
+  .err { color:#B4232A; font-size:14px; margin-top:12px; display:none; }
+  .done { display:none; text-align:center; padding:20px 0 4px; }
+  .done h2 { font-weight:700; letter-spacing:-0.045em; font-size:24px; }
+  .done p { color:var(--dim); font-size:14.5px; margin-top:10px; }
+  footer { text-align:center; padding:0 22px 46px; font-size:11.5px; color:rgba(255,255,255,0.5); line-height:2; }
+  footer img { height:24px; margin:0 auto 10px; display:block; }
+  @media (max-width:700px) { .widget { padding:28px 20px; margin:26px 14px 60px; } .row { grid-template-columns:1fr; } }
+</style>
+<script src="/posthog.js" defer></script>
+</head>
+<body>
+
+<div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA"></div>
+<div class="head">
+  <h1>Two minutes before the big day</h1>
+  <p>So check-in takes seconds: who to call if we need you, anything we should know, and one signature-by-checkbox.</p>
+</div>
+
+<div class="widget">
+  <form id="detForm">
+    <div class="row">
+      <div class="field"><label for="email">Your email (from the booking)</label><input id="email" type="email" required></div>
+      <div class="field"><label for="child">Child&rsquo;s first name</label><input id="child" required></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="emName">Emergency contact name</label><input id="emName" placeholder="e.g. Alex Rivera" required></div>
+      <div class="field"><label for="emPhone">Emergency contact phone</label><input id="emPhone" type="tel" placeholder="e.g. (571) 555-0123" required></div>
+    </div>
+    <div class="field"><label for="allergies">Allergies or anything we should know</label><textarea id="allergies" rows="2" placeholder="None"></textarea></div>
+    <div class="field"><label>Does your child require an EpiPen?</label>
+      <div class="seg"><button type="button" id="epiNo" class="on">No</button><button type="button" id="epiYes">Yes</button></div>
+    </div>
+    <label class="agree"><input type="checkbox" id="agree">
+      <span>I agree to NOVAPA&rsquo;s <a href="/terms" target="_blank" rel="noopener">terms and policies</a> and the <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a>.</span></label>
+    <button class="submit" id="detBtn" type="submit">Save details</button>
+    <div class="err" id="err"></div>
+  </form>
+  <div class="done" id="done">
+    <h2>All set.</h2>
+    <p>Check-in will take seconds. We&rsquo;ll see you and your child at class.</p>
+  </div>
+</div>
+
+<footer>
+  <img src="/free-class/img/logo-novapa.svg" alt="NOVAPA">
+  Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120<br>
+  &copy; 2026 Northern Virginia Performing Arts. All Rights Reserved.
+</footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var epipen = false;
+  var p = new URLSearchParams(location.search);
+  if (p.get("e")) $("email").value = p.get("e");
+  if (p.get("n")) $("child").value = p.get("n");
+  $("epiNo").onclick = function () { epipen = false; this.classList.add("on"); $("epiYes").classList.remove("on"); };
+  $("epiYes").onclick = function () { epipen = true; this.classList.add("on"); $("epiNo").classList.remove("on"); };
+  $("detForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var err = $("err"); err.style.display = "none";
+    if (!$("agree").checked) { err.style.display = "block"; err.textContent = "The agreement checkbox is required."; return; }
+    var btn = $("detBtn"); btn.disabled = true; btn.textContent = "Saving…";
+    fetch("/api/reg-freeclass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "details",
+        email: $("email").value.trim(),
+        child_name: $("child").value.trim(),
+        emergency_name: $("emName").value.trim(),
+        emergency_phone: $("emPhone").value.trim(),
+        allergies: $("allergies").value.trim(),
+        epipen: epipen,
+        agreed: true,
+      }),
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.j.error || "Something went wrong. Try again.");
+        try { if (window.posthog) posthog.capture("free_class_details_saved"); } catch (e) {}
+        $("detForm").style.display = "none"; $("done").style.display = "block";
+      })
+      .catch(function (e) {
+        btn.disabled = false; btn.textContent = "Save details";
+        err.style.display = "block"; err.textContent = e.message;
+      });
+  });
+})();
+</script>
+</body>
+</html>
