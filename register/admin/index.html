@@ -271,6 +271,7 @@
       <a data-s="overview" class="on">Overview</a>
       <a data-s="products">Products</a>
       <a data-g="families">Families</a>
+      <a data-s="leads">Leads</a>
       <a data-g="money">Money</a>
       <a data-g="rewards">Credits &amp; Referrals</a>
       <a data-s="dcu">DC Unifieds</a>
@@ -303,6 +304,33 @@
       database prices.</p>
       <div id="dcuTiles" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
       <div class="wrap-scroll"><table id="tblDcu"></table></div>
+    </section>
+
+    <section class="sec" id="s-leads">
+      <h2>Leads</h2>
+      <p class="sub" style="margin:-6px 0 16px">Everyone who raised a hand on a public form but hasn&rsquo;t bought yet.
+      Three separate funnels, newest first. Nothing here is a registration &mdash; these are people to call.</p>
+
+      <h2 style="margin-top:0">DC Unifieds &mdash; Find Your 5</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-6px 0 10px">
+        <span class="sub" id="ldDcuStatus"></span>
+        <button class="tag" id="ldDcuCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
+      </div>
+      <div class="wrap-scroll"><table id="tblLeadsDcu"></table></div>
+
+      <h2 style="margin-top:26px">NOVAPA Quiz</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-6px 0 10px">
+        <span class="sub" id="ldQuizStatus"></span>
+        <button class="tag" id="ldQuizCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
+      </div>
+      <div class="wrap-scroll"><table id="tblLeadsQuiz"></table></div>
+
+      <h2 style="margin-top:26px">Free Class Bookings</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-6px 0 10px">
+        <span class="sub" id="ldFreeStatus"></span>
+        <button class="tag" id="ldFreeCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
+      </div>
+      <div class="wrap-scroll"><table id="tblLeadsFree"></table></div>
     </section>
 
     <section class="sec" id="s-balances">
@@ -601,6 +629,7 @@
     dcu:       function(){ rload('dcu', 'admin_dcu', function(d){ if (d) renderDcu(d); }); },
     cashflow:  function(){ loadCashflow(); },
     starpages: function(){ loadStars(); },
+    leads:     function(){ loadLeads(); },
     referrals: function(){ loadRefs(); },
     credits:   function(){
       if (!$('crExp').value) $('crExp').value = '2027-07-31';
@@ -677,7 +706,7 @@
     // preload EVERY tab, staggered so the heavy calls don't race one another —
     // no tab should ever greet you with a Load button or an empty table
     ['overview','orders','balances','inventory','products','campers','hiring','referrals',
-     'credits','cashflow','insurance','accounting','starpages','dcu']
+     'credits','cashflow','insurance','accounting','starpages','dcu','leads']
       .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
   // the tab you're looking at quietly refreshes itself once a minute, so the
@@ -2042,6 +2071,188 @@
         (rows || '<tr><td colspan="8" class="sub">No orders yet.</td></tr>');
     }).catch(function(){ $('spStatus').textContent = 'network error'; });
   }
+
+  // ---- Leads: three public funnels behind one endpoint. The DC Unifieds
+  // quiz lives in a SEPARATE Supabase project, so its feed can be missing
+  // (env not set) while the other two are perfectly healthy — never let one
+  // dead stream blank the tab. ----
+  var LEADS = null;
+  // esc() escapes text, not quotes; anything landing in an attribute goes
+  // through this instead. Every field below is free text from a public form.
+  function ldAttr(s){ return esc(s).replace(/"/g, '&quot;'); }
+  function ldCsv(name, rows){
+    var csv = rows.map(function(r){
+      return r.map(function(c){ return '"' + String(c == null ? '' : c).replace(/"/g,'""') + '"'; }).join(',');
+    }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = 'novapa-leads-' + name + '-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+  }
+  function ldContact(email, phone){
+    var out = [];
+    if (email) out.push('<a href="mailto:' + encodeURIComponent(email) + '">' + esc(email) + '</a>');
+    if (phone) {
+      var tel = String(phone).replace(/[^0-9+]/g, '');
+      if (tel) out.push('<a href="tel:' + tel + '" class="sub">' + esc(phone) + '</a>');
+    }
+    return out.join('<br>') || '—';
+  }
+  function ldClip(s){
+    var t = s || '';
+    return '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' +
+      ldAttr(t) + '">' + (t ? esc(t) : '—') + '</td>';
+  }
+  function ldCount(n, word){ return n + ' ' + word + (n === 1 ? '' : 's'); }
+  function ldEmpty(cols){ return '<tr><td colspan="' + cols + '" class="sub">No leads yet.</td></tr>'; }
+
+  function renderLeadsDcu(d){
+    // A returning parent retakes the quiz and the row is UPDATEd, so recency
+    // is updated_at. Hot (prescreens filmed + decision locked) jumps the queue.
+    var rows = (d.dcu || []).slice().sort(function(a, b){
+      if (!!a.hot !== !!b.hot) return a.hot ? -1 : 1;
+      return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
+    });
+    var hot = rows.filter(function(x){ return x.hot; }).length;
+    var ok = d.dcu_status === 'ok';
+    $('ldDcuStatus').textContent = ok
+      ? ldCount(rows.length, 'lead') + (hot ? ' · ' + hot + ' hot' : '')
+      : 'feed unavailable';
+    $('ldDcuCsv').style.display = rows.length ? '' : 'none';
+
+    var warn = '';
+    if (!ok) {
+      warn = '<tr><td colspan="7" style="white-space:normal;color:var(--bad,#E8654B)">' +
+        (d.dcu_status === 'not_configured'
+          ? 'DC Unifieds lead feed not yet connected — DCU_SUPABASE_URL / DCU_SERVICE_KEY not set on this site.'
+          : esc(d.dcu_status)) + '</td></tr>';
+    }
+    var body = rows.map(function(x){
+      var who = [];
+      if (x.role) who.push(esc(x.role));
+      if (x.grad_year) who.push('class of ' + esc(x.grad_year));
+      if (x.home_state) who.push(esc(x.home_state));
+      var signal = [];
+      if (x.dream) signal.push(esc(x.dream));
+      if (x.structure) signal.push(esc(x.structure));
+      return '<tr>' +
+        '<td style="white-space:nowrap">' + dt(x.updated_at || x.created_at) + '</td>' +
+        '<td>' + (x.name ? esc(x.name) : '—') + '</td>' +
+        '<td>' + ldContact(x.email, x.phone) + '</td>' +
+        '<td style="white-space:normal">' + (who.join(' · ') || '—') + '</td>' +
+        '<td style="white-space:normal">' + (signal.join(' · ') || '—') +
+          (x.hot ? ' <span class="tag ok">HOT</span>' : '') + '</td>' +
+        '<td style="white-space:nowrap">' + (x.stage ? esc(x.stage) : '—') +
+          (x.purchased_at ? ' <span class="tag gold">PAID</span>' : '') + '</td>' +
+        ldClip((x.matches || []).join(', ')) +
+      '</tr>';
+    }).join('');
+    $('tblLeadsDcu').innerHTML =
+      '<tr><th>When</th><th>Name</th><th>Contact</th><th>Who</th><th>Signal</th><th>Stage</th><th>Top 5</th></tr>' +
+      warn + (body || (warn ? '' : ldEmpty(7)));
+  }
+
+  function renderLeadsQuiz(d){
+    var rows = d.quiz || [];
+    $('ldQuizStatus').textContent = ldCount(rows.length, 'lead');
+    $('ldQuizCsv').style.display = rows.length ? '' : 'none';
+    var body = rows.map(function(x){
+      return '<tr>' +
+        '<td style="white-space:nowrap">' + dt(x.created_at) + '</td>' +
+        '<td>' + (x.parent_name ? esc(x.parent_name) : '—') + '</td>' +
+        '<td>' + ldContact(x.email, null) + '</td>' +
+        '<td>' + (x.child_name ? esc(x.child_name) : '—') + '</td>' +
+        '<td>' + (x.age_band ? esc(x.age_band) : '—') + '</td>' +
+        '<td style="white-space:normal">' + (x.persona ? esc(x.persona) : '—') + '</td>' +
+      '</tr>';
+    }).join('');
+    $('tblLeadsQuiz').innerHTML =
+      '<tr><th>When</th><th>Parent</th><th>Email</th><th>Child</th><th>Age band</th><th>Persona</th></tr>' +
+      (body || ldEmpty(6));
+  }
+
+  function renderLeadsFree(d){
+    var rows = d.freeclass || [];
+    $('ldFreeStatus').textContent = ldCount(rows.length, 'booking');
+    $('ldFreeCsv').style.display = rows.length ? '' : 'none';
+    var body = rows.map(function(x){
+      var child = x.child_name ? esc(x.child_name) : '—';
+      if (x.child_age != null && x.child_age !== '') child += ' <span class="sub">(' + esc(x.child_age) + ')</span>';
+      return '<tr>' +
+        '<td style="white-space:nowrap">' + dt(x.created_at) + '</td>' +
+        '<td>' + (x.parent_name ? esc(x.parent_name) : '—') + '</td>' +
+        '<td>' + ldContact(x.email, x.phone) + '</td>' +
+        '<td>' + child + '</td>' +
+        '<td>' + (x.cast_key ? '<span class="tag">' + esc(x.cast_key) + '</span>' : '—') + '</td>' +
+        '<td style="white-space:nowrap">' + (x.class_date ? esc(x.class_date) : '—') + '</td>' +
+        '<td>' + (x.status ? esc(x.status) : '—') + '</td>' +
+      '</tr>';
+    }).join('');
+    $('tblLeadsFree').innerHTML =
+      '<tr><th>When</th><th>Parent</th><th>Contact</th><th>Child</th><th>Class</th><th>Class date</th><th>Status</th></tr>' +
+      (body || ldEmpty(7));
+  }
+
+  function loadLeads(){
+    if (!LEADS) {
+      $('ldDcuStatus').textContent = 'loading…';
+      $('ldQuizStatus').textContent = 'loading…';
+      $('ldFreeStatus').textContent = 'loading…';
+    }
+    sb.auth.getSession().then(function(res){
+      var token = res.data && res.data.session && res.data.session.access_token;
+      return fetch('/api/reg-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ action: 'list' })
+      });
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.error) {
+        // A failure here is the whole endpoint (auth, usually), not one feed —
+        // leave all three saying so rather than stranding two on "loading…".
+        $('ldDcuStatus').textContent = 'error: ' + d.error;
+        $('ldQuizStatus').textContent = 'error: ' + d.error;
+        $('ldFreeStatus').textContent = 'error: ' + d.error;
+        return;
+      }
+      LEADS = d;
+      lastLoad.leads = Date.now();
+      renderLeadsDcu(d);
+      renderLeadsQuiz(d);
+      renderLeadsFree(d);
+    }).catch(function(){ $('ldDcuStatus').textContent = 'network error'; });
+  }
+
+  $('ldDcuCsv').addEventListener('click', function(){
+    if (!LEADS) return;
+    var rows = [['updated','created','name','email','phone','role','grad_year','home_state','stage','hot','purchased_at',
+                 'dream','structure','distance','dance','gpa','budget','prescreen','certainty',
+                 'utm_source','utm_campaign','utm_content','top_5','coach_notes']];
+    (LEADS.dcu || []).forEach(function(x){
+      rows.push([x.updated_at, x.created_at, x.name, x.email, x.phone, x.role, x.grad_year, x.home_state,
+                 x.stage, x.hot ? 'yes' : '', x.purchased_at,
+                 x.dream, x.structure, x.distance, x.dance, x.gpa, x.budget, x.prescreen, x.certainty,
+                 x.source, x.campaign, x.content, (x.matches || []).join('; '), x.coach_notes]);
+    });
+    ldCsv('dcu', rows);
+  });
+  $('ldQuizCsv').addEventListener('click', function(){
+    if (!LEADS) return;
+    var rows = [['created','parent_name','email','child_name','age_band','persona','source']];
+    (LEADS.quiz || []).forEach(function(x){
+      rows.push([x.created_at, x.parent_name, x.email, x.child_name, x.age_band, x.persona, x.source]);
+    });
+    ldCsv('quiz', rows);
+  });
+  $('ldFreeCsv').addEventListener('click', function(){
+    if (!LEADS) return;
+    var rows = [['created','parent_name','email','phone','child_name','child_age','cast_key','class_date','status']];
+    (LEADS.freeclass || []).forEach(function(x){
+      rows.push([x.created_at, x.parent_name, x.email, x.phone, x.child_name, x.child_age,
+                 x.cast_key, x.class_date, x.status]);
+    });
+    ldCsv('freeclass', rows);
+  });
 
   // ---- Credits (Todd mints these himself) ----
   var CR = null;
