@@ -257,7 +257,7 @@ export default async (req) => {
     id: q.id, key: `quiz:${q.id}`, board: "novapa",
     stage: stageMap.get(`quiz:${q.id}`) || "new",
     created_at: q.created_at, parent_name: q.parent_name,
-    email: q.email, child_name: q.child_name, age_band: q.age_band,
+    email: q.email, phone: q.phone, child_name: q.child_name, age_band: q.age_band,
     persona: q.persona, source: q.source,
   }));
   const freeRows = (freeclass || []).map((f) => ({

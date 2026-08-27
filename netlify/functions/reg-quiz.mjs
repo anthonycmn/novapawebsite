@@ -1,5 +1,5 @@
 // Quiz funnel — /api/reg-quiz (novapa.org/quiz)
-//   POST { parent_name, email, child_name, answers (q1..q5), persona, utm }
+//   POST { parent_name, email, phone, child_name, answers (q1..q5), persona, utm }
 //        -> { ok: true }, stores the lead in quiz_leads and emails the
 //           parent their child's result.
 //
@@ -115,6 +115,9 @@ export default async (req) => {
   const parent = String(body.parent_name || "").trim().slice(0, 120);
   const email = String(body.email || "").trim().toLowerCase();
   const child = String(body.child_name || "").trim().slice(0, 120);
+  // Kept loose on purpose: a parent who types "571-555-0123 (cell)" should not
+  // lose the whole lead over formatting. Store what they gave us.
+  const phone = String(body.phone || "").trim().slice(0, 40) || null;
 
   if (!parent) return Response.json({ error: "Your name is required" }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200)
@@ -140,7 +143,7 @@ export default async (req) => {
 
   try {
     const rows = await db("POST", "quiz_leads", {
-      parent_name: parent, email, child_name: child || null,
+      parent_name: parent, email, phone, child_name: child || null,
       age_band: ageBand, answers: Object.keys(answers).length ? answers : null,
       persona: personaName, source: "quiz-funnel", utm,
     });

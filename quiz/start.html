@@ -9,7 +9,7 @@
      matching the BFA Figma Section 2 question frames (2290-1691 through
      -1933), contact gate (2295-2063), and result (2368-2547). Answers POST
      to /api/reg-quiz which stores the lead and emails the result. Funnel 1
-     can deep-link here with ?n=&p=&e= to prefill (all three present skips
+     can deep-link here with ?n=&p=&e=&ph= to prefill (name/parent/email skips
      the gate entirely). Persona comes from Q3, program from Q1 age band.
      The 9-12 scarcity line is the verified real fill level (Aug 2026). -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,6 +113,7 @@
     .quote-card .qph { padding:16px 16px 0; }
     .quote-card .qph img { max-height:320px; min-height:0; }
   }
+  .field .hint { display:block; margin-top:6px; font-size:12px; line-height:1.5; color:var(--dim,#5B6472); }
 </style>
 <script>
 !function(f,b,e,v,n,t,s)
@@ -154,6 +155,8 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
         <div class="field"><label for="childName">Child&rsquo;s first name</label><input id="childName" autocomplete="off" placeholder="e.g. Jordan" required></div>
         <div class="field"><label for="parentName">Your name</label><input id="parentName" autocomplete="name" placeholder="e.g. Sam Rivera" required></div>
         <div class="field"><label for="email">Your email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+        <div class="field"><label for="phone">Your mobile</label><input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(571) 555-0123" required>
+          <span class="hint">So we can text you the class times that fit &mdash; a real person, not a robot. We don&rsquo;t sell your details.</span></div>
         <button class="submit" id="gateBtn" type="submit">Send me the result</button>
       </form>
       <div class="err" id="gateErr"></div>
@@ -283,10 +286,11 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
   var submitted = false;
 
   // prefill from funnel 1 (?n= child, ?p= parent, ?e= email)
-  var pre = { n: (params.get("n") || "").slice(0, 120), p: (params.get("p") || "").slice(0, 120), e: (params.get("e") || "").slice(0, 200) };
+  var pre = { n: (params.get("n") || "").slice(0, 120), p: (params.get("p") || "").slice(0, 120), e: (params.get("e") || "").slice(0, 200), ph: (params.get("ph") || "").slice(0, 40) };
   if (pre.n) $("childName").value = pre.n;
   if (pre.p) $("parentName").value = pre.p;
   if (pre.e) $("email").value = pre.e;
+  if (pre.ph) $("phone").value = pre.ph;
   var canSkipGate = !!(pre.n && pre.p && pre.e);
 
   function renderQuestion() {
@@ -326,7 +330,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
   function advance() {
     if (step < 4) { step++; renderQuestion(); return; }
     // quiz finished
-    if (canSkipGate && !submitted) { submitLead(pre.n, pre.p, pre.e, true); return; }
+    if (canSkipGate && !submitted) { submitLead(pre.n, pre.p, pre.e, pre.ph, true); return; }
     step = 5;
     showGate();
   }
@@ -346,7 +350,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
   function persona() { return PERSONAS[answers.q3] || PERSONAS["hard-to-say"]; }
   function program() { return PROGRAMS[answers.q1] || PROGRAMS["9-12"]; }
 
-  function submitLead(child, parent, email, silent) {
+  function submitLead(child, parent, email, phone, silent) {
     submitted = true;
     var btn = $("gateBtn");
     if (!silent) { btn.disabled = true; btn.textContent = "Sending…"; }
@@ -354,7 +358,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        parent_name: parent, email: email, child_name: child,
+        parent_name: parent, email: email, child_name: child, phone: phone,
         answers: answers, persona: persona().name,
         utm: Object.keys(utm).length ? utm : null,
       }),
@@ -376,8 +380,9 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
     ev.preventDefault();
     $("gateErr").style.display = "none";
     var child = $("childName").value.trim(), parent = $("parentName").value.trim(), email = $("email").value.trim();
-    if (!child || !parent || !email) return;
-    submitLead(child, parent, email, false);
+    var phone = $("phone").value.trim();
+    if (!child || !parent || !email || !phone) return;
+    submitLead(child, parent, email, phone, false);
   });
 
   function showResult() {
