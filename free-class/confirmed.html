@@ -5,14 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>You're in — NOVAPA free class booked</title>
 <meta name="robots" content="noindex">
-<!-- Free class funnel, step 3 of 3: confirmation + season pitch. Rebuilt
-     Aug 26 2026 to match the BFA Figma (frame 2246-1622) at the 1512 grid;
-     photos/doodles cropped from the 2x export (free-class/img/). Content
-     departs from the design only where Jason directed: real availability
-     and prices, sold-out cards per his call, $349 camp pack with the honest
-     $395 anchor, no refund-guarantee copy (terms pending Todd), no Season
-     Pass (unpriced in the design). Booking details arrive via query params;
-     the email is already sent by the time this renders. -->
+<!-- Free class funnel, step 3 of 3: confirmation. Rebuilt Aug 26 2026 from
+     the BFA Figma (frame 2246-1622) at the 1512 grid; reworked Aug 27 2026
+     per Jason: no show/camp upsell on this page. The main sell is the quiz
+     funnel (/quiz/start.html) and the next-steps section points families at
+     their My NOVAPA account. Booking details arrive via query params; the
+     email is already sent by the time this renders. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
@@ -20,7 +18,7 @@
   @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
   @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
   @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
-  :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --gold2:#F2B94C; --line:#E8E2CE; --green:#2E7D32; }
+  :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --gold2:#F2B94C; --line:#E8E2CE; }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; }
   body { background:var(--cream); color:var(--ink); font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
@@ -53,50 +51,14 @@
 
   section { padding:90px 0 0; }
 
-  /* Capped — heading left, para right; scroller row */
-  .capped-head { display:grid; grid-template-columns:1fr 1fr; gap:clamp(30px,8vw,120px); align-items:start; }
-  .capped-head h2 { font-size:clamp(25px,2.6vw,38px); max-width:440px; }
-  .capped-head .lede { color:var(--dim); font-size:13.5px; line-height:1.7; max-width:420px; padding-top:8px; }
-  .card-row { display:grid; grid-template-columns:repeat(4,minmax(255px,1fr)); gap:28px; margin-top:44px; overflow-x:auto; scrollbar-width:thin; padding-bottom:8px; }
-  .cardg { display:grid; grid-template-columns:repeat(3,1fr); gap:56px 28px; margin-top:44px; max-width:1215px; position:relative; z-index:1; }
-  .card { background:#FDFAF0; border:1px solid var(--line); border-radius:10px; padding:16px 16px 20px; }
-  .card .ph { position:relative; }
-  .card .ph img { width:100%; border-radius:6px; aspect-ratio:367/259; object-fit:cover; }
-  .chip { position:absolute; top:10px; right:10px; font-size:9.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; border-radius:999px; padding:5px 12px; }
-  .chip.gone { background:#E25454; color:#fff; }
-  .chip.open { background:#8FE3A4; color:#124D24; }
-  .chip.best { background:var(--gold); color:#513A0E; }
-  .card h3 { font-size:15.5px; font-weight:700; margin-top:14px; }
-  .price { font-weight:700; color:var(--green); font-size:15.5px; margin-top:3px; }
-  .price .strike { color:#9AA2AF; text-decoration:line-through; font-weight:500; margin-right:6px; }
-  .price.gone-p { color:#9AA2AF; text-decoration:line-through; }
-  .card p { font-size:12.5px; color:var(--dim); line-height:1.6; margin-top:10px; }
-  .cap-note { margin-top:44px; max-width:520px; }
-  .cap-note b { display:block; font-size:13px; margin-bottom:8px; }
-  .cap-note span { font-size:13px; color:var(--dim); line-height:1.7; }
-
-  /* Why say yes — navy */
-  .why { background:var(--navy); color:#fff; position:relative; overflow:hidden; padding:100px 0 110px; margin-top:90px; }
-  .why .k { text-align:center; color:var(--gold2); font-size:11px; letter-spacing:2px; font-weight:700; text-transform:uppercase; }
-  .why h2 { text-align:center; font-size:clamp(26px,2.8vw,42px); margin-top:10px; }
-  .checks { width:52%; max-width:790px; min-width:min(92%,560px); margin:38px auto 0; display:flex; flex-direction:column; gap:14px; position:relative; z-index:1; }
-  .check { background:#F6F3E8; color:var(--ink); border-radius:10px; padding:16px 24px; display:flex; gap:14px; }
-  .check .box { flex:none; width:19px; height:19px; margin-top:3px; border-radius:5px; background:var(--green); color:#fff; font-size:12px; line-height:19px; text-align:center; font-weight:700; }
-  .check h3 { font-size:14.5px; font-weight:700; font-family:'DM Sans',sans-serif; }
-  .check p { font-size:13px; color:#3A4353; margin-top:3px; line-height:1.6; }
-  .why .fine { text-align:center; color:rgba(255,255,255,0.55); font-size:12.5px; line-height:1.7; max-width:440px; margin:30px auto 0; position:relative; z-index:1; }
-  .why-doodle { position:absolute; left:0; top:36%; width:23%; max-width:349px; pointer-events:none; }
-
-  /* Pick grid */
-  .pick h2 { font-size:clamp(25px,2.6vw,38px); text-align:center; }
-  .pick .gridwrap { position:relative; }
-  .pick-doodle { position:absolute; right:-40px; bottom:-40px; width:24%; max-width:367px; pointer-events:none; }
-
-  /* Decide — btn left, para right */
-  .decide { display:grid; grid-template-columns:1fr 1fr; gap:clamp(30px,8vw,120px); align-items:start; margin-top:100px; }
-  .decide .btn { display:inline-block; background:var(--gold); color:var(--navy); font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; font-size:14px; letter-spacing:0.6px; text-transform:uppercase; padding:15px 34px; border-radius:999px; text-decoration:none; }
-  .decide .later { display:block; width:max-content; margin-top:20px; color:var(--ink); font-size:11px; letter-spacing:1.4px; font-weight:700; text-transform:uppercase; }
-  .decide .aside { color:var(--dim); font-size:13.5px; line-height:1.7; max-width:420px; }
+  /* Quiz CTA — navy */
+  .quiz { background:var(--navy); color:#fff; position:relative; overflow:hidden; text-align:center; padding:100px 0 110px; margin-top:90px; }
+  .quiz .wrap { z-index:1; }
+  .quiz .k { display:inline-block; background:var(--gold); color:#513A0E; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:1.4px; padding:5px 14px; text-transform:uppercase; }
+  .quiz h2 { font-size:clamp(26px,2.8vw,42px); margin-top:18px; }
+  .quiz .sub { color:rgba(255,255,255,0.7); font-size:14.5px; line-height:1.7; max-width:460px; margin:16px auto 0; }
+  .quiz .btn { display:inline-block; background:var(--gold); color:var(--navy); font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; font-size:14px; letter-spacing:0.6px; text-transform:uppercase; padding:15px 34px; border-radius:999px; text-decoration:none; margin-top:32px; }
+  .quiz-doodle { position:absolute; left:0; top:36%; width:23%; max-width:349px; pointer-events:none; opacity:0.8; }
 
   /* No guesswork — heading left, steps right */
   .guess { display:grid; grid-template-columns:1fr 1.1fr; gap:clamp(30px,8vw,120px); align-items:start; padding:120px 0 90px; }
@@ -115,10 +77,7 @@
     .ticket { grid-template-columns:1fr; }
     .ticket .ph { padding:16px 16px 0; }
     .ticket .ph img { max-height:260px; min-height:0; }
-    .capped-head, .decide, .guess { grid-template-columns:1fr; gap:24px; }
-    .card-row { grid-template-columns:repeat(4,78vw); }
-    .cardg { grid-template-columns:1fr; }
-    .pick-doodle { display:none; }
+    .guess { grid-template-columns:1fr; gap:24px; }
   }
 </style>
 <script>
@@ -156,109 +115,17 @@ fbq('track', 'PageView');
         <p class="t-note">Your confirmation is on its way with the date and what to bring. That day is yours no matter what you decide on this page.</p>
       </div>
     </div>
-    <a class="read-next" href="#capped">Read the next part anyway &mdash; it&rsquo;s time-sensitive</a>
+    <a class="read-next" href="#next">Read the next part anyway</a>
   </div>
 </div>
 
-<section id="capped">
+<section class="quiz" id="next">
+  <img class="quiz-doodle" src="/free-class/img/doodle-m.svg" alt="">
   <div class="wrap pad">
-    <div class="capped-head">
-      <h2>Casts are capped, and some are already gone</h2>
-      <p class="lede">Every cast has a hard cap, and the 9&ndash;12 fall cast is already over two thirds full. Rehearsals begin the week of September 15. When a cast is full, it&rsquo;s full &mdash; there&rsquo;s no waitlist trick that reopens a spot.</p>
-    </div>
-    <div class="card-row">
-      <div class="card">
-        <div class="ph"><span class="chip gone">Sold out</span><img src="/free-class/img/sc-shrek.jpg" alt="Shrek Jr., summer 2026"></div>
-        <h3>Shrek Jr.</h3>
-      </div>
-      <div class="card">
-        <div class="ph"><span class="chip gone">Sold out</span><img src="/free-class/img/sc-sweeney.jpg" alt="Sweeney Todd Teen Conservatory"></div>
-        <h3>Sweeney Todd &mdash; Teen Conservatory</h3>
-      </div>
-      <div class="card">
-        <div class="ph"><span class="chip open">Spots open</span><img src="/free-class/img/sc-frozen.jpg" alt="Disney's Frozen Jr."></div>
-        <h3>Disney&rsquo;s Frozen Jr.</h3>
-      </div>
-      <div class="card">
-        <div class="ph"><span class="chip gone">Sold out</span><img src="/free-class/img/c-hadestown.jpg" alt="Hadestown Teen Conservatory"></div>
-        <h3>Hadestown &mdash; Teen Conservatory</h3>
-      </div>
-    </div>
-    <div class="cap-note">
-      <b>Availability pulled live from enrollment &mdash; updated daily.</b>
-      <span>So if you already sense your child is going to love this, waiting until after the free day is a real risk. The spot you want may be gone by then.</span>
-    </div>
-  </div>
-</section>
-
-<section class="why">
-  <img class="why-doodle" src="/free-class/img/doodle-m.svg" alt="" style="opacity:0.8">
-  <div class="wrap">
-    <div class="k">We&rsquo;re not asking you to gamble</div>
-    <h2>Why you can safely say yes right now</h2>
-    <div class="checks">
-      <div class="check"><span class="box">&#10003;</span><div>
-        <h3>Lock your child&rsquo;s season spot today</h3>
-        <p>Before the cast fills. The spot is theirs the moment you reserve it.</p>
-      </div></div>
-      <div class="check"><span class="box">&#10003;</span><div>
-        <h3>They still do their free class</h3>
-        <p>Nothing about that changes. It&rsquo;s yours either way.</p>
-      </div></div>
-      <div class="check"><span class="box">&#10003;</span><div>
-        <h3>Pay in full or split it</h3>
-        <p>Pay once, or in two payments. No account needed &mdash; registration takes about two minutes.</p>
-      </div></div>
-    </div>
-    <p class="fine">You secure the spot while it exists. The only thing you lose by waiting is the spot itself.</p>
-  </div>
-</section>
-
-<section class="pick">
-  <div class="wrap pad">
-    <h2>Pick what fits your family</h2>
-    <div class="gridwrap">
-      <img class="pick-doodle" src="/free-class/img/doodle-tan2.svg" alt="">
-      <div class="cardg">
-        <div class="card">
-          <div class="ph"><span class="chip gone">Sold out</span><img src="/free-class/img/c-shrek.jpg" alt="Shrek Jr."></div>
-          <h3>Shrek Jr.</h3><div class="price gone-p">$649</div>
-          <p>This past summer&rsquo;s show. Every seat in the cast was taken.</p>
-        </div>
-        <div class="card">
-          <div class="ph"><span class="chip gone">Sold out</span><img src="/free-class/img/c-sweeney.jpg" alt="Sweeney Todd Teen Conservatory"></div>
-          <h3>Sweeney Todd &mdash; Teen Conservatory</h3><div class="price gone-p">$895</div>
-          <p>Cast is full. No waitlist reopens a spot.</p>
-        </div>
-        <div class="card">
-          <div class="ph"><span class="chip gone">Sold out</span><img src="/free-class/img/c-hadestown.jpg" alt="Hadestown Teen Conservatory"></div>
-          <h3>Hadestown &mdash; Teen Conservatory</h3><div class="price gone-p">$895</div>
-          <p>Cast is full. Gone until next season.</p>
-        </div>
-        <div class="card">
-          <div class="ph"><span class="chip open">Spots open</span><img src="/free-class/img/c-frozen.jpg" alt="Disney's Frozen Jr."></div>
-          <h3>Disney&rsquo;s Frozen Jr.</h3><div class="price">$695</div>
-          <p>One evening a week, September 2026 &ndash; February 2027, ending on the real stage. Three casts by age: 5&ndash;9, 9&ndash;12, 12&ndash;17.</p>
-        </div>
-        <div class="card">
-          <div class="ph"><span class="chip open">Spots open</span><img src="/free-class/img/c-mermaid.jpg" alt="Disney's The Little Mermaid Jr."></div>
-          <h3>Disney&rsquo;s The Little Mermaid Jr.</h3><div class="price">$695</div>
-          <p>One evening a week, February &ndash; May 2027. The spring season, if winter doesn&rsquo;t fit your family.</p>
-        </div>
-        <div class="card">
-          <div class="ph"><span class="chip best">Best value</span><img src="/free-class/img/c-pack.jpg" alt="NOVAPA day camp kids"></div>
-          <h3>5-Day Camp Pack</h3><div class="price"><span class="strike">$395</span>$349</div>
-          <p>All five day camps on the schedule &mdash; full days on school holidays and teacher workdays, 8:30 AM &ndash; 4:15 PM &mdash; plus 2 free Snow Day camps. Applied automatically at checkout.</p>
-        </div>
-      </div>
-    </div>
-    <div class="decide">
-      <div>
-        <a class="btn" data-reg href="/register/?season=fall">Lock their season spot now</a>
-        <a class="later" href="#steps">Just the free day for now &mdash; take me back</a>
-      </div>
-      <p class="aside">The free day is yours either way, no strings. But some casts are already gone, and once yours fills there&rsquo;s nothing we can do. We&rsquo;d rather you lock it now than wait and find out the spot filled. Your call &mdash; and it&rsquo;s a real one.</p>
-    </div>
+    <div class="k">One more thing</div>
+    <h2 id="quizHead">Is your child ready for the stage? Find out.</h2>
+    <p class="sub">Answer 5 quick questions and we&rsquo;ll tell you exactly which NOVAPA program fits them. Takes under a minute.</p>
+    <a class="btn" id="quizCta" href="/quiz/start.html">Take the quiz</a>
   </div>
 </section>
 
@@ -282,6 +149,11 @@ fbq('track', 'PageView');
           <h3>Your child walks into a real class</h3>
           <p>An instructor greets them by name. You&rsquo;ll know within the hour if it&rsquo;s their thing.</p>
         </div>
+        <div class="step">
+          <span class="tag">Step 4</span>
+          <h3>Your NOVAPA account is waiting</h3>
+          <p><a href="https://novapa.org/register/signin.html" style="color:inherit;text-decoration:underline">Sign in once with the email you just used</a> and your family is set up in My NOVAPA, where enrolling later takes about two minutes.</p>
+        </div>
         <p class="call-note">Questions before the day? Call (571) 571-2120 &mdash; a person answers.</p>
       </div>
     </div>
@@ -301,11 +173,13 @@ fbq('track', 'PageView');
   var n = p.get("n"), d = p.get("d"), t = p.get("t"), c = p.get("c");
   if (n) document.getElementById("who").textContent = n + (c ? " · " + c : "");
   if (d) document.getElementById("when").textContent = d + (t ? ", " + t : "");
-  var utm = [];
-  p.forEach(function (v, k) { if (/^utm_|^fbclid$/.test(k)) utm.push(k + "=" + encodeURIComponent(v)); });
-  if (utm.length) document.querySelectorAll("a[data-reg]").forEach(function (a) {
-    a.href += (a.href.indexOf("?") === -1 ? "?" : "&") + utm.join("&");
-  });
+  var first = n ? n.trim().split(/\s+/)[0] : "";
+  if (first) document.getElementById("quizHead").textContent = "Is " + first + " ready for the stage? Find out.";
+  var fwd = [];
+  if (n) fwd.push("n=" + encodeURIComponent(n));
+  p.forEach(function (v, k) { if (/^utm_|^fbclid$/.test(k)) fwd.push(k + "=" + encodeURIComponent(v)); });
+  var cta = document.getElementById("quizCta");
+  if (fwd.length && cta) cta.href += (cta.href.indexOf("?") === -1 ? "?" : "&") + fwd.join("&");
 })();
 </script>
 </body>
