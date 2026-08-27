@@ -179,7 +179,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
         <div class="pmeta" id="progMeta"></div>
         <p class="pdesc" id="progDesc"></p>
         <p class="scarce hide" id="progScarce"></p>
-        <a class="cta" id="progCta" href="/register/?season=fall">See open spots</a>
+        <a class="cta" id="progCta" href="/quiz/enroll.html">See open spots</a>
       </div>
       <p class="result-note">A copy of this result is on its way to your inbox, so you can talk it over at home.</p>
     </div>
@@ -394,7 +394,11 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
     $("progDesc").textContent = g.desc;
     if (g.scarce) { $("progScarce").textContent = g.scarce; $("progScarce").classList.remove("hide"); }
     var cta = $("progCta");
-    cta.href = "/register/?season=fall" + (utmQs ? "&" + utmQs : "");
+    cta.href = "/quiz/enroll.html?age=" + encodeURIComponent(answers.q1 || "9-12")
+      + "&n=" + encodeURIComponent($("childName").value.trim())
+      + "&p=" + encodeURIComponent($("parentName").value.trim())
+      + "&e=" + encodeURIComponent($("email").value.trim())
+      + (utmQs ? "&" + utmQs : "");
     try { if (window.posthog) posthog.capture("quiz_completed", { persona: p.name, age_band: answers.q1 }); } catch (e) {}
     window.scrollTo(0, 0);
   }

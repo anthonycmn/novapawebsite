@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enroll in Disney's Frozen Jr. — NOVAPA</title>
+<meta name="robots" content="noindex">
+<!-- Quiz funnel, step 3: native enrollment checkout. The result card on
+     /quiz/start.html links here with ?age=5-8|9-12|13-17 plus n/p/e from the
+     gate answers, so enrolling never leaves the funnel for the full register
+     app. The payment contract is the register app's, verbatim: the same
+     acquire_hold_guest RPC, the same /api/reg-pay payload (hold_id, plan,
+     parent_name, insurance, ref, email, bdays), the same Stripe Payment
+     Element + Express Checkout mount, the same client-side Purchase pixel.
+     The server prices everything — this page displays only catalog_list
+     prices and reg-pay's pricing response, never its own math.
+     Frozen casts resolve from the live catalog by name, exactly like
+     fallActsFor()/castLabel() in register/index.html. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+  :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --dimlight:rgba(255,255,255,0.72); --gold:#FFC866; --gold2:#F2B94C; --line:#E4E7ED; --green:#28D07E; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--cream); color:var(--ink); font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  h1,h2,h3 { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:-0.045em; line-height:1.2; }
+  img { display:block; }
+
+  .logo { text-align:center; padding:30px 22px 0; }
+  .logo img { height:26px; margin:0 auto; }
+
+  .qcard { background:var(--navy); color:#fff; border-radius:24px; max-width:560px; margin:36px auto 90px; padding:30px clamp(18px,4vw,40px) 44px; }
+  .back { display:block; text-align:center; color:rgba(255,255,255,0.7); font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; text-decoration:none; margin:0 auto 6px; }
+  .back:hover { color:#fff; }
+  .chip { display:inline-flex; align-items:center; gap:8px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; padding:6px 16px; }
+  .chip-red { background:#E4534B; color:#fff; }
+  .chip-green { background:rgba(40,208,126,0.14); color:var(--green); border:1px solid rgba(40,208,126,0.35); }
+  .qcard h1 { font-size:clamp(24px,3vw,32px); text-align:center; margin-top:18px; }
+
+  .prog { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:16px; margin-top:22px; padding:14px 14px 20px; }
+  .prog .pph img { width:100%; border-radius:10px; aspect-ratio:390/150; object-fit:cover; object-position:center 30%; }
+  .prog h2 { font-size:22px; margin-top:14px; }
+  .prog .pshow { font-size:15px; font-weight:700; color:var(--gold2); margin-top:2px; }
+  .prog .pmeta { color:rgba(255,255,255,0.62); font-size:12.5px; margin-top:8px; line-height:1.6; }
+  .prog .pnote { color:var(--gold2); font-size:12.5px; margin-top:8px; display:none; }
+
+  .fields { margin-top:22px; }
+  .fields label { display:block; font-size:12px; font-weight:500; color:rgba(255,255,255,0.8); margin:14px 0 6px; }
+  .fields input { width:100%; border:1.5px solid transparent; background:#F1F3F6; border-radius:8px; padding:12px 14px; font-family:inherit; font-size:15px; color:var(--ink); }
+  .fields input:focus { outline:none; border-color:var(--gold); background:#fff; }
+  .fields input::placeholder { color:#9AA3B2; }
+  .frow { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .plan-toggle { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:24px; }
+  .plan-opt { border:1.5px solid rgba(255,255,255,0.18); border-radius:14px; padding:14px 12px; cursor:pointer; text-align:center; }
+  .plan-opt.sel { border-color:var(--gold2); background:rgba(242,185,76,0.08); }
+  .plan-opt .p1 { font-weight:700; font-size:14.5px; color:#fff; }
+  .plan-opt .p2 { font-size:12px; color:var(--dimlight); margin-top:4px; line-height:1.45; }
+
+  .policy { display:flex; align-items:flex-start; gap:9px; font-size:12.5px; color:var(--dimlight); line-height:1.55; margin-top:22px; cursor:pointer; text-align:left; }
+  .policy input { width:17px; height:17px; flex-shrink:0; margin-top:2px; accent-color:var(--gold2); }
+  .policy a { color:var(--gold2); }
+
+  .sumrow { display:flex; justify-content:space-between; font-size:14.5px; padding:9px 0 0; }
+  .sumrow.total { font-weight:700; font-size:16px; }
+  .breakdown { margin-top:18px; }
+  .breakdown .tiny { font-size:12.5px; color:var(--dimlight); margin-top:4px; text-align:left; }
+
+  .submit { display:block; width:100%; border:0; background:var(--gold); color:var(--navy); font-family:inherit; font-weight:700; font-size:15px; padding:15px 20px; border-radius:999px; cursor:pointer; margin-top:22px; transition:transform .12s ease; }
+  .submit:hover { transform:translateY(-1px); }
+  .submit[disabled] { opacity:0.6; cursor:wait; transform:none; }
+  .err { color:#FF8A8A; font-size:13.5px; margin-top:14px; display:none; text-align:center; }
+  .err.on { display:block; }
+  .fine { color:rgba(255,255,255,0.55); font-size:12px; text-align:center; margin-top:16px; }
+  .holdline { color:rgba(255,255,255,0.55); font-size:12px; text-align:center; margin-top:10px; display:none; }
+
+  #expressWrap { margin-top:20px; display:none; }
+  .pay-or { display:flex; align-items:center; gap:12px; color:rgba(255,255,255,0.45); font-size:12px; margin:14px 0 4px; }
+  .pay-or:before, .pay-or:after { content:""; height:1px; flex:1; background:rgba(255,255,255,0.14); }
+  #payElement { margin-top:18px; }
+
+  /* ticket confirmation — free-class/confirmed.html's ticket */
+  .ticket-outer { max-width:960px; margin:56px auto 90px; padding:0 clamp(20px,5vw,48px); }
+  .ticket { position:relative; background:var(--navy); color:#fff; border-radius:18px; display:grid; grid-template-columns:37% 1fr; }
+  .ticket-edge { position:absolute; top:10px; bottom:10px; width:48px; pointer-events:none; z-index:1;
+    background-image:radial-gradient(circle 24px at 50% 50%, var(--cream) 22.5px, transparent 24px);
+    background-size:48px 96px; background-repeat:repeat-y; }
+  .ticket-edge.l { left:-24px; } .ticket-edge.r { right:-24px; }
+  .ticket .ph { padding:26px 0 26px 26px; }
+  .ticket .ph img { width:100%; height:100%; object-fit:cover; min-height:300px; border-radius:12px; }
+  .t-body { padding:40px 40px 40px 36px; }
+  .t-chip { display:inline-flex; align-items:center; gap:8px; background:#12331F; color:#7ADB9B; border:1px solid #235C38; font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; border-radius:999px; padding:6px 16px; }
+  .t-chip:before { content:"\2713"; font-size:12px; }
+  .t-body h1 { font-size:clamp(28px,3vw,42px); margin-top:16px; max-width:560px; text-align:left; }
+  .t-rows { margin-top:24px; border-top:1px solid rgba(255,255,255,0.14); max-width:560px; }
+  .t-row { display:flex; justify-content:space-between; gap:20px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.14); font-size:14.5px; }
+  .t-row span { color:rgba(255,255,255,0.55); }
+  .t-row b { text-align:right; }
+  .t-note { margin-top:18px; font-size:12.5px; line-height:1.6; color:rgba(255,255,255,0.6); max-width:560px; }
+
+  .footer-band { background:var(--navy); }
+  footer { text-align:center; padding:56px 22px 60px; font-size:11.5px; color:rgba(255,255,255,0.5); line-height:2; }
+  footer .flogo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:24px; color:#fff; margin-bottom:20px; }
+
+  .hide { display:none !important; }
+
+  @media (max-width:700px) {
+    .qcard { margin:24px 14px 60px; padding:24px 16px 36px; }
+    .frow { grid-template-columns:1fr; }
+    .ticket { grid-template-columns:1fr; }
+    .ticket .ph { padding:16px 16px 0; }
+    .ticket .ph img { max-height:260px; min-height:0; }
+  }
+</style>
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2191001311729801');
+fbq('init', '902777265812159');
+fbq('track', 'PageView');
+fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'product', num_items: 1 });
+</script>
+<script src="/posthog.js" defer></script>
+<script src="/register/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="logo" id="creamLogo"><img src="/free-class/img/logo-novapa-dark.svg" alt="NOVAPA"></div>
+
+<div class="qcard" id="enrollCard">
+  <a class="back" id="backLink" href="/quiz/start.html">&lsaquo; Back</a>
+  <div style="text-align:center;margin-top:14px"><span class="chip chip-red">Their best-fit program</span></div>
+  <h1 id="enrollH1">Enroll in Disney's Frozen Jr.</h1>
+
+  <div class="prog">
+    <div class="pph"><img src="/free-class/img/sc-frozen.jpg" alt="The cast of a NOVAPA production of Disney's Frozen Jr. on stage"></div>
+    <h2 id="progName">Broadway Bound Junior</h2>
+    <div class="pshow">Disney's Frozen Jr.</div>
+    <div class="pmeta" id="progMeta"></div>
+    <div class="pnote" id="progNote"></div>
+  </div>
+
+  <div class="fields">
+    <div class="frow">
+      <div>
+        <label for="childName">Child&rsquo;s first name</label>
+        <input id="childName" autocomplete="off" placeholder="e.g. Jordan" required>
+      </div>
+      <div>
+        <label for="childBday">Child&rsquo;s birthday</label>
+        <input id="childBday" type="date" aria-label="Child's birthday" required>
+      </div>
+    </div>
+    <label for="parentName">Parent name</label>
+    <input id="parentName" autocomplete="name" placeholder="Parent full name (for the receipt)" required>
+    <div class="frow">
+      <div>
+        <label for="email">Your email</label>
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      </div>
+      <div>
+        <label for="phone">Your phone</label>
+        <input id="phone" type="tel" autocomplete="tel" placeholder="(571) 555-0100" required>
+      </div>
+    </div>
+  </div>
+
+  <div class="plan-toggle">
+    <div class="plan-opt sel" data-plan="deposit">
+      <div class="p1">Pay in installments</div>
+      <div class="p2">Equal monthly payments, first one today (+5%)</div>
+    </div>
+    <div class="plan-opt" data-plan="full">
+      <div class="p1">Pay in full</div>
+      <div class="p2">One payment &mdash; save 5%</div>
+    </div>
+  </div>
+
+  <div class="breakdown" id="payBreakdown"></div>
+
+  <label class="policy">
+    <input type="checkbox" id="policyOk">
+    <span>I agree to NOVAPA's <a href="/terms" target="_blank" rel="noopener">terms</a>, <a href="/policies" target="_blank" rel="noopener">policies</a>, and <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a> &mdash; <b>all sales are final (no refunds)</b>.</span>
+  </label>
+
+  <button class="submit" id="payStart" type="button">Continue to payment</button>
+  <div id="expressWrap">
+    <div id="expressCheckout"></div>
+    <div class="pay-or"><span>or pay by card</span></div>
+  </div>
+  <div id="payElement"></div>
+  <button class="submit" id="paySubmit" type="button" style="display:none"></button>
+  <div class="err" id="payErr"></div>
+  <div class="holdline" id="holdLine"></div>
+  <p class="fine">Secure payment by Stripe &middot; No booking fees</p>
+</div>
+
+<!-- confirmation ticket -->
+<div class="ticket-outer hide" id="doneView">
+  <div class="ticket">
+    <span class="ticket-edge l"></span><span class="ticket-edge r"></span>
+    <div class="ph"><img src="/free-class/img/sc-frozen.jpg" alt="The cast of a NOVAPA production of Disney's Frozen Jr. on stage"></div>
+    <div class="t-body">
+      <span class="t-chip">Enrollment confirmed</span>
+      <h1 id="doneH1">You&rsquo;re in.</h1>
+      <div class="t-rows">
+        <div class="t-row"><span>Camper</span><b id="tCamper">Your child</b></div>
+        <div class="t-row"><span>Program</span><b id="tProgram">Broadway Bound</b></div>
+        <div class="t-row"><span>Show</span><b>Disney's Frozen Jr.</b></div>
+        <div class="t-row"><span>When</span><b id="tWhen"></b></div>
+        <div class="t-row"><span>Where</span><b>National Conference Center, Leesburg</b></div>
+        <div class="t-row" id="tPaidRow" style="display:none"><span>Paid today</span><b id="tPaid"></b></div>
+      </div>
+      <p class="t-note" id="doneNote">Your receipt and confirmation are on the way to your inbox, with everything the season needs from here.</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer-band">
+  <footer>
+    <div class="flogo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:28px;margin:0 auto 20px"></div>
+    Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120<br>
+    This site is not a part of the Facebook website or Facebook Inc. Additionally, this site is NOT endorsed by Facebook in any way. FACEBOOK is a trademark of FACEBOOK, Inc.<br>
+    &copy; 2026 Northern Virginia Performing Arts. All Rights Reserved.
+  </footer>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var C = window.NOVAREG;
+  var sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
+  var params = new URLSearchParams(location.search);
+  var utm = {};
+  params.forEach(function (v, k) { if (/^utm_|^fbclid$/.test(k)) utm[k] = v; });
+  var utmQs = Object.keys(utm).map(function (k) { return k + "=" + encodeURIComponent(utm[k]); }).join("&");
+
+  // referral link (?ref=CODE): remember it for this browser; sent with
+  // payment so the webhook can credit both families (mirrors register app)
+  var rm = location.search.match(/[?&]ref=([A-Za-z0-9]+)/);
+  if (rm) { try { localStorage.setItem('nova_ref', rm[1].toUpperCase()); } catch (e) {} }
+  function refCode(){ try { return localStorage.getItem('nova_ref') || undefined; } catch (e) { return undefined; } }
+
+  function ev(name, props){ try { window.posthog && window.posthog.capture(name, props || {}); } catch (e) {} }
+  function money(cents){ return '$' + (cents/100).toLocaleString('en-US', { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 }); }
+  function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+  // The bands and schedule lines the quiz result shows (quiz/start.html);
+  // price comes from the live catalog, appended once catalog_list answers.
+  var FROZEN_START = '2026-09-15';
+  var BANDS = {
+    '5-8':   { name: 'Broadway Bound Kids',   meta: 'Ages 5–9 · Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027',  when: 'Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027' },
+    '9-12':  { name: 'Broadway Bound Junior', meta: 'Ages 9–12 · Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027',   when: 'Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027' },
+    '13-17': { name: 'Broadway Bound Teens',  meta: 'Ages 12–17 · Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027', when: 'Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027' }
+  };
+
+  var state = {
+    band: BANDS[params.get('age')] ? params.get('age') : '9-12',
+    casts: {},           // band -> catalog activity row
+    cast: null,          // chosen activity row
+    plan: 'deposit',
+    hold: null, clientSecret: null, pricing: null,
+    stripe: null, elements: null, piId: null, email: ''
+  };
+
+  // ---------- prefill ----------
+  var pre = { n: (params.get('n') || '').slice(0, 120), p: (params.get('p') || '').slice(0, 120), e: (params.get('e') || '').slice(0, 200) };
+  if (pre.n) $('childName').value = pre.n.trim().split(/\s+/)[0];
+  if (pre.p) $('parentName').value = pre.p;
+  if (pre.e) $('email').value = pre.e;
+  $('childBday').max = new Date().toISOString().slice(0, 10);
+  $('backLink').href = '/quiz/start.html' + (utmQs ? '?' + utmQs : '');
+
+  // ---------- program display ----------
+  function renderProgram(){
+    var b = BANDS[state.band];
+    var price = state.cast && state.cast.price_cents ? ' · ' + money(state.cast.price_cents) : '';
+    $('progName').textContent = b.name;
+    $('progMeta').textContent = b.meta + price + ' · Ends on a real stage';
+    var first = $('childName').value.trim().split(/\s+/)[0];
+    $('enrollH1').textContent = 'Enroll ' + (first || 'your child') + ' in Disney’s Frozen Jr.';
+  }
+  $('childName').addEventListener('input', renderProgram);
+
+  // ---------- catalog: resolve the Frozen casts, exactly like the register
+  // app (catalog_list RPC; casts matched by name, labeled teen/junior/kids) ----------
+  function castBandOf(a){
+    var hay = String(a.schedule_name || '') + ' ' + a.name;
+    if (/teen/i.test(hay)) return '13-17';
+    if (/junior/i.test(hay)) return '9-12';
+    return '5-8';
+  }
+  function castRange(a){
+    var m = String(a.age_range || '').match(/(\d+)\s*[–—-]\s*(\d+)/);
+    return m ? { min: +m[1], max: +m[2] } : { min: 5, max: 17 };
+  }
+  function castTop(a){ return a.id === 1959805 ? 18 : castRange(a).max; }
+  function ageOn(bday, iso){
+    if (!bday) return null;
+    var b = new Date(bday + 'T00:00:00'), d = new Date(iso + 'T00:00:00');
+    var a = d.getFullYear() - b.getFullYear();
+    var m = d.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && d.getDate() < b.getDate())) a--;
+    return a;
+  }
+  var catalogErr = false;
+  sb.rpc('catalog_list', { p_ids: [] }).then(function (res) {
+    var acts = (res.data || []).filter(function (a) { return /frozen/i.test(a.name) && a.bookable && a.category !== 'class'; });
+    acts.forEach(function (a) { state.casts[castBandOf(a)] = a; });
+    if (!acts.length) { catalogErr = true; return; }
+    pickCast();
+  }, function () { catalogErr = true; });
+
+  function pickCast(){
+    // birthday wins over the quiz band: default to the cast whose range
+    // strictly contains the age at the season start, with the register app's
+    // one-year grace below each band floor
+    var bday = $('childBday').value;
+    var age = ageOn(bday, FROZEN_START);
+    var chosen = null;
+    if (age != null) {
+      var bands = Object.keys(state.casts);
+      var fit = bands.filter(function (b) { var r = castRange(state.casts[b]); return age >= r.min && age <= castTop(state.casts[b]); });
+      var near = bands.filter(function (b) { var r = castRange(state.casts[b]); return age >= r.min - 1 && age <= castTop(state.casts[b]); });
+      var pickFrom = fit.length ? fit : near;
+      if (pickFrom.length) {
+        chosen = pickFrom.indexOf(state.band) !== -1 ? state.band : pickFrom[pickFrom.length - 1];
+      } else {
+        state.cast = null;
+        showErr('Frozen Jr. casts run ages 5–17 this season. Questions about the fit? info@novapa.org');
+        return;
+      }
+      if (chosen !== state.band) {
+        state.band = chosen;
+        $('progNote').textContent = 'Based on their birthday, they fit the ' + BANDS[chosen].name + ' cast — updated below.';
+        $('progNote').style.display = 'block';
+      }
+    }
+    state.cast = state.casts[state.band] || null;
+    hideErr();
+    if (state.cast && state.cast.remaining != null && state.cast.remaining <= 0) {
+      showErr('This cast just filled up. Email info@novapa.org and we’ll help.');
+      state.cast = null;
+    }
+    renderProgram();
+  }
+  $('childBday').addEventListener('change', function () { pickCast(); resetPayUI(); });
+
+  // ---------- plan toggle ----------
+  document.querySelectorAll('.plan-opt').forEach(function (opt) {
+    opt.addEventListener('click', function () {
+      document.querySelectorAll('.plan-opt').forEach(function (o) { o.classList.remove('sel'); });
+      opt.classList.add('sel');
+      state.plan = opt.dataset.plan;
+      resetPayUI();
+      if (state.hold) schedulePay();
+    });
+  });
+
+  // ---------- errors ----------
+  function showErr(msg){ var e = $('payErr'); e.textContent = msg; e.classList.add('on'); }
+  function hideErr(){ $('payErr').classList.remove('on'); }
+
+  // ---------- hold ----------
+  var timerInt = null;
+  function startTimer(){
+    clearInterval(timerInt);
+    $('holdLine').style.display = 'block';
+    timerInt = setInterval(function () {
+      var ms = state.hold ? (state.hold.expires - new Date()) : 0;
+      if (ms <= 0) {
+        clearInterval(timerInt);
+        $('holdLine').style.display = 'none';
+        state.hold = null;
+        resetPayUI();
+        showErr('Your 30-minute hold expired — continue to payment to grab the spot again.');
+        return;
+      }
+      var s = Math.floor(ms / 1000);
+      $('holdLine').textContent = 'This spot is held for you — ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+    }, 500);
+  }
+
+  function fieldsOk(){
+    var name = $('childName').value.trim();
+    var bday = $('childBday').value;
+    var parent = $('parentName').value.trim();
+    var email = $('email').value.trim();
+    var phone = $('phone').value.trim();
+    if (!name) { showErr('Add your child’s first name.'); return null; }
+    if (!bday) { showErr('Add your child’s birthday — it sets their cast.'); return null; }
+    if (!parent) { showErr('Add the parent name for the receipt.'); return null; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('A valid email is required — it’s where the confirmation goes.'); return null; }
+    if (!phone) { showErr('Add a phone number.'); return null; }
+    if (!$('policyOk').checked) { showErr('Please agree to NOVAPA’s terms, policies, and Photo and Media Release to continue.'); return null; }
+    if (catalogErr) { showErr('Could not load the season catalog — refresh and try again.'); return null; }
+    if (!state.cast) { showErr('Could not match a Frozen Jr. cast — check the birthday, or email info@novapa.org.'); return null; }
+    return { name: name, bday: bday, parent: parent, email: email, phone: phone };
+  }
+
+  function guestBdays(){
+    var m = {};
+    var name = $('childName').value.trim(), bday = $('childBday').value;
+    if (name && bday) m[name] = bday;
+    return m;
+  }
+
+  $('payStart').addEventListener('click', function () {
+    hideErr();
+    var f = fieldsOk();
+    if (!f) return;
+    state.email = f.email.toLowerCase();
+    $('payStart').disabled = true;
+    var items = [{ activity_id: state.cast.id, camper: f.name, ci: 0 }];
+    sb.rpc('acquire_hold_guest', { p_items: items, p_email: state.email }).then(function (res) {
+      $('payStart').disabled = false;
+      if (res.error) {
+        var msg = res.error.message || '';
+        if (msg.indexOf('DUPLICATE:') !== -1) {
+          showErr(f.name + ' is already registered for this show — no need to register twice. Questions? info@novapa.org');
+        } else if (msg.indexOf('SOLD_OUT') !== -1) {
+          showErr('This cast just filled up. Email info@novapa.org and we’ll help.');
+        } else if (msg.indexOf('GATED') !== -1) {
+          showErr('Registration is limited to returning NOVAPA families right now.');
+        } else {
+          showErr('Could not hold the spot — try again.');
+        }
+        return;
+      }
+      state.hold = { id: res.data.hold_id, expires: new Date(res.data.expires_at), items: items };
+      startTimer();
+      schedulePay();
+    });
+  });
+
+  // ---------- payment (mirrors register/index.html startPayment/mountStripe) ----------
+  var paySeq = 0; // bumps on every reset/request; stale reg-pay responses are dropped
+  function resetPayUI(){
+    paySeq++;
+    state.clientSecret = null;
+    $('payElement').innerHTML = ''; $('paySubmit').style.display = 'none';
+    $('expressCheckout').innerHTML = ''; $('expressWrap').style.display = 'none';
+    $('payBreakdown').innerHTML = '';
+    $('payStart').style.display = '';
+  }
+  var payTimer = null;
+  function schedulePay(){ clearTimeout(payTimer); payTimer = setTimeout(startPayment, 350); }
+
+  function startPayment(){
+    if (!state.hold || state.clientSecret) return;
+    var mySeq = ++paySeq;
+    hideErr();
+    if (!C.STRIPE_PUBLISHABLE_KEY) { showErr('Payments aren’t configured yet (test build) — Stripe keys pending.'); return; }
+    $('payStart').disabled = true;
+    fetch('/api/reg-pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: false, coupon: undefined, ref: refCode(), email: state.email, bdays: guestBdays() })
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      if (mySeq !== paySeq) return; // plan changed meanwhile — drop stale response
+      $('payStart').disabled = false;
+      if (!res.ok) {
+        if (res.j.error === 'hold_expired') {
+          state.hold = null;
+          showErr('Your hold expired — continue to payment to grab the spot again.');
+          return;
+        }
+        if (res.j.error === 'pay_full_only') {
+          state.plan = 'full';
+          document.querySelectorAll('.plan-opt').forEach(function (o) { o.classList.toggle('sel', o.dataset.plan === 'full'); });
+          showErr('This program starts within 2 weeks — payment in full is required.');
+          schedulePay();
+          return;
+        }
+        showErr('Could not start payment (' + (res.j.error || 'error') + ').');
+        return;
+      }
+      state.clientSecret = res.j.client_secret;
+      state.pricing = res.j.pricing;
+      renderServerBreakdown(res.j.pricing);
+      mountStripe();
+    }).catch(function () {
+      if (mySeq !== paySeq) return;
+      $('payStart').disabled = false;
+      showErr('Network error — try again.');
+    });
+  }
+
+  function renderServerBreakdown(p){
+    var html = '<div class="sumrow total"><span>Due today</span><span>' + money(p.today_cents) + '</span></div>';
+    if (state.plan === 'deposit' && p.n_installments) {
+      var first = p.first_installment_utc ? new Date(p.first_installment_utc * 1000) : null;
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var when = first ? (months[first.getUTCMonth()] + ' ' + first.getUTCFullYear()) : '';
+      html += '<p class="tiny">Then <b>' + p.n_installments + ' monthly payments of ' + money(p.installment_cents) +
+        '</b> starting ' + when + ' — automatic on this card.</p>';
+    } else if (p.total_cents !== p.today_cents) {
+      html += '<p class="tiny">Total ' + money(p.total_cents) + '.</p>';
+    }
+    if (p.discount_pct) html += '<p class="tiny">Includes ' + p.discount_pct + '% off list price.</p>';
+    $('payBreakdown').innerHTML = html;
+  }
+
+  function policyBlocked(){
+    if ($('policyOk').checked) return false;
+    showErr('Please agree to NOVAPA’s terms, policies, and Photo and Media Release to continue.');
+    return true;
+  }
+  function confirmNow(){
+    return state.stripe.confirmPayment({
+      elements: state.elements,
+      confirmParams: { return_url: location.origin + '/quiz/enroll.html?paid=1&age=' + encodeURIComponent(state.band) + '&n=' + encodeURIComponent($('childName').value.trim()) },
+      redirect: 'if_required'
+    });
+  }
+
+  function mountStripe(){
+    function ready(){
+      state.stripe = Stripe(C.STRIPE_PUBLISHABLE_KEY);
+      state.elements = state.stripe.elements({
+        clientSecret: state.clientSecret,
+        appearance: { theme: 'night', variables: { colorPrimary: '#E8B84B', fontFamily: 'DM Sans, sans-serif' } }
+      });
+      // Apple Pay / Google Pay / Link buttons — handled by Express Checkout,
+      // so suppress the duplicate wallet row inside the card element.
+      state.elements.create('payment', { wallets: { applePay: 'never', googlePay: 'never' } }).mount('#payElement');
+
+      $('expressCheckout').innerHTML = '';
+      var ece = state.elements.create('expressCheckout', {
+        buttonHeight: 48,
+        buttonTheme: { applePay: 'white', googlePay: 'white' }
+      });
+      ece.on('ready', function (e) { $('expressWrap').style.display = (e && e.availablePaymentMethods) ? 'block' : 'none'; });
+      ece.on('loaderror', function () { $('expressWrap').style.display = 'none'; });
+      ece.on('click', function (e) {
+        if (policyBlocked()) return;   // no resolve() -> wallet sheet stays closed
+        e.resolve();
+      });
+      ece.on('confirm', function () {
+        hideErr();
+        confirmNow().then(function (res) {
+          if (res.error) { showErr(res.error.message); return; }
+          var itn = res.paymentIntent;
+          if (itn && itn.status === 'succeeded') { state.piId = itn.id; finish(); }
+        });
+      });
+      ece.mount('#expressCheckout');
+
+      $('payStart').style.display = 'none';
+      $('paySubmit').innerHTML = (state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
+        money(state.pricing.today_cents) + (state.plan === 'deposit' ? ' today' : '');
+      $('paySubmit').style.display = '';
+    }
+    if (window.Stripe) return ready();
+    var s = document.createElement('script');
+    s.src = 'https://js.stripe.com/v3/'; s.onload = ready;
+    document.head.appendChild(s);
+  }
+
+  $('paySubmit').addEventListener('click', function () {
+    hideErr();
+    if (policyBlocked()) return;
+    $('paySubmit').disabled = true;
+    confirmNow().then(function (res) {
+      $('paySubmit').disabled = false;
+      if (res.error) { showErr(res.error.message); return; }
+      var itn = res.paymentIntent;
+      if (itn && itn.status === 'succeeded') { state.piId = itn.id; finish(); }
+    });
+  });
+
+  // ---------- confirmation ----------
+  function showTicket(name, bandKey, paidCents){
+    var b = BANDS[bandKey] || BANDS['9-12'];
+    $('tCamper').textContent = name || 'Your child';
+    $('tProgram').textContent = b.name;
+    $('tWhen').textContent = b.when;
+    if (paidCents != null) {
+      $('tPaid').textContent = money(paidCents);
+      $('tPaidRow').style.display = 'flex';
+    }
+    $('enrollCard').classList.add('hide');
+    $('doneView').classList.remove('hide');
+    window.scrollTo(0, 0);
+  }
+  function finish(){
+    clearInterval(timerInt);
+    var p = state.pricing || {};
+    var items = (state.hold && state.hold.items) || [];
+    // Value is the whole program commitment, not the deposit taken today;
+    // eventID lets the server-side event dedupe against this one (mirrors
+    // register/index.html finish()).
+    try {
+      window.fbq && fbq('track', 'Purchase', {
+        value: (p.total_cents || 0) / 100, currency: 'USD',
+        contents: items.map(function (it) { return { id: String(it.activity_id || ''), quantity: 1 }; }),
+        content_type: 'product', num_items: items.length
+      }, { eventID: state.piId || undefined });
+    } catch (e) {}
+    ev('quiz_enroll_paid', {
+      plan: state.plan, age_band: state.band,
+      today_cents: p.today_cents, total_cents: p.total_cents,
+      phone: $('phone').value.trim()
+    });
+    showTicket($('childName').value.trim(), state.band, p.today_cents);
+  }
+
+  // Redirect return (redirect-based methods are off, so this is a rare
+  // fallback): the payment finished on Stripe's side — show the ticket.
+  if (params.get('paid') === '1') {
+    if (params.get('redirect_status') && params.get('redirect_status') !== 'succeeded') {
+      showErr('That payment didn’t go through — try again.');
+    } else {
+      showTicket((params.get('n') || '').trim(), state.band, null);
+      $('doneNote').textContent = 'Your receipt and confirmation are on the way to your inbox.';
+    }
+  }
+
+  renderProgram();
+  window.addEventListener('load', function () {
+    ev('quiz_enroll_started', { age_band: state.band, prefilled: !!(pre.n && pre.p && pre.e) });
+  });
+})();
+</script>
+</body>
+</html>
