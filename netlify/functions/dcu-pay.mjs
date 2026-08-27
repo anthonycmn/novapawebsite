@@ -17,6 +17,7 @@
 // edit to this file can move a camp price.
 import Stripe from "stripe";
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { sendConfirmationEmail } from "./reg-email.mjs";
 
 // DC Unifieds occupies 9706xx inside the coaching block (db/dc-unifieds-activities.sql).
 const DCU_MIN = 970600, DCU_MAX = 970699;
@@ -225,7 +226,12 @@ export default async (req) => {
     couponApplied = cp.code;
   }
   const totalCents = Math.max(0, listCents - couponCents);
-  if (totalCents < 50) return Response.json({ error: "coupon_too_large" }, { status: 400 });
+  // A 100% code is a legitimate comp (CJ's DCU-COACHING). Stripe cannot make a
+  // $0 PaymentIntent, so a fully comped seat takes the free path below instead.
+  // Anything between $0 and Stripe's 50c floor is not chargeable either.
+  if (totalCents > 0 && totalCents < 50) {
+    return Response.json({ error: "coupon_too_large" }, { status: 400 });
+  }
 
   const dates = installmentDatesUTC();
   if (plan === "deposit" && !dates.length) {
@@ -252,6 +258,50 @@ export default async (req) => {
     return Response.json({ error: "hold_failed" }, { status: 500 });
   }
   const hold = (await holdRes.json())[0];
+
+  // ---- Fully comped seat: nothing to charge, so skip Stripe entirely -------
+  // Mirrors the camp flow's 100%-off path in reg-pay.mjs: confirm the order
+  // against the hold with a synthetic payment id, redeem the code, and send
+  // the same DC Unifieds confirmation the webhook would have sent.
+  if (totalCents === 0) {
+    const meta = {
+      hold_id: hold.id,
+      plan: "full",
+      email,
+      parent_name: parentName,
+      total_cents: "0",
+      coupon: couponApplied,
+      coupon_cents: String(couponCents),
+      order_desc: `${studentName} — ${act.name}`.slice(0, 480),
+      brand: "dcu",
+      activity_id: String(activityId),
+      student_name: studentName,
+      phone,
+    };
+    try {
+      await serviceRpc("confirm_order", {
+        p_hold_id: hold.id, p_email: email, p_parent_name: parentName || null,
+        p_plan: "full", p_amount_today_cents: 0, p_total_cents: 0,
+        p_installment_cents: null, p_stripe_payment_intent: "free_" + hold.id,
+        p_stripe_customer: null, p_unit_prices: [0],
+      });
+    } catch (e) {
+      console.error("dcu free order confirm failed:", e.message);
+      return Response.json({ error: "order_failed" }, { status: 500 });
+    }
+    if (couponApplied) {
+      try {
+        await serviceRpc("redeem_coupon", { p_code: couponApplied, p_applied_cents: couponCents });
+      } catch (e) { console.error("dcu free order coupon redeem failed:", e.message); }
+    }
+    try { await sendConfirmationEmail(meta, { id: "free_" + hold.id }); }
+    catch (e) { console.error("dcu free order email failed:", e.message); }
+    return Response.json({
+      free: true,
+      hold_id: hold.id,
+      pricing: { name: act.name, total_cents: 0, today_cents: 0, coupon: couponApplied, coupon_cents: couponCents },
+    });
+  }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const customer = await stripe.customers.create({

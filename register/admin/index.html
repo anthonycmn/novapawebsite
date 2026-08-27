@@ -426,6 +426,12 @@
           <label id="crAmtWrap">Amount<input id="crAmt" type="number" step="0.01" min="0" placeholder="1233.75"></label>
           <label id="crPctWrap" style="display:none">Percent off<input id="crPct" type="number" min="1" max="100" placeholder="15"></label>
           <label>Expires<input id="crExp" type="date"></label>
+          <label>Applies to
+            <select id="crScope">
+              <option value="novapa">NOVAPA camps and classes</option>
+              <option value="dcu">DC Unifieds event</option>
+            </select>
+          </label>
         </div>
         <div class="cf-row">
           <label style="flex:1">Note <span class="opt">(why — shows on the order)</span><input id="crNote" placeholder="Remaining balance from Lincoln's 2026 withdrawal"></label>
@@ -2127,6 +2133,7 @@
       amount: $('crAmt').value,
       pct: $('crPct').value,
       expires: $('crExp').value,
+      scope: $('crScope').value,
       note: $('crNote').value.trim()
     }).then(function(d){
       if (d.error) { $('crStatus').textContent = d.error; return; }

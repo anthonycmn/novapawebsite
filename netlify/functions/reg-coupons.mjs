@@ -49,6 +49,9 @@ function slug(label) {
   return pick.slice(0, 12);
 }
 
+// DC Unifieds tracks: In Person / Virtual Live / Virtual.
+const DCU_ACTIVITY_IDS = [970601, 970602, 970603];
+
 export default async (req) => {
   if (req.method !== "POST") return new Response("method", { status: 405 });
   const auth = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
@@ -120,6 +123,11 @@ export default async (req) => {
           body: JSON.stringify({
             code, pct, amount_cents: amountCents, balance_cents: balanceCents,
             active: true, expires_at: expires, max_uses: maxUses, uses: 0,
+            // DC Unifieds checkout only honours codes scoped to its own
+            // tracks, so a code minted for that event must carry the scope.
+            // NOVAPA codes stay unscoped and behave exactly as before.
+            scope_activity_ids: String(body.scope || "") === "dcu"
+              ? DCU_ACTIVITY_IDS : null,
             note: [label, email ? `<${email}>` : null, note].filter(Boolean).join(" · "),
           }),
         });
