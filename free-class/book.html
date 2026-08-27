@@ -58,18 +58,9 @@
   .class-opt .cm { display:block; font-size:10.5px; color:var(--dim); margin-top:2px; }
   .class-opt.on { border-color:#B07B1E; background:var(--gold); }
   .class-opt.on .ct { color:#513A0E; }
-  .class-opt.dim { opacity:0.3; pointer-events:none; }
 
-  .date-label { margin:20px 0 12px; }
-  .dates { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .date { border:1.5px solid var(--line); border-radius:12px; padding:13px 8px; text-align:center; cursor:pointer; background:#FAFBFC; font-family:inherit; }
-  .date .dw { font-size:11px; letter-spacing:1.2px; font-weight:700; text-transform:uppercase; color:var(--dim); display:block; }
-  .date .dn { font-weight:700; font-size:25px; line-height:1.15; display:block; }
-  .date .dm { font-size:12px; color:var(--dim); display:block; }
-  .date.on { border-color:#B07B1E; background:var(--gold); }
-  .date.on .dw, .date.on .dm { color:#513A0E; }
-  .date.full { opacity:0.4; cursor:not-allowed; }
-  .date .left { display:block; font-size:10px; color:#A15C00; font-weight:700; margin-top:2px; }
+  .pick-summary { margin-top:18px; background:#FFF3DC; border:1.5px solid #B07B1E; border-radius:10px; padding:13px 18px; font-size:14px; }
+  .pick-summary span { display:block; font-size:12px; color:var(--dim); margin-top:4px; }
   .widget-note { font-size:12.5px; color:var(--dim); margin-top:18px; max-width:380px; }
 
   label { display:block; font-size:13.5px; font-weight:700; margin:0 0 6px; }
@@ -132,8 +123,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
         <span class="age-hint">We&rsquo;ll show the classes built for them.</span>
       </div>
       <div class="cal" id="classList"></div>
-      <div class="sect-label date-label" id="dateLabel" style="display:none">Pick a date</div>
-      <div class="dates" id="dates"></div>
+      <div class="pick-summary" id="pickSummary" style="display:none"></div>
       <p class="widget-note">Free classes are booked 7 or more days ahead. Your confirmation and everything to bring lands in your inbox right away.</p>
     </div>
     <div>
@@ -204,37 +194,37 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
       var stack = document.createElement("div"); stack.className = "cal-col";
       classes.filter(function (c) { return c.day === day; }).forEach(function (c) {
         var match = (!ageFilter || inBand(c, ageFilter)) && inTrack(c);
-        if (match) anyMatch = true;
+        if (!match) return;
+        anyMatch = true;
         var b = document.createElement("button");
         b.type = "button";
-        b.className = "class-opt" + (clsKey === c.key ? " on" : "") + (match ? "" : " dim");
+        b.className = "class-opt" + (clsKey === c.key ? " on" : "");
         b.innerHTML = "<span class='ct'>" + c.time + "</span><span class='cn'>" + c.name + "</span><span class='cm'>Ages " + c.ages + "</span>";
-        b.onclick = function () { clsKey = c.key; dateISO = null; renderClasses(); };
+        b.onclick = function () {
+          clsKey = c.key;
+          var open = c.dates.find(function (d) { return d.left > 0; });
+          dateISO = open ? open.date : null;
+          renderClasses();
+        };
         stack.appendChild(b);
       });
       col.appendChild(stack);
       el.appendChild(col);
     });
-    if (ageFilter && !anyMatch) {
-      el.innerHTML = "<p style='grid-column:1/-1;font-size:13.5px;color:#5B6472;padding:8px 2px'>No classes for that age. Call (571) 571-2120 and we will find a fit.</p>";
+    if ((ageFilter || track) && !anyMatch) {
+      el.innerHTML = "<p style='grid-column:1/-1;font-size:13.5px;color:#5B6472;padding:8px 2px'>No classes match. Call (571) 571-2120 and we will find a fit.</p>";
     }
-    renderDates();
+    renderSummary();
   }
 
-  function renderDates() {
+  function renderSummary() {
     var c = classes.find(function (x) { return x.key === clsKey; });
-    $("dateLabel").style.display = c ? "" : "none";
-    var el = $("dates"); el.innerHTML = "";
-    if (!c) return;
-    c.dates.forEach(function (d) {
-      var f = fmt(d.date), b = document.createElement("button");
-      b.type = "button";
-      b.className = "date" + (d.left <= 0 ? " full" : "") + (dateISO === d.date ? " on" : "");
-      b.innerHTML = "<span class='dw'>" + f.day + "</span><span class='dn'>" + f.num + "</span><span class='dm'>" + f.mon + "</span>" +
-        (d.left > 0 && d.left <= 3 ? "<span class='left'>" + d.left + " seats left</span>" : "");
-      if (d.left > 0) b.onclick = function () { dateISO = d.date; renderDates(); };
-      el.appendChild(b);
-    });
+    var el = $("pickSummary");
+    if (!c || !dateISO) { el.style.display = "none"; return; }
+    var f = fmt(dateISO);
+    el.style.display = "";
+    el.innerHTML = "<b>" + c.name + "</b> &middot; " + c.day + ", " + f.mon + " " + f.num + " &middot; " + c.time +
+      "<span>The earliest open date. Need a different one? Reply to your confirmation and we move it free.</span>";
   }
 
   document.querySelectorAll(".track").forEach(function (b) {
