@@ -42,12 +42,17 @@
   .age-row input:focus { outline:none; border-color:var(--gold); background:#fff; }
   .age-hint { font-size:12px; color:var(--dim); }
 
-  .class-list { display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:6px; scrollbar-width:thin; }
-  .class-opt { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1.5px solid var(--line); border-radius:10px; padding:11px 16px; cursor:pointer; background:#FAFBFC; text-align:left; font-family:inherit; }
-  .class-opt .cn { font-size:14px; font-weight:700; }
-  .class-opt .cm { font-size:12px; color:var(--dim); }
-  .class-opt .ct { font-size:12.5px; color:var(--dim); white-space:nowrap; }
-  .class-opt.on { border-color:#B07B1E; background:#FFF3DC; }
+  .cal { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .cal-day { min-width:0; }
+  .cal-head { font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--dim); text-align:center; padding-bottom:8px; border-bottom:1.5px solid var(--line); margin-bottom:8px; }
+  .cal-col { display:flex; flex-direction:column; gap:6px; }
+  .class-opt { display:block; width:100%; border:1.5px solid var(--line); border-radius:8px; padding:8px 8px 9px; cursor:pointer; background:#FAFBFC; text-align:left; font-family:inherit; }
+  .class-opt .ct { display:block; font-size:11px; font-weight:700; color:#B07B1E; }
+  .class-opt .cn { display:block; font-size:12px; font-weight:700; line-height:1.25; margin-top:2px; }
+  .class-opt .cm { display:block; font-size:10.5px; color:var(--dim); margin-top:2px; }
+  .class-opt.on { border-color:#B07B1E; background:var(--gold); }
+  .class-opt.on .ct { color:#513A0E; }
+  .class-opt.dim { opacity:0.3; pointer-events:none; }
 
   .date-label { margin:20px 0 12px; }
   .dates { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
@@ -76,7 +81,7 @@
   @media (max-width:900px) {
     .widget { padding:28px 20px; margin:28px 14px 60px; }
     .cols { grid-template-columns:1fr; gap:34px; }
-    .class-list { max-height:260px; }
+    .cal { grid-template-columns:repeat(5,minmax(128px,1fr)); overflow-x:auto; padding-bottom:6px; }
   }
 </style>
 <script>
@@ -116,7 +121,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
         <input id="ageFilter" type="number" min="5" max="17" inputmode="numeric" placeholder="e.g. 8">
         <span class="age-hint">We&rsquo;ll show the classes built for them.</span>
       </div>
-      <div class="class-list" id="classList"></div>
+      <div class="cal" id="classList"></div>
       <div class="sect-label date-label" id="dateLabel" style="display:none">Pick a date</div>
       <div class="dates" id="dates"></div>
       <p class="widget-note">Free classes are booked 7 or more days ahead. Your confirmation and everything to bring lands in your inbox right away.</p>
@@ -169,18 +174,28 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 
   function renderClasses() {
     var el = $("classList"); el.innerHTML = "";
-    var list = classes.slice();
-    if (ageFilter) list = list.filter(function (c) { return inBand(c, ageFilter); });
-    if (!list.length) { el.innerHTML = "<p style='font-size:13.5px;color:#5B6472;padding:8px 2px'>No classes for that age. Call (571) 571-2120 and we will find a fit.</p>"; }
-    list.forEach(function (c) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "class-opt" + (clsKey === c.key ? " on" : "");
-      b.innerHTML = "<span><span class='cn'>" + c.name + "</span><br><span class='cm'>Ages " + c.ages + "</span></span>" +
-        "<span class='ct'>" + c.day + "s &middot; " + c.time + "</span>";
-      b.onclick = function () { clsKey = c.key; dateISO = null; renderClasses(); };
-      el.appendChild(b);
+    var days = ["Monday","Tuesday","Wednesday","Thursday","Saturday"];
+    var anyMatch = false;
+    days.forEach(function (day) {
+      var col = document.createElement("div"); col.className = "cal-day";
+      col.innerHTML = "<div class='cal-head'>" + day.slice(0,3) + "</div>";
+      var stack = document.createElement("div"); stack.className = "cal-col";
+      classes.filter(function (c) { return c.day === day; }).forEach(function (c) {
+        var match = !ageFilter || inBand(c, ageFilter);
+        if (match) anyMatch = true;
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "class-opt" + (clsKey === c.key ? " on" : "") + (match ? "" : " dim");
+        b.innerHTML = "<span class='ct'>" + c.time + "</span><span class='cn'>" + c.name + "</span><span class='cm'>Ages " + c.ages + "</span>";
+        b.onclick = function () { clsKey = c.key; dateISO = null; renderClasses(); };
+        stack.appendChild(b);
+      });
+      col.appendChild(stack);
+      el.appendChild(col);
     });
+    if (ageFilter && !anyMatch) {
+      el.innerHTML = "<p style='grid-column:1/-1;font-size:13.5px;color:#5B6472;padding:8px 2px'>No classes for that age. Call (571) 571-2120 and we will find a fit.</p>";
+    }
     renderDates();
   }
 
