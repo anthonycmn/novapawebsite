@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Give your child a free NOVAPA day — September only</title>
+<title>Give your child a free theatre class this September</title>
 <meta name="description" content="Come try a real NOVAPA class, completely free, this September in Leesburg VA. Classes for ages 5–8, 9–12, and 13–17 run all school year, and the skills can take them onto a real stage.">
-<meta property="og:title" content="Give your child a free NOVAPA day this September">
+<meta property="og:title" content="Give your child a free theatre class this September">
 <meta property="og:description" content="A real class, completely free. Classes for ages 5–8, 9–12, and 13–17, Leesburg VA. Claim a September date and see if it's their thing.">
 <meta property="og:image" content="https://novapa.org/register/img/show-2026.jpg">
 <meta name="robots" content="noindex">
@@ -147,6 +147,17 @@
     .zero-cards { width:auto; margin-left:22px; margin-right:22px; }
     .final .btn { padding:16px 40px; }
   }
+  /* The badge is pushed down by min(24vh,300px) so the headline clears the
+     hero photo's faces on desktop. On a tall narrow phone that same 24vh
+     opens a dead gap under the logo with nothing in it — the pill and the
+     wordmark end up a third of a screen apart. Tighten it on small screens
+     and let the shorter hero copy do the spacing instead. */
+  @media (max-width:760px) {
+    .hero-inner { padding:20px 20px 84px; }
+    .hero-badge { margin-top:min(11vh,120px); }
+    .hero h1 { margin-top:16px; }
+    .hero p { margin-top:13px; }
+  }
 </style>
 <script>
 !function(f,b,e,v,n,t,s)
@@ -171,8 +182,8 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
   <div class="hero-inner">
     <div class="hero-logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px;margin:0 auto"></div>
     <div><span class="hero-badge"><b>Free class pass:</b> September only &middot; Leesburg, VA</span></div>
-    <h1>Give your child a free NOVAPA day this September. Then watch them earn a bow on a real stage.</h1>
-    <p>Come try a real class, completely free this month. See if it&rsquo;s their thing. If it is, classes run all school year &mdash; and the skills they build there are what put our students on stage in real shows like Disney&rsquo;s Frozen Jr.</p>
+    <h1>Give your child a free theatre class this September.</h1>
+    <p>Try a real class, completely free. If it&rsquo;s their thing, classes run all school year &mdash; and those skills are what put our students on stage in shows like Disney&rsquo;s Frozen Jr.</p>
     <a class="btn" data-book href="/free-class/book.html">Claim my free class pass</a>
   </div>
 </header>
