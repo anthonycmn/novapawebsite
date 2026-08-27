@@ -144,7 +144,8 @@
     .tl-doodle { display:none; }
     .how { padding:40px 26px; }
     .how-grid { grid-template-columns:1fr 1fr; }
-    .zero-cards { width:auto; margin-left:22px; margin-right:22px; }
+    .zero-cards { width:auto; margin-left:22px; margin-right:22px; min-width:0; }  /* the base rule's min-width:min(92%,560px) beat the auto width and
+       poked ~13px past a 390px phone */
     .final .btn { padding:16px 40px; }
   }
   /* The badge is pushed down by min(24vh,300px) so the headline clears the

@@ -77,7 +77,22 @@
   @media (max-width:900px) {
     .widget { padding:28px 20px; margin:28px 14px 60px; }
     .cols { grid-template-columns:1fr; gap:34px; }
+    /* A grid item defaults to min-width:auto, so the calendar column refused
+       to shrink below its 5x128px min-content. overflow-x on .cal never got
+       a chance — the card grew past the viewport and the whole PAGE scrolled
+       sideways instead, which is what broke this on phones. */
+    .cols > * { min-width:0; }
     .cal { grid-template-columns:repeat(5,minmax(128px,1fr)); overflow-x:auto; padding-bottom:6px; }
+  }
+  @media (max-width:560px) {
+    .widget { padding:22px 16px; margin:20px 10px 52px; border-radius:16px; }
+    /* Two 1fr columns leave ~150px each on a 390px phone: the age input and
+       the track buttons both wrap mid-word. Stack them. */
+    .track-row { grid-template-columns:1fr; }
+    .row { grid-template-columns:1fr; }
+    .cal { grid-template-columns:repeat(5,minmax(120px,1fr)); gap:8px; }
+    .head { padding:0 18px; }
+    .topbar { padding:16px 18px; }
   }
 </style>
 <script>
