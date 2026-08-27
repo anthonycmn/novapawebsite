@@ -81,8 +81,41 @@ async function activityById(activityId) {
 // GET /api/dcu-pay?activity_id=970601 — what a track costs and which plans it
 // can offer today. The checkout page renders from this rather than repeating
 // prices in markup, so the activities row stays the single source of truth.
+// --- Coupons (added Aug 27 2026, CJ: parents had nowhere to enter a code) ---
+// Deliberately strict: a code only works here if its coupons row is scoped to
+// this DC Unifieds activity (scope_activity_ids). An unscoped or camp-scoped
+// NOVAPA code must never discount a DCU track, so a broad camp promo cannot
+// leak into this checkout. Percent and fixed-amount are both supported; the
+// discount can never take an order below zero.
+async function dcuCoupon(code, activityId, email) {
+  const c = await serviceRpc("check_coupon", { p_code: code });
+  if (!c) return { error: "bad_coupon" };
+  let row = null;
+  try {
+    row = (await (await fetch(
+      `${SUPABASE_URL}/rest/v1/coupons?code=ilike.${encodeURIComponent(code)}&select=email_lock,scope_activity_ids&limit=1`,
+      { headers: svcHeaders() })).json())?.[0] || null;
+  } catch (e) { console.error("dcu coupon row lookup", e.message); return { error: "bad_coupon" }; }
+  const scope = row?.scope_activity_ids;
+  if (!Array.isArray(scope) || !scope.map(Number).includes(Number(activityId))) {
+    return { error: "coupon_not_for_this" };
+  }
+  if (row?.email_lock) {
+    const locks = (Array.isArray(row.email_lock) ? row.email_lock : [row.email_lock])
+      .map((e) => String(e).toLowerCase());
+    if (!locks.includes(email)) return { error: "coupon_not_yours" };
+  }
+  const pct = Number(c.pct) || 0;
+  const amt = Number(c.amount_cents) || 0;
+  if (!pct && !amt) return { error: "bad_coupon" };
+  return { pct, amountCents: amt, code: c.code || code };
+}
+
 async function quote(req) {
-  const activityId = parseInt(new URL(req.url).searchParams.get("activity_id"), 10);
+  const url = new URL(req.url);
+  const activityId = parseInt(url.searchParams.get("activity_id"), 10);
+  const qCoupon = clean(url.searchParams.get("coupon") || "", 40);
+  const qEmail = clean(url.searchParams.get("email") || "", 200).toLowerCase();
   if (!activityId || activityId < DCU_MIN || activityId > DCU_MAX) {
     return Response.json({ error: "unknown_activity" }, { status: 400 });
   }
@@ -95,11 +128,29 @@ async function quote(req) {
   const soldOut = act.capacity != null && (act.sold || 0) + held >= act.capacity;
 
   const dates = installmentDatesUTC();
-  const total = act.price_cents || 0;
+  const listCents = act.price_cents || 0;
+  // Preview a code before payment. The same validation runs again on POST, so
+  // the preview can never be the thing that decides what is charged.
+  let couponCents = 0, couponError = null, couponCode = "";
+  if (qCoupon) {
+    const cp = await dcuCoupon(qCoupon, activityId, qEmail);
+    if (cp.error) couponError = cp.error;
+    else {
+      couponCents = cp.pct
+        ? Math.round(listCents * Math.min(100, cp.pct) / 100)
+        : Math.min(cp.amountCents, listCents);
+      couponCode = cp.code;
+    }
+  }
+  const total = Math.max(0, listCents - couponCents);
   const dep = splitPrice(total, "deposit", dates);
   return Response.json({
     activity_id: act.id,
     name: act.name,
+    list_cents: listCents,
+    coupon: couponCode,
+    coupon_cents: couponCents,
+    coupon_error: couponError,
     total_cents: total,
     available: !!act.bookable && !act.hidden && !soldOut,
     plans: {
@@ -134,6 +185,7 @@ export default async (req) => {
   const parentName = clean(body.parent_name, 100);
   const studentName = clean(body.student_name, 100);
   const phone = clean(body.phone, 40);
+  const couponCode = clean(body.coupon, 40);
 
   if (!activityId || activityId < DCU_MIN || activityId > DCU_MAX) {
     return Response.json({ error: "unknown_activity" }, { status: 400 });
@@ -158,8 +210,22 @@ export default async (req) => {
     return Response.json({ error: "sold_out" }, { status: 409 });
   }
 
-  const totalCents = act.price_cents || 0;
-  if (totalCents < 50) return Response.json({ error: "bad_price" }, { status: 500 });
+  const listCents = act.price_cents || 0;
+  if (listCents < 50) return Response.json({ error: "bad_price" }, { status: 500 });
+
+  // Validated server-side; a bad code is a hard error so the page can never
+  // show a discount and then quietly charge full price.
+  let couponCents = 0, couponApplied = "";
+  if (couponCode) {
+    const cp = await dcuCoupon(couponCode, activityId, email);
+    if (cp.error) return Response.json({ error: cp.error }, { status: 400 });
+    couponCents = cp.pct
+      ? Math.round(listCents * Math.min(100, cp.pct) / 100)
+      : Math.min(cp.amountCents, listCents);
+    couponApplied = cp.code;
+  }
+  const totalCents = Math.max(0, listCents - couponCents);
+  if (totalCents < 50) return Response.json({ error: "coupon_too_large" }, { status: 400 });
 
   const dates = installmentDatesUTC();
   if (plan === "deposit" && !dates.length) {
@@ -218,8 +284,8 @@ export default async (req) => {
       first_installment_utc: String(price.first),
       insurance_cents: "0",
       insured: "0",
-      coupon: "",
-      coupon_cents: "0",
+      coupon: couponApplied,
+      coupon_cents: String(couponCents),
       plan_fee_cents: "0",
       fsa_eligible: "0", // college audition coaching is not dependent care
       unit_prices: JSON.stringify([totalCents]),
