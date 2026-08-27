@@ -53,9 +53,9 @@
   .rated-head { display:flex; align-items:flex-end; justify-content:space-between; gap:30px; }
   .rated h2 { font-size:clamp(26px,2.6vw,40px); max-width:560px; }
   .dots { display:flex; gap:14px; align-items:center; padding-bottom:6px; }
-  .dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--dim); }
+  .dot { border:0; background:none; font-family:inherit; cursor:pointer; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--dim); }
   .dot.on { border:1.5px solid var(--gold2); color:var(--ink); }
-  .quote-card { display:grid; grid-template-columns:40% 1fr; background:var(--navy); color:#fff; border-radius:16px; margin-top:38px; }
+  .quote-card { position:relative; z-index:1; display:grid; grid-template-columns:40% 1fr; background:var(--navy); color:#fff; border-radius:16px; margin-top:38px; }
   .quote-card .qph { padding:32px 0 32px 32px; }
   .quote-card .qph img { width:100%; height:100%; object-fit:cover; border-radius:10px; min-height:420px; }
   .quote-body { padding:44px 52px 44px 44px; display:flex; flex-direction:column; min-height:480px; }
@@ -177,19 +177,19 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
   </div>
 </header>
 
-<section class="rated" style="position:relative;overflow:visible">
-  <img src="/free-class/img/doodle-circle.svg" alt="" style="position:absolute;right:4%;top:-300px;width:510px;max-width:40vw;opacity:0.8;pointer-events:none">
+<section class="rated" style="position:relative;overflow:hidden">
+  <img src="/free-class/img/doodle-circle.svg" alt="" style="position:absolute;right:-8%;top:30px;width:44%;max-width:680px;opacity:0.8;pointer-events:none;z-index:0">
   <div class="wrap pad">
     <div class="rated-head">
       <h2>Rated five stars by the parents who&rsquo;ve already done this</h2>
-      <div class="dots"><span class="dot on">1</span><span class="dot">2</span><span class="dot">3</span><span class="dot">4</span></div>
+      <div class="dots" id="revDots"><button class="dot on" type="button">1</button><button class="dot" type="button">2</button><button class="dot" type="button">3</button><button class="dot" type="button">4</button></div>
     </div>
     <div class="quote-card">
-      <div class="qph"><img src="/free-class/img/quote-photo.jpg" alt="Stefania Whittington, NOVAPA parent"></div>
+      <div class="qph"><img id="revImg" src="/free-class/img/quote-photo.jpg" alt="A NOVAPA parent"></div>
       <div class="quote-body">
         <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <blockquote>&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up &mdash; he&rsquo;d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.&rdquo;</blockquote>
-        <div class="quote-who"><b>Stefania Whittington</b><span>NOVAPA Parent</span></div>
+        <blockquote id="revQuote">&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up &mdash; he&rsquo;d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.&rdquo;</blockquote>
+        <div class="quote-who"><b id="revName">Stefania Whittington</b><span id="revSub">NOVAPA Parent</span></div>
       </div>
     </div>
   </div>
@@ -201,7 +201,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
     <div class="pad">
       <div class="tl-grid">
         <div class="tl-photos">
-          <img src="/free-class/img/tl-1.jpg" alt="Kids at their first NOVAPA class" loading="lazy">
+          <img src="/register/img/rehearsal-2026.jpg" alt="Kids in a NOVAPA class" loading="lazy">
           <img src="/free-class/img/tl-2.jpg" alt="Kids rehearsing choreography" loading="lazy">
           <img src="/free-class/img/tl-3.jpg" alt="Two actors performing on a real stage" loading="lazy">
         </div>
@@ -238,7 +238,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
       <p class="sub">One free class. Real instructors. Real kids their age. Not a presentation, not a watered down demo &mdash; the actual environment our enrolled kids get. You don&rsquo;t have to guess whether they&rsquo;ll love it. Let them try it.</p>
       <div class="how-grid">
         <div class="how-card">
-          <div class="ph"><span class="n">1</span><img src="/free-class/img/how-1.jpg" alt="Parent booking a September date online" loading="lazy"></div>
+          <div class="ph"><span class="n">1</span><img src="/register/img/firstday-2026.jpg" alt="Kids at their first NOVAPA class" loading="lazy"></div>
           <h3>Choose your day</h3>
           <p>Pick an available September date. Takes about a minute.</p>
         </div>
@@ -343,6 +343,34 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
 </section>
 
 <script>
+  // testimonial carousel: the four published parent reviews from classes.html
+  (function () {
+    var REVIEWS = [
+      { q: "\u201cHe wasn\u2019t happy when I told him I\u2019d signed him up \u2014 he\u2019d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.\u201d",
+        n: "Stefania Whittington", s: "NOVAPA Parent", img: "/free-class/img/quote-photo.jpg" },
+      { q: "\u201cEvery child walks through those doors feeling seen, valued, and like a star \u2014 and that\u2019s something they\u2019ll remember long after the curtain closes.\u201d",
+        n: "Holly Tucker", s: "NOVAPA Parent", img: "/free-class/img/final-photo.jpg" },
+      { q: "\u201cYour crew very quickly built a passion in her that I hope lasts a lifetime. I\u2019ve been truly impressed!\u201d",
+        n: "Megan Rosh", s: "NOVAPA Parent", img: "/register/img/rehearsal-2026.jpg" },
+      { q: "\u201cShe had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence \u2014 it was worth every penny!\u201d",
+        n: "Ashley H. Wills", s: "NOVAPA Parent", img: "/register/img/firstday-2026.jpg" },
+    ];
+    var i = 0, timer;
+    var dots = document.querySelectorAll("#revDots .dot");
+    function show(n) {
+      i = n % REVIEWS.length;
+      var r = REVIEWS[i];
+      document.getElementById("revQuote").textContent = r.q;
+      document.getElementById("revName").textContent = r.n;
+      document.getElementById("revSub").textContent = r.s;
+      document.getElementById("revImg").src = r.img;
+      dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
+    }
+    function arm() { clearInterval(timer); timer = setInterval(function () { show(i + 1); }, 6000); }
+    dots.forEach(function (d, k) { d.addEventListener("click", function () { show(k); arm(); }); });
+    arm();
+  })();
+
   // forward the ad's utm/fbclid params into the booking step so attribution
   // survives the click-through
   (function () {
