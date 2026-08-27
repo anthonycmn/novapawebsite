@@ -12,10 +12,44 @@
 // It tracks updated_at because a returning email UPDATEs its funnel_leads row
 // instead of inserting a new one — keying off created_at would miss retakes.
 import { getStore } from "@netlify/blobs";
+import { resultsEmail, isTestAddress } from "./reg-lead-email.mjs";
 
 const FROM = "NOVAPA Leads <leads@mail.novapa.org>";
+const LEAD_FROM = "DC Unifieds <leads@mail.novapa.org>";
 const STORE = "lead-alerts";
 const KEY = "dcu-watermark";
+const SENT_KEY = "results-emailed";
+
+async function sendMail(resend, payload) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return r.ok;
+}
+
+// The lead-facing send is tracked by lead id, not by the watermark, because a
+// failed team alert holds the watermark back — and replaying that window must
+// never email the same family their list twice.
+async function emailLeads(store, resend, rows) {
+  if (String(process.env.LEAD_RESULTS_EMAIL || "").toLowerCase() !== "on") {
+    return { sent: 0, skipped: "disabled" };
+  }
+  let sentIds = [];
+  try { sentIds = JSON.parse((await store.get(SENT_KEY)) || "[]"); } catch {}
+  const already = new Set(sentIds);
+  let sent = 0;
+  for (const lead of rows) {
+    if (already.has(lead.id) || isTestAddress(lead.email)) continue;
+    const { subject, html } = resultsEmail(lead);
+    const ok = await sendMail(resend, { from: LEAD_FROM, to: [lead.email], subject, html });
+    if (ok) { already.add(lead.id); sent++; }
+  }
+  // Keep the tail bounded; ids age out long after any replay window closes.
+  await store.set(SENT_KEY, JSON.stringify([...already].slice(-2000)));
+  return { sent };
+}
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -89,18 +123,18 @@ export default async () => {
 <div style="font:12px/1.6 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:18px">
 Full list in the NOVAPA admin dashboard under Leads.</div></div>`;
 
-  const send = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to, subject, html }),
-  });
+  // The family gets their promised list first — that is the time-sensitive
+  // half. The team alert can retry next tick; a lead's first impression cannot.
+  const leadRes = await emailLeads(store, resend, rows);
+
+  const ok = await sendMail(resend, { from: FROM, to, subject, html });
   // Only advance the watermark on a confirmed send, so a Resend outage
   // re-alerts next tick instead of dropping the leads on the floor.
-  if (!send.ok) {
-    return new Response(JSON.stringify({ error: `resend ${send.status}` }), { status: 200 });
+  if (!ok) {
+    return new Response(JSON.stringify({ error: "resend failed", leads: leadRes }), { status: 200 });
   }
   await store.set(KEY, rows[rows.length - 1].updated_at);
-  return new Response(JSON.stringify({ alerted: rows.length, hot: hotCount }), { status: 200 });
+  return new Response(JSON.stringify({ alerted: rows.length, hot: hotCount, leads: leadRes }), { status: 200 });
 };
 
 export const config = { schedule: "*/15 * * * *" };
