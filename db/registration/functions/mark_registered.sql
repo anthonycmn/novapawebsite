@@ -9,6 +9,9 @@ CREATE OR REPLACE FUNCTION public.mark_registered(p_email text, p_items jsonb)
 AS $function$
 declare fid uuid; r record; slug text;
 begin
+  -- 2026-08-27: an empty p_email used to match every family whose cc_email is
+  -- null (the '' = '' trap that misfiled campers). Refuse it outright.
+  if nullif(lower(btrim(coalesce(p_email,''))), '') is null then return; end if;
   select id into fid from (
     select id, 1 as pri from families where lower(email) = lower(p_email)
     union all

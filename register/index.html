@@ -2814,7 +2814,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         var k = state.kids[+sl.dataset.i];
         if (!k) return;
         k.tshirt = sl.value;
-        sb.rpc('update_my_camper_v2', { p_name: k.name, p_birthdate: null, p_profile: { tshirt: sl.value } }).then(function(res){
+        // Guests have no family row yet, so this RPC has nothing to write to;
+        // their shirt size rides along in the order. (Aug 27 2026: unguarded,
+        // it wrote guest campers into a stranger's family via my_family_id.)
+        state.guest || sb.rpc('update_my_camper_v2', { p_name: k.name, p_birthdate: null, p_profile: { tshirt: sl.value } }).then(function(res){
           if (res.error) ev('reg_save_failed', { fn: 'tshirt', kid: k.name, msg: String(res.error.message || '').slice(0, 120) });
         });
         ev('reg_tshirt_selected', { size: sl.value });

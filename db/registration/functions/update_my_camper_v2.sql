@@ -12,6 +12,9 @@ declare
   v_bday date;
   v_clean jsonb;
 begin
+  -- Defense in depth (2026-08-27): never act for an unauthenticated caller,
+  -- even if my_family_id() were ever to resolve one again.
+  if nullif(lower(coalesce(auth.jwt()->>'email','')), '') is null then return; end if;
   v_fam := my_family_id();
   if v_fam is null then return; end if;
   -- drop empty-string values so blank fields never clobber saved data
