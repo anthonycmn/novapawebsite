@@ -49,7 +49,9 @@
 
   .cal { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
   .cal-day { min-width:0; }
-  .cal-head { font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--dim); text-align:center; padding-bottom:8px; border-bottom:1.5px solid var(--line); margin-bottom:8px; }
+  .cal-head { text-align:center; padding-bottom:10px; border-bottom:1.5px solid var(--line); margin-bottom:8px; }
+  .cal-head .chd { display:block; font-size:10.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--dim); }
+  .cal-head .chn { display:block; font-size:17px; font-weight:700; margin-top:2px; white-space:nowrap; }
   .cal-col { display:flex; flex-direction:column; gap:6px; }
   .class-opt { display:block; width:100%; border:1.5px solid var(--line); border-radius:8px; padding:8px 8px 9px; cursor:pointer; background:#FAFBFC; text-align:left; font-family:inherit; }
   .class-opt .ct { display:block; font-size:11px; font-weight:700; color:#B07B1E; }
@@ -58,7 +60,6 @@
   .class-opt.on { border-color:#B07B1E; background:var(--gold); }
   .class-opt.on .ct { color:#513A0E; }
 
-  .pick-summary { margin-top:16px; font-size:15px; font-weight:700; }
   .widget-note { font-size:12.5px; color:var(--dim); margin-top:18px; max-width:380px; }
 
   label { display:block; font-size:13.5px; font-weight:700; margin:0 0 6px; }
@@ -121,7 +122,6 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
         <span class="age-hint">We&rsquo;ll show the classes built for them.</span>
       </div>
       <div class="cal" id="classList"></div>
-      <div class="pick-summary" id="pickSummary" style="display:none"></div>
       <p class="widget-note">Free classes are booked 7 or more days ahead. Your confirmation and everything to bring lands in your inbox right away.</p>
     </div>
     <div>
@@ -182,13 +182,22 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
              num: +p[2], mon: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"][p[1]-1] };
   }
 
+  var MON = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
+  function colDate(day) {
+    var c = classes.find(function (x) { return x.day === day; });
+    if (!c) return "";
+    var open = c.dates.find(function (d) { return d.left > 0; }) || c.dates[0];
+    if (!open) return "";
+    var p = open.date.split("-");
+    return MON[p[1]-1] + " " + (+p[2]);
+  }
   function renderClasses() {
     var el = $("classList"); el.innerHTML = "";
     var days = ["Monday","Tuesday","Wednesday","Thursday","Saturday"];
     var anyMatch = false;
     days.forEach(function (day) {
       var col = document.createElement("div"); col.className = "cal-day";
-      col.innerHTML = "<div class='cal-head'>" + day.slice(0,3) + "</div>";
+      col.innerHTML = "<div class='cal-head'><span class='chd'>" + day.slice(0,3) + "</span><span class='chn'>" + colDate(day) + "</span></div>";
       var stack = document.createElement("div"); stack.className = "cal-col";
       classes.filter(function (c) { return c.day === day; }).forEach(function (c) {
         var match = (!ageFilter || inBand(c, ageFilter)) && inTrack(c);
@@ -212,16 +221,6 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
     if ((ageFilter || track) && !anyMatch) {
       el.innerHTML = "<p style='grid-column:1/-1;font-size:13.5px;color:#5B6472;padding:8px 2px'>No classes match. Call (571) 571-2120 and we will find a fit.</p>";
     }
-    renderSummary();
-  }
-
-  function renderSummary() {
-    var c = classes.find(function (x) { return x.key === clsKey; });
-    var el = $("pickSummary");
-    if (!c || !dateISO) { el.style.display = "none"; return; }
-    var f = fmt(dateISO);
-    el.style.display = "";
-    el.textContent = c.day + ", " + f.mon + " " + f.num + " \u00b7 " + c.time;
   }
 
   document.querySelectorAll(".track").forEach(function (b) {
