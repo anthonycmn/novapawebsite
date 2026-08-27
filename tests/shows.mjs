@@ -146,10 +146,11 @@ for (const [key, title] of Object.entries(LICENSED)) {
   A(S.byKey(key).title === title,
     key + ' is billed as "' + title + '" — got "' + S.byKey(key).title + '"');
 }
-// The two teen bands no longer share a range: Frozen's was widened to 12–17
-// on 26 Aug 2026 and Little Mermaid's was not. They are asserted separately so
-// that a later change to one cannot quietly drag the other with it.
-const TEEN_AGES = { 'frozen-teen': '12–17', 'mermaid-teen': '12–15' };
+// Both teen bands are 12–17 (CJ, 26 Aug 2026 — Frozen first, then Little
+// Mermaid). Still asserted per key rather than as one shared value: they were
+// briefly different that same day, and a single constant would let a change to
+// one silently move the other.
+const TEEN_AGES = { 'frozen-teen': '12–17', 'mermaid-teen': '12–17' };
 for (const [key, ages] of Object.entries(TEEN_AGES)) {
   A(S.byKey(key).ages === ages,
     key + ' is the ' + ages + ' band — got ' + S.byKey(key).ages);
@@ -219,9 +220,10 @@ for (const [file, casts] of Object.entries(PAGE_CASTS)) {
 //   Teen Conservatory     — the audition-based track, ages 13–18: Dear Evan
 //                           Hansen, Sweeney Todd, A Christmas Carol, Hadestown,
 //                           Mean Girls.
-//   Broadway Bound Teen   — the teen cast inside the Broadway Bound JR. shows:
-//                           Frozen JR. (12–17) and The Little Mermaid JR.
-//                           (12–15).
+//   Broadway Bound Teen   — the teen cast inside the Broadway Bound JR. shows,
+//                           ages 12–17: Frozen JR. and The Little Mermaid JR.
+// The two now overlap on age; what separates them is that the Conservatory
+// auditions and these cast everyone.
 // The site briefly used "Broadway Bound Teen" for both, which put a 13–18
 // audition track and a junior cast under one name.
 for (const key of ['deh', 'sweeney', 'carol', 'hadestown', 'mean-girls']) {
