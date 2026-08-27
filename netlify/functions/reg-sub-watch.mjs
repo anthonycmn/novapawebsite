@@ -50,7 +50,13 @@ export default async () => {
   const subs = await stripe("subscriptions", { status: "all", limit: "100", "expand[]": "data.items.data.price" });
   const live = (subs.data || []).filter((s) =>
     !["canceled", "incomplete", "incomplete_expired", "unpaid"].includes(s.status));
-  const open = live.filter((s) => !s.cancel_at && !s.schedule);
+  // A schedule only counts as a stopping condition if it actually cancels —
+  // end_behavior "release" hands the subscription back and it bills on.
+  const sched = await stripe("subscription_schedules", { limit: "100" });
+  const bounded = new Set((sched.data || [])
+    .filter((sc) => sc.end_behavior === "cancel" && (sc.phases || []).some((p) => p.end_date))
+    .map((sc) => sc.id));
+  const open = live.filter((s) => !s.cancel_at && !(s.schedule && bounded.has(s.schedule)));
 
   const rows = [];
   for (const s of open) {

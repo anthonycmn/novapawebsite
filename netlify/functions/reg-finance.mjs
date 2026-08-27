@@ -241,6 +241,23 @@ export default async (req) => {
     return new Date(Date.UTC(y, m + 1, Math.min(day, last), 12));
   }
 
+  // Schedules are read BEFORE the subscription loop because a schedule-managed
+  // subscription carries no cancel_at of its own — its stopping condition lives
+  // on the schedule's final phase. Reading subscriptions first meant those were
+  // bounded by the 366-day fallback instead: six migration plans that actually
+  // end in March 2027 were forecast through September, and their final balloon
+  // phase (e.g. six pulls of $125 then one of $56.50) was never modelled at all.
+  let allScheds = [];
+  try { allScheds = (await stripe.subscriptionSchedules.list({ limit: 100 })).data || []; }
+  catch (e) { console.error("schedules list:", e.message); }
+  const schedEndById = {};
+  for (const sc of allScheds) {
+    const ends = (sc.phases || []).map((p) => p.end_date).filter(Boolean);
+    // end_behavior "release" hands the subscription back and it keeps billing,
+    // so only a schedule that cancels actually stops the money.
+    if (ends.length && sc.end_behavior === "cancel") schedEndById[sc.id] = Math.max(...ends);
+  }
+
   // class + released-schedule subscriptions
   try {
     const subs = await stripe.subscriptions.list({ status: "all", limit: 100, expand: ["data.items.data.price"] });
@@ -259,7 +276,7 @@ export default async (req) => {
       let periodEnd = 0;
       for (const it of s.items.data) periodEnd = Math.max(periodEnd, it.current_period_end || 0);
       const t = Math.max(s.trial_end || 0, periodEnd) || nowSec;
-      const stop = s.cancel_at || (t + 366 * 86400);
+      const stop = s.cancel_at || (s.schedule && schedEndById[s.schedule]) || (t + 366 * 86400);
       let d = new Date(t * 1000);
       for (let i = 0; i < 14; i++) {
         const ts = Math.floor(d.getTime() / 1000);
@@ -272,8 +289,7 @@ export default async (req) => {
 
   // not-yet-started installment schedules
   try {
-    const scheds = await stripe.subscriptionSchedules.list({ limit: 100 });
-    for (const sc of scheds.data) {
+    for (const sc of allScheds) {
       if (sc.status !== "not_started" && sc.status !== "active") continue;
       if (sc.subscription) continue; // already counted via subscriptions above
       const o = schedByRef[sc.id];
