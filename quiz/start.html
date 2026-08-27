@@ -70,7 +70,8 @@
   .result-inner h1 { font-size:clamp(28px,3.4vw,42px); margin-top:18px; }
   .result-inner .psub { color:var(--dimlight); font-size:15px; line-height:1.7; max-width:560px; margin:16px auto 0; }
   .prog { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:16px; max-width:430px; margin:40px auto 0; padding:16px 16px 24px; text-align:left; }
-  .prog .pph img { width:100%; border-radius:10px; aspect-ratio:390/150; object-fit:cover; object-position:center 30%; }
+  /* Show logo art, not a photo: contain it so the title lockup is never cropped. */
+  .prog .pph img { width:100%; border-radius:10px; aspect-ratio:390/175; object-fit:contain; background:#0B1422; }
   .chip-red { background:#E4534B; color:#fff; margin-top:16px; }
   .prog h2 { font-size:24px; margin-top:12px; }
   .prog .pshow { font-size:15px; font-weight:700; color:var(--gold2); margin-top:2px; }
@@ -175,7 +176,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
       <h1 id="personaName"></h1>
       <p class="psub" id="personaCopy"></p>
       <div class="prog">
-        <div class="pph"><img src="/free-class/img/sc-frozen.jpg" alt="The cast of a NOVAPA production of Disney's Frozen Jr. on stage"></div>
+        <div class="pph"><img id="progLogo" src="/register/img/frozen.jpg" alt=""></div>
         <span class="chip chip-red">Their best-fit program</span>
         <h2 id="progName"></h2>
         <div class="pshow" id="progShow"></div>
@@ -263,18 +264,21 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
 
   var PROGRAMS = {
     "5-8": {
-      name: "Broadway Bound Kids", show: "Disney's Frozen Jr.",
+      name: "Broadway Bound Kids", show: "Disney's Frozen KIDS",
+      logo: "/register/img/frozen-kids.jpg",
       meta: "Ages 5–9 · Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027 · $695 · Ends on a real stage",
-      desc: "A full cast of kids their age, one evening a week, building toward Disney's Frozen Jr. in front of a real audience. Built for first-timers and young performers alike.",
+      desc: "A full cast of kids their age, one evening a week, building toward Disney's Frozen KIDS in front of a real audience. Built for first-timers and young performers alike.",
     },
     "9-12": {
       name: "Broadway Bound Junior", show: "Disney's Frozen Jr.",
+      logo: "/register/img/frozen.jpg",
       meta: "Ages 9–12 · Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027 · $695",
       desc: "The heart of the season for ages 9–12: a full cast, weekly rehearsals, and Disney's Frozen Jr. on a real stage in front of a real audience.",
       scarce: "The 9–12 cast is already over two thirds full.",
     },
     "13-17": {
       name: "Broadway Bound Teens", show: "Disney's Frozen Jr.",
+      logo: "/register/img/frozen.jpg",
       meta: "Ages 12–17 · Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027 · $695",
       desc: "A teen cast with real material and real stage time: weekly rehearsals through the fall, ending with Disney's Frozen Jr. in front of a real audience.",
     },
@@ -393,6 +397,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
     document.body.style.background = "#0B1422";
     $("personaName").textContent = "Your child is " + p.name;
     $("personaCopy").textContent = p.copy;
+    if (g.logo) { $("progLogo").src = g.logo; $("progLogo").alt = g.show; }
     $("progName").textContent = g.name;
     $("progShow").textContent = g.show;
     $("progMeta").textContent = g.meta;

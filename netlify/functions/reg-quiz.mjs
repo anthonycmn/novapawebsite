@@ -25,7 +25,8 @@ const PERSONAS = {
 const PROGRAMS = {
   "5-8": {
     name: "Broadway Bound Kids",
-    show: "Disney's Frozen Jr.",
+    // The 5-9 cast performs Frozen KIDS, not Jr. — activity 1959789.
+    show: "Disney's Frozen KIDS",
     meta: "Ages 5 to 9, Wednesdays 5:15 to 6:45 PM, September 2026 through January 2027, $695",
   },
   "9-12": {

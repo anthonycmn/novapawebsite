@@ -143,7 +143,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
   <h1 id="enrollH1">Enroll in Disney's Frozen Jr.</h1>
 
   <div class="prog">
-    <div class="pph"><img src="/free-class/img/sc-frozen.jpg" alt="The cast of a NOVAPA production of Disney's Frozen Jr. on stage"></div>
+    <div class="pph"><img id="progLogo" src="/register/img/frozen.jpg" alt="Disney's Frozen Jr."></div>
     <h2 id="progName">Broadway Bound Junior</h2>
     <div class="pshow">Disney's Frozen Jr.</div>
     <div class="pmeta" id="progMeta"></div>
@@ -259,9 +259,9 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
   // price comes from the live catalog, appended once catalog_list answers.
   var FROZEN_START = '2026-09-15';
   var BANDS = {
-    '5-8':   { name: 'Broadway Bound Kids',   meta: 'Ages 5–9 · Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027',  when: 'Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027' },
-    '9-12':  { name: 'Broadway Bound Junior', meta: 'Ages 9–12 · Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027',   when: 'Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027' },
-    '13-17': { name: 'Broadway Bound Teens',  meta: 'Ages 12–17 · Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027', when: 'Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027' }
+    '5-8':   { name: 'Broadway Bound Kids',   show: 'Disney’s Frozen KIDS', logo: '/register/img/frozen-kids.jpg', meta: 'Ages 5–9 · Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027',  when: 'Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027' },
+    '9-12':  { name: 'Broadway Bound Junior', show: 'Disney’s Frozen Jr.',  logo: '/register/img/frozen.jpg',      meta: 'Ages 9–12 · Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027',   when: 'Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027' },
+    '13-17': { name: 'Broadway Bound Teens',  show: 'Disney’s Frozen Jr.',  logo: '/register/img/frozen.jpg',      meta: 'Ages 12–17 · Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027', when: 'Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027' }
   };
 
   var state = {
@@ -287,8 +287,13 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
     var price = state.cast && state.cast.price_cents ? ' · ' + money(state.cast.price_cents) : '';
     $('progName').textContent = b.name;
     $('progMeta').textContent = b.meta + price + ' · Ends on a real stage';
+    // The 5-9 cast performs Frozen KIDS; only 9+ do Jr. Hardcoding "Jr." here
+    // told a parent of a six-year-old they were enrolling in the wrong show.
+    $('progLogo').src = b.logo; $('progLogo').alt = b.show;
+    var showEl = document.querySelector('.prog .pshow');
+    if (showEl) showEl.textContent = b.show;
     var first = $('childName').value.trim().split(/\s+/)[0];
-    $('enrollH1').textContent = 'Enroll ' + (first || 'your child') + ' in Disney’s Frozen Jr.';
+    $('enrollH1').textContent = 'Enroll ' + (first || 'your child') + ' in ' + b.show;
   }
   $('childName').addEventListener('input', renderProgram);
 
