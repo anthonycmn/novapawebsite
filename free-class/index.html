@@ -12,20 +12,25 @@
 <!-- Free class funnel, step 1 of 3. Rebuilt Aug 26 2026 to match the BFA
      Figma (Section 1, frame 2206-5598) at the 1512 design grid; photos and
      doodles are cropped straight from the 2x frame export (free-class/img/).
-     Headline font is Protest Strike by Jason's call (brand override of the
-     design's GT Walsheim Pro). -->
+     Fonts are self-hosted GT Walsheim (licensed by Jason, Aug 26) matching
+     the design; DM Sans is the per-glyph fallback because the current
+     files are glyph-stripped trials — replace fonts/*.woff2 with the
+     licensed full set, same filenames, when Jason drops them in. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Protest+Strike&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
   :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --dimlight:rgba(255,255,255,0.72); --gold:#FFC866; --gold2:#F2B94C; --line:#E8E2CE; }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; }
-  body { background:var(--cream); color:var(--ink); font-family:'DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
-  h1,h2,h3 { font-family:'Protest Strike',sans-serif; font-weight:400; letter-spacing:0.01em; line-height:1.15; }
+  body { background:var(--cream); color:var(--ink); font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3 { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:-0.045em; line-height:1.2; }
   .wrap { max-width:1512px; margin:0 auto; position:relative; }
   .pad { padding-left:clamp(20px,8.5vw,128px); padding-right:clamp(20px,8.5vw,128px); }
-  .btn { display:inline-block; background:var(--gold); color:var(--navy); font-family:'DM Sans',sans-serif; font-weight:700; font-size:15px; padding:13px 28px; border-radius:999px; text-decoration:none; transition:transform .12s ease; }
+  .btn { display:inline-block; background:var(--gold); color:var(--navy); font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; font-size:15px; padding:13px 28px; border-radius:999px; text-decoration:none; transition:transform .12s ease; }
   .btn:hover { transform:translateY(-2px); }
   .btn-note { font-size:11px; letter-spacing:1.6px; font-weight:700; color:var(--dim); text-transform:uppercase; margin-left:16px; }
   img { display:block; }
@@ -36,7 +41,7 @@
   .hero-media img { width:100%; height:100%; object-fit:cover; object-position:center 25%; filter:brightness(0.55) saturate(1.05); }
   .hero-media:after { content:""; position:absolute; inset:0; background:radial-gradient(80% 70% at 50% 45%, rgba(4,8,16,0.25), rgba(4,8,16,0.55)); }
   .hero-inner { position:relative; text-align:center; padding:34px 22px 120px; }
-  .hero-logo { font-family:'Protest Strike',sans-serif; letter-spacing:4px; font-size:21px; }
+  .hero-logo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:21px; }
   .hero-badge { display:inline-flex; align-items:center; gap:8px; margin-top:min(24vh,300px); background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.22); border-radius:999px; padding:8px 18px; font-size:11.5px; letter-spacing:1.8px; font-weight:700; text-transform:uppercase; }
   .hero-badge b { color:var(--gold); }
   .hero h1 { font-size:clamp(30px,3.5vw,53px); max-width:900px; margin:20px auto 0; }
@@ -69,7 +74,7 @@
   .tl-right h2 { font-size:clamp(26px,2.6vw,40px); max-width:420px; }
   .tl-steps { margin-top:44px; border-left:1.5px solid var(--line); padding-left:34px; display:flex; flex-direction:column; gap:70px; }
   .tl-tag { display:inline-block; border:1.5px solid var(--gold2); color:#B07B1E; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:1.6px; padding:4px 13px; text-transform:uppercase; background:var(--cream); }
-  .tl-steps h3 { font-size:15.5px; margin:12px 0 8px; font-family:'DM Sans',sans-serif; font-weight:700; letter-spacing:0; }
+  .tl-steps h3 { font-size:15.5px; margin:12px 0 8px; font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:0; }
   .tl-steps p { color:var(--dim); font-size:14px; line-height:1.65; max-width:330px; }
   .tl-cta { margin-top:60px; display:flex; align-items:center; }
 
@@ -80,8 +85,11 @@
   .how h2 { font-size:clamp(25px,2.4vw,37px); max-width:520px; }
   .how .sub { color:var(--dim); font-size:14px; line-height:1.65; max-width:520px; margin-top:16px; }
   .how-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; margin-top:44px; }
-  .how-card img { width:100%; border-radius:10px; }
-  .how-card h3 { font-size:15.5px; margin-top:14px; font-family:'DM Sans',sans-serif; font-weight:700; letter-spacing:0; }
+  .how-card img { width:100%; border-radius:10px; aspect-ratio:264/260; object-fit:cover; }
+  .how-card .ph { position:relative; }
+  .how-card .n { position:absolute; left:12px; top:-13px; width:27px; height:27px; display:flex; align-items:center; justify-content:center; background:var(--gold); color:var(--navy); border-radius:50%; font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; font-size:14px; }
+
+  .how-card h3 { font-size:15.5px; margin-top:14px; font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:0; }
   .how-card p { color:var(--dim); font-size:13px; line-height:1.6; margin-top:6px; }
   .how .center { text-align:center; margin-top:44px; }
 
@@ -90,15 +98,16 @@
   .zero h2 { font-size:clamp(28px,3vw,46px); text-align:center; }
   .zero-cards { width:51.2%; max-width:775px; min-width:min(92%,560px); margin:44px auto 0; display:flex; flex-direction:column; gap:16px; position:relative; z-index:1; }
   .zc { background:#F6F3E8; color:var(--ink); border-radius:10px; padding:17px 26px; }
-  .zc h3 { font-size:15px; margin-bottom:5px; font-family:'DM Sans',sans-serif; font-weight:700; letter-spacing:0; }
+  .zc h3 { font-size:15px; margin-bottom:5px; font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:0; }
   .zc p { font-size:13.5px; line-height:1.6; color:#3A4353; }
   .zero .cta-row { text-align:center; margin-top:40px; position:relative; z-index:1; }
   .zero .cta-note { display:block; margin:14px 0 0; color:rgba(255,255,255,0.55); font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; }
   .zero-doodle { position:absolute; right:5%; bottom:-10px; width:18%; max-width:275px; pointer-events:none; }
 
   /* Photo strip — single design crop, full width */
-  .strip { background:var(--navy); }
-  .strip img { width:100%; }
+  .strip { background:var(--navy); display:flex; gap:8px; padding:0 0 0 0; }
+  .strip img { width:calc((100% - 32px)/5); aspect-ratio:295/340; object-fit:cover; border-radius:12px; }
+  @media (max-width:700px) { .strip { flex-wrap:nowrap; overflow-x:auto; } .strip img { width:44vw; flex:none; } }
 
   /* Season caption — design y 5990-6420 */
   .season { text-align:center; padding:110px 22px 60px; }
@@ -123,7 +132,7 @@
   .final .snap { width:min(479px,86%); border-radius:16px; margin:70px auto 0; }
   .final .btn { margin:70px 0 0; text-transform:uppercase; letter-spacing:1.2px; font-size:14px; padding:18px 88px; }
   footer { margin-top:110px; padding:0 22px 60px; font-size:11.5px; color:rgba(255,255,255,0.5); line-height:2; }
-  footer .flogo { font-family:'Protest Strike',sans-serif; letter-spacing:4px; font-size:24px; color:#fff; margin-bottom:20px; }
+  footer .flogo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:24px; color:#fff; margin-bottom:20px; }
 
   @media (max-width:900px) {
     .rated-head { flex-direction:column; align-items:flex-start; }
@@ -158,9 +167,9 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
 <body>
 
 <header class="hero">
-  <div class="hero-media"><img src="/register/img/show-2026.jpg" alt="NOVAPA kids performing on a real stage" fetchpriority="high"></div>
+  <div class="hero-media"><img src="/free-class/img/hero.jpg" alt="NOVAPA kids performing on a real stage" fetchpriority="high"></div>
   <div class="hero-inner">
-    <div class="hero-logo">NOVAPA</div>
+    <div class="hero-logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px;margin:0 auto"></div>
     <div><span class="hero-badge"><b>Free class pass:</b> September only &middot; Leesburg, VA</span></div>
     <h1>Give your child a free NOVAPA day this September. By February, watch them take a bow on a real stage.</h1>
     <p>Come try a real class, completely free this month. See if it&rsquo;s their thing. If it is, a whole season of it ends with them on stage in a real show &mdash; Disney&rsquo;s Frozen Jr., this winter.</p>
@@ -168,7 +177,8 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
   </div>
 </header>
 
-<section class="rated">
+<section class="rated" style="position:relative;overflow:visible">
+  <img src="/free-class/img/doodle-circle.svg" alt="" style="position:absolute;right:4%;top:-300px;width:510px;max-width:40vw;opacity:0.8;pointer-events:none">
   <div class="wrap pad">
     <div class="rated-head">
       <h2>Rated five stars by the parents who&rsquo;ve already done this</h2>
@@ -187,7 +197,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
 
 <section class="tl">
   <div class="wrap">
-    <img class="tl-doodle" src="/free-class/img/doodle-tan.jpg" alt="">
+    <img class="tl-doodle" src="/free-class/img/doodle-tan.svg" alt="">
     <div class="pad">
       <div class="tl-grid">
         <div class="tl-photos">
@@ -228,22 +238,22 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
       <p class="sub">One free class. Real instructors. Real kids their age. Not a presentation, not a watered down demo &mdash; the actual environment our enrolled kids get. You don&rsquo;t have to guess whether they&rsquo;ll love it. Let them try it.</p>
       <div class="how-grid">
         <div class="how-card">
-          <img src="/free-class/img/how-1.jpg" alt="Parent booking a September date online" loading="lazy">
+          <div class="ph"><span class="n">1</span><img src="/free-class/img/how-1.jpg" alt="Parent booking a September date online" loading="lazy"></div>
           <h3>Choose your day</h3>
           <p>Pick an available September date. Takes about a minute.</p>
         </div>
         <div class="how-card">
-          <img src="/free-class/img/how-2.jpg" alt="Child arriving at class" loading="lazy">
+          <div class="ph"><span class="n">2</span><img src="/free-class/img/how-2.jpg" alt="Child arriving at class" loading="lazy"></div>
           <h3>Bring your child</h3>
           <p>They join a real NOVAPA class at the National Conference Center in Leesburg.</p>
         </div>
         <div class="how-card">
-          <img src="/free-class/img/how-3.jpg" alt="Kids in class together" loading="lazy">
+          <div class="ph"><span class="n">3</span><img src="/free-class/img/how-3.jpg" alt="Kids in class together" loading="lazy"></div>
           <h3>Let them experience it</h3>
           <p>They meet the instructors, meet the other kids, and get involved.</p>
         </div>
         <div class="how-card">
-          <img src="/free-class/img/how-4.jpg" alt="Kids building the show together" loading="lazy">
+          <div class="ph"><span class="n">4</span><img src="/free-class/img/how-4.jpg" alt="Kids building the show together" loading="lazy"></div>
           <h3>Decide what&rsquo;s next</h3>
           <p>If they love it, we&rsquo;ll show you the season. If they don&rsquo;t &mdash; that&rsquo;s completely okay.</p>
         </div>
@@ -274,11 +284,17 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
       <a class="btn" data-book href="/free-class/book.html">Claim my free class pass</a>
       <span class="cta-note">It starts with 1 free day</span>
     </div>
-    <img class="zero-doodle" src="/free-class/img/doodle-n.jpg" alt="">
+    <img class="zero-doodle" src="/free-class/img/doodle-n.svg" alt="" style="opacity:0.9">
   </div>
 </section>
 
-<div class="strip"><img src="/free-class/img/strip.jpg" alt="Five moments from NOVAPA seasons: shows, classes, and performances" loading="lazy"></div>
+<div class="strip">
+  <img src="/free-class/img/strip-1.jpg" alt="A NOVAPA show moment" loading="lazy">
+  <img src="/free-class/img/strip-2.jpg" alt="A NOVAPA class moment" loading="lazy">
+  <img src="/free-class/img/strip-3.jpg" alt="A NOVAPA performance moment" loading="lazy">
+  <img src="/free-class/img/strip-4.jpg" alt="A NOVAPA show moment" loading="lazy">
+  <img src="/free-class/img/strip-5.jpg" alt="A NOVAPA performance moment" loading="lazy">
+</div>
 
 <section class="season">
   <h2>This is what a season actually looks like</h2>
@@ -310,7 +326,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
 
 <section class="final">
   <div class="wrap">
-    <img class="final-doodle" src="/free-class/img/doodle-loop.jpg" alt="">
+    <img class="final-doodle" src="/free-class/img/doodle-loop.svg" alt="" style="opacity:0.12">
     <div class="inner">
       <h2>Every free day is a real seat, with a real instructor, in a real class.</h2>
       <p class="sub">September dates are limited. Rehearsals begin the week of September 15, so the September days go first. Claim yours and we hold that seat for your child specifically.</p>
@@ -318,7 +334,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
       <a class="btn" data-book href="/free-class/book.html">Claim my free class pass</a>
     </div>
     <footer>
-      <div class="flogo">NOVAPA</div>
+      <div class="flogo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:28px;margin:0 auto 20px"></div>
       Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120<br>
       This site is not a part of the Facebook website or Facebook Inc. Additionally, this site is NOT endorsed by Facebook in any way. FACEBOOK is a trademark of FACEBOOK, Inc.<br>
       &copy; 2026 Northern Virginia Performing Arts. All Rights Reserved.

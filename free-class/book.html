@@ -10,11 +10,14 @@
      same endpoint, which books the seat and sends the confirmation email. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Protest+Strike&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
   :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --line:#E4E7ED; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--navy); color:#fff; font-family:'DM Sans',sans-serif; font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  body { background:var(--navy); color:#fff; font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; }
   .topbar { display:flex; justify-content:space-between; align-items:center; padding:22px 26px; max-width:1140px; margin:0 auto; }
   .back { color:rgba(255,255,255,0.7); font-size:12px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; text-decoration:none; }
   .back:hover { color:#fff; }
@@ -22,9 +25,9 @@
   .steps i { display:block; width:52px; height:4px; border-radius:4px; background:rgba(255,255,255,0.18); }
   .steps i.on { background:var(--gold); }
   .head { text-align:center; max-width:640px; margin:26px auto 0; padding:0 22px; }
-  h1 { font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; font-weight:400; font-size:clamp(30px,5vw,46px); line-height:1.1; }
+  h1 { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:0.01em; font-weight:400; font-size:clamp(30px,5vw,46px); line-height:1.1; }
   .head p { color:rgba(255,255,255,0.72); font-size:15px; margin-top:14px; }
-  .logo { font-family:'Protest Strike',sans-serif; font-weight:400; letter-spacing:4px; font-size:20px; color:#fff; text-align:center; padding-top:26px; }
+  .logo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:20px; color:#fff; text-align:center; padding-top:26px; }
 
   .widget { background:#fff; color:var(--ink); border-radius:22px; max-width:1080px; margin:38px auto 90px; padding:40px 44px; }
   .cols { display:grid; grid-template-columns:1.1fr 1fr; gap:48px; }
@@ -38,7 +41,7 @@
   .dates { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
   .date { border:1.5px solid var(--line); border-radius:12px; padding:14px 8px; text-align:center; cursor:pointer; background:#FAFBFC; }
   .date .dw { font-size:11.5px; letter-spacing:1.2px; font-weight:700; text-transform:uppercase; color:var(--dim); }
-  .date .dn { font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; font-weight:400; font-size:26px; line-height:1.1; }
+  .date .dn { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:0.01em; font-weight:400; font-size:26px; line-height:1.1; }
   .date .dm { font-size:12.5px; color:var(--dim); }
   .date.on { border-color:#B07B1E; background:var(--gold); }
   .date.on .dw, .date.on .dm { color:#513A0E; }
@@ -51,12 +54,12 @@
   .field { margin-bottom:16px; }
   input { width:100%; border:1.5px solid var(--line); background:#F5F7FA; border-radius:8px; padding:12px 14px; font-family:'DM Sans',sans-serif; font-size:15px; color:var(--ink); }
   input:focus { outline:none; border-color:var(--gold); background:#fff; }
-  .submit { display:inline-block; border:0; background:var(--gold); color:var(--navy); font-family:'DM Sans',sans-serif; font-weight:700; font-size:16.5px; padding:14px 32px; border-radius:999px; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,0.18); margin-top:6px; }
+  .submit { display:inline-block; border:0; background:var(--gold); color:var(--navy); font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; font-size:16.5px; padding:14px 32px; border-radius:999px; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,0.18); margin-top:6px; }
   .submit[disabled] { opacity:0.6; cursor:wait; }
   .err { color:#B4232A; font-size:14px; margin-top:12px; display:none; }
 
   footer { text-align:center; padding:0 22px 46px; font-size:12px; color:rgba(255,255,255,0.5); line-height:1.8; }
-  footer .flogo { font-family:'Protest Strike',sans-serif; font-weight:400; letter-spacing:4px; font-size:19px; color:#fff; margin-bottom:10px; }
+  footer .flogo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:19px; color:#fff; margin-bottom:10px; }
 
   @media (max-width:860px) {
     .widget { padding:28px 22px; margin:28px 14px 60px; }
@@ -85,7 +88,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
   <a class="back" data-utm href="/free-class/">&larr; Back to free class details</a>
   <div class="steps">Step 2 of 3 <i class="on"></i><i class="on"></i><i></i></div>
 </div>
-<div class="logo">NOVAPA</div>
+<div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:24px;margin:0 auto"></div>
 <div class="head">
   <h1>Pick your child&rsquo;s free class</h1>
   <p>Takes about a minute. No payment, no card, no commitment &mdash; we just need to know who&rsquo;s coming and when, so we can hold their seat.</p>
@@ -120,7 +123,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 </div>
 
 <footer>
-  <div class="flogo">NOVAPA</div>
+  <div class="flogo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px;margin:0 auto 10px"></div>
   Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120<br>
   &copy; 2026 Northern Virginia Performing Arts. All Rights Reserved.
 </footer>
