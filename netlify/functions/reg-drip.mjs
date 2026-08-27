@@ -148,6 +148,13 @@ async function stopRepliers(states) {
 }
 
 export default async () => {
+  // KILL SWITCH — unset means OFF. Added Aug 27 2026 after this engine mailed
+  // people who had unsubscribed and people who never requested a sign-in link
+  // at all. An email sender with no off switch is the actual bug; everything
+  // else here is downstream of it. Set DRIP_ENABLED=on to run.
+  if (String(process.env.DRIP_ENABLED || "").toLowerCase() !== "on") {
+    return new Response("drip disabled", { status: 200 });
+  }
   // Only the published production deploy runs the engine. Branch deploys share
   // the same database — two runners = duplicate sends (learned 7/22 the hard way).
   if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
