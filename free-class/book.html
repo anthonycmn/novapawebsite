@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pick your child's free class — NOVAPA</title>
 <meta name="robots" content="noindex">
-<!-- Free class funnel, step 2 of 3. Dates come live from /api/reg-freeclass
-     (real September rehearsal nights per cast); the form posts back to the
-     same endpoint, which books the seat and sends the confirmation email. -->
+<!-- Free class funnel, step 2 of 3, matching the BFA Figma booking frame
+     (2271-208). Classes and dates come live from /api/reg-freeclass: the
+     real weekly class schedule, bookable 7+ days out (Jason, Aug 26). The
+     form posts back to the same endpoint, which books the seat and sends
+     the confirmation email. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
@@ -15,55 +17,66 @@
   @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
   @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
   @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
-  :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --line:#E4E7ED; }
+  :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --gold2:#F2B94C; --line:#E4E7ED; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--navy); color:#fff; font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased; }
-  .topbar { display:flex; justify-content:space-between; align-items:center; padding:22px 26px; max-width:1140px; margin:0 auto; }
-  .back { color:rgba(255,255,255,0.7); font-size:12px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; text-decoration:none; }
+  body { background:var(--navy); color:#fff; font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; padding:22px 26px; max-width:1512px; margin:0 auto; }
+  .back { color:rgba(255,255,255,0.7); font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; text-decoration:none; }
   .back:hover { color:#fff; }
-  .steps { display:flex; align-items:center; gap:10px; font-size:12px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; color:rgba(255,255,255,0.7); }
+  .steps { display:flex; align-items:center; gap:10px; font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; color:rgba(255,255,255,0.7); }
   .steps i { display:block; width:52px; height:4px; border-radius:4px; background:rgba(255,255,255,0.18); }
   .steps i.on { background:var(--gold); }
-  .head { text-align:center; max-width:640px; margin:26px auto 0; padding:0 22px; }
-  h1 { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:0.01em; font-weight:400; font-size:clamp(30px,5vw,46px); line-height:1.1; }
-  .head p { color:rgba(255,255,255,0.72); font-size:15px; margin-top:14px; }
-  .logo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:20px; color:#fff; text-align:center; padding-top:26px; }
+  .logo { text-align:center; padding-top:24px; }
+  .logo img { height:24px; margin:0 auto; display:block; }
+  .head { text-align:center; max-width:640px; margin:28px auto 0; padding:0 22px; }
+  h1 { font-weight:700; letter-spacing:-0.045em; line-height:1.2; font-size:clamp(30px,4.6vw,46px); }
+  .head p { color:rgba(255,255,255,0.72); font-size:14.5px; margin-top:14px; }
 
-  .widget { background:#fff; color:var(--ink); border-radius:22px; max-width:1080px; margin:38px auto 90px; padding:40px 44px; }
-  .cols { display:grid; grid-template-columns:1.1fr 1fr; gap:48px; }
-  .sect-label { font-size:12.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; margin-bottom:16px; }
+  .widget { background:#fff; color:var(--ink); border-radius:20px; max-width:1240px; margin:36px auto 90px; padding:44px 48px; }
+  .cols { display:grid; grid-template-columns:1.15fr 1fr; gap:52px; }
+  .sect-label { font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; margin-bottom:16px; }
 
-  .cast-tabs { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
-  .cast-tab { border:1.5px solid var(--line); background:#fff; border-radius:999px; padding:8px 16px; font-family:'DM Sans',sans-serif; font-size:13.5px; font-weight:700; cursor:pointer; }
-  .cast-tab small { display:block; font-weight:500; color:var(--dim); font-size:11.5px; }
-  .cast-tab.on { border-color:var(--gold); background:#FFF6E3; }
-  .cast-meta { font-size:13px; color:var(--dim); margin-bottom:14px; }
+  .age-row { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  .age-row label { font-size:13.5px; font-weight:700; }
+  .age-row input { width:84px; border:1.5px solid var(--line); background:#F5F7FA; border-radius:8px; padding:10px 12px; font-family:inherit; font-size:15px; }
+  .age-row input:focus { outline:none; border-color:var(--gold); background:#fff; }
+  .age-hint { font-size:12px; color:var(--dim); }
+
+  .class-list { display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding-right:6px; scrollbar-width:thin; }
+  .class-opt { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1.5px solid var(--line); border-radius:10px; padding:11px 16px; cursor:pointer; background:#FAFBFC; text-align:left; font-family:inherit; }
+  .class-opt .cn { font-size:14px; font-weight:700; }
+  .class-opt .cm { font-size:12px; color:var(--dim); }
+  .class-opt .ct { font-size:12.5px; color:var(--dim); white-space:nowrap; }
+  .class-opt.on { border-color:#B07B1E; background:#FFF3DC; }
+
+  .date-label { margin:20px 0 12px; }
   .dates { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  .date { border:1.5px solid var(--line); border-radius:12px; padding:14px 8px; text-align:center; cursor:pointer; background:#FAFBFC; }
-  .date .dw { font-size:11.5px; letter-spacing:1.2px; font-weight:700; text-transform:uppercase; color:var(--dim); }
-  .date .dn { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:0.01em; font-weight:400; font-size:26px; line-height:1.1; }
-  .date .dm { font-size:12.5px; color:var(--dim); }
+  .date { border:1.5px solid var(--line); border-radius:12px; padding:13px 8px; text-align:center; cursor:pointer; background:#FAFBFC; font-family:inherit; }
+  .date .dw { font-size:11px; letter-spacing:1.2px; font-weight:700; text-transform:uppercase; color:var(--dim); display:block; }
+  .date .dn { font-weight:700; font-size:25px; line-height:1.15; display:block; }
+  .date .dm { font-size:12px; color:var(--dim); display:block; }
   .date.on { border-color:#B07B1E; background:var(--gold); }
   .date.on .dw, .date.on .dm { color:#513A0E; }
   .date.full { opacity:0.4; cursor:not-allowed; }
-  .date .left { display:block; font-size:10.5px; color:#A15C00; font-weight:700; margin-top:2px; }
-  .widget-note { font-size:12.5px; color:var(--dim); margin-top:18px; max-width:340px; }
+  .date .left { display:block; font-size:10px; color:#A15C00; font-weight:700; margin-top:2px; }
+  .widget-note { font-size:12.5px; color:var(--dim); margin-top:18px; max-width:380px; }
 
   label { display:block; font-size:13.5px; font-weight:700; margin:0 0 6px; }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .field { margin-bottom:16px; }
-  input { width:100%; border:1.5px solid var(--line); background:#F5F7FA; border-radius:8px; padding:12px 14px; font-family:'DM Sans',sans-serif; font-size:15px; color:var(--ink); }
-  input:focus { outline:none; border-color:var(--gold); background:#fff; }
-  .submit { display:inline-block; border:0; background:var(--gold); color:var(--navy); font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; font-size:16.5px; padding:14px 32px; border-radius:999px; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,0.18); margin-top:6px; }
+  .field input { width:100%; border:1.5px solid var(--line); background:#F5F7FA; border-radius:8px; padding:12px 14px; font-family:inherit; font-size:15px; color:var(--ink); }
+  .field input:focus { outline:none; border-color:var(--gold); background:#fff; }
+  .submit { display:inline-block; border:0; background:var(--gold); color:var(--navy); font-family:inherit; font-weight:700; font-size:16px; padding:14px 32px; border-radius:999px; cursor:pointer; margin-top:6px; }
   .submit[disabled] { opacity:0.6; cursor:wait; }
   .err { color:#B4232A; font-size:14px; margin-top:12px; display:none; }
 
-  footer { text-align:center; padding:0 22px 46px; font-size:12px; color:rgba(255,255,255,0.5); line-height:1.8; }
-  footer .flogo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:19px; color:#fff; margin-bottom:10px; }
+  footer { text-align:center; padding:0 22px 46px; font-size:11.5px; color:rgba(255,255,255,0.5); line-height:2; }
+  footer img { height:24px; margin:0 auto 10px; display:block; }
 
-  @media (max-width:860px) {
-    .widget { padding:28px 22px; margin:28px 14px 60px; }
+  @media (max-width:900px) {
+    .widget { padding:28px 20px; margin:28px 14px 60px; }
     .cols { grid-template-columns:1fr; gap:34px; }
+    .class-list { max-height:260px; }
   }
 </style>
 <script>
@@ -88,7 +101,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
   <a class="back" data-utm href="/free-class/">&larr; Back to free class details</a>
   <div class="steps">Step 2 of 3 <i class="on"></i><i class="on"></i><i></i></div>
 </div>
-<div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:24px;margin:0 auto"></div>
+<div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA"></div>
 <div class="head">
   <h1>Pick your child&rsquo;s free class</h1>
   <p>Takes about a minute. No payment, no card, no commitment &mdash; we just need to know who&rsquo;s coming and when, so we can hold their seat.</p>
@@ -98,10 +111,15 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
   <div class="cols">
     <div>
       <div class="sect-label">1. Choose their class and date</div>
-      <div class="cast-tabs" id="castTabs"></div>
-      <div class="cast-meta" id="castMeta"></div>
+      <div class="age-row">
+        <label for="ageFilter">Child&rsquo;s age</label>
+        <input id="ageFilter" type="number" min="5" max="17" inputmode="numeric" placeholder="e.g. 8">
+        <span class="age-hint">We&rsquo;ll show the classes built for them.</span>
+      </div>
+      <div class="class-list" id="classList"></div>
+      <div class="sect-label date-label" id="dateLabel" style="display:none">Pick a date</div>
       <div class="dates" id="dates"></div>
-      <p class="widget-note">Your confirmation and everything to bring lands in your inbox right away.</p>
+      <p class="widget-note">Free classes are booked 7 or more days ahead. Your confirmation and everything to bring lands in your inbox right away.</p>
     </div>
     <div>
       <div class="sect-label">2. Tell us who is coming</div>
@@ -123,21 +141,25 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 </div>
 
 <footer>
-  <div class="flogo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px;margin:0 auto 10px"></div>
+  <img src="/free-class/img/logo-novapa.svg" alt="NOVAPA">
   Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120<br>
   &copy; 2026 Northern Virginia Performing Arts. All Rights Reserved.
 </footer>
 
 <script>
 (function () {
-  var casts = [], castKey = null, dateISO = null;
+  var classes = [], clsKey = null, dateISO = null, ageFilter = null;
   var $ = function (id) { return document.getElementById(id); };
 
-  // keep utm params flowing backward too
   var qs = location.search.replace(/^\?/, "");
   if (qs) document.querySelectorAll("a[data-utm]").forEach(function (a) {
     a.href += (a.href.indexOf("?") === -1 ? "?" : "&") + qs;
   });
+
+  function inBand(c, a) {
+    var p = c.ages.split("–");
+    return a >= +p[0] && a <= +p[1];
+  }
 
   function fmt(d) {
     var p = d.split("-");
@@ -145,63 +167,62 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
              num: +p[2], mon: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"][p[1]-1] };
   }
 
-  function renderDates() {
-    var c = casts.find(function (x) { return x.key === castKey; });
-    $("castMeta").textContent = c ? c.label + " · ages " + c.ages + " · " + c.day + "s, " + c.time : "";
-    var el = $("dates"); el.innerHTML = "";
-    if (!c) return;
-    if (!c.dates.length) { el.innerHTML = "<p style='font-size:14px;color:#5B6472'>September dates for this cast have passed. Pick another cast, or call (571) 571-2120.</p>"; return; }
-    c.dates.forEach(function (d) {
-      var f = fmt(d.date), b = document.createElement("button");
-      b.type = "button";
-      b.className = "date" + (d.left <= 0 ? " full" : "") + (dateISO === d.date ? " on" : "");
-      b.innerHTML = "<span class='dw'>" + f.day + "</span><span class='dn'>" + f.num + "</span><span class='dm'>" + f.mon + "</span>" +
-        (d.left > 0 && d.left <= 4 ? "<span class='left'>" + d.left + " seats left</span>" : "");
-      if (d.left > 0) b.onclick = function () { dateISO = d.date; renderDates(); };
-      el.appendChild(b);
-    });
-  }
-
-  function renderTabs() {
-    var el = $("castTabs"); el.innerHTML = "";
-    casts.forEach(function (c) {
+  function renderClasses() {
+    var el = $("classList"); el.innerHTML = "";
+    var list = classes.slice();
+    if (ageFilter) list = list.filter(function (c) { return inBand(c, ageFilter); });
+    if (!list.length) { el.innerHTML = "<p style='font-size:13.5px;color:#5B6472;padding:8px 2px'>No classes for that age. Call (571) 571-2120 and we will find a fit.</p>"; }
+    list.forEach(function (c) {
       var b = document.createElement("button");
       b.type = "button";
-      b.className = "cast-tab" + (castKey === c.key ? " on" : "");
-      b.innerHTML = c.label + "<small>ages " + c.ages + "</small>";
-      b.onclick = function () { castKey = c.key; dateISO = null; renderTabs(); renderDates(); };
+      b.className = "class-opt" + (clsKey === c.key ? " on" : "");
+      b.innerHTML = "<span><span class='cn'>" + c.name + "</span><br><span class='cm'>Ages " + c.ages + "</span></span>" +
+        "<span class='ct'>" + c.day + "s &middot; " + c.time + "</span>";
+      b.onclick = function () { clsKey = c.key; dateISO = null; renderClasses(); };
       el.appendChild(b);
     });
     renderDates();
   }
 
+  function renderDates() {
+    var c = classes.find(function (x) { return x.key === clsKey; });
+    $("dateLabel").style.display = c ? "" : "none";
+    var el = $("dates"); el.innerHTML = "";
+    if (!c) return;
+    c.dates.forEach(function (d) {
+      var f = fmt(d.date), b = document.createElement("button");
+      b.type = "button";
+      b.className = "date" + (d.left <= 0 ? " full" : "") + (dateISO === d.date ? " on" : "");
+      b.innerHTML = "<span class='dw'>" + f.day + "</span><span class='dn'>" + f.num + "</span><span class='dm'>" + f.mon + "</span>" +
+        (d.left > 0 && d.left <= 3 ? "<span class='left'>" + d.left + " seats left</span>" : "");
+      if (d.left > 0) b.onclick = function () { dateISO = d.date; renderDates(); };
+      el.appendChild(b);
+    });
+  }
+
   fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) {
-    casts = j.casts || [];
-    castKey = casts.length ? casts[0].key : null;
-    renderTabs();
+    classes = j.classes || [];
+    renderClasses();
   }).catch(function () {
     $("err").style.display = "block";
-    $("err").textContent = "We couldn't load dates. Refresh, or call (571) 571-2120.";
+    $("err").textContent = "We couldn't load the schedule. Refresh, or call (571) 571-2120.";
   });
 
-  // picking an age snaps the cast selection to the matching band
+  $("ageFilter").addEventListener("input", function () {
+    ageFilter = parseInt(this.value, 10) || null;
+    if ($("childAge").value === "") $("childAge").value = this.value;
+    var cur = classes.find(function (c) { return c.key === clsKey; });
+    if (ageFilter && cur && !inBand(cur, ageFilter)) { clsKey = null; dateISO = null; }
+    renderClasses();
+  });
   $("childAge").addEventListener("change", function () {
-    var a = parseInt(this.value, 10);
-    if (!a) return;
-    var match = casts.find(function (c) {
-      var p = c.ages.split("–");
-      return a >= +p[0] && a <= +p[1] && c.key === castKey;
-    }) || casts.find(function (c) {
-      var p = c.ages.split("–");
-      return a >= +p[0] && a <= +p[1];
-    });
-    if (match && match.key !== castKey) { castKey = match.key; dateISO = null; renderTabs(); }
+    if (!$("ageFilter").value) { $("ageFilter").value = this.value; $("ageFilter").dispatchEvent(new Event("input")); }
   });
 
   $("bookForm").addEventListener("submit", function (ev) {
     ev.preventDefault();
     var err = $("err"); err.style.display = "none";
-    if (!castKey || !dateISO) { err.style.display = "block"; err.textContent = "Pick a class and date first."; return; }
+    if (!clsKey || !dateISO) { err.style.display = "block"; err.textContent = "Pick a class and date first."; return; }
     var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Holding their seat…";
     var utm = {};
     new URLSearchParams(location.search).forEach(function (v, k) {
@@ -216,22 +237,22 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
         phone: $("phone").value.trim(),
         child_name: $("childName").value.trim(),
         child_age: parseInt($("childAge").value, 10),
-        cast: castKey, date: dateISO, utm: utm,
+        "class": clsKey, date: dateISO, utm: utm,
       }),
     }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
         if (!res.ok) throw new Error(res.j.error || "Something went wrong. Try again.");
         try { fbq("track", "Lead", { content_name: "Free Class Booking" }); } catch (e) {}
-        try { if (window.posthog) posthog.capture("free_class_booked", { cast: castKey, date: dateISO }); } catch (e) {}
+        try { if (window.posthog) posthog.capture("free_class_booked", { "class": clsKey, date: dateISO }); } catch (e) {}
         var b = res.j.booking;
         location.href = "/free-class/confirmed.html?n=" + encodeURIComponent(b.child_name) +
           "&d=" + encodeURIComponent(b.pretty_date) + "&t=" + encodeURIComponent(b.time) +
-          "&c=" + encodeURIComponent(b.cast_label) + (qs ? "&" + qs : "");
+          "&c=" + encodeURIComponent(b.class_label) + (qs ? "&" + qs : "");
       })
       .catch(function (e) {
         btn.disabled = false; btn.textContent = "Hold my child’s seat";
         err.style.display = "block"; err.textContent = e.message;
-        fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) { casts = j.casts || []; renderTabs(); });
+        fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) { classes = j.classes || []; renderClasses(); });
       });
   });
 })();

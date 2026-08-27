@@ -9,8 +9,8 @@ create table if not exists public.free_class_bookings (
   phone        text,
   child_name   text not null,
   child_age    int  not null,
-  cast_key     text not null check (cast_key in ('kids','jr','teens')),
-  activity_id  bigint not null,
+  cast_key     text not null,  -- class key from reg-freeclass CLASSES (was kids/jr/teens pre Aug 26 pivot)
+  activity_id  bigint not null default 0,  -- 0 since the class pivot; legacy rows carry cast activity ids
   class_date   date not null,
   status       text not null default 'booked' check (status in ('booked','cancelled','attended')),
   utm          jsonb,
