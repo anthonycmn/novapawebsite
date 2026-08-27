@@ -223,9 +223,10 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
     $("err").textContent = "We couldn't load the schedule. Refresh, or call (571) 571-2120.";
   });
 
+  var ageMirror = "";
   $("ageFilter").addEventListener("input", function () {
     ageFilter = parseInt(this.value, 10) || null;
-    if ($("childAge").value === "") $("childAge").value = this.value;
+    if ($("childAge").value === "" || $("childAge").value === ageMirror) { $("childAge").value = this.value; ageMirror = this.value; }
     var cur = classes.find(function (c) { return c.key === clsKey; });
     if (ageFilter && cur && !inBand(cur, ageFilter)) { clsKey = null; dateISO = null; }
     renderClasses();
