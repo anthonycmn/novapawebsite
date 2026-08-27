@@ -11,15 +11,15 @@
      catalog numbers only (seat-counting skill) — no invented scarcity. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Protest+Strike&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --gold2:#F2B94C; --line:#E8E2CE; }
   * { margin:0; padding:0; box-sizing:border-box; }
   html { scroll-behavior:smooth; }
   body { background:var(--cream); color:var(--ink); font-family:'DM Sans',sans-serif; font-size:16.5px; line-height:1.65; -webkit-font-smoothing:antialiased; }
   .wrap { max-width:1020px; margin:0 auto; padding:0 22px; }
-  .logo { font-family:'Baloo 2',sans-serif; font-weight:800; letter-spacing:4px; font-size:21px; text-align:center; padding:30px 0 6px; }
-  h2 { font-family:'Baloo 2',sans-serif; font-weight:700; line-height:1.12; }
+  .logo { font-family:'Protest Strike',sans-serif; font-weight:400; letter-spacing:4px; font-size:21px; text-align:center; padding:30px 0 6px; }
+  h2 { font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; font-weight:400; line-height:1.12; }
 
   .ticket { position:relative; background:var(--navy); color:#fff; border-radius:22px; max-width:860px; margin:26px auto 0; display:grid; grid-template-columns:300px 1fr; overflow:hidden; }
   .ticket:before, .ticket:after { content:""; position:absolute; top:50%; width:36px; height:36px; border-radius:50%; background:var(--cream); transform:translateY(-50%); }
@@ -27,7 +27,7 @@
   .ticket img { width:100%; height:100%; object-fit:cover; min-height:280px; }
   .t-body { padding:36px 40px; }
   .t-chip { display:inline-block; background:#153B22; color:#7ADB9B; border:1px solid #2C6B41; font-size:11.5px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; border-radius:999px; padding:5px 14px; }
-  .t-body h1 { font-family:'Baloo 2',sans-serif; font-weight:800; font-size:clamp(26px,3.6vw,38px); line-height:1.12; margin-top:14px; }
+  .t-body h1 { font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; font-weight:400; font-size:clamp(26px,3.6vw,38px); line-height:1.12; margin-top:14px; }
   .t-rows { margin-top:22px; border-top:1px solid rgba(255,255,255,0.14); }
   .t-row { display:flex; justify-content:space-between; gap:20px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,0.14); font-size:15px; }
   .t-row span { color:rgba(255,255,255,0.55); }
@@ -43,8 +43,8 @@
   .card { background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
   .card img { width:100%; aspect-ratio:4/3.2; object-fit:cover; }
   .card .pad { padding:14px 16px 16px; display:flex; flex-direction:column; flex:1; }
-  .card h3 { font-size:15.5px; font-family:'Baloo 2',sans-serif; }
-  .price { font-family:'Baloo 2',sans-serif; font-weight:700; color:#2E7D32; font-size:17px; margin-top:2px; }
+  .card h3 { font-size:15.5px; font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; }
+  .price { font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; font-weight:400; color:#2E7D32; font-size:17px; margin-top:2px; }
   .card p { font-size:13px; color:var(--dim); margin-top:8px; }
   .chip { position:absolute; margin:10px; background:#DFF6E5; color:#1F7A38; font-size:10.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; border-radius:999px; padding:4px 10px; z-index:1; }
   .chip.warn { background:#FFEACC; color:#A15C00; }
@@ -55,7 +55,7 @@
   .gone-row .card img { filter:grayscale(0.65) brightness(0.92); }
   .gone-row h3, .gone-row .price { color:#6E7684; }
   .strike { color:#9AA2AF; text-decoration:line-through; font-size:14px; font-weight:500; margin-right:6px; }
-  .mid-label { font-family:'Baloo 2',sans-serif; font-weight:700; font-size:clamp(21px,2.8vw,26px); margin:8px 0 18px; }
+  .mid-label { font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; font-weight:400; font-size:clamp(21px,2.8vw,26px); margin:8px 0 18px; }
   .cap-note { font-size:13px; color:var(--dim); margin-top:18px; max-width:520px; }
 
   .why { background:var(--navy); color:#fff; }
@@ -69,7 +69,7 @@
   .why .fine { text-align:center; color:rgba(255,255,255,0.55); font-size:13px; max-width:460px; margin:24px auto 0; }
 
   .decide { text-align:center; }
-  .decide .btn { display:inline-block; background:var(--gold); color:var(--navy); font-family:'Baloo 2',sans-serif; font-weight:700; font-size:17px; padding:15px 36px; border-radius:999px; text-decoration:none; box-shadow:0 3px 0 rgba(0,0,0,0.24); }
+  .decide .btn { display:inline-block; background:var(--gold); color:var(--navy); font-family:'DM Sans',sans-serif; font-weight:700; font-size:17px; padding:15px 36px; border-radius:999px; text-decoration:none; box-shadow:0 3px 0 rgba(0,0,0,0.24); }
   .decide .later { display:block; width:max-content; margin:18px auto 0; color:var(--dim); font-size:12px; letter-spacing:1.4px; font-weight:700; text-transform:uppercase; text-decoration:underline; }
   .decide .aside { color:var(--dim); font-size:14px; max-width:480px; margin:26px auto 0; }
 
@@ -77,12 +77,12 @@
   .steps3 h2 { font-size:clamp(25px,3.4vw,34px); }
   .step { border-left:2px solid var(--line); padding-left:24px; margin-bottom:28px; }
   .step .tag { display:inline-block; background:var(--gold); color:#513A0E; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:1.4px; padding:3px 10px; text-transform:uppercase; }
-  .step h3 { font-family:'Baloo 2',sans-serif; font-size:17px; margin-top:8px; }
+  .step h3 { font-family:'Protest Strike',sans-serif; letter-spacing:0.01em; font-size:17px; margin-top:8px; }
   .step p { font-size:14px; color:var(--dim); margin-top:4px; }
   .call-note { font-size:13px; color:var(--dim); }
 
   footer { background:var(--navy); text-align:center; padding:38px 22px 46px; font-size:12px; color:rgba(255,255,255,0.5); line-height:1.8; }
-  footer .flogo { font-family:'Baloo 2',sans-serif; font-weight:800; letter-spacing:4px; font-size:19px; color:#fff; margin-bottom:10px; }
+  footer .flogo { font-family:'Protest Strike',sans-serif; font-weight:400; letter-spacing:4px; font-size:19px; color:#fff; margin-bottom:10px; }
 
   @media (max-width:860px) {
     .ticket { grid-template-columns:1fr; }
