@@ -19,6 +19,35 @@ const BUCKET = {
   likely: { label: "Likely", bg: "#E4EAF4", fg: "#26406E" },
 };
 
+// The quiz stores option VALUES ("locked", "filmed", "minor") which mean
+// nothing to whoever reads a lead alert. These are the labels the family
+// actually chose on screen, lifted verbatim from audition-atlas
+// src/lib/dcFunnel.ts, so staff read what the parent read.
+//
+// Worth knowing: "locked" is NOT "picked a college" — it is "I have a list
+// and I'm working it", i.e. actively booking auditions. And "minor" budget
+// is "we'll work it out once she's in", i.e. price is not the blocker.
+export const ANSWER_LABELS = {
+  dream: { "Musical Theatre": "Center stage in a musical", "Acting": "On a film set, or in a play",
+           "Dance": "In the middle of a dance company", "Design & Production": "Backstage, running the show",
+           undecided: "Still figuring it out" },
+  structure: { conservatory: "All in on training", intense: "Serious training, some breathing room",
+               flexible: "Theatre plus everything else", unsure: "Doesn't know the difference yet" },
+  distance: { close: "Close enough to drive", region: "Somewhere in my region", anywhere: "Anywhere worth going" },
+  dance: { advanced: "Trained and strong", solid: "Holds their own", beginner: "Just starting", none: "Doesn't dance" },
+  budget: { major: "Needs affordable options", some: "Will stretch for the right fit",
+            minor: "Price is not the blocker" },
+  prescreen: { filmed: "Already filming, or ready to", willing: "Would film one",
+               avoid: "Prefers in-person only", unsure: "Didn't know prescreens existed" },
+  certainty: { locked: "Has a list, booking auditions", narrowing: "Some names, no plan",
+               exploring: "Starting from scratch", overwhelmed: "Overwhelmed" },
+};
+
+export function label(field, value) {
+  const m = ANSWER_LABELS[field];
+  return (m && m[value]) || value || "?";
+}
+
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -48,8 +77,8 @@ function schoolCard(m, i) {
     <span style="color:#B07B1E">${i + 1}.</span> ${esc(m.school)}${chip}</div>
   <div style="font:14px/1.6 Helvetica,Arial,sans-serif;color:#0B1422;margin-top:3px">${esc(prog)}</div>
   ${place ? `<div style="font:13px/1.6 Helvetica,Arial,sans-serif;color:#5B6472">${esc(place)}</div>` : ""}
-  ${reasons.length ? `<div style="font:13px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:6px">${esc(reasons.join(" &middot; "))}</div>` : ""}
-  ${flags.length ? `<div style="font:700 12px/1.6 Helvetica,Arial,sans-serif;color:#8A2A31;margin-top:6px">${esc(flags.join(" &middot; "))}</div>` : ""}
+  ${reasons.length ? `<div style="font:13px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:6px">${reasons.map(esc).join(" &middot; ")}</div>` : ""}
+  ${flags.length ? `<div style="font:700 12px/1.6 Helvetica,Arial,sans-serif;color:#8A2A31;margin-top:6px">${flags.map(esc).join(" &middot; ")}</div>` : ""}
   ${url ? `<div style="font:13px/1.6 Helvetica,Arial,sans-serif;margin-top:7px"><a href="${esc(url)}" style="color:#26406E">Audition requirements &rarr;</a></div>` : ""}
 </td></tr>`;
 }
@@ -80,12 +109,21 @@ export function resultsEmail(lead) {
   const focus = answers.dream === "Acting" ? "acting" : "musical theatre";
   const anyPrescreen = matches.some((m) => m.prescreenRequired);
 
-  const subject = `${first}, here are your five ${focus} programs`;
+  // The form captures one first name and who typed it — never both parties.
+  // A parent gets "your performer's five", a student gets "your five";
+  // saying "your five programs" to a mother reads like we think she's applying.
+  const isParent = String(lead.role || "").toLowerCase() === "parent";
+  const subject = isParent
+    ? `${first}, the five ${focus} programs we matched`
+    : `${first}, here are your five ${focus} programs`;
+  const opener = isParent
+    ? `here are the five programs we matched from the Find Your 5 quiz, so you still have the list next week.`
+    : `here's the list from your Find Your 5 quiz, so you still have it next week.`;
 
   const html = `<div style="max-width:600px;margin:0 auto;padding:30px 22px;font-family:Helvetica,Arial,sans-serif;color:#0B1422">
 <div style="font:700 24px/1.25 Helvetica,Arial,sans-serif;letter-spacing:-0.02em">Your five programs</div>
 <div style="font:15px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:10px">
-Hi ${esc(first)} &mdash; here's the list from your Find Your 5 quiz, so you still have it next week.
+Hi ${esc(first)} &mdash; ${opener}
 Each one auditions at DC Unifieds, and each links straight to its official audition requirements.</div>
 
 <table style="width:100%;border-collapse:collapse;margin-top:14px">

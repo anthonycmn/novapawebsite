@@ -247,6 +247,36 @@
     padding:8px 16px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
   .warnbox { margin-top:12px; padding:12px 14px; border-radius:9px; font-size:13.5px; line-height:1.6;
     border:1px solid rgba(232,101,75,0.45); background:rgba(232,101,75,0.10); color:var(--ink); }
+
+  /* leads pipeline: one column per stage, cards drag between them. The row of
+     columns scrolls sideways on its own so a narrow window never makes the
+     whole page scroll, and each column scrolls its cards independently. */
+  .ldpills { display:flex; gap:6px; }
+  .ldpills button { background:var(--panel); border:1px solid var(--line); color:var(--dim); border-radius:999px;
+    padding:7px 16px; cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:600; }
+  .ldpills button.on { background:rgba(232,184,75,0.13); border-color:rgba(232,184,75,0.45); color:var(--gold); }
+  .kan { display:flex; gap:12px; align-items:flex-start; overflow-x:auto; padding-bottom:10px; }
+  .kcol { flex:0 0 268px; background:rgba(8,17,31,0.45); border:1px solid var(--line); border-radius:12px;
+    display:flex; flex-direction:column; max-height:calc(100vh - 250px); }
+  .kcol.over { border-color:rgba(232,184,75,0.55); background:rgba(232,184,75,0.05); }
+  .kcol-h { display:flex; align-items:center; gap:8px; padding:11px 13px; border-bottom:1px solid var(--line);
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--dim); font-weight:600; }
+  .kcol-h i { margin-left:auto; font-style:normal; color:var(--ink); font-size:12px; letter-spacing:0; }
+  .kcol-b { overflow-y:auto; padding:9px; display:flex; flex-direction:column; gap:8px; min-height:66px; }
+  .kcol-empty { padding:16px 4px; text-align:center; }
+  .ldcard { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 11px;
+    cursor:pointer; transition:border-color .15s, transform .15s; }
+  .ldcard:hover { border-color:rgba(232,184,75,0.35); transform:translateY(-1px); }
+  .ldcard.drag { opacity:0.4; }
+  .ldcard.open { border-color:rgba(232,184,75,0.45); }
+  .ldc-top { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:5px; }
+  .ldc-top b { font-size:13.5px; }
+  .ldc-contact { font-size:12px; line-height:1.5; word-break:break-all; }
+  .ldc-line { margin-top:4px; line-height:1.45; }
+  .ldd { margin-top:9px; padding-top:9px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:5px; }
+  .ldd-row { display:flex; gap:8px; font-size:12px; align-items:baseline; }
+  .ldd-row span { color:var(--dim); flex:0 0 86px; }
+  .ldd-row b { font-weight:500; flex:1; word-break:break-word; white-space:pre-wrap; }
 </style>
 <meta name="theme-color" content="#08111F">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -308,29 +338,17 @@
 
     <section class="sec" id="s-leads">
       <h2>Leads</h2>
-      <p class="sub" style="margin:-6px 0 16px">Everyone who raised a hand on a public form but hasn&rsquo;t bought yet.
-      Three separate funnels, newest first. Nothing here is a registration &mdash; these are people to call.</p>
-
-      <h2 style="margin-top:0">DC Unifieds &mdash; Find Your 5</h2>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-6px 0 10px">
-        <span class="sub" id="ldDcuStatus"></span>
-        <button class="tag" id="ldDcuCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
+      <p class="sub" style="margin:-6px 0 14px">Everyone who raised a hand on a public form but hasn&rsquo;t bought yet.
+      Drag a card between columns to move the lead down the pipeline &mdash; click one to open everything we know.
+      Nothing here is a registration &mdash; these are people to call.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px">
+        <div class="ldpills" id="ldBoards"></div>
+        <span class="sub" id="ldStatus"></span>
+        <span class="sub" id="ldMsg"></span>
+        <button class="tag" id="ldCsvBtn" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
       </div>
-      <div class="wrap-scroll"><table id="tblLeadsDcu"></table></div>
-
-      <h2 style="margin-top:26px">NOVAPA Quiz</h2>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-6px 0 10px">
-        <span class="sub" id="ldQuizStatus"></span>
-        <button class="tag" id="ldQuizCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
-      </div>
-      <div class="wrap-scroll"><table id="tblLeadsQuiz"></table></div>
-
-      <h2 style="margin-top:26px">Free Class Bookings</h2>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:-6px 0 10px">
-        <span class="sub" id="ldFreeStatus"></span>
-        <button class="tag" id="ldFreeCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
-      </div>
-      <div class="wrap-scroll"><table id="tblLeadsFree"></table></div>
+      <div class="warnbox" id="ldWarn" style="display:none;margin:0 0 12px"></div>
+      <div class="kan" id="ldBoard"></div>
     </section>
 
     <section class="sec" id="s-balances">
@@ -2072,11 +2090,20 @@
     }).catch(function(){ $('spStatus').textContent = 'network error'; });
   }
 
-  // ---- Leads: three public funnels behind one endpoint. The DC Unifieds
-  // quiz lives in a SEPARATE Supabase project, so its feed can be missing
-  // (env not set) while the other two are perfectly healthy — never let one
-  // dead stream blank the tab. ----
+  // ---- Leads: three public funnels behind one endpoint, drawn as one
+  // drag-and-drop pipeline. The DC Unifieds quiz lives in a SEPARATE Supabase
+  // project, so its feed can be missing (env not set) while the other two are
+  // perfectly healthy — never let one dead stream blank the tab. The board
+  // toggle, the open card and the in-flight moves all live in module vars so
+  // the 60s background refresh redraws without yanking anything away. ----
   var LEADS = null;
+  var LD_BOARD = 'dcu';   // which pipeline is on screen — survives a refresh
+  var LD_OPEN = null;     // key of the one expanded card
+  var LD_DRAG = null;     // key of the card currently being dragged
+  var LD_BUSY = {};       // key -> stage we optimistically moved it to
+  var LD_MSG = '';        // last move failure, shown next to the counts
+  var LD_BOARDS = [['dcu', 'DC Unifieds'], ['novapa', 'NOVAPA']];
+
   // esc() escapes text, not quotes; anything landing in an attribute goes
   // through this instead. Every field below is free text from a public form.
   function ldAttr(s){ return esc(s).replace(/"/g, '&quot;'); }
@@ -2096,163 +2123,289 @@
       var tel = String(phone).replace(/[^0-9+]/g, '');
       if (tel) out.push('<a href="tel:' + tel + '" class="sub">' + esc(phone) + '</a>');
     }
-    return out.join('<br>') || '—';
-  }
-  function ldClip(s){
-    var t = s || '';
-    return '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' +
-      ldAttr(t) + '">' + (t ? esc(t) : '—') + '</td>';
+    return out.join('<br>') || '<span class="sub">no contact on file</span>';
   }
   function ldCount(n, word){ return n + ' ' + word + (n === 1 ? '' : 's'); }
-  function ldEmpty(cols){ return '<tr><td colspan="' + cols + '" class="sub">No leads yet.</td></tr>'; }
 
-  function renderLeadsDcu(d){
-    // A returning parent retakes the quiz and the row is UPDATEd, so recency
-    // is updated_at. Hot (prescreens filmed + decision locked) jumps the queue.
-    var rows = (d.dcu || []).slice().sort(function(a, b){
-      if (!!a.hot !== !!b.hot) return a.hot ? -1 : 1;
-      return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0);
-    });
-    var hot = rows.filter(function(x){ return x.hot; }).length;
-    var ok = d.dcu_status === 'ok';
-    $('ldDcuStatus').textContent = ok
-      ? ldCount(rows.length, 'lead') + (hot ? ' · ' + hot + ' hot' : '')
-      : 'feed unavailable';
-    $('ldDcuCsv').style.display = rows.length ? '' : 'none';
-
-    var warn = '';
-    if (!ok) {
-      warn = '<tr><td colspan="7" style="white-space:normal;color:var(--bad,#E8654B)">' +
-        (d.dcu_status === 'not_configured'
-          ? 'DC Unifieds lead feed not yet connected — DCU_SUPABASE_URL / DCU_SERVICE_KEY not set on this site.'
-          : esc(d.dcu_status)) + '</td></tr>';
-    }
-    var body = rows.map(function(x){
-      var who = [];
-      if (x.role) who.push(esc(x.role));
-      if (x.grad_year) who.push('class of ' + esc(x.grad_year));
-      if (x.home_state) who.push(esc(x.home_state));
-      var signal = [];
-      if (x.dream) signal.push(esc(x.dream));
-      if (x.structure) signal.push(esc(x.structure));
-      return '<tr>' +
-        '<td style="white-space:nowrap">' + dt(x.updated_at || x.created_at) + '</td>' +
-        '<td>' + (x.name ? esc(x.name) : '—') + '</td>' +
-        '<td>' + ldContact(x.email, x.phone) + '</td>' +
-        '<td style="white-space:normal">' + (who.join(' · ') || '—') + '</td>' +
-        '<td style="white-space:normal">' + (signal.join(' · ') || '—') +
-          (x.hot ? ' <span class="tag ok">HOT</span>' : '') + '</td>' +
-        '<td style="white-space:nowrap">' + (x.stage ? esc(x.stage) : '—') +
-          (x.purchased_at ? ' <span class="tag gold">PAID</span>' : '') + '</td>' +
-        ldClip((x.matches || []).join(', ')) +
-      '</tr>';
-    }).join('');
-    $('tblLeadsDcu').innerHTML =
-      '<tr><th>When</th><th>Name</th><th>Contact</th><th>Who</th><th>Signal</th><th>Stage</th><th>Top 5</th></tr>' +
-      warn + (body || (warn ? '' : ldEmpty(7)));
-  }
-
-  function renderLeadsQuiz(d){
-    var rows = d.quiz || [];
-    $('ldQuizStatus').textContent = ldCount(rows.length, 'lead');
-    $('ldQuizCsv').style.display = rows.length ? '' : 'none';
-    var body = rows.map(function(x){
-      return '<tr>' +
-        '<td style="white-space:nowrap">' + dt(x.created_at) + '</td>' +
-        '<td>' + (x.parent_name ? esc(x.parent_name) : '—') + '</td>' +
-        '<td>' + ldContact(x.email, null) + '</td>' +
-        '<td>' + (x.child_name ? esc(x.child_name) : '—') + '</td>' +
-        '<td>' + (x.age_band ? esc(x.age_band) : '—') + '</td>' +
-        '<td style="white-space:normal">' + (x.persona ? esc(x.persona) : '—') + '</td>' +
-      '</tr>';
-    }).join('');
-    $('tblLeadsQuiz').innerHTML =
-      '<tr><th>When</th><th>Parent</th><th>Email</th><th>Child</th><th>Age band</th><th>Persona</th></tr>' +
-      (body || ldEmpty(6));
-  }
-
-  function renderLeadsFree(d){
-    var rows = d.freeclass || [];
-    $('ldFreeStatus').textContent = ldCount(rows.length, 'booking');
-    $('ldFreeCsv').style.display = rows.length ? '' : 'none';
-    var body = rows.map(function(x){
-      var child = x.child_name ? esc(x.child_name) : '—';
-      if (x.child_age != null && x.child_age !== '') child += ' <span class="sub">(' + esc(x.child_age) + ')</span>';
-      return '<tr>' +
-        '<td style="white-space:nowrap">' + dt(x.created_at) + '</td>' +
-        '<td>' + (x.parent_name ? esc(x.parent_name) : '—') + '</td>' +
-        '<td>' + ldContact(x.email, x.phone) + '</td>' +
-        '<td>' + child + '</td>' +
-        '<td>' + (x.cast_key ? '<span class="tag">' + esc(x.cast_key) + '</span>' : '—') + '</td>' +
-        '<td style="white-space:nowrap">' + (x.class_date ? esc(x.class_date) : '—') + '</td>' +
-        '<td>' + (x.status ? esc(x.status) : '—') + '</td>' +
-      '</tr>';
-    }).join('');
-    $('tblLeadsFree').innerHTML =
-      '<tr><th>When</th><th>Parent</th><th>Contact</th><th>Child</th><th>Class</th><th>Class date</th><th>Status</th></tr>' +
-      (body || ldEmpty(7));
-  }
-
-  function loadLeads(){
-    if (!LEADS) {
-      $('ldDcuStatus').textContent = 'loading…';
-      $('ldQuizStatus').textContent = 'loading…';
-      $('ldFreeStatus').textContent = 'loading…';
-    }
-    sb.auth.getSession().then(function(res){
+  function ldApi(payload){
+    return sb.auth.getSession().then(function(res){
       var token = res.data && res.data.session && res.data.session.access_token;
       return fetch('/api/reg-leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ action: 'list' })
+        body: JSON.stringify(payload)
       });
-    }).then(function(r){ return r.json(); }).then(function(d){
-      if (d.error) {
-        // A failure here is the whole endpoint (auth, usually), not one feed —
-        // leave all three saying so rather than stranding two on "loading…".
-        $('ldDcuStatus').textContent = 'error: ' + d.error;
-        $('ldQuizStatus').textContent = 'error: ' + d.error;
-        $('ldFreeStatus').textContent = 'error: ' + d.error;
-        return;
-      }
-      LEADS = d;
-      lastLoad.leads = Date.now();
-      renderLeadsDcu(d);
-      renderLeadsQuiz(d);
-      renderLeadsFree(d);
-    }).catch(function(){ $('ldDcuStatus').textContent = 'network error'; });
+    }).then(function(r){ return r.json(); });
+  }
+  function ldAll(){
+    if (!LEADS) return [];
+    return (LEADS.dcu || []).concat(LEADS.quiz || [], LEADS.freeclass || []);
+  }
+  function ldFind(key){
+    var all = ldAll();
+    for (var i = 0; i < all.length; i++) if (all[i].key === key) return all[i];
+    return null;
+  }
+  // NOVAPA is two forms in one pipeline — the quiz and the free-class booking
+  // sit side by side, so every card carries the badge that says which it was.
+  function ldRows(){
+    if (!LEADS) return [];
+    if (LD_BOARD === 'dcu') return (LEADS.dcu || []).slice();
+    return (LEADS.quiz || []).concat(LEADS.freeclass || []);
+  }
+  function ldWhen(x){ return x.updated_at || x.created_at || 0; }
+  function ldSort(a, b){
+    // a returning parent retakes the quiz and the row is UPDATEd, so recency
+    // is updated_at. Hot (prescreens filmed + decision locked) jumps the queue.
+    if (!!a.hot !== !!b.hot) return a.hot ? -1 : 1;
+    return new Date(ldWhen(b)) - new Date(ldWhen(a));
+  }
+  function ldLocked(x){ return !!(x.stage_locked || x.purchased_at); }
+  function ldName(x){ return x.name || x.parent_name || ''; }
+  function ldBadge(x){
+    if (x._stream === 'quiz') return 'QUIZ';
+    if (x._stream === 'freeclass') return 'FREE CLASS';
+    return '';
   }
 
-  $('ldDcuCsv').addEventListener('click', function(){
-    if (!LEADS) return;
-    var rows = [['updated','created','name','email','phone','role','grad_year','home_state','stage','hot','purchased_at',
-                 'dream','structure','distance','dance','gpa','budget','prescreen','certainty',
-                 'utm_source','utm_campaign','utm_content','top_5','coach_notes']];
-    (LEADS.dcu || []).forEach(function(x){
-      rows.push([x.updated_at, x.created_at, x.name, x.email, x.phone, x.role, x.grad_year, x.home_state,
-                 x.stage, x.hot ? 'yes' : '', x.purchased_at,
-                 x.dream, x.structure, x.distance, x.dance, x.gpa, x.budget, x.prescreen, x.certainty,
-                 x.source, x.campaign, x.content, (x.matches || []).join('; '), x.coach_notes]);
+  function ldRow(label, val){
+    if (val == null || val === '') return '';
+    return '<div class="ldd-row"><span>' + esc(label) + '</span><b>' + esc(val) + '</b></div>';
+  }
+  function ldDetail(x){
+    var h = '';
+    if (x._stream === 'dcu') {
+      h += ldRow('Role', x.role) + ldRow('Grad year', x.grad_year) + ldRow('Home state', x.home_state) +
+           ldRow('Dream', x.dream) + ldRow('Structure', x.structure) + ldRow('Prescreens', x.prescreen) +
+           ldRow('Certainty', x.certainty) + ldRow('Budget', x.budget) + ldRow('Dance', x.dance) +
+           ldRow('GPA', x.gpa) + ldRow('Campaign', x.campaign) +
+           ldRow('Purchased', x.purchased_at ? dt(x.purchased_at) : '') +
+           ldRow('Coach notes', x.coach_notes) +
+           '<div class="ldd-row"><span>Top 5</span><b>' +
+             ((x.matches || []).length ? esc((x.matches || []).join(', ')) : '—') + '</b></div>';
+    } else if (x._stream === 'quiz') {
+      h += ldRow('Child', x.child_name) + ldRow('Age band', x.age_band) + ldRow('Persona', x.persona);
+    } else {
+      h += ldRow('Child', x.child_name) + ldRow('Child age', x.child_age) + ldRow('Cast', x.cast_key) +
+           ldRow('Class date', x.class_date) + ldRow('Booking', x.status);
+    }
+    h += ldRow('First seen', x.created_at ? dt(x.created_at) : '');
+    if (x.updated_at && x.updated_at !== x.created_at) h += ldRow('Updated', dt(x.updated_at));
+    return '<div class="ldd">' + (h || '<span class="sub">Nothing else on file.</span>') + '</div>';
+  }
+  function ldCard(x){
+    var locked = ldLocked(x);
+    var badge = ldBadge(x);
+    var line = [];
+    if (x._stream === 'dcu') {
+      if (x.role) line.push(esc(x.role));
+      if (x.grad_year) line.push('class of ' + esc(x.grad_year));
+      if (x.home_state) line.push(esc(x.home_state));
+    } else {
+      if (x.child_name) line.push(esc(x.child_name));
+      if (x.age_band) line.push(esc(x.age_band));
+      if (x.child_age != null && x.child_age !== '') line.push('age ' + esc(x.child_age));
+      if (x.class_date) line.push(esc(x.class_date));
+    }
+    // a locked card is one the books already decided — dragging it would only
+    // desync the board from the money, so it is not draggable at all
+    return '<div class="ldcard' + (LD_OPEN === x.key ? ' open' : '') + '" data-key="' + ldAttr(x.key) + '"' +
+      (locked
+        ? ' title="Locked — payment is confirmed, so this stage is set by the books, not by hand."'
+        : ' draggable="true"') + '>' +
+      '<div class="ldc-top"><b>' + (ldName(x) ? esc(ldName(x)) : '—') + '</b>' +
+        (x.hot ? '<span class="tag ok">HOT</span>' : '') +
+        (locked ? '<span class="tag gold">PAID</span>' : '') +
+        (badge ? '<span class="tag">' + badge + '</span>' : '') +
+      '</div>' +
+      '<div class="ldc-contact">' + ldContact(x.email, x.phone) + '</div>' +
+      '<div class="sub ldc-line">' + (line.join(' · ') || '—') + '</div>' +
+      (LD_OPEN === x.key ? ldDetail(x) : '') +
+    '</div>';
+  }
+
+  function renderLeads(){
+    $('ldBoards').innerHTML = LD_BOARDS.map(function(b){
+      return '<button data-b="' + b[0] + '" class="' + (LD_BOARD === b[0] ? 'on' : '') + '">' + b[1] + '</button>';
+    }).join('');
+
+    var stages = (LEADS && LEADS.stages) || [];
+    var rows = ldRows().sort(ldSort);
+    var dcuOk = !LEADS || LEADS.dcu_status === 'ok';
+    var hot = rows.filter(function(x){ return x.hot; }).length;
+
+    $('ldStatus').textContent = (LD_BOARD === 'dcu' && !dcuOk)
+      ? 'feed unavailable'
+      : ldCount(rows.length, 'lead') + (hot ? ' · ' + hot + ' hot' : '');
+    $('ldMsg').innerHTML = LD_MSG ? '<span style="color:var(--bad)">' + esc(LD_MSG) + '</span>' : '';
+    $('ldCsvBtn').style.display = rows.length ? '' : 'none';
+
+    // one dead feed must not blank the other board, so the warning is scoped
+    // to the DC Unifieds pipeline and NOVAPA carries on underneath it
+    if (LD_BOARD === 'dcu' && !dcuOk) {
+      $('ldWarn').innerHTML = LEADS.dcu_status === 'not_configured'
+        ? 'DC Unifieds lead feed not yet connected — DCU_SUPABASE_URL / DCU_SERVICE_KEY not set on this site.'
+        : esc(LEADS.dcu_status);
+      $('ldWarn').style.display = 'block';
+    } else {
+      $('ldWarn').style.display = 'none';
+    }
+
+    if (!stages.length) {
+      $('ldBoard').innerHTML = '<p class="sub">' + (LEADS ? 'No pipeline stages configured.' : 'Loading…') + '</p>';
+      return;
+    }
+    // anything arriving on a stage we don't have a column for still has to be
+    // visible, so it lands in the first column rather than vanishing
+    var buckets = {};
+    stages.forEach(function(s){ buckets[s.id] = []; });
+    rows.forEach(function(x){
+      (buckets[x.stage] || buckets[stages[0].id]).push(x);
     });
-    ldCsv('dcu', rows);
-  });
-  $('ldQuizCsv').addEventListener('click', function(){
-    if (!LEADS) return;
-    var rows = [['created','parent_name','email','child_name','age_band','persona','source']];
-    (LEADS.quiz || []).forEach(function(x){
-      rows.push([x.created_at, x.parent_name, x.email, x.child_name, x.age_band, x.persona, x.source]);
+    $('ldBoard').innerHTML = stages.map(function(s){
+      var list = buckets[s.id];
+      return '<div class="kcol" data-stage="' + ldAttr(s.id) + '">' +
+        '<div class="kcol-h">' + esc(s.label) + '<i>' + list.length + '</i></div>' +
+        '<div class="kcol-b">' +
+          (list.length
+            ? list.map(function(x){ return ldCard(x); }).join('')
+            : '<div class="kcol-empty sub">Nothing here.</div>') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Optimistic: the card lands in the new column immediately, and only comes
+  // back if the write fails. LD_BUSY holds the pending stage so a background
+  // refetch landing mid-save doesn't drag the card back to where it was.
+  function ldMove(key, stage){
+    var x = ldFind(key);
+    if (!x || !stage || x.stage === stage || ldLocked(x)) return;
+    var prev = x.stage;
+    x.stage = stage;
+    LD_BUSY[key] = stage;
+    LD_MSG = '';
+    renderLeads();
+    ldApi({ action: 'set_stage', key: key, stage: stage }).then(function(d){
+      delete LD_BUSY[key];
+      if (!d || d.error) {
+        x.stage = prev;
+        LD_MSG = 'could not move ' + (ldName(x) || key) + ': ' + ((d && d.error) || 'error');
+      } else if (d.stage) {
+        x.stage = d.stage;
+      }
+      renderLeads();
+    }).catch(function(){
+      delete LD_BUSY[key];
+      x.stage = prev;
+      LD_MSG = 'could not move ' + (ldName(x) || key) + ': network error';
+      renderLeads();
     });
-    ldCsv('quiz', rows);
+  }
+
+  function loadLeads(){
+    // a redraw mid-drag would tear the card out from under the mouse
+    if (LD_DRAG) return;
+    if (!LEADS) $('ldStatus').textContent = 'loading…';
+    ldApi({ action: 'list' }).then(function(d){
+      if (d.error) {
+        // a failure here is the whole endpoint (auth, usually), not one feed
+        $('ldStatus').textContent = 'error: ' + d.error;
+        return;
+      }
+      ['dcu', 'quiz', 'freeclass'].forEach(function(k){
+        (d[k] || []).forEach(function(x){ x._stream = k; });
+      });
+      LEADS = d;
+      // an in-flight set_stage is newer than anything this list can tell us
+      Object.keys(LD_BUSY).forEach(function(key){
+        var x = ldFind(key);
+        if (x) x.stage = LD_BUSY[key];
+      });
+      lastLoad.leads = Date.now();
+      renderLeads();
+    }).catch(function(){ $('ldStatus').textContent = 'network error'; });
+  }
+
+  $('ldBoards').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-b]');
+    if (!b || b.dataset.b === LD_BOARD) return;
+    LD_BOARD = b.dataset.b;
+    LD_OPEN = null;
+    LD_MSG = '';
+    renderLeads();
   });
-  $('ldFreeCsv').addEventListener('click', function(){
-    if (!LEADS) return;
-    var rows = [['created','parent_name','email','phone','child_name','child_age','cast_key','class_date','status']];
-    (LEADS.freeclass || []).forEach(function(x){
-      rows.push([x.created_at, x.parent_name, x.email, x.phone, x.child_name, x.child_age,
-                 x.cast_key, x.class_date, x.status]);
+  $('ldBoard').addEventListener('click', function(e){
+    // the mailto:/tel: links are the whole point of the card — never swallow them
+    if (e.target.closest('a')) return;
+    var c = e.target.closest('.ldcard');
+    if (!c) return;
+    LD_OPEN = LD_OPEN === c.dataset.key ? null : c.dataset.key;
+    renderLeads();
+  });
+  $('ldBoard').addEventListener('dragstart', function(e){
+    var c = e.target.closest('.ldcard[draggable="true"]');
+    if (!c) return;
+    LD_DRAG = c.dataset.key;
+    c.classList.add('drag');
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      // Firefox refuses to start a drag at all unless some payload is set
+      try { e.dataTransfer.setData('text/plain', LD_DRAG); } catch (err) {}
+    }
+  });
+  $('ldBoard').addEventListener('dragend', function(){
+    LD_DRAG = null;
+    if (LEADS) renderLeads();
+  });
+  $('ldBoard').addEventListener('dragover', function(e){
+    var col = LD_DRAG && e.target.closest('.kcol');
+    if (!col) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('#ldBoard .kcol.over').forEach(function(k){
+      if (k !== col) k.classList.remove('over');
     });
-    ldCsv('freeclass', rows);
+    col.classList.add('over');
   });
+  $('ldBoard').addEventListener('dragleave', function(e){
+    var col = e.target.closest('.kcol');
+    if (col && !col.contains(e.relatedTarget)) col.classList.remove('over');
+  });
+  $('ldBoard').addEventListener('drop', function(e){
+    var col = e.target.closest('.kcol');
+    if (!col || !LD_DRAG) return;
+    e.preventDefault();
+    col.classList.remove('over');
+    var key = LD_DRAG;
+    LD_DRAG = null;
+    ldMove(key, col.dataset.stage);
+  });
+  $('ldCsvBtn').addEventListener('click', function(){
+    if (!LEADS) return;
+    var rows;
+    if (LD_BOARD === 'dcu') {
+      rows = [['updated','created','stage','name','email','phone','role','grad_year','home_state','hot','purchased_at',
+               'dream','structure','distance','dance','gpa','budget','prescreen','certainty',
+               'utm_source','utm_campaign','utm_content','top_5','coach_notes']];
+      ldRows().sort(ldSort).forEach(function(x){
+        rows.push([x.updated_at, x.created_at, x.stage, x.name, x.email, x.phone, x.role, x.grad_year, x.home_state,
+                   x.hot ? 'yes' : '', x.purchased_at,
+                   x.dream, x.structure, x.distance, x.dance, x.gpa, x.budget, x.prescreen, x.certainty,
+                   x.source, x.campaign, x.content, (x.matches || []).join('; '), x.coach_notes]);
+      });
+      ldCsv('dcu', rows);
+      return;
+    }
+    rows = [['form','created','stage','parent_name','email','phone','child_name','child_age','age_band',
+             'persona','cast_key','class_date','booking_status','source']];
+    ldRows().sort(ldSort).forEach(function(x){
+      rows.push([x._stream === 'quiz' ? 'quiz' : 'free class', x.created_at, x.stage, x.parent_name, x.email, x.phone,
+                 x.child_name, x.child_age, x.age_band, x.persona, x.cast_key, x.class_date, x.status, x.source]);
+    });
+    ldCsv('novapa', rows);
+  });
+  renderLeads();
 
   // ---- Credits (Todd mints these himself) ----
   var CR = null;
