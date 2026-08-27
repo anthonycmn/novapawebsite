@@ -36,6 +36,12 @@
   .cols { display:grid; grid-template-columns:1.15fr 1fr; gap:52px; }
   .sect-label { font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; margin-bottom:16px; }
 
+  .track-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .track { border:1.5px solid var(--line); background:#FAFBFC; border-radius:12px; padding:16px 10px; cursor:pointer; font-family:inherit; text-align:center; }
+  .track .tn { display:block; font-size:16px; font-weight:700; }
+  .track .ts { display:block; font-size:11.5px; color:var(--dim); margin-top:3px; }
+  .track.on { border-color:#B07B1E; background:var(--gold); }
+  .track.on .ts { color:#513A0E; }
   .age-row { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
   .age-row label { font-size:13.5px; font-weight:700; }
   .age-row input { width:84px; border:1.5px solid var(--line); background:#F5F7FA; border-radius:8px; padding:10px 12px; font-family:inherit; font-size:15px; }
@@ -116,6 +122,10 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
   <div class="cols">
     <div>
       <div class="sect-label">1. Choose their class and date</div>
+      <div class="track-row">
+        <button type="button" class="track" data-track="acting"><span class="tn">Acting</span><span class="ts">Acting, improv and theatre classes</span></button>
+        <button type="button" class="track" data-track="mt"><span class="tn">Musical Theatre</span><span class="ts">Singing, dancing and MT training</span></button>
+      </div>
       <div class="age-row">
         <label for="ageFilter">Child&rsquo;s age</label>
         <input id="ageFilter" type="number" min="5" max="17" inputmode="numeric" placeholder="e.g. 8">
@@ -153,7 +163,19 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 
 <script>
 (function () {
-  var classes = [], clsKey = null, dateISO = null, ageFilter = null;
+  var classes = [], clsKey = null, dateISO = null, ageFilter = null, track = null;
+  var TRACKS = {
+    "acting-5-8": "acting", "acting-9-12": "acting", "improv-9-12": "acting",
+    "improv-13-17": "acting", "hs-theatre": "acting",
+    "mt-5-8": "mt", "mt-dance-9-12": "mt", "mt-acting-9-12": "mt",
+    "mt-dance-13-17": "mt", "mt-acting-13-17": "mt", "triple-threat": "mt", "hs-mt": "mt",
+    "acting-mt-sat": "both",
+  };
+  function inTrack(c) {
+    if (!track) return true;
+    var t = TRACKS[c.key] || "both";
+    return t === "both" || t === track;
+  }
   var $ = function (id) { return document.getElementById(id); };
 
   var qs = location.search.replace(/^\?/, "");
@@ -181,7 +203,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
       col.innerHTML = "<div class='cal-head'>" + day.slice(0,3) + "</div>";
       var stack = document.createElement("div"); stack.className = "cal-col";
       classes.filter(function (c) { return c.day === day; }).forEach(function (c) {
-        var match = !ageFilter || inBand(c, ageFilter);
+        var match = (!ageFilter || inBand(c, ageFilter)) && inTrack(c);
         if (match) anyMatch = true;
         var b = document.createElement("button");
         b.type = "button";
@@ -214,6 +236,16 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
       el.appendChild(b);
     });
   }
+
+  document.querySelectorAll(".track").forEach(function (b) {
+    b.addEventListener("click", function () {
+      track = (track === b.dataset.track) ? null : b.dataset.track;
+      document.querySelectorAll(".track").forEach(function (x) { x.classList.toggle("on", x.dataset.track === track); });
+      var cur = classes.find(function (c) { return c.key === clsKey; });
+      if (cur && !inTrack(cur)) { clsKey = null; dateISO = null; }
+      renderClasses();
+    });
+  });
 
   fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) {
     classes = j.classes || [];
