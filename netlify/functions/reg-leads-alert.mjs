@@ -51,13 +51,14 @@ export default async () => {
   }
 
   const store = getStore(STORE);
-  // First run must not blast the whole back catalogue at the team, so an
-  // unset watermark starts from now and only genuinely new leads alert.
+  // First run must not blast the whole back catalogue at the team. Seeding
+  // from "now" at first tick would instead skip anything that arrived between
+  // deploy and that tick, so the start line is a fixed timestamp set at
+  // deploy time (LEADS_ALERT_SINCE) — everything after it alerts exactly once.
   let since = await store.get(KEY);
   if (!since) {
-    since = new Date().toISOString();
+    since = process.env.LEADS_ALERT_SINCE || new Date().toISOString();
     await store.set(KEY, since);
-    return new Response(JSON.stringify({ initialised: since }), { status: 200 });
   }
 
   const url = `${base}/rest/v1/funnel_leads_ro?select=*&updated_at=gt.${encodeURIComponent(since)}` +
