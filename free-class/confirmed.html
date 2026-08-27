@@ -39,16 +39,23 @@
   .capped h2 { font-size:clamp(25px,3.4vw,34px); max-width:420px; }
   .capped .lede { color:var(--dim); font-size:15px; max-width:420px; margin-top:8px; }
   .capped-head { display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:end; margin-bottom:30px; }
-  .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
   .card { background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; }
   .card img { width:100%; aspect-ratio:4/3.2; object-fit:cover; }
   .card .pad { padding:14px 16px 16px; display:flex; flex-direction:column; flex:1; }
   .card h3 { font-size:15.5px; font-family:'Baloo 2',sans-serif; }
   .price { font-family:'Baloo 2',sans-serif; font-weight:700; color:#2E7D32; font-size:17px; margin-top:2px; }
   .card p { font-size:13px; color:var(--dim); margin-top:8px; }
-  .chip { position:absolute; margin:10px; background:#DFF6E5; color:#1F7A38; font-size:10.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; border-radius:999px; padding:4px 10px; }
+  .chip { position:absolute; margin:10px; background:#DFF6E5; color:#1F7A38; font-size:10.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; border-radius:999px; padding:4px 10px; z-index:1; }
   .chip.warn { background:#FFEACC; color:#A15C00; }
+  .chip.gone { background:#F3D4D4; color:#8E2323; }
   .card-wrap { position:relative; }
+  .cards.gone-row { grid-template-columns:repeat(3,1fr); margin-bottom:34px; }
+  .gone-row .card { background:#FBF8EF; }
+  .gone-row .card img { filter:grayscale(0.65) brightness(0.92); }
+  .gone-row h3, .gone-row .price { color:#6E7684; }
+  .strike { color:#9AA2AF; text-decoration:line-through; font-size:14px; font-weight:500; margin-right:6px; }
+  .mid-label { font-family:'Baloo 2',sans-serif; font-weight:700; font-size:clamp(21px,2.8vw,26px); margin:8px 0 18px; }
   .cap-note { font-size:13px; color:var(--dim); margin-top:18px; max-width:520px; }
 
   .why { background:var(--navy); color:#fff; }
@@ -125,10 +132,34 @@ fbq('track', 'PageView');
   <div class="wrap">
     <div class="capped-head">
       <div>
-        <h2>Fall casts are capped, and filling now</h2>
+        <h2>Casts are capped, and some are already gone</h2>
       </div>
-      <p class="lede">Every fall cast has a hard cap, and the 9&ndash;12 cast is already over two thirds full. Rehearsals begin the week of September 15. When a cast is full, it&rsquo;s full &mdash; there&rsquo;s no waitlist trick that reopens a spot.</p>
+      <p class="lede">Every cast has a hard cap, and the 9&ndash;12 fall cast is already over two thirds full. Rehearsals begin the week of September 15. When a cast is full, it&rsquo;s full &mdash; there&rsquo;s no waitlist trick that reopens a spot.</p>
     </div>
+    <div class="cards gone-row">
+      <div class="card-wrap"><span class="chip gone">Sold out</span><div class="card">
+        <img src="/img/gallery/img-7912.jpg" alt="Shrek Jr., summer 2026">
+        <div class="pad">
+          <h3>Shrek Jr.</h3><div class="price">Summer 2026</div>
+          <p>This past summer&rsquo;s show. Every seat in the cast was taken.</p>
+        </div>
+      </div></div>
+      <div class="card-wrap"><span class="chip gone">Sold out</span><div class="card">
+        <img src="/register/img/sweeney.jpg" alt="Sweeney Todd Teen Conservatory">
+        <div class="pad">
+          <h3>Sweeney Todd &mdash; Teen Conservatory</h3><div class="price">$895</div>
+          <p>Cast is full. No waitlist reopens a spot.</p>
+        </div>
+      </div></div>
+      <div class="card-wrap"><span class="chip gone">Sold out</span><div class="card">
+        <img src="/register/img/hadestown.jpg" alt="Hadestown Teen Conservatory">
+        <div class="pad">
+          <h3>Hadestown &mdash; Teen Conservatory</h3><div class="price">$895</div>
+          <p>Cast is full. Gone until next season.</p>
+        </div>
+      </div></div>
+    </div>
+    <div class="mid-label">Pick what fits your family</div>
     <div class="cards">
       <div class="card-wrap"><span class="chip warn">Filling fast</span><div class="card">
         <img src="/register/img/frozen.jpg" alt="Disney's Frozen Jr.">
@@ -144,18 +175,11 @@ fbq('track', 'PageView');
           <p>One evening a week, February &ndash; May 2027. The spring season, if winter doesn&rsquo;t fit your family.</p>
         </div>
       </div></div>
-      <div class="card-wrap"><span class="chip">Spots open</span><div class="card">
-        <img src="/register/img/sweeney.jpg" alt="Sweeney Todd Teen Conservatory">
-        <div class="pad">
-          <h3>Sweeney Todd &mdash; Teen Conservatory</h3><div class="price">$895</div>
-          <p>An intensive for ages 12&ndash;18: October 23 &ndash; November 1, staged in ten days.</p>
-        </div>
-      </div></div>
-      <div class="card-wrap"><span class="chip">Spots open</span><div class="card">
+      <div class="card-wrap"><span class="chip">Best value</span><div class="card">
         <img src="/register/img/cast-summer-2026.jpg" alt="NOVAPA day camp kids">
         <div class="pad">
-          <h3>Broadway Bound Day Camps</h3><div class="price">$79 / day</div>
-          <p>Full days on school holidays and teacher workdays, 8:30 AM &ndash; 4:15 PM. Ages 5&ndash;9 and up by camp.</p>
+          <h3>5-Day Camp Pack</h3><div class="price"><span class="strike">$395</span>$349</div>
+          <p>All five day camps on the schedule &mdash; full days on school holidays and teacher workdays, 8:30 AM &ndash; 4:15 PM &mdash; plus 2 free Snow Day camps. Applied automatically at checkout.</p>
         </div>
       </div></div>
     </div>
