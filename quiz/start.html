@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which NOVAPA program fits your child? — NOVAPA</title>
+<meta name="robots" content="noindex">
+<!-- Quiz funnel, step 2 of 2: the quiz itself as a single-page app,
+     matching the BFA Figma Section 2 question frames (2290-1691 through
+     -1933), contact gate (2295-2063), and result (2368-2547). Answers POST
+     to /api/reg-quiz which stores the lead and emails the result. Funnel 1
+     can deep-link here with ?n=&p=&e= to prefill (all three present skips
+     the gate entirely). Persona comes from Q3, program from Q1 age band.
+     The 9-12 scarcity line is the verified real fill level (Aug 2026). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+  :root { --cream:#FFFBEE; --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --dimlight:rgba(255,255,255,0.72); --gold:#FFC866; --gold2:#F2B94C; --line:#E4E7ED; --green:#28D07E; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--cream); color:var(--ink); font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  h1,h2,h3 { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:-0.045em; line-height:1.2; }
+  img { display:block; }
+
+  .logo { text-align:center; padding:30px 22px 0; }
+  .logo img { height:26px; margin:0 auto; }
+
+  /* quiz + gate: full-width navy card on cream */
+  .qcard { background:var(--navy); color:#fff; border-radius:24px; max-width:1240px; margin:40px auto 90px; padding:34px clamp(20px,4vw,48px) 90px; min-height:600px; }
+  .back { display:block; text-align:center; color:rgba(255,255,255,0.7); font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; text-decoration:none; background:none; border:0; font-family:inherit; cursor:pointer; margin:0 auto; }
+  .back:hover { color:#fff; }
+  .segs { display:flex; justify-content:center; gap:8px; margin-top:26px; }
+  .segs i { display:block; width:52px; height:4px; border-radius:4px; background:rgba(255,255,255,0.18); }
+  .segs i.on { background:var(--gold2); }
+  .qnum { text-align:center; font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; margin-top:16px; color:rgba(255,255,255,0.85); }
+  .qh { text-align:center; font-size:clamp(26px,3vw,38px); max-width:640px; margin:56px auto 0; }
+  .opts { max-width:406px; margin:30px auto 0; display:flex; flex-direction:column; gap:14px; }
+  .opt { display:block; width:100%; border:1.5px solid transparent; background:#FAFAF7; color:var(--ink); border-radius:14px; padding:15px 18px 14px; cursor:pointer; font-family:inherit; text-align:center; transition:background .12s ease; }
+  .opt b { display:block; font-size:16.5px; font-weight:700; letter-spacing:-0.02em; }
+  .opt span { display:block; font-size:11.5px; color:var(--dim); margin-top:2px; }
+  .opt:hover { background:#fff; }
+  .opt.on { background:var(--gold); border-color:#D89B26; }
+  .opt.on span { color:#6B5210; }
+
+  /* contact gate */
+  .chip { display:inline-flex; align-items:center; gap:8px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; padding:6px 16px; }
+  .chip-green { background:rgba(40,208,126,0.14); color:var(--green); border:1px solid rgba(40,208,126,0.35); }
+  .gate { text-align:center; margin-top:44px; }
+  .gate h1 { font-size:clamp(28px,3.2vw,40px); max-width:560px; margin:16px auto 0; }
+  .gate .sub { color:var(--dimlight); font-size:14.5px; line-height:1.65; max-width:470px; margin:16px auto 0; }
+  .gate-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:14px; max-width:430px; margin:32px auto 0; padding:24px 24px 20px; text-align:left; }
+  .gate-card label { display:block; font-size:12px; font-weight:500; color:rgba(255,255,255,0.8); margin:0 0 6px; }
+  .gate-card .field { margin-bottom:16px; }
+  .gate-card input { width:100%; border:1.5px solid transparent; background:#F1F3F6; border-radius:8px; padding:12px 14px; font-family:inherit; font-size:15px; color:var(--ink); }
+  .gate-card input:focus { outline:none; border-color:var(--gold); background:#fff; }
+  .gate-card input::placeholder { color:#9AA3B2; }
+  .submit { display:block; width:100%; border:0; background:var(--gold); color:var(--navy); font-family:inherit; font-weight:700; font-size:15px; padding:15px 20px; border-radius:999px; cursor:pointer; margin-top:6px; transition:transform .12s ease; }
+  .submit:hover { transform:translateY(-1px); }
+  .submit[disabled] { opacity:0.6; cursor:wait; transform:none; }
+  .gate .fine { color:rgba(255,255,255,0.55); font-size:13px; margin-top:24px; }
+  .err { color:#FF8A8A; font-size:13.5px; margin-top:12px; display:none; text-align:center; }
+
+  /* result: full-bleed navy */
+  .result-band { background:var(--navy); color:#fff; position:relative; overflow:hidden; padding:40px 22px 90px; }
+  .result-doodle { position:absolute; right:-12%; top:220px; width:min(38vw,560px); opacity:0.55; pointer-events:none; }
+  .result-inner { position:relative; max-width:640px; margin:0 auto; text-align:center; }
+  .result-inner h1 { font-size:clamp(28px,3.4vw,42px); margin-top:18px; }
+  .result-inner .psub { color:var(--dimlight); font-size:15px; line-height:1.7; max-width:560px; margin:16px auto 0; }
+  .prog { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:16px; max-width:430px; margin:40px auto 0; padding:16px 16px 24px; text-align:left; }
+  .prog .pph img { width:100%; border-radius:10px; aspect-ratio:390/150; object-fit:cover; object-position:center 30%; }
+  .chip-red { background:#E4534B; color:#fff; margin-top:16px; }
+  .prog h2 { font-size:24px; margin-top:12px; }
+  .prog .pshow { font-size:15px; font-weight:700; color:var(--gold2); margin-top:2px; }
+  .prog .pmeta { color:rgba(255,255,255,0.62); font-size:12.5px; margin-top:10px; line-height:1.6; }
+  .prog .pdesc { color:var(--dimlight); font-size:13.5px; line-height:1.65; margin-top:10px; }
+  .prog .scarce { color:var(--gold2); font-size:13px; font-weight:500; margin-top:10px; }
+  .prog .cta { display:block; text-align:center; background:var(--gold); color:var(--navy); font-weight:700; font-size:15px; padding:14px 20px; border-radius:999px; text-decoration:none; margin-top:18px; transition:transform .12s ease; }
+  .prog .cta:hover { transform:translateY(-1px); }
+  .result-note { color:rgba(255,255,255,0.55); font-size:13px; line-height:1.7; max-width:420px; margin:36px auto 0; }
+
+  /* reviews band on the result page — same carousel as free-class/index.html */
+  .rated-band { background:var(--cream); border-radius:24px 24px 0 0; margin-top:-24px; position:relative; }
+  .rated { padding:70px clamp(20px,8.5vw,128px) 90px; max-width:1512px; margin:0 auto; }
+  .rated-head { display:flex; align-items:flex-end; justify-content:space-between; gap:30px; }
+  .rated h2 { font-size:clamp(26px,2.6vw,40px); max-width:560px; }
+  .dots { display:flex; gap:14px; align-items:center; padding-bottom:6px; }
+  .dot { border:0; background:none; font-family:inherit; cursor:pointer; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--dim); }
+  .dot.on { border:1.5px solid var(--gold2); color:var(--ink); }
+  .quote-card { position:relative; z-index:1; display:grid; grid-template-columns:40% 1fr; background:var(--navy); color:#fff; border-radius:16px; margin-top:38px; }
+  .quote-card .qph { padding:24px 0 24px 24px; }
+  .quote-card .qph img { width:100%; height:100%; object-fit:cover; border-radius:10px; min-height:260px; }
+  .quote-body { padding:32px 44px 30px 38px; display:flex; flex-direction:column; }
+  .stars { color:var(--gold2); font-size:19px; letter-spacing:4px; }
+  .quote-body blockquote { font-size:17px; line-height:1.75; margin-top:22px; max-width:560px; }
+  .quote-who { margin-top:auto; padding-top:22px; }
+  .quote-who b { display:block; font-size:16px; }
+  .quote-who span { color:rgba(255,255,255,0.55); font-size:13px; }
+
+  .footer-band { background:var(--navy); }
+  footer { text-align:center; padding:56px 22px 60px; font-size:11.5px; color:rgba(255,255,255,0.5); line-height:2; }
+  footer .flogo { font-family:'GT Walsheim','DM Sans',sans-serif; font-weight:700; letter-spacing:4px; font-size:24px; color:#fff; margin-bottom:20px; }
+
+  .hide { display:none !important; }
+
+  @media (max-width:700px) {
+    .qcard { margin:28px 14px 60px; padding:26px 16px 60px; min-height:0; }
+    .segs i { width:38px; }
+    .rated-head { flex-direction:column; align-items:flex-start; }
+    .quote-card { grid-template-columns:1fr; }
+    .quote-card .qph { padding:16px 16px 0; }
+    .quote-card .qph img { max-height:320px; min-height:0; }
+  }
+</style>
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2191001311729801');
+fbq('init', '902777265812159');
+fbq('track', 'PageView');
+fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
+</script>
+<script src="/posthog.js" defer></script>
+</head>
+<body>
+
+<div class="logo" id="creamLogo"><img src="/free-class/img/logo-novapa-dark.svg" alt="NOVAPA"></div>
+
+<!-- QUIZ + GATE -->
+<div class="qcard" id="qcard">
+  <button class="back" id="backBtn" type="button">&lsaquo; Back</button>
+
+  <div id="quizView">
+    <div class="segs" id="segs"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="qnum" id="qnum">Question 1 of 5</div>
+    <h1 class="qh" id="qh"></h1>
+    <div class="opts" id="opts"></div>
+  </div>
+
+  <div id="gateView" class="hide">
+    <div class="gate">
+      <span class="chip chip-green">Your result is ready</span>
+      <h1>Where should we send their result?</h1>
+      <p class="sub">You&rsquo;ll see it on the next page instantly &mdash; we&rsquo;ll also email you a copy so you can talk it over at home.</p>
+      <form class="gate-card" id="gateForm">
+        <div class="field"><label for="childName">Child&rsquo;s first name</label><input id="childName" autocomplete="off" placeholder="e.g. Jordan" required></div>
+        <div class="field"><label for="parentName">Your name</label><input id="parentName" autocomplete="name" placeholder="e.g. Sam Rivera" required></div>
+        <div class="field"><label for="email">Your email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+        <button class="submit" id="gateBtn" type="submit">Send me the result</button>
+      </form>
+      <div class="err" id="gateErr"></div>
+      <p class="fine">No spam, ever. Just the result and what to do with it.</p>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="resultView" class="hide">
+  <div class="result-band">
+    <img class="result-doodle" src="/free-class/img/doodle-m.svg" alt="">
+    <div style="text-align:center;padding-bottom:44px"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px;margin:0 auto"></div>
+    <div class="result-inner">
+      <span class="chip chip-green">Quiz complete &mdash; result ready</span>
+      <h1 id="personaName"></h1>
+      <p class="psub" id="personaCopy"></p>
+      <div class="prog">
+        <div class="pph"><img src="/free-class/img/sc-frozen.jpg" alt="The cast of a NOVAPA production of Disney's Frozen Jr. on stage"></div>
+        <span class="chip chip-red">Their best-fit program</span>
+        <h2 id="progName"></h2>
+        <div class="pshow" id="progShow"></div>
+        <div class="pmeta" id="progMeta"></div>
+        <p class="pdesc" id="progDesc"></p>
+        <p class="scarce hide" id="progScarce"></p>
+        <a class="cta" id="progCta" href="/register/?season=fall">See open spots</a>
+      </div>
+      <p class="result-note">A copy of this result is on its way to your inbox, so you can talk it over at home.</p>
+    </div>
+  </div>
+
+  <div class="rated-band">
+    <section class="rated">
+      <div class="rated-head">
+        <h2>Rated five stars by the parents who&rsquo;ve already done this</h2>
+        <div class="dots" id="revDots"><button class="dot on" type="button">1</button><button class="dot" type="button">2</button><button class="dot" type="button">3</button><button class="dot" type="button">4</button></div>
+      </div>
+      <div class="quote-card">
+        <div class="qph"><img id="revImg" src="/free-class/img/strip-2.jpg" alt="A NOVAPA student"></div>
+        <div class="quote-body">
+          <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <blockquote id="revQuote">&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up &mdash; he&rsquo;d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.&rdquo;</blockquote>
+          <div class="quote-who"><b id="revName">Stefania Whittington</b><span id="revSub">NOVAPA Parent</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="footer-band">
+  <footer>
+    <div class="flogo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:28px;margin:0 auto 20px"></div>
+    Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120<br>
+    This site is not a part of the Facebook website or Facebook Inc. Additionally, this site is NOT endorsed by Facebook in any way. FACEBOOK is a trademark of FACEBOOK, Inc.<br>
+    &copy; 2026 Northern Virginia Performing Arts. All Rights Reserved.
+  </footer>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var qs = location.search.replace(/^\?/, "");
+  var utm = {};
+  params.forEach(function (v, k) { if (/^utm_|^fbclid$/.test(k)) utm[k] = v; });
+  var utmQs = Object.keys(utm).map(function (k) { return k + "=" + encodeURIComponent(utm[k]); }).join("&");
+
+  var QUESTIONS = [
+    { h: "How old is your child?", opts: [
+      { v: "5-8",  t: "5-8" },
+      { v: "9-12", t: "9-12" },
+      { v: "13-17", t: "13-17" },
+    ]},
+    { h: "Have they ever done theatre or performing before?", opts: [
+      { v: "never",   t: "Never", s: "Total first-timer" },
+      { v: "a-little", t: "A little", s: "A school play, a dance class, something small" },
+      { v: "love-it", t: "They already love it", s: "This is their thing" },
+    ]},
+    { h: "Which sounds most like them?", opts: [
+      { v: "shy",       t: "Shy, but curious", s: "Warms up once they feel safe" },
+      { v: "energy",    t: "A bundle of energy", s: "Never stops moving, singing, talking" },
+      { v: "performer", t: "A born performer", s: "Puts on shows in the living room" },
+      { v: "hard-to-say", t: "Honestly, hard to say", s: "Still figuring out what lights them up" },
+    ]},
+    { h: "What do you most want them to get out of it?", opts: [
+      { v: "confidence",  t: "Confidence", s: "Comfortable in front of people" },
+      { v: "friendships", t: "Real friendships", s: "Their people, outside of school" },
+      { v: "passion",     t: "A passion of their own", s: "A thing that's theirs" },
+      { v: "joy",         t: "An incredible few months", s: "Joy first, everything else follows" },
+    ]},
+    { h: "Do they sing, dance, or act around the house?", opts: [
+      { v: "all-the-time", t: "All the time", s: "The living room is already a stage" },
+      { v: "sometimes",    t: "Sometimes", s: "When they think no one's watching" },
+      { v: "not-really",   t: "Not really", s: "Not yet, anyway" },
+    ]},
+  ];
+
+  var PERSONAS = {
+    "shy":       { name: "The Quiet Spark",     copy: "Shy, but curious is where a surprising number of our performers start. Kids like this warm up once they feel safe, and that's exactly what a small-group class with a patient room gives them: time, familiar faces, and space to open up at their own pace." },
+    "energy":    { name: "The Firecracker",     copy: "All that energy is fuel. Theatre gives it a place to go every single week: moving, singing, playing scenes with a room of kids who match their pace. The class doesn't ask them to sit still. It asks them to bring it." },
+    "performer": { name: "The Born Performer",  copy: "The living-room shows are real. Kids like this already have the instinct; what they're ready for is an actual stage, real material, and an audience that isn't just family. That's exactly what a NOVAPA season builds toward." },
+    "hard-to-say": { name: "The Undiscovered",  copy: "Some kids don't know this is their thing until they're standing in the room. A weekly class is the low-stakes way to find out: real instructors, kids their age, and no pressure to be anything on day one." },
+  };
+
+  var PROGRAMS = {
+    "5-8": {
+      name: "Broadway Bound Kids", show: "Disney's Frozen Jr.",
+      meta: "Ages 5–9 · Wednesdays 5:15–6:45 PM · Sep 2026 – Jan 2027 · $695 · Ends on a real stage",
+      desc: "A full cast of kids their age, one evening a week, building toward Disney's Frozen Jr. in front of a real audience. Built for first-timers and young performers alike.",
+    },
+    "9-12": {
+      name: "Broadway Bound Junior", show: "Disney's Frozen Jr.",
+      meta: "Ages 9–12 · Tuesdays 6:15–7:45 PM · Sep 2026 – Jan 2027 · $695",
+      desc: "The heart of the season for ages 9–12: a full cast, weekly rehearsals, and Disney's Frozen Jr. on a real stage in front of a real audience.",
+      scarce: "The 9–12 cast is already over two thirds full.",
+    },
+    "13-17": {
+      name: "Broadway Bound Teens", show: "Disney's Frozen Jr.",
+      meta: "Ages 12–17 · Wednesdays 7:00–9:00 PM · Sep 2026 – Feb 2027 · $695",
+      desc: "A teen cast with real material and real stage time: weekly rehearsals through the fall, ending with Disney's Frozen Jr. in front of a real audience.",
+    },
+  };
+
+  var answers = {};        // q1..q5 -> value
+  var step = 0;            // 0..4 questions, 5 gate
+  var started = false;
+  var submitted = false;
+
+  // prefill from funnel 1 (?n= child, ?p= parent, ?e= email)
+  var pre = { n: (params.get("n") || "").slice(0, 120), p: (params.get("p") || "").slice(0, 120), e: (params.get("e") || "").slice(0, 200) };
+  if (pre.n) $("childName").value = pre.n;
+  if (pre.p) $("parentName").value = pre.p;
+  if (pre.e) $("email").value = pre.e;
+  var canSkipGate = !!(pre.n && pre.p && pre.e);
+
+  function renderQuestion() {
+    var q = QUESTIONS[step];
+    $("quizView").classList.remove("hide");
+    $("gateView").classList.add("hide");
+    $("qnum").textContent = "Question " + (step + 1) + " of 5";
+    $("qh").textContent = q.h;
+    var segs = $("segs").children;
+    for (var i = 0; i < 5; i++) segs[i].className = i <= step ? "on" : "";
+    var box = $("opts"); box.innerHTML = "";
+    q.opts.forEach(function (o) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt" + (answers["q" + (step + 1)] === o.v ? " on" : "");
+      b.innerHTML = "<b></b>" + (o.s ? "<span></span>" : "");
+      b.querySelector("b").textContent = o.t;
+      if (o.s) b.querySelector("span").textContent = o.s;
+      b.onclick = function () { pick(o.v, b); };
+      box.appendChild(b);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function pick(v, btn) {
+    answers["q" + (step + 1)] = v;
+    var kids = $("opts").children;
+    for (var i = 0; i < kids.length; i++) kids[i].classList.remove("on");
+    btn.classList.add("on");
+    if (!started) {
+      started = true;
+      try { if (window.posthog) posthog.capture("quiz_started", { q1: v }); } catch (e) {}
+    }
+    setTimeout(advance, 250);
+  }
+
+  function advance() {
+    if (step < 4) { step++; renderQuestion(); return; }
+    // quiz finished
+    if (canSkipGate && !submitted) { submitLead(pre.n, pre.p, pre.e, true); return; }
+    step = 5;
+    showGate();
+  }
+
+  function showGate() {
+    $("quizView").classList.add("hide");
+    $("gateView").classList.remove("hide");
+    window.scrollTo(0, 0);
+  }
+
+  $("backBtn").addEventListener("click", function () {
+    if (step === 0) { location.href = "/quiz/" + (qs ? "?" + qs : ""); return; }
+    if (step === 5) { step = 4; renderQuestion(); return; }
+    step--; renderQuestion();
+  });
+
+  function persona() { return PERSONAS[answers.q3] || PERSONAS["hard-to-say"]; }
+  function program() { return PROGRAMS[answers.q1] || PROGRAMS["9-12"]; }
+
+  function submitLead(child, parent, email, silent) {
+    submitted = true;
+    var btn = $("gateBtn");
+    if (!silent) { btn.disabled = true; btn.textContent = "Sending…"; }
+    fetch("/api/reg-quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        parent_name: parent, email: email, child_name: child,
+        answers: answers, persona: persona().name,
+        utm: Object.keys(utm).length ? utm : null,
+      }),
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.j.error || "Something went wrong. Try again.");
+        try { fbq("track", "Lead", { content_name: "Quiz Funnel" }); } catch (e) {}
+        showResult();
+      })
+      .catch(function (e) {
+        submitted = false;
+        if (silent) { step = 5; showGate(); return; }
+        btn.disabled = false; btn.textContent = "Send me the result";
+        var err = $("gateErr"); err.style.display = "block"; err.textContent = e.message;
+      });
+  }
+
+  $("gateForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    $("gateErr").style.display = "none";
+    var child = $("childName").value.trim(), parent = $("parentName").value.trim(), email = $("email").value.trim();
+    if (!child || !parent || !email) return;
+    submitLead(child, parent, email, false);
+  });
+
+  function showResult() {
+    var p = persona(), g = program();
+    $("qcard").classList.add("hide");
+    $("creamLogo").classList.add("hide");
+    $("resultView").classList.remove("hide");
+    document.body.style.background = "#0B1422";
+    $("personaName").textContent = "Your child is " + p.name;
+    $("personaCopy").textContent = p.copy;
+    $("progName").textContent = g.name;
+    $("progShow").textContent = g.show;
+    $("progMeta").textContent = g.meta;
+    $("progDesc").textContent = g.desc;
+    if (g.scarce) { $("progScarce").textContent = g.scarce; $("progScarce").classList.remove("hide"); }
+    var cta = $("progCta");
+    cta.href = "/register/?season=fall" + (utmQs ? "&" + utmQs : "");
+    try { if (window.posthog) posthog.capture("quiz_completed", { persona: p.name, age_band: answers.q1 }); } catch (e) {}
+    window.scrollTo(0, 0);
+  }
+
+  // testimonial carousel: the four published parent reviews from classes.html
+  var REVIEWS = [
+    { q: "“He wasn’t happy when I told him I’d signed him up — he’d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.”",
+      n: "Stefania Whittington", s: "NOVAPA Parent", img: "/free-class/img/strip-2.jpg" },
+    { q: "“Every child walks through those doors feeling seen, valued, and like a star — and that’s something they’ll remember long after the curtain closes.”",
+      n: "Holly Tucker", s: "NOVAPA Parent", img: "/free-class/img/final-photo.jpg" },
+    { q: "“Your crew very quickly built a passion in her that I hope lasts a lifetime. I’ve been truly impressed!”",
+      n: "Megan Rosh", s: "NOVAPA Parent", img: "/register/img/rehearsal-2026.jpg" },
+    { q: "“She had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence — it was worth every penny!”",
+      n: "Ashley H. Wills", s: "NOVAPA Parent", img: "/register/img/firstday-2026.jpg" },
+  ];
+  var ri = 0, rtimer;
+  var dots = document.querySelectorAll("#revDots .dot");
+  function showRev(n) {
+    ri = n % REVIEWS.length;
+    var r = REVIEWS[ri];
+    $("revQuote").textContent = r.q;
+    $("revName").textContent = r.n;
+    $("revSub").textContent = r.s;
+    $("revImg").src = r.img;
+    dots.forEach(function (d, k) { d.classList.toggle("on", k === ri); });
+  }
+  function armRev() { clearInterval(rtimer); rtimer = setInterval(function () { showRev(ri + 1); }, 6000); }
+  dots.forEach(function (d, k) { d.addEventListener("click", function () { showRev(k); armRev(); }); });
+  armRev();
+
+  renderQuestion();
+})();
+</script>
+</body>
+</html>
