@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register — NOVAPA Summer 2027 Broadway Bound Camps</title>
-<meta name="description" content="Reserve your camper's spot in NOVAPA's Summer 2027 Broadway Bound camps — How to Train Your Dragon Jr., Charlie and the Chocolate Factory Jr., and Trolls Jr.">
+<meta name="description" content="Reserve your student's spot in NOVAPA's Summer 2027 Broadway Bound camps — How to Train Your Dragon Jr., Charlie and the Chocolate Factory Jr., and Trolls Jr.">
 <meta name="robots" content="noindex"><!-- remove at public launch -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -375,7 +375,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <section class="step" id="st-family">
     <div class="eyebrow" id="famEyebrow">Welcome back</div>
     <h1 id="famH1">Who's coming to camp?</h1>
-    <p class="sub" id="famSub">Confirm your campers — add or edit anyone.</p>
+    <p class="sub" id="famSub">Confirm your students — add or edit anyone.</p>
     <div class="card">
       <div id="kidList"></div>
       <div class="addkid">
@@ -393,7 +393,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <section class="step" id="st-shows">
     <h1>Choose your <em>shows.</em></h1>
     <p class="sub">Check each camper into their shows.</p>
-    <p class="tiny" id="guestReturnRow" style="display:none;margin:-6px 0 14px">Registered with us before? <a href="#" id="guestReturnLink">Sign in</a> to load your campers.</p>
+    <p class="tiny" id="guestReturnRow" style="display:none;margin:-6px 0 14px">Registered with us before? <a href="#" id="guestReturnLink">Sign in</a> to load your students.</p>
     <div class="season-chips" id="seasonChips">
       <span class="schip" data-f="summer">Summer</span>
       <span class="schip" data-f="year">Year Round</span>
@@ -1218,7 +1218,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
                  dayCr:c.day_camp_credits||0, snowCr:c.snow_day_credits||0 };
       });
       var returning = state.kids.length > 0;
-      $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your campers';
+      $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your students';
       $('famH1').innerHTML = returning
         ? 'Welcome back — registering <em>' + esc(firstNames()) + '</em> again?'
         : 'Who\'s coming to <em>camp?</em>';
@@ -1301,7 +1301,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (res && res.data) {
         // Returning family: say it in the header, not in fine print (Jason, Aug 21)
         $('gemTitle').textContent = 'Welcome back!';
-        $('gemSub').textContent = 'This email already has a NOVAPA family. Load your campers with a quick emailed code, or continue as a guest — your picks are kept either way.';
+        $('gemSub').textContent = 'This email already has a NOVAPA family. Load your students with a quick emailed code, or continue as a guest — your picks are kept either way.';
         $('guestWelcomeBack').style.display = '';
         $('guestEmailGo').style.display = 'none';
         ev('reg_guest_known_email', {});

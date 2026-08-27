@@ -170,13 +170,20 @@ export default async () => {
   for (const s of steps) (stepsBySeq[s.seq] = stepsBySeq[s.seq] || []).push(s);
 
   // all orders (suppression) + holds + families/campers context
-  const [orders, holds, families, activities] = await Promise.all([
+  const [orders, holds, families, activities, suppressions] = await Promise.all([
     svcAll("orders?select=email,created_at&order=created_at"),
     svc("holds?select=email,items,created_at,expires_at&order=created_at.desc&limit=1000"),
     svcAll("families?select=email,parent_name&order=email"),
     svcAll("activities?select=id,name&order=id"),
+    svcAll("email_suppressions?select=email,scope&order=email"),
   ]);
   const purchased = new Set(orders.map((o) => String(o.email || "").toLowerCase()));
+  // This engine had NO suppression check at all until Aug 27 2026, so it mailed
+  // 13 people who had already unsubscribed — one of them 25 days after they
+  // opted out. reg-campaign.mjs always honored these; the drip simply never
+  // asked. Any scope counts: someone who opted out of "marketing" has not
+  // consented to a retargeting nudge just because we filed it elsewhere.
+  const suppressed = new Set(suppressions.map((s) => String(s.email || "").toLowerCase()));
   // Cart items are either a summer camp (it.show) or a catalog item
   // (it.activity_id) — Mean Girls, Frozen, Mermaid, classes. Without this the
   // catalog half resolved to nothing and every email fell back to the generic
@@ -237,6 +244,7 @@ export default async () => {
     const signIn = new Date(u.last_sign_in_at).getTime();
     if (now - signIn > 7 * 86400000) continue; // stale
     const st = stateByEmail[email];
+    if (suppressed.has(email)) continue;
     if (purchased.has(email)) {
       if (st && st.status === "active") {
         await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, { method: "PATCH", body: JSON.stringify({ status: "purchased", updated_at: new Date().toISOString() }) });
@@ -274,6 +282,7 @@ export default async () => {
   for (const st of states2) {
     if (log.sent >= MAX_SENDS_PER_RUN) break;
     const email = st.email;
+    if (suppressed.has(email)) continue;
     if (purchased.has(email)) {
       await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, { method: "PATCH", body: JSON.stringify({ status: "purchased", updated_at: new Date().toISOString() }) });
       log.purchased_out++;
@@ -313,8 +322,8 @@ export default async () => {
     const vars = {
       parentName: ctx.parent || "there",
       parentComma: ctx.parent ? " " + ctx.parent : "",
-      camperName: campers[0] || "your camper",
-      camperNames: joinNames(campers) || "your camper",
+      camperName: campers[0] || "your student",
+      camperNames: joinNames(campers) || "your student",
       camp: camps[0],
       campName: camps[0],
       camps: joinNames(camps),
@@ -355,11 +364,18 @@ export default async () => {
       if (log.sent >= MAX_SENDS_PER_RUN) break;
       const email = String(u.email || "").toLowerCase();
       if (!email || u.last_sign_in_at) continue; // clicked a link at some point — never nudge
-      if (purchased.has(email) || stateByEmail[email]) continue;
+      if (suppressed.has(email) || purchased.has(email) || stateByEmail[email]) continue;
       // measure from their LATEST link request, not account creation — a fresh
       // link must actually go stale before we claim it expired
-      const lastLink = Math.max(...[u.created_at, u.confirmation_sent_at, u.recovery_sent_at, u.email_change_sent_at]
-        .filter(Boolean).map((t) => new Date(t).getTime()));
+      // Only an actual sent link counts. created_at used to be in this list,
+      // which meant "an account exists" was read as "they asked us for a link":
+      // on Aug 27 2026 a bulk import created 415 auth rows at 11:26 and this
+      // engine mailed 425 people within the hour, none of whom had requested
+      // anything. Supabase stamps confirmation_sent_at / recovery_sent_at only
+      // when a link genuinely goes out, so those are the only honest evidence.
+      const linkStamps = [u.confirmation_sent_at, u.recovery_sent_at, u.email_change_sent_at].filter(Boolean);
+      if (!linkStamps.length) continue; // account exists, but we never sent them a link
+      const lastLink = Math.max(...linkStamps.map((t) => new Date(t).getTime()));
       if (lastLink < LINKEXPIRED_EPOCH) continue; // pre-launch backlog: never nudge
       if (now - lastLink < lxSteps[0].delay_minutes * 60000) continue; // their link is still fresh
       if (now - lastLink > 2 * 86400000) continue; // stale, skip
