@@ -85,12 +85,15 @@
 
     // ── Broadway Bound · The Little Mermaid ──────────────────────────────
     {
+      // Kids and Jr. were moved into one weekend (CJ, 27 Aug 2026): Fri 21,
+      // then Sat 22 running 11am and 1pm for Kids, 4pm and 7pm for Jr., then
+      // Sun 23. The teen cast keeps its own weekend in June.
       key: 'mermaid-kids', season: 'Broadway Bound', title: 'Little Mermaid KIDS',
       company: 'Little Mermaid KIDS', ages: '5–9', runMinutes: 30, slotMinutes: 60, page: 'little-mermaid-jr.html',
       performances: [
-        { at: '2027-05-14 19:00' },
-        { at: '2027-05-15 14:00' },
-        { at: '2027-05-15 19:00' }
+        { at: '2027-05-21 19:00' },
+        { at: '2027-05-22 11:00' },
+        { at: '2027-05-22 13:00' }
       ]
     },
     {
@@ -98,9 +101,9 @@
       company: 'Little Mermaid JR. (Ages 9–12)', ages: '9–12', runMinutes: 90,
       page: 'little-mermaid-jr.html',
       performances: [
-        { at: '2027-05-21 19:00' },
-        { at: '2027-05-22 14:00' },
-        { at: '2027-05-22 19:00' }
+        { at: '2027-05-22 16:00' },
+        { at: '2027-05-22 19:00' },
+        { at: '2027-05-23 14:00' }
       ]
     },
     {
