@@ -39,7 +39,7 @@ console.log('\nDATES');
 const EXPECT_DAY = {
   'frozen-kids': ['Fri', 'Sat', 'Sat'], 'frozen-jr': ['Fri', 'Sat', 'Sat'],
   'frozen-teen': ['Fri', 'Sat', 'Sat'], 'mermaid-kids': ['Fri', 'Sat', 'Sat'],
-  'mermaid-jr': ['Fri', 'Sat', 'Sat'], 'mermaid-teen': ['Fri', 'Sat', 'Sat'],
+  'mermaid-jr': ['Sat', 'Sat', 'Sun'], 'mermaid-teen': ['Fri', 'Sat', 'Sat'],
   httyd: ['Fri', 'Fri', 'Sat', 'Sat', 'Sat', 'Sat'],
   charlie: ['Fri', 'Fri', 'Sat', 'Sat', 'Sat', 'Sat'],
   trolls: ['Fri', 'Fri', 'Sat', 'Sat', 'Sat', 'Sat'],
@@ -300,8 +300,9 @@ const ADMIN_CALENDAR = {
   hadestown: ['2027-03-05 19:00', '2027-03-06 14:00', '2027-03-06 19:00', '2027-03-07 14:00',
     '2027-03-11 19:00', '2027-03-12 19:00', '2027-03-13 14:00', '2027-03-13 19:00',
     '2027-03-14 14:00', '2027-03-19 19:00', '2027-03-20 14:00', '2027-03-20 19:00'],
-  'mermaid-kids': ['2027-05-14 19:00', '2027-05-15 14:00', '2027-05-15 19:00'],
-  'mermaid-jr': ['2027-05-21 19:00', '2027-05-22 14:00', '2027-05-22 19:00'],
+  // Kids and Jr. moved into the May 21-23 weekend (CJ, 27 Aug 2026).
+  'mermaid-kids': ['2027-05-21 19:00', '2027-05-22 11:00', '2027-05-22 13:00'],
+  'mermaid-jr': ['2027-05-22 16:00', '2027-05-22 19:00', '2027-05-23 14:00'],
   'mermaid-teen': ['2027-06-04 19:00', '2027-06-05 14:00', '2027-06-05 19:00'],
   'mean-girls': ['2027-06-25 19:00', '2027-06-26 14:00', '2027-06-26 19:00', '2027-06-27 14:00'],
   httyd: ['2027-07-16 17:00', '2027-07-16 19:00', '2027-07-17 11:00', '2027-07-17 13:00',
@@ -393,10 +394,21 @@ const RANGES = [
   ['broadway-bound.html', 'frozen-kids', 'Jan 22–23, 2027'],
   ['broadway-bound.html', 'frozen-jr', 'Jan 29–30, 2027'],
   ['broadway-bound.html', 'frozen-teen', 'Feb 5–6, 2027'],
-  ['broadway-bound.html', 'mermaid-kids', 'May 14–15, 2027'],
-  ['broadway-bound.html', 'mermaid-jr', 'May 21–22, 2027'],
+  ['broadway-bound.html', 'mermaid-kids', 'May 21–22, 2027'],
+  ['broadway-bound.html', 'mermaid-jr', 'May 22–23, 2027'],
   ['broadway-bound.html', 'mermaid-teen', 'Jun 4–5, 2027'],
   ['broadway-bound.html', 'mean-girls', 'Jun 25–27, 2027'],
+  // summer-2027.html carries the same six Broadway Bound cards, and it is the
+  // page the nav's "Broadway Bound" link actually opens. Only broadway-bound
+  // .html was checked here, so when the Mermaid dates moved on 27 Aug 2026 the
+  // busier of the two pages could have kept the old ones and this suite would
+  // still have passed.
+  ['summer-2027.html', 'frozen-kids', 'Jan 22–23, 2027'],
+  ['summer-2027.html', 'frozen-jr', 'Jan 29–30, 2027'],
+  ['summer-2027.html', 'frozen-teen', 'Feb 5–6, 2027'],
+  ['summer-2027.html', 'mermaid-kids', 'May 21–22, 2027'],
+  ['summer-2027.html', 'mermaid-jr', 'May 22–23, 2027'],
+  ['summer-2027.html', 'mermaid-teen', 'Jun 4–5, 2027'],
   ['summer-2027.html', 'httyd', 'Jul 16 – 17, 2027'],
   ['summer-2027.html', 'charlie', 'Jul 30 – 31, 2027'],
   ['summer-2027.html', 'trolls', 'Aug 13 – 14, 2027'],
@@ -421,6 +433,9 @@ const CURTAINS = [
   ['broadway-bound.html', ['mermaid-jr']], ['broadway-bound.html', ['mermaid-teen']],
   ['broadway-bound.html', ['mean-girls']], ['broadway-bound.html', ['httyd']],
   ['broadway-bound.html', ['charlie']], ['broadway-bound.html', ['trolls']],
+  ['summer-2027.html', ['frozen-kids']], ['summer-2027.html', ['frozen-jr']],
+  ['summer-2027.html', ['frozen-teen']], ['summer-2027.html', ['mermaid-kids']],
+  ['summer-2027.html', ['mermaid-jr']], ['summer-2027.html', ['mermaid-teen']],
   ['summer-2027.html', ['httyd']], ['summer-2027.html', ['charlie']],
   ['summer-2027.html', ['trolls']],
   ['teen-conservatory.html', ['sweeney']], ['teen-conservatory.html', ['hadestown']],
@@ -519,13 +534,11 @@ const STALE = [
   ['January 22&ndash;24', 'the dropped Frozen KIDS Sunday, spelled out'],
   ['January 29&ndash;31', 'the dropped Frozen JR. Sunday, spelled out'],
   ['May 14&ndash;16', 'the dropped Mermaid KIDS Sunday, spelled out'],
-  ['May 21&ndash;23', 'the dropped Mermaid JR. Sunday, spelled out'],
   ['June 4&ndash;6', 'the dropped Mermaid Teen Sunday, spelled out'],
   ['Sun Jan 24', 'the dropped Frozen KIDS Sunday'],
   ['Sun Jan 31', 'the dropped Frozen JR. Sunday'],
   ['Sun Feb 7', 'the dropped Frozen Teen Sunday'],
   ['Sun May 16', 'the dropped Mermaid KIDS Sunday'],
-  ['Sun May 23', 'the dropped Mermaid JR. Sunday'],
   ['Sun Jun 6', 'the dropped Mermaid Teen Sunday'],
   ['Thu Oct 29', 'the dropped Sweeney Thursday'],
   ['3:00 PM', 'the old 3pm matinee'],
@@ -535,6 +548,11 @@ const STALE = [
   ['May 14&ndash;16', 'the old Mermaid KIDS range'],
   ['May 21&ndash;23', 'the old Mermaid JR. range'],
   ['June 4&ndash;6', 'the old Mermaid Teen range'],
+  // retired when Kids and Jr. moved into the May 21-23 weekend. "May 21"
+  // and "May 22" are live dates now, so only the dropped curtains are named.
+  ['May 14&ndash;15', 'the old Mermaid KIDS run'],
+  ['May 15 2pm', 'the old Mermaid KIDS Saturday matinee'],
+  ['May 22 2pm', 'the old Mermaid JR. Saturday matinee'],
 ];
 const PAGES = ['index.html', 'broadway-bound.html', 'summer-2027.html', 'calendar.html',
   'frozen-kids.html', 'frozen-jr.html', 'little-mermaid-jr.html', 'dear-evan-hansen.html',
