@@ -12,6 +12,13 @@
 [build]
   publish = "."
   command = "npm run check"
+  # Skip the build entirely when a push changed nothing that reaches the built
+  # site. A push touching only markdown or docs/ still costs 15 credits without
+  # this, and nothing it changed can affect what visitors see. Site files live
+  # in the repo root, so the exclude list is deliberately short — LAUNCH-
+  # CHECKLIST.md and docs/ are the only non-shipping paths here, and no HTML
+  # references a .md file. Anything else still builds and still runs preflight.
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)*.md' ':(exclude)docs/'"
 
 [functions]
   directory = "netlify/functions"
