@@ -58,51 +58,37 @@ export default async (req) => {
     rec: pick(body.rec, 20),
   };
 
-  const row = {
-    name,
-    email,
-    phone,
-    phone_digits: phoneDigits,
-    role,
-    student_name: studentName,
-    grad_year: GRAD_YEAR[answers.grade] || "",
-    answers: JSON.stringify(answers),
-    stage: "new",
-    utm_source: pick(body.utm_source, 80),
-    utm_medium: pick(body.utm_medium, 80),
-    utm_campaign: pick(body.utm_campaign, 80),
-    utm_content: pick(body.utm_content, 80),
-    fbclid: pick(body.fbclid, 200),
-    referrer: pick(body.referrer, 300),
-    client_ip: req.headers.get("x-nf-client-connection-ip") || "",
-    updated_at: new Date().toISOString(),
-  };
-
+  // public is deliberately NOT exposed over PostgREST on the DCU project
+  // (Aug 2026 RLS hardening) — all writes go through the one fixed-shape RPC
+  // in the leads_api schema, granted to service_role only. Its source is
+  // tracked at audition-atlas/db/leads_api/submit_quiz_lead.sql.
   const hdrs = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
 
   try {
-    // Upsert by email, same as the portal quiz: a retake updates the row
-    // rather than duplicating the person on the board.
-    const q = await fetch(`${base}/rest/v1/funnel_leads?email=eq.${encodeURIComponent(email)}&select=id,stage`, { headers: hdrs });
-    const existing = q.ok ? await q.json() : [];
-
-    let leadId;
-    if (existing[0]) {
-      leadId = existing[0].id;
-      // A lead a coach already moved keeps its stage — a retake is a signal
-      // of interest, not a reset to the top of the pipeline.
-      const { stage, ...rest } = row;
-      const r = await fetch(`${base}/rest/v1/funnel_leads?id=eq.${encodeURIComponent(leadId)}`, {
-        method: "PATCH", headers: hdrs, body: JSON.stringify(rest),
-      });
-      if (!r.ok) throw new Error(`update ${r.status}: ${(await r.text()).slice(0, 140)}`);
-    } else {
-      leadId = crypto.randomUUID();
-      const r = await fetch(`${base}/rest/v1/funnel_leads`, {
-        method: "POST", headers: hdrs, body: JSON.stringify({ id: leadId, created_at: new Date().toISOString(), ...row }),
-      });
-      if (!r.ok) throw new Error(`insert ${r.status}: ${(await r.text()).slice(0, 140)}`);
-    }
+    const r = await fetch(`${base}/rest/v1/rpc/submit_quiz_lead`, {
+      method: "POST",
+      headers: hdrs,
+      body: JSON.stringify({
+        p_email: email,
+        p_name: name,
+        p_phone: phone,
+        p_phone_digits: phoneDigits,
+        p_role: role,
+        p_student_name: studentName,
+        p_grad_year: GRAD_YEAR[answers.grade] || "",
+        p_answers: JSON.stringify(answers),
+        p_utm_source: pick(body.utm_source, 80),
+        p_utm_medium: pick(body.utm_medium, 80),
+        p_utm_campaign: pick(body.utm_campaign, 80),
+        p_utm_content: pick(body.utm_content, 80),
+        p_fbclid: pick(body.fbclid, 200),
+        p_referrer: pick(body.referrer, 300),
+        p_client_ip: req.headers.get("x-nf-client-connection-ip") || "",
+      }),
+    });
+    const t = await r.text();
+    if (!r.ok) throw new Error(`rpc ${r.status}: ${t.slice(0, 160)}`);
+    const leadId = JSON.parse(t);
 
     // Alert — fire-and-forget shape, but awaited so the function doesn't get
     // frozen mid-send. A failed email must never fail the lead.
@@ -126,7 +112,7 @@ ${line("Call", `${name} (parent)`)}${line("Email", email)}${line("Phone", phone)
 ${line("Filled in by", role === "parent" ? "the parent" : `${studentName} (the student)`)}
 ${line("Grade", answers.grade)}${line("Track", answers.track)}${line("Travel", answers.travel)}
 ${line("Priority", answers.priority)}${line("Materials", answers.ready)}${line("Steered to", answers.rec)}
-${line("Ad", [row.utm_campaign, row.utm_content].filter(Boolean).join(" / "))}
+${line("Ad", [pick(body.utm_campaign, 80), pick(body.utm_content, 80)].filter(Boolean).join(" / "))}
 </table>
 <div style="font:13px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:16px">On the Leads board (DC Unifieds) in the admin dashboard.</div></div>`,
           }),
