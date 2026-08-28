@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Private Lessons | Northern Virginia Performing Arts</title>
+<meta name="description" content="Choose your coach, claim one weekly time slot, and lock it in for the semester. Private lessons at NoVAPA — same day, same time, every week.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#08111F; --navy2:#0F1E36; --navy3:#16294a;
+  --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+  --line:rgba(255,255,255,0.10); --line2:rgba(232,184,75,0.28);
+  --dim:rgba(255,255,255,0.62); --dim2:rgba(255,255,255,0.40);
+  --good:#4ADE80;
+}
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+html{ scroll-behavior:smooth; }
+body{
+  font-family:'DM Sans',sans-serif; color:#fff; line-height:1.6; min-height:100vh;
+  background:linear-gradient(160deg,#08111F 0%,#0F1E36 55%,#08111F 100%);
+  background-attachment:fixed;
+}
+a{ color:inherit; }
+button{ font-family:inherit; }
+
+/* ── NAV ── */
+.p-nav{ display:flex; align-items:center; justify-content:space-between; padding:15px 40px;
+  border-bottom:1px solid rgba(232,184,75,0.15); position:sticky; top:0;
+  background:rgba(8,17,31,0.94); backdrop-filter:blur(10px); z-index:100; }
+.p-logo{ font-family:'Cinzel',serif; font-weight:700; letter-spacing:.09em; color:#fff;
+  text-decoration:none; font-size:15px; }
+.p-logo span{ color:var(--gold2); }
+.p-nav-links{ display:flex; gap:22px; align-items:center; }
+.p-nav-links a{ text-decoration:none; font-size:13px; color:rgba(255,255,255,0.72); }
+.p-nav-links a:hover{ color:#fff; }
+.p-nav-cta{ background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#08111F !important;
+  padding:9px 20px; border-radius:100px; font-weight:700; font-size:12.5px; }
+
+/* ── HERO ── */
+.hero{ text-align:center; padding:56px 24px 22px; }
+.eyebrow{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.26em;
+  text-transform:uppercase; color:var(--gold2); }
+.hero h1{ font-family:'Cormorant Garamond',serif; font-size:clamp(36px,6vw,60px);
+  font-weight:800; margin:12px 0 10px; line-height:1.05; }
+.hero h1 em{ font-style:italic; color:var(--gold3); }
+.hero p{ max-width:600px; margin:0 auto; color:var(--dim); font-size:16px; }
+
+/* ── STEP RAIL ── */
+.rail{ position:sticky; top:63px; z-index:90; background:rgba(8,17,31,0.92);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line); margin-top:26px; }
+.rail-inner{ max-width:1120px; margin:0 auto; padding:0 24px; display:flex; }
+.rail-step{ flex:1; display:flex; align-items:center; gap:9px; padding:14px 6px;
+  border-bottom:2px solid transparent; color:var(--dim2); font-size:12.5px;
+  letter-spacing:.04em; transition:color .2s, border-color .2s; min-width:0; }
+.rail-step b{ width:21px; height:21px; border-radius:50%; flex-shrink:0;
+  border:1px solid currentColor; display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; }
+.rail-step span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rail-step.done{ color:var(--good); }
+.rail-step.done b{ background:rgba(74,222,128,0.14); border-color:var(--good); }
+.rail-step.active{ color:var(--gold2); border-bottom-color:var(--gold2); }
+.rail-step.active b{ background:rgba(232,184,75,0.16); }
+
+/* ── LAYOUT ── */
+.wrap{ max-width:1120px; margin:0 auto; padding:34px 24px 90px;
+  display:grid; grid-template-columns:1fr 336px; gap:34px; align-items:start; }
+.step{ margin-bottom:46px; scroll-margin-top:130px; }
+.step-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:6px; }
+.step-num{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.2em;
+  color:var(--gold2); text-transform:uppercase; }
+.step h2{ font-family:'Cormorant Garamond',serif; font-size:30px; font-weight:700; }
+.step-sub{ color:var(--dim); font-size:14px; margin-bottom:20px; }
+.step[data-locked="1"]{ opacity:.34; pointer-events:none; filter:saturate(.4); }
+
+/* ── COACH CARDS ── */
+.coaches{ display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:15px; }
+.coach{ text-align:left; background:rgba(255,255,255,0.04); border:1px solid var(--line);
+  border-radius:16px; padding:20px; cursor:pointer; color:#fff; display:flex;
+  flex-direction:column; gap:11px; transition:transform .18s, border-color .18s, background .18s; }
+.coach:hover{ transform:translateY(-3px); border-color:var(--line2); background:rgba(255,255,255,0.06); }
+.coach[aria-pressed="true"]{ border-color:var(--gold2); background:rgba(232,184,75,0.09);
+  box-shadow:0 0 0 1px var(--gold2) inset, 0 10px 34px rgba(232,184,75,0.14); }
+.coach-top{ display:flex; align-items:center; gap:13px; }
+.avatar{ width:48px; height:48px; border-radius:50%; flex-shrink:0; display:flex;
+  align-items:center; justify-content:center; font-family:'Cinzel',serif; font-weight:700;
+  font-size:16px; color:var(--navy); background:linear-gradient(135deg,var(--gold2),var(--gold3));
+  object-fit:cover; }
+.coach-name{ font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:700; line-height:1.15; }
+.coach-title{ font-size:12px; color:var(--gold3); letter-spacing:.03em; }
+.coach-bio{ font-size:13.5px; color:var(--dim); }
+.tags{ display:flex; flex-wrap:wrap; gap:6px; }
+.tag{ font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; padding:3px 9px;
+  border-radius:100px; background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.72); }
+.coach-foot{ margin-top:auto; padding-top:11px; border-top:1px solid var(--line);
+  display:flex; align-items:baseline; justify-content:space-between; }
+.coach-rate{ font-size:18px; font-weight:700; color:var(--gold3); }
+.coach-rate small{ font-size:11.5px; color:var(--dim2); font-weight:400; }
+.coach-open{ font-size:11.5px; color:var(--dim2); }
+
+/* ── SLOT GRID ── */
+.days{ display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:13px; }
+.day{ background:rgba(255,255,255,0.03); border:1px solid var(--line);
+  border-radius:14px; padding:14px 13px; }
+.day-name{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--gold2); margin-bottom:11px; }
+.slot{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:9px;
+  padding:9px 12px; margin-bottom:7px; color:#fff; font-size:14px; font-weight:500;
+  cursor:pointer; transition:border-color .16s, background .16s, transform .16s; }
+.slot:last-child{ margin-bottom:0; }
+.slot:hover:not(:disabled){ border-color:var(--gold2); background:rgba(232,184,75,0.11);
+  transform:translateX(2px); }
+.slot[aria-pressed="true"]{ border-color:var(--gold2); background:rgba(232,184,75,0.17);
+  box-shadow:0 0 0 1px var(--gold2) inset; }
+.slot:disabled{ cursor:not-allowed; opacity:.36; text-decoration:line-through; }
+.slot em{ font-style:normal; font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--dim2); text-decoration:none; }
+.slot[aria-pressed="true"] em{ color:var(--gold3); }
+
+/* ── PLAN CARDS ── */
+.plans{ display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:15px; }
+.plan{ position:relative; text-align:left; background:rgba(255,255,255,0.04);
+  border:1px solid var(--line); border-radius:16px; padding:22px 20px; cursor:pointer;
+  color:#fff; display:flex; flex-direction:column; gap:7px;
+  transition:transform .18s, border-color .18s, background .18s; }
+.plan:hover:not(:disabled){ transform:translateY(-3px); border-color:var(--line2); }
+.plan[aria-pressed="true"]{ border-color:var(--gold2); background:rgba(232,184,75,0.09);
+  box-shadow:0 0 0 1px var(--gold2) inset, 0 10px 34px rgba(232,184,75,0.14); }
+.plan:disabled{ cursor:not-allowed; opacity:.4; }
+.plan-flag{ position:absolute; top:-9px; left:20px; font-family:'Cinzel',serif; font-size:9.5px;
+  letter-spacing:.16em; text-transform:uppercase; padding:3px 11px; border-radius:100px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2)); color:var(--navy); font-weight:700; }
+.plan-name{ font-family:'Cormorant Garamond',serif; font-size:23px; font-weight:700; }
+.plan-meta{ font-size:12.5px; color:var(--dim); }
+.plan-skip{ display:inline-block; margin-top:4px; font-size:11.5px; color:var(--gold3); }
+.plan-price{ font-size:32px; font-weight:700; color:#fff; line-height:1.1; margin-top:5px; }
+.plan-per{ font-size:12.5px; color:var(--gold3); }
+.plan-was{ font-size:12.5px; color:var(--dim2); text-decoration:line-through; }
+.plan-save{ display:inline-block; align-self:flex-start; margin-top:5px; font-size:11px;
+  font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:4px 10px;
+  border-radius:100px; background:rgba(74,222,128,0.14); color:var(--good);
+  border:1px solid rgba(74,222,128,0.35); }
+
+/* ── FORM ── */
+.fields{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field.wide{ grid-column:1 / -1; }
+.field label{ font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
+/* min-width:0 stops the inputs' intrinsic size from forcing the grid wider
+   than the viewport on narrow phones. */
+.field input, .field textarea{ font-family:inherit; font-size:15px; color:#fff;
+  background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:10px;
+  padding:11px 13px; transition:border-color .16s, background .16s;
+  min-width:0; width:100%; }
+.field input:focus, .field textarea:focus{ outline:none; border-color:var(--gold2);
+  background:rgba(232,184,75,0.07); }
+.field textarea{ resize:vertical; min-height:78px; }
+.modes{ display:flex; gap:10px; flex-wrap:wrap; }
+.mode{ flex:1; min-width:150px; text-align:left; background:rgba(255,255,255,0.05);
+  border:1px solid var(--line); border-radius:10px; padding:11px 14px; color:#fff;
+  cursor:pointer; transition:border-color .16s, background .16s; }
+.mode:hover{ border-color:var(--line2); }
+.mode[aria-pressed="true"]{ border-color:var(--gold2); background:rgba(232,184,75,0.13); }
+.mode b{ display:block; font-size:14px; font-weight:600; }
+.mode span{ font-size:11.5px; color:var(--dim2); }
+
+/* ── SUMMARY ── */
+.summary{ position:sticky; top:130px; background:rgba(255,255,255,0.045);
+  border:1px solid var(--line2); border-radius:18px; padding:24px 22px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.34); }
+.summary h3{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--gold2); margin-bottom:16px; }
+.srow{ display:flex; justify-content:space-between; gap:14px; padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,0.06); font-size:13.5px; }
+.srow span{ color:var(--dim2); flex-shrink:0; }
+.srow b{ font-weight:600; text-align:right; }
+.srow.empty b{ color:var(--dim2); font-weight:400; font-style:italic; }
+.srow.save b{ color:var(--good); }
+.stotal{ display:flex; justify-content:space-between; align-items:baseline;
+  padding:16px 0 4px; }
+.stotal span{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--gold2); }
+.stotal b{ font-size:34px; font-weight:700; }
+.sper{ text-align:right; font-size:12px; color:var(--dim2); margin-bottom:16px; }
+.pay{ width:100%; padding:15px; border:none; border-radius:100px; cursor:pointer;
+  font-size:14.5px; font-weight:700; letter-spacing:.05em; color:var(--navy);
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  transition:transform .16s, box-shadow .16s, filter .16s; }
+.pay:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 12px 30px rgba(232,184,75,0.34); }
+.pay:disabled{ filter:grayscale(.8); opacity:.5; cursor:not-allowed; }
+.snote{ font-size:11.5px; color:var(--dim2); text-align:center; margin-top:12px; line-height:1.5; }
+.err{ margin-top:13px; padding:11px 13px; border-radius:10px; font-size:13px;
+  background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); color:#FCA5A5; }
+
+/* ── MISC ── */
+.loading, .empty{ padding:44px 20px; text-align:center; color:var(--dim2); font-size:14px; }
+.spin{ width:26px; height:26px; margin:0 auto 14px; border-radius:50%;
+  border:2px solid rgba(255,255,255,0.14); border-top-color:var(--gold2);
+  animation:spin .8s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.trust{ max-width:1120px; margin:0 auto; padding:0 24px 70px;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:15px; }
+.trust div{ background:rgba(255,255,255,0.03); border:1px solid var(--line);
+  border-radius:13px; padding:17px 18px; }
+.trust b{ display:block; font-size:13.5px; margin-bottom:3px; }
+.trust p{ font-size:12.5px; color:var(--dim2); }
+footer{ border-top:1px solid var(--line); padding:30px 24px; text-align:center;
+  font-size:12.5px; color:var(--dim2); }
+footer a{ color:var(--gold3); text-decoration:none; }
+
+@media (max-width:940px){
+  .wrap{ grid-template-columns:1fr; padding-bottom:150px; }
+  .fields{ grid-template-columns:1fr; }
+
+  /* On a phone the summary becomes a slim pay bar. The line-item rows are
+     redundant there — every choice is already on screen just above it — and
+     leaving them in pushed the pay button off the bottom of the viewport. */
+  .summary{ position:fixed; inset:auto 0 0 0; top:auto; border-radius:18px 18px 0 0;
+    padding:12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    background:rgba(9,19,35,0.98); backdrop-filter:blur(14px);
+    border-left:none; border-right:none; border-bottom:none; z-index:95; }
+  .summary h3, .summary .srow, .snote{ display:none; }
+  .stotal{ padding:0 0 2px; }
+  .stotal b{ font-size:25px; }
+  .sper{ margin-bottom:10px; font-size:11.5px; }
+  .pay{ padding:14px; }
+
+  .rail-step span{ display:none; }
+  .rail-step{ justify-content:center; }
+  .p-nav{ padding:13px 18px; }
+  .p-nav-links a:not(.p-nav-cta){ display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="p-nav">
+  <a class="p-logo" href="index.html">NORTHERN VIRGINIA <span>PERFORMING ARTS</span></a>
+  <div class="p-nav-links">
+    <a href="classes.html">Classes</a>
+    <a href="coaching.html">Coaching</a>
+    <a href="pricing.html">Pricing</a>
+    <a class="p-nav-cta" href="#book">Book a Coach &rarr;</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow">Private Lessons &middot; One-on-One</div>
+  <h1>Your coach. Your time.<br><em>Every single week.</em></h1>
+  <p>Pick a coach, claim one weekly slot, and it&rsquo;s yours for the whole run &mdash; same day, same time, no rescheduling scramble. Reserve it in about a minute.</p>
+</section>
+
+<div class="rail" id="book">
+  <div class="rail-inner">
+    <div class="rail-step active" data-rail="1"><b>1</b><span>Coach</span></div>
+    <div class="rail-step" data-rail="2"><b>2</b><span>Weekly time</span></div>
+    <div class="rail-step" data-rail="3"><b>3</b><span>Plan</span></div>
+    <div class="rail-step" data-rail="4"><b>4</b><span>Details</span></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main>
+    <section class="step" id="step-teacher">
+      <div class="step-head"><span class="step-num">Step 01</span><h2>Choose your coach</h2></div>
+      <p class="step-sub">Every coach teaches 50-minute private sessions, in studio or on video.</p>
+      <div id="coaches" class="loading"><div class="spin"></div>Loading coaches&hellip;</div>
+    </section>
+
+    <section class="step" id="step-slot" data-locked="1">
+      <div class="step-head"><span class="step-num">Step 02</span><h2>Claim your weekly time</h2></div>
+      <p class="step-sub">Pick one time. It becomes yours every week for the plan you choose next &mdash; nobody else can book it.</p>
+      <div id="slots"></div>
+    </section>
+
+    <section class="step" id="step-plan" data-locked="1">
+      <div class="step-head"><span class="step-num">Step 03</span><h2>How many weeks?</h2></div>
+      <p class="step-sub">The longer you commit, the less each lesson costs. Paid once, up front.</p>
+      <div id="plans"></div>
+    </section>
+
+    <section class="step" id="step-details" data-locked="1">
+      <div class="step-head"><span class="step-num">Step 04</span><h2>Who&rsquo;s coming?</h2></div>
+      <p class="step-sub">We&rsquo;ll send the confirmation and any video links here.</p>
+      <div class="field wide" style="margin-bottom:14px">
+        <label>Lesson format</label>
+        <div class="modes" id="modes"></div>
+      </div>
+      <form id="details" class="fields" autocomplete="on" novalidate>
+        <div class="field"><label for="studentName">Student name</label>
+          <input id="studentName" name="studentName" required></div>
+        <div class="field"><label for="studentAge">Student age / grade</label>
+          <input id="studentAge" name="studentAge" placeholder="e.g. 16 / 11th"></div>
+        <div class="field"><label for="parentName">Parent or guardian</label>
+          <input id="parentName" name="parentName" required autocomplete="name"></div>
+        <div class="field"><label for="phone">Phone</label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel"></div>
+        <div class="field wide"><label for="email">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email"></div>
+        <div class="field wide"><label for="notes">Goals or anything we should know <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+          <textarea id="notes" name="notes" placeholder="Auditioning for BFA programs, working on two contrasting songs&hellip;"></textarea></div>
+      </form>
+    </section>
+  </main>
+
+  <aside>
+    <div class="summary">
+      <h3>Your booking</h3>
+      <div class="srow empty" data-sum="teacher"><span>Coach</span><b>Not chosen</b></div>
+      <div class="srow empty" data-sum="slot"><span>Weekly time</span><b>Not chosen</b></div>
+      <div class="srow empty" data-sum="plan"><span>Plan</span><b>Not chosen</b></div>
+      <div class="srow empty" data-sum="runs"><span>Runs</span><b>&mdash;</b></div>
+      <div class="srow save" data-sum="save" hidden><span>You save</span><b></b></div>
+      <div class="stotal"><span>Total</span><b id="total">$0</b></div>
+      <div class="sper" id="per">&nbsp;</div>
+      <button class="pay" id="pay" disabled>Choose a coach to start</button>
+      <p class="snote">Secure payment by Stripe. Cards, Apple&nbsp;Pay &amp; Google&nbsp;Pay.<br>48-hour cancellation policy applies.</p>
+      <div class="err" id="err" hidden></div>
+    </div>
+  </aside>
+</div>
+
+<div class="trust">
+  <div><b>The slot is really yours</b><p>Once you pay, that weekly time is removed from the calendar for everyone else. No double-booking, no weekly re-scheduling.</p></div>
+  <div><b>One payment, whole run</b><p>Pay for the semester or the pack in a single checkout &mdash; the discount is already applied to the price you see.</p></div>
+  <div><b>Studio or virtual</b><p>Meet at the National Conference Center in Leesburg, or over video. Switch anytime by emailing us.</p></div>
+  <div><b>Not sure yet?</b><p>Start with a <a href="https://calendly.com/novapa/free-consultation-15-minutes" target="_blank" rel="noopener" style="color:var(--gold3)">free 15-minute consult</a> or browse <a href="coaching.html" style="color:var(--gold3)">all coaching services</a>.</p></div>
+</div>
+
+<footer>
+  Northern Virginia Performing Arts &middot; Leesburg, VA &middot;
+  <a href="mailto:info@novapa.org">info@novapa.org</a> &middot;
+  <a href="tel:5715712120">(571) 571-2120</a> &middot;
+  <a href="policies.html">Policies</a>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var state = { catalog:null, teacher:null, slot:null, plan:null, mode:null, busy:false };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var money = function(cents){
+    return "$" + (cents/100).toLocaleString("en-US",{ minimumFractionDigits:0, maximumFractionDigits:0 });
+  };
+  var esc = function(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c];
+    });
+  };
+  var prettyTime = function(t){
+    var p = t.split(":"), h = +p[0];
+    return (h % 12 === 0 ? 12 : h % 12) + ":" + p[1] + " " + (h >= 12 ? "PM" : "AM");
+  };
+  var prettyDate = function(iso){
+    return new Date(iso + "T12:00:00Z").toLocaleDateString("en-US",
+      { month:"short", day:"numeric", timeZone:"UTC" });
+  };
+
+  // ── Load ──────────────────────────────────────────────────────────────────
+  fetch("/api/lessons/catalog", { headers:{ accept:"application/json" } })
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(data){ state.catalog = data; renderCoaches(); renderModes(); })
+    .catch(function(){
+      $("coaches").className = "empty";
+      $("coaches").innerHTML = "We couldn&rsquo;t load the schedule just now. " +
+        "Please refresh, or email <a href='mailto:info@novapa.org' style='color:var(--gold3)'>info@novapa.org</a> " +
+        "and we&rsquo;ll book you by hand.";
+    });
+
+  // ── Step 1: coaches ───────────────────────────────────────────────────────
+  function renderCoaches(){
+    var host = $("coaches");
+    host.className = "coaches";
+    host.innerHTML = state.catalog.teachers.map(function(t){
+      var open = t.slots.filter(function(s){ return s.anyAvailable; }).length;
+      var face = t.photo
+        ? '<img class="avatar" src="' + esc(t.photo) + '" alt="">'
+        : '<div class="avatar" aria-hidden="true">' + esc(t.initials) + "</div>";
+      return '<button type="button" class="coach" aria-pressed="false" data-teacher="' + esc(t.id) + '"' +
+        ' aria-label="Choose ' + esc(t.name) + ", " + esc(t.title) + ", $" + t.rate + " per session, " +
+        (open ? open + " times open" : "fully booked") + '">' +
+        '<div class="coach-top">' + face +
+          '<div><div class="coach-name">' + esc(t.name) + "</div>" +
+          '<div class="coach-title">' + esc(t.title) + "</div></div>" +
+        "</div>" +
+        '<div class="tags">' + t.specialties.map(function(s){
+          return '<span class="tag">' + esc(s) + "</span>"; }).join("") + "</div>" +
+        '<p class="coach-bio">' + esc(t.bio) + "</p>" +
+        '<div class="coach-foot">' +
+          '<div class="coach-rate">$' + t.rate + " <small>/ session</small></div>" +
+          '<div class="coach-open">' + (open ? open + " time" + (open===1?"":"s") + " open" : "Fully booked") + "</div>" +
+        "</div></button>";
+    }).join("");
+
+    host.querySelectorAll("[data-teacher]").forEach(function(btn){
+      btn.addEventListener("click", function(){ pickTeacher(btn.dataset.teacher); });
+    });
+  }
+
+  function pickTeacher(id){
+    state.teacher = state.catalog.teachers.filter(function(t){ return t.id === id; })[0] || null;
+    state.slot = null; state.plan = null;
+    if (state.teacher && state.teacher.modes.indexOf(state.mode) === -1) state.mode = null;
+    document.querySelectorAll("[data-teacher]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(b.dataset.teacher === id));
+    });
+    renderSlots(); renderPlans(); renderModes(); refresh();
+    scrollTo_("step-slot");
+  }
+
+  // ── Step 2: weekly slot ───────────────────────────────────────────────────
+  function renderSlots(){
+    var host = $("slots");
+    if (!state.teacher){ host.innerHTML = ""; return; }
+
+    var byDay = {};
+    state.teacher.slots.forEach(function(s){ (byDay[s.day] = byDay[s.day] || []).push(s); });
+    var days = Object.keys(byDay).map(Number).sort(function(a,b){ return a - b; });
+
+    if (!days.length){
+      host.className = "empty";
+      host.innerHTML = esc(state.teacher.name) + " has no times posted right now. " +
+        "Email <a href='mailto:info@novapa.org' style='color:var(--gold3)'>info@novapa.org</a> to get on the list.";
+      return;
+    }
+
+    host.className = "days";
+    host.innerHTML = days.map(function(d){
+      var times = byDay[d].slice().sort(function(a,b){ return a.time < b.time ? -1 : 1; });
+      return '<div class="day"><div class="day-name">' + DAYS[d] + "s</div>" +
+        times.map(function(s){
+          // Say what's actually true. A slot sold for the semester can still
+          // have a short pack free before term starts — calling that "Open"
+          // walks the family into two dead plan cards.
+          var all = state.catalog.plans.length;
+          var ok = state.catalog.plans.filter(function(p){
+            return s.quotes[p.id] && s.quotes[p.id].available; }).length;
+          var label = ok === 0 ? "Taken" : ok === all ? "Open" : "Some plans";
+          return '<button type="button" class="slot" aria-pressed="false" data-slot="' + esc(s.key) + '"' +
+            (ok ? "" : " disabled") +
+            ' aria-label="' + DAYS[d] + "s at " + prettyTime(s.time) + ", " +
+            (ok === 0 ? "already taken" : ok === all ? "available" : "available on some plans only") + '">' +
+            "<span>" + prettyTime(s.time) + "</span>" +
+            "<em>" + label + "</em></button>";
+        }).join("") + "</div>";
+    }).join("");
+
+    host.querySelectorAll("[data-slot]").forEach(function(btn){
+      btn.addEventListener("click", function(){ pickSlot(btn.dataset.slot); });
+    });
+  }
+
+  function pickSlot(key){
+    state.slot = state.teacher.slots.filter(function(s){ return s.key === key; })[0] || null;
+    state.plan = null;
+    document.querySelectorAll("[data-slot]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(b.dataset.slot === key));
+    });
+    renderPlans(); refresh();
+    scrollTo_("step-plan");
+  }
+
+  // ── Step 3: plan ──────────────────────────────────────────────────────────
+  function renderPlans(){
+    var host = $("plans");
+    if (!state.slot){ host.innerHTML = ""; return; }
+
+    var quotes = state.slot.quotes;
+    var best = null;
+    state.catalog.plans.forEach(function(p){
+      var q = quotes[p.id];
+      if (q && q.available && (!best || q.perSessionCents < best.per)){
+        best = { id:p.id, per:q.perSessionCents };
+      }
+    });
+
+    host.className = "plans";
+    host.innerHTML = state.catalog.plans.map(function(p){
+      var q = quotes[p.id];
+      if (!q || !q.available){
+        var why = q && q.reason === "slot_taken"
+            ? "This time is already booked from " + prettyDate(q.blocked[0])
+          : q && q.reason === "term_started" ? "Semester is under way — choose a pack below"
+          : q && q.reason === "plan_over" ? "Not running right now"
+          : "Not available";
+        return '<button type="button" class="plan" disabled aria-label="' +
+          esc(p.name) + " unavailable: " + esc(why) + '">' +
+          '<div class="plan-name">' + esc(p.name) + "</div>" +
+          '<div class="plan-meta">' + esc(why) + "</div></button>";
+      }
+      var flag = p.kind === "term" ? "Best value &middot; Whole semester"
+               : (best && best.id === p.id ? "Lowest per lesson" : "");
+      return '<button type="button" class="plan" aria-pressed="false" data-plan="' + esc(p.id) + '"' +
+        ' aria-label="Choose ' + esc(p.name) + ", " + q.sessions + " weekly lessons, " +
+        money(q.totalCents) + " total, " + money(q.perSessionCents) + ' per lesson">' +
+        (flag ? '<span class="plan-flag">' + flag + "</span>" : "") +
+        '<div class="plan-name">' + esc(p.name) + "</div>" +
+        '<div class="plan-meta">' + q.sessions + " weekly lessons &middot; " +
+          prettyDate(q.firstDate) + " &ndash; " + prettyDate(q.lastDate) +
+          (q.skips && q.skips.length
+            ? '<br><span class="plan-skip">Pauses for ' + q.skips.map(esc).join(" &amp; ") + "</span>"
+            : "") + "</div>" +
+        '<div class="plan-price">' + money(q.totalCents) + "</div>" +
+        '<div class="plan-per">' + money(q.perSessionCents) + " per lesson &middot; " +
+          '<span class="plan-was">' + money(q.rateCents) + "</span></div>" +
+        '<span class="plan-save">Save ' + money(q.discountCents) + " &middot; " + q.discountPct + "% off</span>" +
+        "</button>";
+    }).join("");
+
+    host.querySelectorAll("[data-plan]").forEach(function(btn){
+      btn.addEventListener("click", function(){ pickPlan(btn.dataset.plan); });
+    });
+  }
+
+  function pickPlan(id){
+    state.plan = id;
+    document.querySelectorAll("[data-plan]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(b.dataset.plan === id));
+    });
+    refresh();
+    scrollTo_("step-details");
+  }
+
+  // ── Step 4: format + details ──────────────────────────────────────────────
+  function renderModes(){
+    var host = $("modes");
+    if (!state.catalog){ return; }
+    var allowed = state.catalog.modes.filter(function(m){
+      return !state.teacher || state.teacher.modes.indexOf(m.id) !== -1;
+    });
+    if (allowed.length && !state.mode) state.mode = allowed[0].id;
+
+    host.innerHTML = allowed.map(function(m){
+      return '<button type="button" class="mode" data-mode="' + esc(m.id) + '" aria-pressed="' +
+        String(m.id === state.mode) + '"><b>' + esc(m.label) + "</b><span>" +
+        esc(m.detail) + "</span></button>";
+    }).join("");
+
+    host.querySelectorAll("[data-mode]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        state.mode = btn.dataset.mode;
+        host.querySelectorAll("[data-mode]").forEach(function(b){
+          b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode));
+        });
+      });
+    });
+  }
+
+  // ── Summary + gating ──────────────────────────────────────────────────────
+  function currentQuote(){
+    if (!state.slot || !state.plan) return null;
+    var q = state.slot.quotes[state.plan];
+    return q && q.available ? q : null;
+  }
+
+  function setRow(name, value, filled){
+    var row = document.querySelector('[data-sum="' + name + '"]');
+    row.querySelector("b").innerHTML = value;
+    row.classList.toggle("empty", !filled);
+  }
+
+  function refresh(){
+    var q = currentQuote();
+
+    setRow("teacher", state.teacher ? esc(state.teacher.name) : "Not chosen", !!state.teacher);
+    setRow("slot", state.slot
+      ? DAYS[state.slot.day] + "s &middot; " + prettyTime(state.slot.time)
+      : "Not chosen", !!state.slot);
+    setRow("plan", q
+      ? esc(planName(state.plan)) + " &middot; " + q.sessions + " lessons"
+      : "Not chosen", !!q);
+    setRow("runs", q ? prettyDate(q.firstDate) + " &ndash; " + prettyDate(q.lastDate) : "&mdash;", !!q);
+
+    var saveRow = document.querySelector('[data-sum="save"]');
+    saveRow.hidden = !q;
+    if (q) saveRow.querySelector("b").textContent = money(q.discountCents) + " (" + q.discountPct + "%)";
+
+    $("total").textContent = q ? money(q.totalCents) : "$0";
+    $("per").innerHTML = q ? money(q.perSessionCents) + " per 50-minute lesson" : "&nbsp;";
+
+    // Unlock steps in order so the page always reads as one path forward.
+    $("step-slot").dataset.locked = state.teacher ? "0" : "1";
+    $("step-plan").dataset.locked = state.slot ? "0" : "1";
+    $("step-details").dataset.locked = q ? "0" : "1";
+
+    var stage = q ? 4 : state.slot ? 3 : state.teacher ? 2 : 1;
+    document.querySelectorAll("[data-rail]").forEach(function(el){
+      var n = +el.dataset.rail;
+      el.classList.toggle("done", n < stage);
+      el.classList.toggle("active", n === stage);
+    });
+
+    var pay = $("pay");
+    pay.disabled = !q || state.busy;
+    pay.textContent = state.busy ? "Opening secure checkout…"
+      : q ? "Pay " + money(q.totalCents) + " & lock it in"
+      : state.slot ? "Choose a plan"
+      : state.teacher ? "Choose a weekly time"
+      : "Choose a coach to start";
+  }
+
+  function planName(id){
+    var p = state.catalog.plans.filter(function(x){ return x.id === id; })[0];
+    return p ? p.name : id;
+  }
+
+  function scrollTo_(id){
+    // Only nudge the page on pointer-based screens; on mobile the sticky
+    // summary would fight the scroll.
+    if (window.innerWidth < 940) return;
+    requestAnimationFrame(function(){
+      $(id).scrollIntoView({ behavior:"smooth", block:"start" });
+    });
+  }
+
+  // ── Checkout ──────────────────────────────────────────────────────────────
+  function showError(html){
+    var box = $("err");
+    box.hidden = !html;
+    box.innerHTML = html || "";
+  }
+
+  var ERRORS = {
+    slot_taken: "Someone just claimed that time. Pick another and you&rsquo;ll be right back here.",
+    contended: "That time is being booked right now. Give it a moment or choose another.",
+    unavailable: "That combination isn&rsquo;t available anymore. Please pick again.",
+    plan_over: "That plan has ended. Choose another option.",
+    term_ending: "The semester is too close to its end for that plan.",
+    payments_not_configured: "Online payment isn&rsquo;t switched on yet. Email <a href='mailto:info@novapa.org'>info@novapa.org</a> and we&rsquo;ll reserve this time for you.",
+    rate_limited: "Too many attempts. Please wait a minute and try again.",
+    bad_email: "That email address doesn&rsquo;t look right.",
+    missing_name: "Please add both the student and parent name.",
+  };
+
+  $("pay").addEventListener("click", function(){
+    var q = currentQuote();
+    if (!q || state.busy) return;
+
+    var form = $("details");
+    var payload = {
+      teacherId: state.teacher.id,
+      day: state.slot.day,
+      time: state.slot.time,
+      planId: state.plan,
+      mode: state.mode,
+      studentName: form.studentName.value.trim(),
+      studentAge: form.studentAge.value.trim(),
+      parentName: form.parentName.value.trim(),
+      phone: form.phone.value.trim(),
+      email: form.email.value.trim(),
+      notes: form.notes.value.trim(),
+    };
+
+    if (!payload.studentName || !payload.parentName){
+      showError(ERRORS.missing_name);
+      (payload.studentName ? form.parentName : form.studentName).focus();
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){
+      showError(ERRORS.bad_email); form.email.focus(); return;
+    }
+
+    showError("");
+    state.busy = true; refresh();
+
+    fetch("/api/lessons/checkout", {
+      method:"POST",
+      headers:{ "content-type":"application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, data:d }; }); })
+      .then(function(res){
+        if (res.ok && res.data.url){ window.location.href = res.data.url; return; }
+        state.busy = false;
+        showError(ERRORS[res.data.error] ||
+          "We couldn&rsquo;t start checkout. Please try again, or email " +
+          "<a href='mailto:info@novapa.org'>info@novapa.org</a>.");
+        // A taken slot means our picture of the calendar is stale — reload it.
+        if (res.data.error === "slot_taken" || res.data.error === "contended"){
+          return fetch("/api/lessons/catalog").then(function(r){ return r.json(); })
+            .then(function(data){
+              state.catalog = data;
+              var tid = state.teacher.id, key = state.slot.key;
+              state.teacher = data.teachers.filter(function(t){ return t.id === tid; })[0];
+              state.slot = state.teacher.slots.filter(function(s){ return s.key === key; })[0];
+              if (state.slot && !state.slot.anyAvailable){ state.slot = null; state.plan = null; }
+              renderCoaches(); renderSlots(); renderPlans();
+              document.querySelector('[data-teacher="' + tid + '"]').setAttribute("aria-pressed","true");
+            });
+        }
+      })
+      .catch(function(){
+        state.busy = false;
+        showError("Network trouble &mdash; please try again.");
+      })
+      .then(refresh);
+  });
+
+  if (new URLSearchParams(location.search).get("cancelled")){
+    showError("Checkout was cancelled &mdash; nothing was charged and your time is back on the board.");
+  }
+
+  refresh();
+})();
+</script>
+</body>
+</html>

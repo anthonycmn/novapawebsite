@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lessons Confirmed | Northern Virginia Performing Arts</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{ --navy:#08111F; --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+  --line:rgba(255,255,255,0.10); --dim:rgba(255,255,255,0.62); --dim2:rgba(255,255,255,0.40);
+  --good:#4ADE80; }
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+body{ font-family:'DM Sans',sans-serif; color:#fff; line-height:1.6; min-height:100vh;
+  background:linear-gradient(160deg,#08111F 0%,#0F1E36 55%,#08111F 100%); background-attachment:fixed; }
+a{ color:var(--gold3); }
+.p-nav{ display:flex; align-items:center; justify-content:space-between; padding:15px 40px;
+  border-bottom:1px solid rgba(232,184,75,0.15); }
+.p-logo{ font-family:'Cinzel',serif; font-weight:700; letter-spacing:.09em; color:#fff;
+  text-decoration:none; font-size:15px; }
+.p-logo span{ color:var(--gold2); }
+.wrap{ max-width:660px; margin:0 auto; padding:52px 24px 80px; }
+.check{ width:62px; height:62px; margin:0 auto 22px; border-radius:50%;
+  background:rgba(74,222,128,0.14); border:1px solid rgba(74,222,128,0.45);
+  display:flex; align-items:center; justify-content:center; }
+.check svg{ width:30px; height:30px; stroke:var(--good); fill:none; stroke-width:3;
+  stroke-linecap:round; stroke-linejoin:round; }
+.eyebrow{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.26em;
+  text-transform:uppercase; color:var(--gold2); text-align:center; }
+h1{ font-family:'Cormorant Garamond',serif; font-size:clamp(32px,5.5vw,50px); font-weight:800;
+  text-align:center; margin:12px 0 10px; line-height:1.08; }
+h1 em{ font-style:italic; color:var(--gold3); }
+.lede{ text-align:center; color:var(--dim); max-width:520px; margin:0 auto 34px; }
+.card{ background:rgba(255,255,255,0.045); border:1px solid rgba(232,184,75,0.28);
+  border-radius:18px; padding:26px 24px; box-shadow:0 18px 50px rgba(0,0,0,0.34); }
+.card h2{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--gold2); margin-bottom:16px; }
+.row{ display:flex; justify-content:space-between; gap:16px; padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.06); font-size:14px; }
+.row span{ color:var(--dim2); flex-shrink:0; }
+.row b{ font-weight:600; text-align:right; }
+.row.hero b{ color:var(--gold3); font-size:17px; }
+.total{ display:flex; justify-content:space-between; align-items:baseline; padding-top:16px; }
+.total span{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--gold2); }
+.total b{ font-size:31px; }
+.dates{ margin-top:22px; }
+.dates h3{ font-family:'Cinzel',serif; font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--gold2); margin-bottom:12px; }
+.chips{ display:flex; flex-wrap:wrap; gap:7px; }
+.chip{ font-size:12.5px; padding:5px 11px; border-radius:100px;
+  background:rgba(255,255,255,0.06); border:1px solid var(--line); color:rgba(255,255,255,0.8); }
+.next{ margin-top:26px; display:grid; gap:11px; }
+.next div{ background:rgba(255,255,255,0.03); border:1px solid var(--line);
+  border-radius:12px; padding:14px 16px; font-size:13.5px; color:var(--dim); }
+.next b{ display:block; color:#fff; font-size:14px; margin-bottom:2px; }
+.actions{ display:flex; gap:11px; flex-wrap:wrap; justify-content:center; margin-top:30px; }
+.btn{ padding:13px 26px; border-radius:100px; text-decoration:none; font-size:13.5px;
+  font-weight:700; letter-spacing:.04em; border:1px solid var(--line); color:#fff; }
+.btn.gold{ background:linear-gradient(135deg,var(--gold),var(--gold2)); color:var(--navy);
+  border-color:transparent; }
+.state{ text-align:center; padding:70px 20px; color:var(--dim2); }
+.spin{ width:28px; height:28px; margin:0 auto 16px; border-radius:50%;
+  border:2px solid rgba(255,255,255,0.14); border-top-color:var(--gold2);
+  animation:spin .8s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.warn{ margin-top:18px; padding:13px 15px; border-radius:12px; font-size:13.5px;
+  background:rgba(232,184,75,0.10); border:1px solid rgba(232,184,75,0.4); color:var(--gold3); }
+@media (max-width:600px){ .p-nav{ padding:13px 18px; } }
+</style>
+</head>
+<body>
+
+<nav class="p-nav">
+  <a class="p-logo" href="index.html">NORTHERN VIRGINIA <span>PERFORMING ARTS</span></a>
+</nav>
+
+<div class="wrap" id="root">
+  <div class="state"><div class="spin"></div>Confirming your booking&hellip;</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root = document.getElementById("root");
+  var sid = new URLSearchParams(location.search).get("session_id");
+
+  var esc = function(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c];
+    });
+  };
+  var money = function(c){
+    return "$" + (c/100).toLocaleString("en-US",{ minimumFractionDigits:0, maximumFractionDigits:0 });
+  };
+
+  function fail(msg){
+    root.innerHTML = '<div class="state">' + msg +
+      '<div style="margin-top:22px"><a class="btn gold" href="private-lessons.html">Back to booking</a></div></div>';
+  }
+
+  if (!sid){ fail("We couldn&rsquo;t find that booking."); return; }
+
+  // The Stripe webhook and this redirect race each other; a couple of retries
+  // covers the gap without making the family refresh.
+  var tries = 0;
+  (function load(){
+    fetch("/api/lessons/booking?session_id=" + encodeURIComponent(sid))
+      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(b){
+        if (b.status === "pending" && tries < 4){ tries++; setTimeout(load, 1200); return; }
+        render(b);
+      })
+      .catch(function(){
+        if (tries < 4){ tries++; setTimeout(load, 1200); return; }
+        fail("We couldn&rsquo;t load your booking. If you were charged, it went through &mdash; " +
+          "email <a href='mailto:info@novapa.org'>info@novapa.org</a> and we&rsquo;ll confirm the details.");
+      });
+  })();
+
+  function render(b){
+    var flagged = b.status !== "confirmed";
+    root.innerHTML =
+      '<div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></div>' +
+      '<div class="eyebrow">Booking ' + esc(b.reference) + "</div>" +
+      "<h1>That time is <em>yours</em>.</h1>" +
+      '<p class="lede">' + esc(b.studentName) + " is booked with " + esc(b.teacherName) +
+        " for " + b.sessions + " private lessons. A receipt is on its way to " +
+        esc(b.email) + ".</p>" +
+
+      '<div class="card"><h2>Your lessons</h2>' +
+        row("Coach", esc(b.teacherName)) +
+        row("Every week", esc(b.when), true) +
+        row("Format", b.mode ? esc(b.mode.label) + " &middot; " + esc(b.mode.detail) : "&mdash;") +
+        row("Plan", esc(b.planName) + " &middot; " + b.sessions + " × " + b.sessionMinutes + " min") +
+        row("Runs", esc(b.prettyDates[0]) + " &ndash; " + esc(b.prettyDates[b.prettyDates.length-1])) +
+        row("Full price", money(b.grossCents)) +
+        row("Discount", "&minus; " + money(b.discountCents) + " (" + b.discountPct + "%)") +
+        '<div class="total"><span>Paid</span><b>' + money(b.totalCents) + "</b></div>" +
+      "</div>" +
+
+      '<div class="dates card" style="margin-top:16px"><h3>Every date on your calendar</h3>' +
+        '<div class="chips">' + b.prettyDates.map(function(d){
+          return '<span class="chip">' + esc(d) + "</span>"; }).join("") + "</div></div>" +
+
+      (flagged ? '<div class="warn">Your payment went through. One detail on our end needs a ' +
+        'quick human check &mdash; we&rsquo;ll email you within one business day to confirm. ' +
+        'Nothing more is needed from you.</div>' : "") +
+
+      '<div class="next">' +
+        item("Add it to your calendar", "Set a weekly repeating event for " + esc(b.when) +
+          " so nobody in the house double-books it.") +
+        item("Bring your material", "Come with whatever you&rsquo;re working on. Your coach will " +
+          "email before the first session to plan the run.") +
+        item("Need to move a lesson?", "Email info@novapa.org at least 48 hours ahead. " +
+          "Inside 48 hours, sessions are non-refundable.") +
+      "</div>" +
+
+      '<div class="actions">' +
+        '<a class="btn gold" href="private-lessons.html">Book another coach</a>' +
+        '<a class="btn" href="index.html">Back to NoVAPA</a>' +
+      "</div>";
+  }
+
+  function row(label, value, hero){
+    return '<div class="row' + (hero ? " hero" : "") + '"><span>' + label + "</span><b>" + value + "</b></div>";
+  }
+  function item(title, body){
+    return "<div><b>" + title + "</b>" + body + "</div>";
+  }
+})();
+</script>
+</body>
+</html>

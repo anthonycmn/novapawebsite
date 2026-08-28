@@ -5,7 +5,8 @@
   "scripts": {
     "check": "node tests/preflight.mjs",
     "check:live": "node tests/preflight.mjs --live",
-    "check:staging": "node tests/preflight.mjs --live --base https://staging-summer-sprint--northernvirginiaperformingarts.netlify.app"
+    "check:staging": "node tests/preflight.mjs --live --base https://staging-summer-sprint--northernvirginiaperformingarts.netlify.app",
+    "test": "node tests/pricing.test.mjs && node tests/booking.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",

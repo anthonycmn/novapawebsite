@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview — Private Lessons inside /register</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens and card styles lifted verbatim from register/index.html, so what
+      you see here is what the real Coaching tab will look like. ───────────── */
+:root {
+  --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
+  --gold:#C8892A; --gold2:#E8B84B; --gold3:#F7D98F;
+  --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
+  --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45);
+  --ok:#5BC98C;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html { background:#08111F; }
+body {
+  font-family:'DM Sans',sans-serif; color:var(--ink);
+  background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%);
+  min-height:100vh; padding:0 20px 90px;
+}
+.wrap { max-width:960px; margin:0 auto; }
+
+.previewbar { background:rgba(232,184,75,0.10); border-bottom:1px dashed rgba(232,184,75,0.45);
+  margin:0 -20px 26px; padding:11px 20px; font-size:13px; color:var(--gold3); text-align:center; }
+.previewbar b { color:#fff; }
+
+.top { display:flex; align-items:center; gap:14px; padding:18px 0 10px; }
+.brand { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:700; color:#fff; }
+#coachLink { margin-left:auto; flex-shrink:0; background:rgba(232,184,75,0.12);
+  border:1px solid var(--gold2); border-radius:999px; padding:6px 15px; color:var(--gold2);
+  font-family:inherit; font-size:13px; font-weight:700; letter-spacing:0.04em; cursor:pointer; }
+
+h1 { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; color:#fff; margin:14px 0 6px; }
+.sub { color:var(--ink-dim); font-size:16px; line-height:1.6; margin-bottom:8px; }
+
+.coach-grp { margin-top:34px; }
+.coach-grp > h2 { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:var(--gold3);
+  letter-spacing:0.01em; margin-bottom:4px; }
+.coach-grp > .cg-blurb { font-size:14px; color:var(--ink-dim); line-height:1.5; margin-bottom:16px; }
+.coach-cards { display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); }
+.coach-card { display:flex; flex-direction:column; gap:7px; text-align:left;
+  background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 18px 16px; }
+.coach-card .cc-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+.coach-card .cc-nm { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:700; color:#fff; line-height:1.2; }
+.coach-card .cc-pr { font-weight:700; color:var(--gold2); font-size:19px; white-space:nowrap; }
+.coach-card .cc-note { font-size:12.5px; color:var(--gold3); }
+.coach-card .cc-desc { font-size:13.5px; color:var(--ink-dim); line-height:1.55; }
+.coach-card ul { list-style:none; display:flex; flex-direction:column; gap:4px; margin:2px 0 0; padding:0; }
+.coach-card li { font-size:12.5px; color:var(--ink-dim); padding-left:15px; position:relative; line-height:1.45; }
+.coach-card li::before { content:'·'; position:absolute; left:4px; color:var(--gold2); font-weight:700; }
+.coach-card .cc-go { margin-top:auto; padding-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.coach-card .cc-btn { display:inline-block; border-radius:10px; padding:10px 18px; font-weight:700; font-size:13.5px;
+  text-decoration:none; background:linear-gradient(135deg, var(--gold), var(--gold2)); color:#1a1206;
+  border:none; font-family:inherit; cursor:pointer; }
+.coach-card .cc-btn[disabled] { filter:grayscale(.7); opacity:.45; cursor:not-allowed; }
+.coach-note { background:rgba(232,184,75,0.08); border:1px dashed rgba(232,184,75,0.45); border-radius:12px;
+  padding:13px 16px; font-size:13.5px; color:var(--gold3); line-height:1.55; margin-top:18px; }
+
+/* ── New: the private-lesson pieces, built from the same tokens ──────────── */
+.pl-card { cursor:pointer; transition:border-color .16s, background .16s, transform .16s; }
+.pl-card:hover { border-color:rgba(232,184,75,0.5); transform:translateY(-2px); }
+.pl-card[aria-pressed="true"] { border-color:var(--gold2); background:rgba(232,184,75,0.10);
+  box-shadow:0 0 0 1px var(--gold2) inset; }
+.pl-tier { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:0.14em;
+  text-transform:uppercase; color:#1a1206; background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border-radius:999px; padding:2px 9px; }
+.pl-spec { display:flex; flex-wrap:wrap; gap:5px; margin-top:2px; }
+.pl-spec span { font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; padding:3px 8px;
+  border-radius:999px; background:rgba(255,255,255,0.07); color:var(--ink-dim); }
+
+.pl-panel { margin-top:16px; background:rgba(22,43,82,0.45); border:1px solid var(--line);
+  border-radius:14px; padding:18px; }
+.pl-panel h3 { font-family:'Cormorant Garamond',serif; font-size:21px; color:#fff; margin-bottom:3px; }
+.pl-panel .pl-hint { font-size:13px; color:var(--ink-dim); margin-bottom:14px; }
+.pl-days { display:grid; gap:11px; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+.pl-day { background:rgba(8,17,31,0.4); border:1px solid var(--line); border-radius:11px; padding:12px; }
+.pl-day b { display:block; font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--gold2); margin-bottom:9px; font-weight:700; }
+.pl-slot { width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:9px;
+  padding:8px 11px; margin-bottom:6px; color:#fff; font-size:14px; font-family:inherit;
+  cursor:pointer; transition:border-color .15s, background .15s; }
+.pl-slot:last-child { margin-bottom:0; }
+.pl-slot:hover:not(:disabled) { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
+.pl-slot[aria-pressed="true"] { border-color:var(--gold2); background:rgba(232,184,75,0.16); }
+.pl-slot:disabled { opacity:.35; text-decoration:line-through; cursor:not-allowed; }
+.pl-slot em { font-style:normal; font-size:10px; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink-dim); }
+
+.pl-plans { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); margin-top:6px; }
+.pl-plan { text-align:left; background:rgba(8,17,31,0.4); border:1px solid var(--line); border-radius:12px;
+  padding:15px; color:#fff; font-family:inherit; cursor:pointer; transition:border-color .15s, background .15s; }
+.pl-plan:hover { border-color:rgba(232,184,75,0.5); }
+.pl-plan[aria-pressed="true"] { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
+.pl-plan .pn { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:700; }
+.pl-plan .pm { font-size:12px; color:var(--ink-dim); margin:2px 0 7px; }
+.pl-plan .pp { font-size:25px; font-weight:700; color:var(--gold2); line-height:1.1; }
+.pl-plan .pe { font-size:12px; color:var(--gold3); }
+.pl-plan .ps { display:inline-block; margin-top:6px; font-size:10.5px; font-weight:700; letter-spacing:0.05em;
+  text-transform:uppercase; padding:3px 8px; border-radius:999px; color:var(--ok);
+  background:rgba(91,201,140,0.14); border:1px solid rgba(91,201,140,0.35); }
+
+.pl-cart { margin-top:16px; padding-top:14px; border-top:1px solid var(--line);
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.pl-cart .sum { font-size:13.5px; color:var(--ink-dim); flex:1; min-width:220px; }
+.pl-cart .sum b { color:#fff; }
+.pl-cart .tot { font-size:26px; font-weight:700; color:var(--gold2); }
+</style>
+</head>
+<body>
+
+<div class="previewbar">
+  <b>Preview only.</b> This is how Private Lessons would sit inside the Broadway Bound
+  registration app — same tokens, same card styles as the real Coaching tab. Nothing here charges anything.
+</div>
+
+<div class="wrap">
+  <div class="top">
+    <div class="brand">NOVAPA Registration</div>
+    <button id="coachLink" type="button">Coaching</button>
+  </div>
+
+  <h1>Coaching</h1>
+  <p class="sub">One-on-one work with our coaching staff. Book a package, or claim a
+     weekly time and keep it for the term.</p>
+
+  <!-- The new group. It would sit above "Full Season Support". -->
+  <div class="coach-grp">
+    <h2>Private Lessons — Weekly</h2>
+    <p class="cg-blurb">Pick a coach, claim one weekly time, and it is yours for the whole run.
+       Same day, same time, every week — nobody else can book it.</p>
+    <div class="coach-cards" id="coaches"></div>
+    <div id="panel"></div>
+  </div>
+
+  <!-- Existing groups, rendered from the real coaching.js, for context. -->
+  <div id="existing"></div>
+
+  <div class="coach-note">
+    Everything below the line is today's catalog, rendered from
+    <code>register/coaching.js</code> — shown so you can see the new group in context.
+  </div>
+</div>
+
+<script src="/register/coaching.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var TERM = { name:"Fall 2026 Semester", startDate:"2026-09-14", endDate:"2027-01-14", pct:15 };
+  var CLOSURES = [
+    { name:"Thanksgiving Break", from:"2026-11-22", to:"2026-11-29" },
+    { name:"Winter Break", from:"2026-12-20", to:"2027-01-03" }
+  ];
+  var PACKS = [ {id:"p10",n:"10-Session Pack",s:10,price:1050},
+                {id:"p6", n:"6-Session Pack", s:6, price:660},
+                {id:"p3", n:"3-Session Pack", s:3, price:350} ];
+  var BASE = 120;
+
+  var COACHES = [
+    { id:"tony", name:"Tony Cimino-Johnson", title:"Acting, Musical Theatre & College Coach",
+      rate:138, lead:true, specs:["Acting","Musical Theatre","College Auditions"],
+      slots:[[1,"16:00"],[1,"17:00"],[3,"16:30"],[3,"17:30"],[3,"18:30"],[5,"15:30"]] },
+    { id:"colton", name:"Colton Sorenson", title:"Vocal & Musical Theatre Coach",
+      rate:120, specs:["Voice","Musical Theatre","Vocal Technique"],
+      slots:[[2,"16:00"],[2,"17:00"],[2,"18:00"],[4,"17:00"],[4,"18:00"],[6,"10:00"],[6,"11:00"]] },
+    { id:"ryyana", name:"Ryyana Cunningham", title:"Audition & Musical Theatre Coach",
+      rate:120, specs:["Audition Prep","Musical Theatre","Repertoire"],
+      slots:[[1,"18:00"],[4,"16:00"],[4,"19:00"],[6,"12:00"],[6,"13:00"]] },
+    { id:"katie", name:"Katie Hamburger", title:"Dance Coach",
+      rate:120, specs:["Dance","Choreography","Movement"],
+      slots:[[2,"15:30"],[4,"15:30"],[5,"16:30"],[5,"17:30"],[6,"09:00"]] }
+  ];
+
+  // One slot is pre-sold so the "already taken" state is visible.
+  var SOLD = "colton|2|17:00";
+
+  var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
+  var money = function(c){ return "$" + (c/100).toLocaleString("en-US"); };
+  var t12 = function(t){ var p=t.split(":"), h=+p[0];
+    return (h%12===0?12:h%12)+":"+p[1]+" "+(h>=12?"PM":"AM"); };
+  var iso = function(d){ return d.toISOString().slice(0,10); };
+  var closed = function(s){ return CLOSURES.some(function(c){ return s>=c.from && s<=c.to; }); };
+
+  function dates(day, from, until, limit){
+    var d = new Date(from+"T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() + ((day - d.getUTCDay() + 7) % 7));
+    var out=[], stop = until ? new Date(until+"T12:00:00Z").getTime() : Infinity;
+    for (var i=0;i<104;i++){
+      if (d.getTime()>stop) break;
+      var s = iso(d);
+      if (!closed(s)) { out.push(s); if (limit && out.length>=limit) break; }
+      d.setUTCDate(d.getUTCDate()+7);
+    }
+    return out;
+  }
+  var round = function(c){ return Math.round(c/100)*100; };
+  var pretty = function(s){ return new Date(s+"T12:00:00Z")
+    .toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:"UTC"}); };
+
+  var sel = { coach:COACHES[0], slot:null, plan:null };
+
+  function planFor(coach, day){
+    var out = [];
+    var td = dates(day, TERM.startDate, TERM.endDate, null);
+    if (td.length >= 2) {
+      var gross = coach.rate*100*td.length;
+      out.push({ id:"term", name:TERM.name, sessions:td.length, dates:td,
+        total: round(gross - gross*TERM.pct/100), gross:gross, best:true });
+    }
+    PACKS.forEach(function(p){
+      var pd = dates(day, "2026-09-14", null, p.s);
+      out.push({ id:p.id, name:p.n, sessions:p.s, dates:pd,
+        total: round(p.price*100*coach.rate/BASE), gross: coach.rate*100*p.s });
+    });
+    return out;
+  }
+
+  function renderCoaches(){
+    $("coaches").innerHTML = COACHES.map(function(c){
+      return '<button type="button" class="coach-card pl-card" data-c="'+c.id+'" aria-pressed="'+(sel.coach.id===c.id)+'">'+
+        '<div class="cc-top"><div class="cc-nm">'+esc(c.name)+'</div>'+
+          '<div class="cc-pr">$'+c.rate+'</div></div>'+
+        '<div class="cc-note">'+esc(c.title)+'</div>'+
+        (c.lead ? '<div><span class="pl-tier">Lead coach</span></div>' : '')+
+        '<div class="pl-spec">'+c.specs.map(function(s){return "<span>"+esc(s)+"</span>";}).join("")+'</div>'+
+        '<div class="cc-go"><span class="cc-btn">'+(sel.coach.id===c.id?"Selected":"Choose")+'</span></div>'+
+      '</button>';
+    }).join("");
+    [].forEach.call(document.querySelectorAll("[data-c]"), function(b){
+      b.onclick = function(){
+        sel.coach = COACHES.filter(function(x){return x.id===b.dataset.c;})[0];
+        sel.slot = null; sel.plan = null; renderCoaches(); renderPanel();
+      };
+    });
+  }
+
+  function renderPanel(){
+    var c = sel.coach, byDay = {};
+    c.slots.forEach(function(s){ (byDay[s[0]] = byDay[s[0]]||[]).push(s[1]); });
+
+    var grid = Object.keys(byDay).map(Number).sort(function(a,b){return a-b;}).map(function(d){
+      return '<div class="pl-day"><b>'+DAYS[d]+'s</b>'+ byDay[d].sort().map(function(t){
+        var key = c.id+"|"+d+"|"+t, gone = key===SOLD, on = sel.slot===key;
+        return '<button type="button" class="pl-slot" data-s="'+key+'" aria-pressed="'+on+'"'+(gone?" disabled":"")+'>'+
+          "<span>"+t12(t)+"</span><em>"+(gone?"Taken":"Open")+"</em></button>";
+      }).join("") + '</div>';
+    }).join("");
+
+    var plansHtml = "";
+    if (sel.slot) {
+      var day = +sel.slot.split("|")[1];
+      plansHtml = '<div class="pl-hint" style="margin-top:16px">Then pick how long:</div><div class="pl-plans">'+
+        planFor(c, day).map(function(p){
+          var per = Math.round(p.total/p.sessions);
+          var skips = CLOSURES.filter(function(x){ return x.to>=p.dates[0] && x.from<=p.dates[p.dates.length-1]; })
+                              .map(function(x){ return x.name; });
+          return '<button type="button" class="pl-plan" data-p="'+p.id+'" aria-pressed="'+(sel.plan===p.id)+'">'+
+            '<div class="pn">'+esc(p.name)+'</div>'+
+            '<div class="pm">'+p.sessions+' lessons · '+pretty(p.dates[0])+' – '+pretty(p.dates[p.dates.length-1])+
+              (skips.length? '<br>pauses for '+skips.join(" & ") : "")+'</div>'+
+            '<div class="pp">'+money(p.total)+'</div>'+
+            '<div class="pe">'+money(per)+' per lesson</div>'+
+            (p.gross>p.total ? '<span class="ps">Save '+money(p.gross-p.total)+'</span>' : "")+
+          '</button>';
+        }).join("") + '</div>';
+    }
+
+    var chosen = null;
+    if (sel.slot && sel.plan) {
+      chosen = planFor(c, +sel.slot.split("|")[1]).filter(function(p){ return p.id===sel.plan; })[0];
+    }
+
+    $("panel").innerHTML =
+      '<div class="pl-panel">'+
+        '<h3>'+esc(c.name)+'</h3>'+
+        '<div class="pl-hint">Claim one weekly time — it becomes yours for every week of the run.</div>'+
+        '<div class="pl-days">'+grid+'</div>'+
+        plansHtml+
+        (chosen ? '<div class="pl-cart">'+
+            '<div class="sum"><b>'+esc(c.name)+'</b> · '+DAYS[+sel.slot.split("|")[1]]+'s at '+
+              t12(sel.slot.split("|")[2])+'<br>'+chosen.sessions+' lessons · '+
+              pretty(chosen.dates[0])+' – '+pretty(chosen.dates[chosen.dates.length-1])+'</div>'+
+            '<div class="tot">'+money(chosen.total)+'</div>'+
+            '<button class="cc-btn" type="button" onclick="alert(\'Preview only — in the real app this adds to the cart and goes through the normal Stripe checkout.\')">Add to cart</button>'+
+          '</div>' : "")+
+      '</div>';
+
+    [].forEach.call(document.querySelectorAll("[data-s]"), function(b){
+      if (b.disabled) return;
+      b.onclick = function(){ sel.slot = b.dataset.s; sel.plan = null; renderPanel(); };
+    });
+    [].forEach.call(document.querySelectorAll("[data-p]"), function(b){
+      b.onclick = function(){ sel.plan = b.dataset.p; renderPanel(); };
+    });
+  }
+
+  // Today's catalog underneath, straight from coaching.js.
+  function renderExisting(){
+    var CO = window.NOVACOACHING;
+    if (!CO) return;
+    $("existing").innerHTML = CO.groups.map(function(g){
+      return '<div class="coach-grp"><h2>'+esc(g.title)+'</h2>'+
+        (g.blurb ? '<p class="cg-blurb">'+esc(g.blurb)+'</p>' : "")+
+        '<div class="coach-cards">'+ g.items.map(function(i){
+          return '<div class="coach-card"><div class="cc-top">'+
+            '<div class="cc-nm">'+esc(i.name)+'</div><div class="cc-pr">'+money(i.price)+'</div></div>'+
+            (i.note ? '<div class="cc-note">'+esc(i.note)+'</div>' : "")+
+            '<div class="cc-desc">'+esc((i.desc||"").slice(0,150))+'…</div></div>';
+        }).join("") +'</div></div>';
+    }).join("");
+  }
+
+  renderCoaches(); renderPanel(); renderExisting();
+})();
+</script>
+</body>
+</html>
