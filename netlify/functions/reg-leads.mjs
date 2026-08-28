@@ -106,6 +106,10 @@ async function loadDcu() {
         email: x.email,
         phone: x.phone,
         role: x.role,
+        // Since 28 Aug 2026 the gate asks everyone for the performer's name
+        // and a parent's contact — so `name` is the parent on new rows.
+        // Empty on older rows, where `name` is whoever filled the form in.
+        student_name: x.student_name || "",
         grad_year: x.grad_year,
         // DCU rows predating their stage column come back null; the board has
         // no null column to drop them in, so they land in New.

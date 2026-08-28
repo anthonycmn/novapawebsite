@@ -2186,7 +2186,7 @@
   function ldDetail(x){
     var h = '';
     if (x._stream === 'dcu') {
-      h += ldRow('Role', x.role) + ldRow('Grad year', x.grad_year) + ldRow('Home state', x.home_state) +
+      h += ldRow('Student', x.student_name) + ldRow('Role', x.role) + ldRow('Grad year', x.grad_year) + ldRow('Home state', x.home_state) +
            ldRow('Dream', x.dream) + ldRow('Structure', x.structure) + ldRow('Prescreens', x.prescreen) +
            ldRow('Certainty', x.certainty) + ldRow('Budget', x.budget) + ldRow('Dance', x.dance) +
            ldRow('GPA', x.gpa) + ldRow('Campaign', x.campaign) +
@@ -2209,6 +2209,7 @@
     var badge = ldBadge(x);
     var line = [];
     if (x._stream === 'dcu') {
+      if (x.student_name) line.push(esc(x.student_name));
       if (x.role) line.push(esc(x.role));
       if (x.grad_year) line.push('class of ' + esc(x.grad_year));
       if (x.home_state) line.push(esc(x.home_state));
@@ -2396,11 +2397,11 @@
     if (!LEADS) return;
     var rows;
     if (LD_BOARD === 'dcu') {
-      rows = [['updated','created','stage','name','email','phone','role','grad_year','home_state','hot','purchased_at',
+      rows = [['updated','created','stage','name','email','phone','role','student_name','grad_year','home_state','hot','purchased_at',
                'dream','structure','distance','dance','gpa','budget','prescreen','certainty',
                'utm_source','utm_campaign','utm_content','top_5','coach_notes']];
       ldRows().sort(ldSort).forEach(function(x){
-        rows.push([x.updated_at, x.created_at, x.stage, x.name, x.email, x.phone, x.role, x.grad_year, x.home_state,
+        rows.push([x.updated_at, x.created_at, x.stage, x.name, x.email, x.phone, x.role, x.student_name || '', x.grad_year, x.home_state,
                    x.hot ? 'yes' : '', x.purchased_at,
                    x.dream, x.structure, x.distance, x.dance, x.gpa, x.budget, x.prescreen, x.certainty,
                    x.source, x.campaign, x.content, (x.matches || []).join('; '), x.coach_notes]);
