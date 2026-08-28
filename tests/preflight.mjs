@@ -229,19 +229,32 @@ async function probe(path, opts = {}) {
   // the MONITOR's network blinking, not the site — on Aug 16 2026 one DNS
   // blip failed all six probes at once, static pages included, and paged
   // Jason for a site that was up the whole time.
+  // Three attempts with escalating backoff, not two at a fixed 15s. Between
+  // Aug 15 and Aug 28 2026 this alerted five times on "fetch failed" or
+  // "aborted" against endpoints that were healthy seconds later — and every
+  // single-endpoint case hit probe #1, #2 or #3, never the static pages that
+  // run afterwards. That shape is the monitor's own DNS/TLS warming up, not
+  // the site. An HTTP status error still fails on attempt one, which is how
+  // the real 500s (Aug 21) and the sells_now bug (Aug 18) were caught.
+  const backoff = [10000, 30000];
   for (let attempt = 1; ; attempt++) {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), 20000);
     try { return await fetch(BASE + path, { ...opts, signal: ctl.signal }); }
     catch (e) {
-      if (attempt >= 2) throw e;
-      await new Promise((res) => setTimeout(res, 15000));
+      if (attempt > backoff.length) throw e;
+      await new Promise((res) => setTimeout(res, backoff[attempt - 1]));
     }
     finally { clearTimeout(t); }
   }
 }
 
 async function checkLive() {
+  // Pay the DNS + TLS + cold-start cost on a throwaway request whose result is
+  // ignored, so probe #1 is not the one that absorbs it. Failures here are
+  // deliberately swallowed: this is a warm-up, not a check.
+  try { await fetch(BASE + "/register/config.js", { signal: AbortSignal.timeout(20000) }); } catch {}
+
   const expectations = [
     // 400 became a healthy answer with guest checkout (Aug 18): an empty
     // body hits bad_request before the identity check. A broken shared
