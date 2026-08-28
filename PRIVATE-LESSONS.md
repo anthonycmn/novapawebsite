@@ -18,7 +18,7 @@ Family journey: **coach → weekly time → plan → details → checkout.**
 | Piece | State |
 |---|---|
 | Booking UI (`private-lessons.html`) | Built, demoable |
-| Scheduling logic — dates, holidays, pricing | Built, 104 passing assertions |
+| Scheduling logic — dates, holidays, pricing | Built, 106 passing assertions |
 | Slot locking | Built and tested standalone, then re-expressed as SQL |
 | `db/private-lessons.sql` | Applies cleanly to stock Postgres, 53 assertions green; **never run against Supabase** |
 | Wiring into `/register` checkout | **Not started** |
@@ -193,9 +193,9 @@ and genuinely are free.
 npm test
 ```
 
-104 assertions: pricing at both rates, holiday skipping, the two term lengths,
-the 48-hour lead time, DST-proof weekly dates, and slot locking under
-concurrent checkout.
+106 assertions: pricing at both rates, holiday skipping, the two term lengths,
+the 48-hour lead time, DST-proof weekly dates, the payment window against
+Stripe's 30-minute floor, and slot locking under concurrent checkout.
 
 `tests/migration.test.mjs` covers the SQL itself — the locking model, the
 expiry sweep and the permission grants — against a real Postgres. It is **not**

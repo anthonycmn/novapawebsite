@@ -1,4 +1,4 @@
-import { TERM, isClosed, closureFor, planDates, priceFor, prettyDate, prettyTime, dayName, weeklyDates, toDate, slotKey, earliestBookableDate, allPlans, getTeacher } from "../netlify/lib/lessons-config.mjs";
+import { TERM, isClosed, closureFor, planDates, priceFor, prettyDate, prettyTime, dayName, weeklyDates, toDate, slotKey, earliestBookableDate, allPlans, getTeacher, CHECKOUT_MINUTES, HOLD_MINUTES } from "../netlify/lib/lessons-config.mjs";
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -124,6 +124,13 @@ eq("every tier price is a whole dollar",
 eq("4 plans offered (term + 3 packs)", allPlans().length, 4);
 eq("teacher lookup", getTeacher("colton-sorenson").name, "Colton Sorenson");
 eq("unknown teacher → null", getTeacher("nope"), null);
+
+// ── The payment window and the hold ─────────────────────────────────────────
+// Stripe rejects a Checkout Session expiring less than 30 minutes out, and the
+// hold is placed before that session exists — so the hold has to outlast it.
+// Both directions are silent failures in production, hence the guard here.
+eq("payment window clears Stripe's 30-minute floor", CHECKOUT_MINUTES > 30, true);
+eq("the hold outlives the payment window", HOLD_MINUTES > CHECKOUT_MINUTES, true);
 
 console.log(fails ? `\n${fails} FAILING` : "\nAll green.");
 process.exit(fails ? 1 : 0);

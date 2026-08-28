@@ -8,7 +8,7 @@
 import Stripe from "stripe";
 import { quoteForCheckout } from "../lib/lessons-availability.mjs";
 import {
-  HOLD_MINUTES,
+  CHECKOUT_MINUTES,
   MODES,
   SESSION_MINUTES,
   dayName,
@@ -118,7 +118,11 @@ export default async (req, context) => {
       mode: "payment",
       customer_email: contact.email,
       client_reference_id: bookingId,
-      expires_at: Math.floor(now.getTime() / 1000) + HOLD_MINUTES * 60,
+      // Stamped from the clock *here*, not from `now` above: the quote and
+      // the slot claim in between are a blob list plus a write per lesson
+      // date, so `now` is seconds stale by the time Stripe sees this — enough
+      // to drop the window under Stripe's 30-minute floor and fail the call.
+      expires_at: Math.floor(Date.now() / 1000) + CHECKOUT_MINUTES * 60,
       success_url: `${origin}/lesson-confirmed.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/private-lessons.html?cancelled=1`,
       line_items: [

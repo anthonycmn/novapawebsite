@@ -23,11 +23,22 @@ export const SESSION_MINUTES = 50;
 // starts tomorrow.
 export const BOOKING_LEAD_DAYS = 2;
 
-// How long a slot is held while the family is on the Stripe payment page.
-// If they abandon checkout, the hold evaporates and the slot reopens.
-// Kept in lockstep with the Stripe Checkout Session expiry, whose floor is
-// 30 minutes — a shorter hold would reopen a slot someone could still pay for.
-export const HOLD_MINUTES = 30;
+// How long the family has on the Stripe payment page.
+//
+// Stripe refuses a Checkout Session whose expires_at is less than 30 minutes
+// past the moment Stripe itself stamps it as created. Asking for exactly 30
+// loses that race twice over: our timestamp is read before the network round
+// trip, and our clock can sit behind theirs. The headroom makes the call
+// deterministic instead of a coin flip.
+export const CHECKOUT_MINUTES = 32;
+
+// How long the slot stays held. This has to *outlive* the payment window, not
+// match it. The hold goes on before the Stripe session exists, so an
+// equal-length hold always expires first — and a family paying in the last
+// minute would find their slot already swept out from under them, land on
+// `hold_lost`, and need a human. Erring long only delays reopening an
+// abandoned slot, which is the cheap direction to be wrong in.
+export const HOLD_MINUTES = CHECKOUT_MINUTES + 5;
 
 // ── THE SEMESTER ────────────────────────────────────────────────────────────
 // Buying the term reserves the same weekday + time every week from start to
