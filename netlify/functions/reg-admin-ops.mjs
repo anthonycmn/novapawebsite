@@ -287,6 +287,17 @@ export default async (req) => {
       return Response.json(out);
     }
 
+    if (action === "move_legacy") {
+      const out = await rpc("admin_move_legacy", {
+        p_legacy_id: Number(body.legacy_id || 0),
+        p_show: body.show || null, p_band: body.band || null,
+        p_activity_id: body.activity_id ? Number(body.activity_id) : null,
+        p_actor: actor, p_force: !!body.force,
+      });
+      if (out && out.error) return Response.json(out, { status: 400 });
+      return Response.json(out);
+    }
+
     if (action === "cancel") {
       const itemId = String(body.item_id || "");
       if (!itemId) return Response.json({ error: "no item" }, { status: 400 });
@@ -367,7 +378,10 @@ export default async (req) => {
         : [];
       const actById = Object.fromEntries(acts.map((a) => [a.id, a]));
       const orderById = Object.fromEntries(orders.map((o) => [o.id, o]));
-      const legacy = await db(`legacy_enrollments?select=source,activity_text,dates,paid_cents&camper_name=ilike.${like}`);
+      // id/activity_id/show come back too: without them the UI could render a
+      // legacy registration but never move it, which is every registration
+      // for a family that came over from Regpack.
+      const legacy = await db(`legacy_enrollments?select=id,source,activity_text,dates,paid_cents,activity_id,show&camper_name=ilike.${like}`);
       return Response.json({
         campers, families: fams, legacy: legacy || [],
         registrations: items.map((i) => {

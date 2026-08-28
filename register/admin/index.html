@@ -106,9 +106,17 @@
   .camp-panel { display:grid; grid-template-columns:minmax(300px,1.4fr) minmax(160px,.6fr) minmax(280px,1fr);
     gap:16px; padding:8px 0 4px; align-items:start; }
   @media (max-width:1100px) { .camp-panel { grid-template-columns:1fr; } }
-  .cp-block { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:rgba(8,17,31,0.35); color:var(--ink); }
+  /* min-width:0 or the grid item keeps its default min-width:auto and refuses
+     to shrink below the widest table row — the registrations table then grew
+     past its card and painted its `paid` / `order` columns on top of the
+     Family card next to it. Same trap as the free-class booking grid. */
+  .cp-block { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:rgba(8,17,31,0.35); color:var(--ink); min-width:0; overflow:hidden; }
   .cp-block > b { font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--dim); }
-  .cp-block table { background:transparent; border:0; }
+  /* Program names run long ("Broadway Bound: Grades 4 - 9 Fairy Tale Cast |
+     July 25th at 7pm Performance"), so wrap them rather than scroll a card. */
+  .cp-block table { background:transparent; border:0; width:100%; table-layout:fixed; }
+  .cp-block table td, .cp-block table th { overflow-wrap:anywhere; }
+  .cp-block table .num { white-space:nowrap; }
   .cp-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .pe input[type=checkbox] { accent-color:#E8B84B; width:auto; }
   .pe label { user-select:none; }
@@ -843,6 +851,7 @@
           // money was paid (Jason, Aug 20: "show this as an official sign up
           // same as others, note on the billing side").
           ((regs.length || leg.length) ? '<table style="margin-top:6px">' +
+            '<colgroup><col><col style="width:74px"><col style="width:104px"><col style="width:34px"></colgroup>' +
             '<tr><th>program</th><th class="num">paid</th><th>order</th><th></th></tr>' +
             regs.map(function(r){
               return '<tr><td><b>' + esc(r.what) + '</b>' +
@@ -857,7 +866,7 @@
                 (l.dates ? '<div class="sub">' + esc(l.dates) + '</div>' : '') + '</td>' +
                 '<td class="num">' + (l.paid_cents != null ? usd(l.paid_cents) : '—') + '</td>' +
                 '<td class="sub">Paid on ' + src + '</td>' +
-                '<td></td></tr>';
+                '<td>' + rosterActionBtns(null, name, l.id) + '</td></tr>';
             }).join('') +
             '</table>'
             : '<div class="sub" style="padding:4px 0">not registered for anything</div>') +
@@ -1839,7 +1848,7 @@
     var r = btn.getBoundingClientRect();
     pop.style.left = Math.max(8, Math.min(window.innerWidth - 336, r.left - 260)) + 'px';
     pop.style.top = Math.min(window.innerHeight - 380, r.bottom + 6) + 'px';
-    MV = { pop: pop, cell: cell, itemId: btn.dataset.item, camper: btn.dataset.camper };
+    MV = { pop: pop, cell: cell, itemId: btn.dataset.item, legacyId: btn.dataset.legacy, camper: btn.dataset.camper };
     mvRender(null);
     var q = pop.querySelector('.mv-q');
     q.focus();
@@ -1864,10 +1873,12 @@
   }
   function mvExec(value, label, force){
     if (!MV) return;
-    var cell = MV.cell, itemId = MV.itemId, camper = MV.camper;
+    var cell = MV.cell, itemId = MV.itemId, legacyId = MV.legacyId, camper = MV.camper;
     if (!force && !confirm('Move ' + camper + ' to ' + label + '?')) return;
     var p = value.split('|');
-    var payload = { action: 'move', item_id: itemId, force: !!force };
+    var payload = legacyId
+      ? { action: 'move_legacy', legacy_id: legacyId, force: !!force }
+      : { action: 'move', item_id: itemId, force: !!force };
     if (p[0] === 's') { payload.show = p[1]; payload.band = p[2]; }
     else payload.activity_id = +p[1];
     mvClose();
@@ -1875,16 +1886,16 @@
     opsApi(payload).then(function(d){
       if (d.needs_force) {
         if (confirm(label + ' is FULL. Move ' + camper + ' anyway (oversell by one)?')) {
-          MV = { pop: null, cell: cell, itemId: itemId, camper: camper };
+          MV = { pop: null, cell: cell, itemId: itemId, legacyId: legacyId, camper: camper };
           return mvExec(value, label, true);
         }
-        cell.innerHTML = rosterActionBtns(itemId, camper);
+        cell.innerHTML = rosterActionBtns(itemId, camper, legacyId);
         return;
       }
-      if (d.error) { alert(d.error); cell.innerHTML = rosterActionBtns(itemId, camper); return; }
+      if (d.error) { alert(d.error); cell.innerHTML = rosterActionBtns(itemId, camper, legacyId); return; }
       cell.innerHTML = '<span class="tag ok">moved → ' + esc(d.to || '') + '</span>';
       runLoader('overview');
-    }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper); });
+    }).catch(function(){ alert('network error'); cell.innerHTML = rosterActionBtns(itemId, camper, legacyId); });
   }
   document.addEventListener('click', function(e){
     var mv = e.target.closest('.r-move');
@@ -3447,7 +3458,14 @@
         return '<button class="' + (it.cls || '') + '"' + (it.attrs || '') + '>' + it.label + '</button>';
       }).join('') + '</div></span>';
   }
-  function rosterActionBtns(itemId, camper){
+  // legacyId set => a Regpack/Sawyer row. It gets Move (a seat swap, which is
+  // just as real for a legacy registration) but not Cancel & refund: that path
+  // refunds through Stripe, and these seats were never paid through Stripe.
+  function rosterActionBtns(itemId, camper, legacyId){
+    if (legacyId) {
+      var la = ' data-legacy="' + esc(legacyId) + '" data-camper="' + esc(camper || '') + '"';
+      return kebabHtml([{ label: 'Move to another session&hellip;', cls: 'r-move', attrs: la }]);
+    }
     var a = ' data-item="' + esc(itemId) + '" data-camper="' + esc(camper || '') + '"';
     return kebabHtml([
       { label: 'Move to another session&hellip;', cls: 'r-move', attrs: a },
