@@ -218,33 +218,72 @@ export async function claimSlot(slotKey, { bookingId, dates, status = "held" }) 
   return { ok: true };
 }
 
-/** Payment landed — make the locks permanent. */
-export async function confirmClaim(slotKey, bookingId, dates) {
-  for (const date of dates) {
-    const key = claimKey(slotKey, date);
-    const existing = await store().get(key, { type: "json" });
+const bookedLock = (bookingId) => ({
+  bookingId,
+  status: "booked",
+  claimedAt: new Date().toISOString(),
+});
 
+/**
+ * Undo a lock this call created a moment ago.
+ *
+ * Not `dropDate`: that one refuses to touch anything marked `booked`, which is
+ * exactly what a half-finished confirm leaves lying around. The ownership check
+ * is still what makes it safe — a rollback racing somebody else's fresh claim
+ * must not reach across and delete theirs.
+ */
+async function discardOwn(slotKey, date, bookingId) {
+  const key = claimKey(slotKey, date);
+  try {
+    const existing = await store().get(key, { type: "json" });
+    if (existing?.bookingId === bookingId) await store().delete(key);
+  } catch (err) {
+    console.error("confirm rollback failed:", err?.message || err);
+  }
+}
+
+/**
+ * Payment landed — make the locks permanent.
+ *
+ * Reads decide, then writes happen. Checking and re-taking in one pass meant a
+ * confirm that failed on its fifth date had already re-taken its first four and
+ * stamped them `booked` — for a booking that then reported `hold_lost`. Those
+ * dates were unsellable and invisible to every release path, since nothing
+ * deletes a booked lock. A confirm now either takes every date or none.
+ */
+export async function confirmClaim(slotKey, bookingId, dates) {
+  // Pass 1 — read only. Anything already ours needs no write to keep; anything
+  // belonging to someone else ends this now, with the store untouched.
+  const lapsed = [];
+  for (const date of dates) {
+    const existing = await store().get(claimKey(slotKey, date), { type: "json" });
     if (!existing) {
-      // The hold lapsed and nobody else took it — re-take it outright.
-      const { modified } = await store().setJSON(
-        key,
-        { bookingId, status: "booked", claimedAt: new Date().toISOString() },
-        { onlyIfNew: true },
-      );
-      if (!modified) return { ok: false, reason: "hold_lost" };
+      lapsed.push(date);
       continue;
     }
     if (existing.bookingId !== bookingId) return { ok: false, reason: "hold_lost" };
   }
 
+  // Pass 2 — re-take the dates whose holds lapsed. These are the only writes
+  // that can still lose a race, so they go first and on their own: if one is
+  // beaten, the rollback has nothing to undo but its own siblings.
+  const retaken = [];
+  for (const date of lapsed) {
+    const { modified } = await store().setJSON(
+      claimKey(slotKey, date),
+      bookedLock(bookingId),
+      { onlyIfNew: true },
+    );
+    if (!modified) {
+      await Promise.all(retaken.map((d) => discardOwn(slotKey, d, bookingId)));
+      return { ok: false, reason: "hold_lost" };
+    }
+    retaken.push(date);
+  }
+
+  // Pass 3 — every date is ours. Promote the holds that were already here.
   await Promise.all(
-    dates.map((date) =>
-      store().setJSON(claimKey(slotKey, date), {
-        bookingId,
-        status: "booked",
-        claimedAt: new Date().toISOString(),
-      }),
-    ),
+    dates.map((date) => store().setJSON(claimKey(slotKey, date), bookedLock(bookingId))),
   );
 
   await updateSummary(slotKey, (summary) => {

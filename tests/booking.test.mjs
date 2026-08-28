@@ -170,6 +170,27 @@ eq("stripe session resolves to booking", (await store.bookingForStripeSession("c
 eq("unknown stripe session → null", await store.bookingForStripeSession("cs_nope"), null);
 eq("booking list works", (await store.listBookings()).length, 1);
 
+// ── 15. A confirm that cannot finish leaves nothing half-taken ──────────────
+// One date has lapsed, the next now belongs to somebody else. Re-taking the
+// lapsed one and *then* discovering the clash would strand it as `booked`
+// forever: unsellable, and untouchable by every release path, because nothing
+// deletes a booked lock. The confirm has to fail whole.
+const partial = cfg.slotKey("katie-hamburger", 2, "15:30");
+const pair = ["2026-09-08", "2026-09-15"];   // two Tuesdays
+eq("a hold is placed on both dates", (await store.claimSlot(partial, { bookingId:"P", dates:pair })).ok, true);
+await raw.delete(`claim/${partial}/${pair[0]}`);                     // first hold lapses
+await raw.setJSON(`claim/${partial}/${pair[1]}`,                     // second is taken
+  { bookingId:"RIVAL", status:"booked", claimedAt:new Date().toISOString() });
+
+eq("confirm refuses once a date is gone",
+  (await store.confirmClaim(partial, "P", pair)).reason, "hold_lost");
+eq("  the lapsed date is left free, not stranded",
+  await raw.get(`claim/${partial}/${pair[0]}`, { type:"json" }), null);
+eq("  the rival keeps theirs",
+  (await raw.get(`claim/${partial}/${pair[1]}`, { type:"json" })).bookingId, "RIVAL");
+eq("  and the freed date is sellable again",
+  (await store.claimSlot(partial, { bookingId:"AFTER", dates:[pair[0]] })).ok, true);
+
 await new Promise((r) => proxy.close(r));
 await server.stop();
 console.log(fails ? `\n${fails} FAILING` : "\nAll green.");
