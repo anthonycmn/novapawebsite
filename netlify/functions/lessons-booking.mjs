@@ -6,7 +6,12 @@
 // idempotent, so whichever path gets there first wins and the other no-ops.
 
 import Stripe from "stripe";
-import { bookingForStripeSession, confirmClaim, saveBooking } from "../lib/lessons-store.mjs";
+import {
+  bookingForStripeSession,
+  confirmClaim,
+  readBooking,
+  saveBooking,
+} from "../lib/lessons-store.mjs";
 import { MODES, SESSION_MINUTES, prettyDate } from "../lib/lessons-config.mjs";
 
 function publicView(booking) {
@@ -44,12 +49,25 @@ export default async (req) => {
   }
 
   try {
-    const booking = await bookingForStripeSession(sessionId);
+    const stripe = process.env.STRIPE_SECRET_KEY
+      ? new Stripe(process.env.STRIPE_SECRET_KEY)
+      : null;
+    let session = null;
+
+    let booking = await bookingForStripeSession(sessionId);
+    if (!booking && stripe) {
+      // The session-to-booking pointer is written once the session is already
+      // live, so a checkout that otherwise went fine can be missing it. The
+      // session still names the booking, so ask Stripe rather than tell a
+      // family who has just paid that we have never heard of them.
+      session = await stripe.checkout.sessions.retrieve(sessionId);
+      const id = session?.metadata?.bookingId || session?.client_reference_id;
+      if (id) booking = await readBooking(id);
+    }
     if (!booking) return Response.json({ error: "not_found" }, { status: 404 });
 
-    if (booking.status === "pending" && process.env.STRIPE_SECRET_KEY) {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (booking.status === "pending" && stripe) {
+      session = session || (await stripe.checkout.sessions.retrieve(sessionId));
       if (session.payment_status === "paid") {
         const result = await confirmClaim(booking.slotKey, booking.id, booking.dates);
         booking.status = result.ok ? "confirmed" : "needs_review";

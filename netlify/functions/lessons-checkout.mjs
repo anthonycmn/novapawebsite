@@ -4,6 +4,12 @@
 // The price is recomputed here from the store — the browser's number is never
 // trusted. The hold is placed *before* the Stripe session is created and torn
 // down if that call fails, so a slot is never stranded.
+//
+// The order of the writes is the other half of that. The booking record is
+// written before the session exists, so anything Stripe can later tell us
+// about a payment already has a record to attach itself to; and once the
+// session is live nothing here may fail the request or give the slot back,
+// because from that moment the family can pay.
 
 import Stripe from "stripe";
 import { quoteForCheckout } from "../lib/lessons-availability.mjs";
@@ -112,9 +118,49 @@ export default async (req, context) => {
     `${quote.sessions} × ${SESSION_MINUTES}-minute private lessons · ${when} · ${range}` +
     ` · ${MODES.find((m) => m.id === mode).label}`;
 
+  const booking = {
+    id: bookingId,
+    status: "pending",
+    createdAt: now.toISOString(),
+    paidAt: null,
+    teacherId: teacher.id,
+    teacherName: teacher.name,
+    planId: plan.id,
+    planName: plan.name,
+    day,
+    time,
+    when,
+    mode,
+    slotKey: key,
+    sessions: quote.sessions,
+    dates: quote.dates,
+    firstDate: quote.firstDate,
+    lastDate: quote.lastDate,
+    rateCents: quote.rateCents,
+    grossCents: quote.grossCents,
+    discountPct: quote.discountPct,
+    discountCents: quote.discountCents,
+    totalCents: quote.totalCents,
+    contact,
+    stripeSessionId: null,
+  };
+
+  // The record goes down before the session exists, not after it. The webhook
+  // reconciles a payment by the bookingId carried in the session metadata, so
+  // writing this first is what guarantees a live session always has something
+  // to be matched against — however badly the rest of this handler goes.
+  try {
+    await saveBooking(booking);
+  } catch (err) {
+    console.error("lessons-checkout could not record the booking:", err?.message || err);
+    await releaseClaim(key, bookingId, quote.dates);
+    return Response.json({ error: "checkout_failed" }, { status: 502 });
+  }
+
+  let session;
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const session = await stripe.checkout.sessions.create({
+    session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: contact.email,
       client_reference_id: bookingId,
@@ -148,43 +194,26 @@ export default async (req, context) => {
         mode,
       },
     });
-
-    const booking = {
-      id: bookingId,
-      status: "pending",
-      createdAt: now.toISOString(),
-      paidAt: null,
-      teacherId: teacher.id,
-      teacherName: teacher.name,
-      planId: plan.id,
-      planName: plan.name,
-      day,
-      time,
-      when,
-      mode,
-      slotKey: key,
-      sessions: quote.sessions,
-      dates: quote.dates,
-      firstDate: quote.firstDate,
-      lastDate: quote.lastDate,
-      rateCents: quote.rateCents,
-      grossCents: quote.grossCents,
-      discountPct: quote.discountPct,
-      discountCents: quote.discountCents,
-      totalCents: quote.totalCents,
-      contact,
-      stripeSessionId: session.id,
-    };
-
-    await saveBooking(booking);
-    await linkStripeSession(session.id, bookingId);
-
-    return Response.json({ url: session.url, bookingId });
   } catch (err) {
     console.error("lessons-checkout stripe error:", err?.message || err);
     await releaseClaim(key, bookingId, quote.dates);
+    booking.status = "failed";
+    await saveBooking(booking).catch(() => {});
     return Response.json({ error: "checkout_failed" }, { status: 502 });
   }
+
+  // Past this line the session is live and the family can pay, so nothing
+  // below may release the slot or fail the request. Both writes are
+  // conveniences: the webhook already has the record above plus the bookingId
+  // in the metadata. A missing pointer costs the confirmation page its
+  // shortcut, and that page falls back to asking Stripe.
+  booking.stripeSessionId = session.id;
+  await saveBooking(booking).catch((err) =>
+    console.error("lessons-checkout session id not stored:", err?.message || err));
+  await linkStripeSession(session.id, bookingId).catch((err) =>
+    console.error("lessons-checkout pointer not stored:", err?.message || err));
+
+  return Response.json({ url: session.url, bookingId });
 };
 
 export const config = { path: "/api/lessons/checkout" };
