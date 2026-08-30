@@ -902,7 +902,34 @@
             (h.last4 ? ' · card ending ' + esc(h.last4) : '') + '</span></div>';
         }).join('');
     }
+    // Self-serve card management — Stripe-hosted, and locked down to
+    // updating the payment method + viewing invoices (no cancelling).
+    html += '<button class="act" id="cardBtn" style="margin-top:14px">UPDATE PAYMENT METHOD</button>' +
+      '<div class="empty" style="font-size:12px;margin-top:8px">Opens Stripe\u2019s secure page. The new card is used for all future payments.</div>';
     $('payments').innerHTML = html + '</div></div>';
+    $('cardBtn').addEventListener('click', function(){
+      var b = this; b.disabled = true; b.textContent = 'OPENING\u2026';
+      apiPost({ action: 'billing_portal' }).then(function(d){
+        if (d.url) { window.location.href = d.url; return; }
+        alert(d.error || 'Billing portal unavailable right now.');
+        b.disabled = false; b.textContent = 'UPDATE PAYMENT METHOD';
+      }).catch(function(){
+        b.disabled = false; b.textContent = 'UPDATE PAYMENT METHOD';
+        alert('Network hiccup, try again.');
+      });
+    });
+  }
+
+  // Shared authed POST — same header/body split every action on this page uses.
+  function apiPost(payload){
+    if (PORTAL_TOKEN) payload.portal_token = PORTAL_TOKEN;
+    return fetch('/api/reg-account', {
+      method: 'POST',
+      headers: AUTH_TOKEN
+        ? { 'Content-Type':'application/json', Authorization: 'Bearer ' + AUTH_TOKEN }
+        : { 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function(r){ return r.json(); });
   }
 
   // ── referral tickets: earned by sharing your link (or by joining through
@@ -1059,6 +1086,14 @@
       .then(function(d){
         if (d.error) { showAuth(d.error); return; }
         DATA = d;
+        // Back from Stripe's portal: make every future payment follow the
+        // card they just saved, then confirm so they know it took.
+        if (/[?&]billing=updated/.test(location.search)) {
+          history.replaceState(null, '', location.pathname);
+          apiPost({ action: 'billing_sync' }).then(function(){
+            alert('Your card is updated. All future payments will use it.');
+          }).catch(function(){});
+        }
         $('subLine').textContent = d.family.parent_name
           ? 'Everything registered under ' + d.family.parent_name + "'s account."
           : 'Everything registered under ' + d.family.email + '.';

@@ -302,6 +302,116 @@ export default async (req) => {
   }
 
   // Self-serve redemption: the parent taps Redeem at the box office. Only the
+  // ── Self-serve card management ─────────────────────────────────────────
+  // "billing_portal" opens a Stripe-hosted Billing Portal locked down to
+  // updating the payment method and viewing invoices — a family can never
+  // cancel or reschedule a plan from it. "billing_sync" repoints any pinned
+  // billing at the family's chosen card and is called when they land back
+  // from the portal.
+  //
+  // The pin problem this solves: checkout pins the card onto each
+  // subscription/schedule (default_payment_method), so a card saved in the
+  // portal would otherwise never be the one actually charged. The rule here:
+  // a default the family set themselves always wins for future payments.
+  if (body.action === "billing_portal" || body.action === "billing_sync") {
+    const sk = process.env.STRIPE_SECRET_KEY;
+    if (!sk) return Response.json({ error: "billing unavailable" }, { status: 503 });
+    const sapi = async (path, params) => {
+      const r = await fetch(`https://api.stripe.com/v1/${path}`, {
+        method: params ? "POST" : "GET",
+        headers: {
+          Authorization: `Bearer ${sk}`,
+          ...(params ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+        },
+        body: params ? new URLSearchParams(params).toString() : undefined,
+      });
+      const j = await r.json();
+      if (j.error) throw new Error(`${path}: ${j.error.message}`);
+      return j;
+    };
+
+    try {
+      // Every Stripe customer this email owns: our orders' stripe_customer
+      // (authoritative for web checkouts) plus an email search (payment links
+      // mint a fresh customer per checkout, so one family owns several).
+      const ids = new Set();
+      const ours = await svc(
+        `orders?select=stripe_customer&email=ilike.${encodeURIComponent(email)}&stripe_customer=not.is.null&limit=100`);
+      for (const o of ours) if (o.stripe_customer) ids.add(o.stripe_customer);
+      const search = await sapi(
+        `customers/search?query=${encodeURIComponent(`email:'${email.replace(/'/g, "")}'`)}&limit=10`);
+      for (const c of search.data || []) ids.add(c.id);
+      if (!ids.size) return Response.json({ error: "no billing on file" }, { status: 404 });
+
+      // Find the customers that actually have money in motion, and sync pins
+      // wherever the family has chosen a default card.
+      const live = [];
+      for (const id of ids) {
+        const [cust, subs, scheds] = await Promise.all([
+          sapi(`customers/${id}`),
+          sapi(`subscriptions?customer=${id}&status=all&limit=20`),
+          sapi(`subscription_schedules?customer=${id}&limit=20`),
+        ]);
+        const activeSubs = (subs.data || []).filter((x) =>
+          ["active", "trialing", "past_due", "unpaid"].includes(x.status));
+        const liveScheds = (scheds.data || []).filter((x) =>
+          ["not_started", "active"].includes(x.status));
+        if (activeSubs.length || liveScheds.length) live.push({ id, created: cust.created });
+
+        const chosen = (cust.invoice_settings || {}).default_payment_method;
+        if (!chosen) continue;
+        for (const sub of activeSubs) {
+          if (sub.default_payment_method && sub.default_payment_method !== chosen) {
+            await sapi(`subscriptions/${sub.id}`, { default_payment_method: chosen });
+            console.log(`billing sync: ${sub.id} -> customer default for ${email}`);
+          }
+        }
+        for (const sc of liveScheds) {
+          const pinned = (sc.default_settings || {}).default_payment_method;
+          if (pinned && pinned !== chosen) {
+            await sapi(`subscription_schedules/${sc.id}`, {
+              "default_settings[default_payment_method]": chosen,
+            });
+            console.log(`billing sync: ${sc.id} -> customer default for ${email}`);
+          }
+        }
+      }
+      if (body.action === "billing_sync") return Response.json({ ok: true });
+
+      // The portal is per-customer: open it on the one carrying live billing
+      // (newest first when several), falling back to the newest customer so a
+      // fully-paid family can still fix an expiring card.
+      const all = [...ids];
+      let target = live.sort((a, b) => b.created - a.created)[0]?.id || all[all.length - 1];
+
+      // One locked-down configuration, created on first use and found by
+      // metadata after that. Card update + invoice history only.
+      let cfg = null;
+      const cfgs = await sapi(`billing_portal/configurations?limit=100&active=true`);
+      cfg = (cfgs.data || []).find((c) => (c.metadata || {}).novapa === "card-update");
+      if (!cfg) {
+        cfg = await sapi(`billing_portal/configurations`, {
+          "business_profile[headline]": "NOVAPA — manage your payment method",
+          "features[payment_method_update][enabled]": "true",
+          "features[invoice_history][enabled]": "true",
+          "features[subscription_cancel][enabled]": "false",
+          "features[subscription_update][enabled]": "false",
+          "default_return_url": "https://novapa.org/register/account.html?billing=updated",
+          "metadata[novapa]": "card-update",
+        });
+      }
+      const session = await sapi(`billing_portal/sessions`, {
+        customer: target,
+        configuration: cfg.id,
+        return_url: "https://novapa.org/register/account.html?billing=updated",
+      });
+      return Response.json({ url: session.url });
+    } catch (e) {
+      console.error("reg-account billing_portal", e);
+      return Response.json({ error: "billing portal unavailable" }, { status: 500 });
+    }
+  }
+
   // side belonging to the signed-in email can be stamped, only once — the
   // is.null filter makes a double-tap (or a race) a no-op, not a re-stamp.
   if (body.action === "redeem_referral") {
