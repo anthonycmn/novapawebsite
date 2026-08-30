@@ -143,6 +143,43 @@ async function paymentsFor(email) {
           upcoming.push({ date: nextTs * 1000, amount_cents: amount, desc, ends: null, renews: true });
         }
       }
+      // Plans sold as deposit-now, installments-later have NO subscription
+      // until billing begins — only a not_started schedule — so the loop
+      // above finds nothing and a family sees "past payments" with no hint
+      // of what's coming or when. That guessing is real: Andrea Ansell
+      // (Aug 29, 2026) — "I think the payment might hit on Tuesday" — when
+      // her installment was set for Monday. Enumerate those schedules here.
+      //
+      // Prices are expanded inline because STRIPE_READ_KEY has no standalone
+      // Prices read scope — the expand rides the schedule's own permission
+      // (same trick that fixed the reg-finance forecast, Aug 28).
+      try {
+        const scheds = await stripe(
+          `subscription_schedules?customer=${c.id}&limit=10&expand[]=data.phases.items.price`);
+        for (const sch of scheds.data || []) {
+          if (sch.status !== "not_started") continue;
+          const phases = (sch.phases || []).filter((p) => p.end_date);
+          if (!phases.length) continue;
+          const endAll = phases[phases.length - 1].end_date;
+          const desc = pretty(sch.metadata?.description) || "Payment plan";
+          let d = new Date(phases[0].start_date * 1000);
+          // Same +12h probe as above: billing ticks and phase boundaries can
+          // differ by seconds, and an exact comparison invents a final charge
+          // at the cancel moment.
+          for (let i = 0; d.getTime() / 1000 + 43200 < endAll && i < 24; i++) {
+            const probe = d.getTime() / 1000 + 43200;
+            const ph = phases.find((x) => probe >= x.start_date && probe < x.end_date) || phases[phases.length - 1];
+            const cents = (ph.items || []).reduce(
+              (n, x) => n + (x.price?.unit_amount || 0) * (x.quantity || 1), 0);
+            upcoming.push({
+              date: d.getTime(), amount_cents: cents, desc,
+              ends: sch.end_behavior === "cancel" ? endAll * 1000 : null,
+            });
+            d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), d.getUTCHours(), d.getUTCMinutes()));
+          }
+        }
+      } catch (e) { /* schedules unreadable — the section just stays as-is */ }
+
       // Charges no longer carry an invoice reference on this API version (and
       // invoices no longer carry a charge), so history rows come from paid
       // invoices — the good descriptions live there — and card charges merge
