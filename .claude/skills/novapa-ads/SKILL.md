@@ -138,6 +138,14 @@ group by distinct_id
 Useful events: `quiz_started`, `quiz_completed`, `quiz_register_clicked`,
 `dcu_register_cta_clicked`, `dcu_purchase`, `free_class_details_saved`.
 
+**`dcu_purchase` only exists on dcunifieds.com.** NOVAPA's register flow fires
+its own funnel: `reg_step_viewed` → `reg_payment_started` → **`reg_completed`**
+(the purchase event). Judging a NOVAPA campaign by `dcu_purchase` counts is the
+mistake that briefly declared the profitable Frozen ads worthless on 30 Aug
+2026 — always check `reg_completed` for novapa.org conversions, and confirm a
+sale by matching the event timestamp against `orders.created_at` (real matches
+land within seconds).
+
 ## Acting on ads without the browser
 
 The Meta Marketing API does everything Ads Manager does. Pausing an ad:
@@ -199,7 +207,12 @@ Kept as a baseline, not as current truth.
   it drove one of the two actual purchases**. The other buyer arrived untagged.
 - `quiz-video`: 11 views, 2 starts, **0 completions** — and it also
   underperformed on the NOVAPA side. The one clear-cut kill.
-- NOVAPA Main Funnel and Frozen JR: **0 purchases** on ~$100/day combined.
+- NOVAPA Main Funnel: **0 purchases and zero registration events** from
+  `novapa-classes-2026` traffic — genuinely inert.
+- Frozen JR: first read said 0 purchases, which was the `dcu_purchase` mistake
+  above. Corrected 30 Aug: **2 direct same-session sales** (Aug 25 $729.75,
+  Aug 30 $695) on ~$430 lifetime spend — about 3.3x ROAS, plus 17 ad-touched
+  `reg_payment_started` sessions.
 - DCU cost per purchase: **$201.52** (2 purchases in the window).
 
 The lesson worth keeping: **the quiz generates leads, the weekend ad generates
