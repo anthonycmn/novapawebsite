@@ -88,14 +88,18 @@ export default async (req) => {
     });
     const t = await r.text();
     if (!r.ok) throw new Error(`rpc ${r.status}: ${t.slice(0, 160)}`);
-    const leadId = JSON.parse(t);
+    const rpcOut = JSON.parse(t);
+    const leadId = rpcOut.id || rpcOut;
+    const isNew = rpcOut.is_new !== false;
 
     // Alert — fire-and-forget shape, but awaited so the function doesn't get
     // frozen mid-send. A failed email must never fail the lead.
     try {
       const resend = process.env.RESEND_API_KEY;
       const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
-      if (resend) {
+      // Retakes refresh the row silently — only a brand new lead emails the
+      // team (Jason, Aug 31).
+      if (resend && isNew) {
         const esc = (s) => String(s || "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[c]);
         const line = (l, v) => (v ? `<tr><td style="padding:3px 10px 3px 0;color:#5B6472;font:13px Helvetica,Arial,sans-serif">${l}</td><td style="padding:3px 0;font:14px Helvetica,Arial,sans-serif;color:#0B1422">${esc(v)}</td></tr>` : "");
         await fetch("https://api.resend.com/emails", {
