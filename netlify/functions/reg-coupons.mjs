@@ -16,13 +16,13 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
 const MAX_CREDIT_CENTS = 1000000; // $10,000 — a typo guard, not a policy
 
 async function isAdmin(userToken) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_role`, {
     method: "POST",
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${userToken}`, "Content-Type": "application/json" },
     body: "{}",
   });
   if (!r.ok) return false;
-  return (await r.text()).trim() === "true";
+  return (await r.text()).replace(/"/g, "").trim() === "full";
 }
 function svc(extra = {}) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

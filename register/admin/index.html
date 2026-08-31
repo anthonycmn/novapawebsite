@@ -264,8 +264,8 @@
     padding:7px 16px; cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:600; }
   .ldpills button.on { background:rgba(232,184,75,0.13); border-color:rgba(232,184,75,0.45); color:var(--gold); }
   .kan { display:flex; gap:12px; align-items:flex-start; overflow-x:auto; padding-bottom:10px; }
-  .kcol { flex:0 0 268px; background:rgba(8,17,31,0.45); border:1px solid var(--line); border-radius:12px;
-    display:flex; flex-direction:column; max-height:calc(100vh - 250px); }
+  .kcol { flex:0 0 288px; background:rgba(8,17,31,0.45); border:1px solid var(--line); border-radius:12px;
+    display:flex; flex-direction:column; max-height:calc(100vh - 140px); }
   .kcol.over { border-color:rgba(232,184,75,0.55); background:rgba(232,184,75,0.05); }
   .kcol-h { display:flex; align-items:center; gap:8px; padding:11px 13px; border-bottom:1px solid var(--line);
     font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--dim); font-weight:600; }
@@ -285,6 +285,15 @@
   .ldd-row { display:flex; gap:8px; font-size:12px; align-items:baseline; }
   .ldd-row span { color:var(--dim); flex:0 0 86px; }
   .ldd-row b { font-weight:500; flex:1; word-break:break-word; white-space:pre-wrap; }
+  .ldd-notes { display:flex; flex-direction:column; gap:6px; }
+  .ldd-notetext { white-space:pre-wrap; font-size:12.5px; line-height:1.55; color:var(--ink);
+    background:rgba(8,17,31,0.55); border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    max-height:180px; overflow-y:auto; }
+  .ldNoteInput { width:100%; resize:vertical; min-height:64px; padding:8px 10px; border-radius:8px;
+    border:1px solid var(--line); background:rgba(8,17,31,0.55); color:var(--ink);
+    font-family:inherit; font-size:12.5px; line-height:1.5; }
+  .ldNoteInput:focus { outline:none; border-color:rgba(232,184,75,0.5); }
+  .ldNoteSave { align-self:flex-start; }
 </style>
 <meta name="theme-color" content="#08111F">
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -568,7 +577,21 @@
       if (!r.data) { $('login').style.display=''; $('lgMsg').textContent = 'No access for ' + (s.user.email||''); sb.auth.signOut(); return; }
       $('app').style.display='flex';
       $('whoEmail').textContent = s.user.email;
-      boot();
+      // Role gate (Aug 31): 'ops' (Katie, public safety) gets leads and
+      // registration management with full camper info. Money and marketing
+      // stay 'full' only - the server enforces this on every money function,
+      // hiding the nav here just keeps her out of dead ends.
+      sb.rpc('admin_role').then(function(rr){
+        if (rr.data === 'ops') {
+          ['[data-s="products"]','[data-g="money"]','[data-g="rewards"]','[data-s="starpages"]','[data-s="hiring"]'].forEach(function(sel){
+            var a = document.querySelector('#nav ' + sel);
+            if (a) a.style.display = 'none';
+          });
+          var rev = $('stRevenue');
+          if (rev) { rev.style.display = 'none'; var h = rev.previousElementSibling; if (h && h.tagName === 'H2') h.style.display = 'none'; }
+        }
+        boot();
+      }, function(){ boot(); });
     });
   });
   $('lgGo').addEventListener('click', function(){
@@ -2113,7 +2136,7 @@
   var LD_DRAG = null;     // key of the card currently being dragged
   var LD_BUSY = {};       // key -> stage we optimistically moved it to
   var LD_MSG = '';        // last move failure, shown next to the counts
-  var LD_BOARDS = [['dcu', 'DC Unifieds'], ['novapa', 'NOVAPA']];
+  var LD_BOARDS = [['dcu', 'DC Unifieds'], ['novapa', 'NOVAPA'], ['free', 'Free Class']];
 
   // esc() escapes text, not quotes; anything landing in an attribute goes
   // through this instead. Every field below is free text from a public form.
@@ -2162,7 +2185,14 @@
   function ldRows(){
     if (!LEADS) return [];
     if (LD_BOARD === 'dcu') return (LEADS.dcu || []).slice();
-    return (LEADS.quiz || []).concat(LEADS.freeclass || []);
+    if (LD_BOARD === 'free') return (LEADS.freeclass || []).slice();
+    return (LEADS.quiz || []).slice();
+  }
+  // Free class runs its own three-stage pipeline; the other boards share the
+  // five-stage sales one.
+  function ldStages(){
+    if (!LEADS) return [];
+    return LD_BOARD === 'free' ? (LEADS.free_stages || []) : (LEADS.stages || []);
   }
   function ldWhen(x){ return x.updated_at || x.created_at || 0; }
   function ldSort(a, b){
@@ -2207,11 +2237,9 @@
     var noteText = x._stream === 'dcu' ? (x.coach_notes || '') : (x.notes || '');
     h += '<div class="ldd-notes">' +
       '<div class="sub" style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin:10px 0 4px">Notes</div>' +
-      (noteText ? '<div class="ldd-notetext" style="white-space:pre-wrap;font-size:12.5px;margin-bottom:8px">' + esc(noteText) + '</div>' : '') +
-      '<div style="display:flex;gap:6px">' +
-        '<input type="text" class="ldNoteInput" placeholder="Add a note…" maxlength="500" style="flex:1;min-width:0">' +
-        '<button class="act ldNoteSave" data-key="' + ldAttr(x.key) + '">SAVE</button>' +
-      '</div></div>';
+      (noteText ? '<div class="ldd-notetext">' + esc(noteText) + '</div>' : '') +
+      '<textarea class="ldNoteInput" placeholder="Add a note…" maxlength="500" rows="3"></textarea>' +
+      '<button class="act ldNoteSave" data-key="' + ldAttr(x.key) + '">SAVE NOTE</button></div>';
     return '<div class="ldd">' + h + '</div>';
   }
   function ldCard(x){
@@ -2251,7 +2279,7 @@
       return '<button data-b="' + b[0] + '" class="' + (LD_BOARD === b[0] ? 'on' : '') + '">' + b[1] + '</button>';
     }).join('');
 
-    var stages = (LEADS && LEADS.stages) || [];
+    var stages = ldStages();
     var rows = ldRows().sort(ldSort);
     var dcuOk = !LEADS || LEADS.dcu_status === 'ok';
     var hot = rows.filter(function(x){ return x.hot; }).length;

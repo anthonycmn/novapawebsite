@@ -5,7 +5,7 @@ import Stripe from "stripe";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
 
 async function isAdmin(userToken) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_role`, {
     method: "POST",
     headers: {
       apikey: SUPABASE_ANON_KEY,
@@ -15,8 +15,8 @@ async function isAdmin(userToken) {
     body: "{}",
   });
   if (!r.ok) return false;
-  const t = (await r.text()).trim();
-  return t === "true";
+  const t = (await r.text()).replace(/"/g, "").trim();
+  return t === "full";
 }
 
 async function svcGet(path) {

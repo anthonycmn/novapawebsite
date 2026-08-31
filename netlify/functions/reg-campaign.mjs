@@ -200,12 +200,12 @@ async function audienceFor(campaign) {
 
 async function isAdmin(userToken) {
   const { SUPABASE_ANON_KEY } = await import("./reg-config.mjs");
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_role`, {
     method: "POST",
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${userToken}`, "Content-Type": "application/json" },
     body: "{}",
   });
-  return r.ok && (await r.text()).trim() === "true";
+  return r.ok && (await r.text()).replace(/"/g, "").trim() === "full";
 }
 
 export default async () => {

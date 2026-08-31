@@ -26,12 +26,12 @@ See you at the theatre,
 Jason from Broadway Bound`;
 
 async function isAdmin(userToken) {
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_role`, {
     method: "POST",
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${userToken}`, "Content-Type": "application/json" },
     body: "{}",
   });
-  return r.ok && (await r.text()).trim() === "true";
+  return r.ok && (await r.text()).replace(/"/g, "").trim() === "full";
 }
 
 export default async (req) => {

@@ -27,7 +27,16 @@ const STAGES = [
   { id: "registered", label: "Registered" },
   { id: "closed_lost", label: "Closed lost" },
 ];
+// Free class is a booking pipeline, not a sales one: they land as Registered
+// (they booked), then it's just whether we've talked to them and whether the
+// seat is confirmed for the date (Jason, Aug 31).
+const FREE_STAGES = [
+  { id: "registered", label: "Registered" },
+  { id: "contacted", label: "Contacted" },
+  { id: "confirmed", label: "Confirmed" },
+];
 const STAGE_IDS = new Set(STAGES.map((s) => s.id));
+const FREE_STAGE_IDS = new Set(FREE_STAGES.map((s) => s.id));
 
 async function isAdmin(userToken) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
@@ -215,7 +224,6 @@ export default async (req) => {
   if (action === "set_stage") {
     const key = String(body.key || "");
     const stage = String(body.stage || "");
-    if (!STAGE_IDS.has(stage)) return Response.json({ error: "bad_stage" }, { status: 400 });
     const cut = key.indexOf(":");
     const prefix = cut < 0 ? "" : key.slice(0, cut);
     const id = cut < 0 ? "" : key.slice(cut + 1);
@@ -223,6 +231,9 @@ export default async (req) => {
     // The body may name a `by`, but the token is the one we trust to be a real
     // admin, so it wins; body.by is only a fallback for scripted calls.
     const by = emailFromToken(auth) || body.by || null;
+
+    const validStages = prefix === "free" ? FREE_STAGE_IDS : STAGE_IDS;
+    if (!validStages.has(stage)) return Response.json({ error: "bad_stage" }, { status: 400 });
 
     if (prefix === "dcu") {
       const r = await dcuSetStage(id, stage, by);
@@ -315,7 +326,7 @@ ${line}` : line;
   }));
   const freeRows = (freeclass || []).map((f) => ({
     id: f.id, key: `free:${f.id}`, board: "novapa",
-    stage: (stageMap.get(`free:${f.id}`) || {}).stage || "new",
+    stage: (stageMap.get(`free:${f.id}`) || {}).stage || "registered",
     notes: (stageMap.get(`free:${f.id}`) || {}).notes || "",
     created_at: f.created_at, parent_name: f.parent_name,
     email: f.email, phone: f.phone, child_name: f.child_name,
@@ -330,6 +341,7 @@ ${line}` : line;
 
   return Response.json({
     stages: STAGES,
+    free_stages: FREE_STAGES,
     dcu: dcu.rows.map((d) => applyPaid(d, !!d.purchased_at)),
     dcu_status: dcu.status,
     quiz: quizRows.map((q) => applyPaid(q, isPaid(q.email))),

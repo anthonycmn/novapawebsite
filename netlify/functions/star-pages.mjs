@@ -110,12 +110,12 @@ export default async function handler(req) {
       // photo links. Guarded by the same is_admin check as the rest of admin.
       const auth = req.headers.get("authorization") || "";
       const userToken = auth.replace(/^Bearer\s+/i, "");
-      const chk = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+      const chk = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_role`, {
         method: "POST",
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${userToken}`, "Content-Type": "application/json" },
         body: "{}",
       });
-      if (!chk.ok || (await chk.text()).trim() !== "true") return json(403, { error: "admins only" });
+      if (!chk.ok || (await chk.text()).replace(/"/g, "").trim() !== "full") return json(403, { error: "admins only" });
 
       const rows = await db("star_page_ads?select=*&order=created_at.desc");
       for (const r of rows) {
