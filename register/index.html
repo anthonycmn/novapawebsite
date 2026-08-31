@@ -3369,6 +3369,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   } catch (e) {}
   function exitHref(){
     try { var b = sessionStorage.getItem('regBackTo'); if (b) return b; } catch (e) {}
+    // Camp Pack deep links are a funnel: leaving returns to the pack page,
+    // never the full catalog (Jason, Aug 30 - no stumbling into everything else)
+    if (state.catItems.length === 1 && state.catItems[0].id === 990010) return '/camp-pack';
     return isCatMode() ? '/register/catalog.html' : '/summer-2027';
   }
   $('closeX').addEventListener('click', function(){

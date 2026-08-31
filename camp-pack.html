@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Camp Pack — NOVAPA Broadway Bound</title>
+<meta name="description" content="5 full theatre camp days for every day off school this year. A punch card for the season: $349 per camper, plus 2 free Snow Day credits through Labor Day. Leesburg, VA.">
+<meta property="og:title" content="Every day off school, handled">
+<meta property="og:description" content="5 full camp days on a punch card, plus 2 free Snow Day credits through Labor Day. $553 of camp for $349. Ages 5 to 15, Leesburg VA.">
+<meta property="og:image" content="https://novapa.org/register/img/show-2026.jpg">
+<meta name="robots" content="noindex">
+<!-- Sales funnel page for the Day Camp Pack (Aug 30 2026): promotes ONLY the
+     punch-card pack and funnels straight into the one-item checkout at
+     /register/?activity=990010. No site nav, one way in, one way out.
+     UTM params forward into every checkout link. -->
+<style>
+  :root { --navy:#0b1b33; --navy2:#122542; --ink:#f2f5fa; --dim:#aab6c8; --gold:#E8B84B; --gold2:#f2c94c; --line:rgba(255,255,255,0.12); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:var(--ink); font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; line-height:1.55; }
+  .wrap { max-width:640px; margin:0 auto; padding:0 20px; }
+  .hero { text-align:center; padding:34px 0 8px; }
+  .eyebrow { display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; color:var(--gold); border:1px solid rgba(232,184,75,0.45); border-radius:999px; padding:6px 14px; }
+  h1 { font-size:clamp(30px, 6.4vw, 44px); line-height:1.12; font-weight:800; margin-top:16px; }
+  h1 em { color:var(--gold); font-style:normal; }
+  .sub { font-size:16.5px; color:var(--dim); max-width:520px; margin:12px auto 0; }
+  .sub b { color:var(--ink); }
+  h2 { font-size:clamp(22px, 4.6vw, 28px); font-weight:800; }
+  .btn { display:block; width:100%; max-width:420px; margin:22px auto 0; text-align:center; background:linear-gradient(180deg,var(--gold2),#C8892A); color:#1a1608; font-weight:800; font-size:16px; letter-spacing:0.06em; text-transform:uppercase; text-decoration:none; padding:16px 18px; border-radius:12px; box-shadow:0 6px 22px rgba(232,184,75,0.25); }
+  .tiny { text-align:center; font-size:12.5px; color:var(--dim); margin-top:10px; }
+  .price { display:flex; align-items:baseline; justify-content:center; gap:14px; margin-top:22px; }
+  .price .was { font-size:22px; color:var(--dim); text-decoration:line-through; }
+  .price .now { font-size:52px; font-weight:800; color:var(--gold); line-height:1; }
+  .price .per { font-size:13px; color:var(--dim); }
+  .cd { display:flex; justify-content:center; gap:10px; margin-top:20px; }
+  .cd div { background:var(--navy2); border:1px solid var(--line); border-radius:10px; min-width:64px; padding:10px 6px; text-align:center; }
+  .cd b { display:block; font-size:24px; }
+  .cd span { font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--dim); }
+  .cdlabel { text-align:center; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--dim); margin-top:22px; }
+  .steps { margin:44px auto 0; text-align:center; }
+  .exgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:18px; }
+  @media (max-width:680px) { .exgrid { grid-template-columns:1fr; } }
+  .excell { text-align:center; background:rgba(255,255,255,0.04); border:1px solid var(--line); border-radius:14px; padding:20px 16px; }
+  .stepn { width:40px; height:40px; border-radius:50%; background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1608; font-weight:800; font-size:19px; display:flex; align-items:center; justify-content:center; margin:0 auto 10px; }
+  .excell b { display:block; color:var(--gold); font-size:16px; font-weight:800; margin-bottom:5px; }
+  .excell p { font-size:14px; color:var(--ink); line-height:1.55; }
+  .math { background:var(--navy2); border:1px solid var(--line); border-radius:16px; padding:22px 22px 18px; margin-top:40px; }
+  .math .row { display:flex; justify-content:space-between; font-size:15px; padding:7px 0; border-bottom:1px solid var(--line); }
+  .math .row:last-of-type { border-bottom:0; }
+  .math .row b { color:var(--gold); }
+  .math .label { font-size:11.5px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+  .photo { width:100%; border-radius:16px; display:block; margin:8px 0 14px; }
+  .day { margin-top:44px; }
+  .day .t { display:flex; gap:14px; padding:11px 0; border-bottom:1px solid var(--line); font-size:15px; }
+  .day .t:last-child { border-bottom:0; }
+  .day .t b { color:var(--gold); min-width:74px; font-variant-numeric:tabular-nums; }
+  .bands { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:18px; }
+  @media (max-width:680px) { .bands { grid-template-columns:1fr; } }
+  .band { background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:12px; padding:16px 12px; text-align:center; }
+  .band .a { color:var(--gold); font-weight:800; font-size:16px; }
+  .band p { font-size:13px; color:var(--dim); margin-top:6px; line-height:1.5; }
+  .reviews { margin:44px auto 6px; text-align:center; }
+  .rev { background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:12px; text-align:center; }
+  .rev .stars { color:var(--gold); font-size:13px; letter-spacing:2px; margin-bottom:7px; }
+  .rev blockquote { font-size:15px; line-height:1.6; }
+  .rev .who { margin-top:9px; font-size:12.5px; color:var(--dim); font-weight:600; }
+  .faq { margin-top:44px; }
+  .faq details { border-bottom:1px solid var(--line); padding:13px 0; }
+  .faq summary { cursor:pointer; font-weight:700; font-size:15.5px; list-style:none; }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq p { font-size:14.5px; color:var(--dim); margin-top:8px; }
+  .urgent { text-align:center; font-size:15px; color:var(--gold); font-weight:700; margin-top:30px; }
+  footer { text-align:center; padding:38px 20px 44px; color:var(--dim); font-size:12.5px; }
+  footer a { color:var(--dim); }
+</style>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2191001311729801');
+fbq('init', '902777265812159');
+fbq('track', 'PageView');
+fbq('track', 'ViewContent', { content_name: 'Day Camp Pack', content_type: 'product' });
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=2191001311729801&ev=PageView&noscript=1"/>
+<img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel Code -->
+</head>
+<body>
+
+<div class="wrap hero">
+  <span class="eyebrow">Labor Day Sale &middot; ends Monday night</span>
+  <h1>Every day off school, <em>handled.</em></h1>
+  <p class="sub">A punch card for the season: <b>5 full theatre camp days</b> your camper can use on any day camps this school year, plus <b>2 free Snow Day credits</b> when you book by Labor Day.</p>
+  <div class="price">
+    <span class="was">$553</span>
+    <span class="now">$349</span>
+    <span class="per">per camper</span>
+  </div>
+  <a class="btn" data-reg href="/register/?activity=990010">Get the Camp Pack</a>
+  <p class="tiny">Takes about a minute. You don&rsquo;t pick a single date today.</p>
+  <p class="cdlabel" id="cdlabel">The sale ends in</p>
+  <div class="cd" id="cd">
+    <div><b id="cdD">0</b><span>days</span></div>
+    <div><b id="cdH">00</b><span>hrs</span></div>
+    <div><b id="cdM">00</b><span>min</span></div>
+    <div><b id="cdS">00</b><span>sec</span></div>
+  </div>
+</div>
+
+<div class="wrap steps">
+  <h2>How the punch card works</h2>
+  <div class="exgrid">
+    <div class="excell"><div class="stepn">1</div><b>Buy it once</b>
+      <p>One checkout, one minute. The pack is per camper, and siblings booked together save 5%.</p></div>
+    <div class="excell"><div class="stepn">2</div><b>Pick days whenever</b>
+      <p>Redeem your 5 credits for any day camps on the calendar. School&rsquo;s-out days, teacher workdays, any time through June 30, 2027. Each day prices at $0 at checkout.</p></div>
+    <div class="excell"><div class="stepn">3</div><b>Snow days included</b>
+      <p>Book by Labor Day and get 2 free Snow Day credits. When school cancels, camp doesn&rsquo;t. We post by 7 AM and take it from there.</p></div>
+  </div>
+</div>
+
+<div class="wrap math">
+  <div class="label">The math</div>
+  <div class="row"><span>5 camp days, booked one at a time</span><span>$395</span></div>
+  <div class="row"><span>2 Snow Day Fun Days</span><span>$158</span></div>
+  <div class="row"><span>Total value</span><span>$553</span></div>
+  <div class="row"><b>The Camp Pack, through Labor Day</b><b>$349</b></div>
+</div>
+
+<div class="wrap day">
+  <h2 style="text-align:center">What a camp day looks like</h2>
+  <div style="margin-top:14px">
+    <div class="t"><b>8:30 AM</b><span>Drop-off, warmups, and acting games. Work begins on a piece they&rsquo;ll perform at the end of the day.</span></div>
+    <div class="t"><b>12:00 PM</b><span>Packed lunch together. The room stays loud.</span></div>
+    <div class="t"><b>1:00 PM</b><span>Choreography, scene work, and a full run.</span></div>
+    <div class="t"><b>4:15 PM</b><span>Pick-up, with a showing for every family who can stay.</span></div>
+  </div>
+  <img class="photo" style="margin-top:18px" src="/register/img/rehearsal-2026.jpg" alt="NOVAPA kids rehearsing choreography" loading="lazy">
+</div>
+
+<div class="wrap">
+  <h2 style="text-align:center">Every camper works with their own age group</h2>
+  <div class="bands">
+    <div class="band"><div class="a">Ages 5&ndash;9</div><p>Songs, stories, games, and choreography pitched so a five year old can keep up.</p></div>
+    <div class="band"><div class="a">Ages 9&ndash;12</div><p>Real scene work and real choreography. Deeper into character and technique.</p></div>
+    <div class="band"><div class="a">Ages 12&ndash;15</div><p>Audition material, ensemble work, and feedback that carries into their next show.</p></div>
+  </div>
+  <a class="btn" data-reg href="/register/?activity=990010">Get the Camp Pack</a>
+</div>
+
+<div class="wrap reviews">
+  <h2>What NOVAPA parents say</h2>
+  <div style="margin-top:14px">
+  <div class="rev"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+    <blockquote>&ldquo;Every child walks through those doors feeling seen, valued, and like a star &mdash; and that&rsquo;s something they&rsquo;ll remember long after the curtain closes.&rdquo;</blockquote>
+    <div class="who">Holly Tucker &middot; Parent</div></div>
+  <div class="rev"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+    <blockquote>&ldquo;Your crew very quickly built a passion in her that I hope lasts a lifetime. I&rsquo;ve been truly impressed!&rdquo;</blockquote>
+    <div class="who">Megan Rosh &middot; Parent</div></div>
+  <div class="rev"><div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+    <blockquote>&ldquo;Our daughter was confident and comfortable in her role. She&rsquo;s already asking about the next program!&rdquo;</blockquote>
+    <div class="who">Kanages Mohler &middot; Parent</div></div>
+  </div>
+</div>
+
+<div class="wrap faq">
+  <h2 style="text-align:center; margin-bottom:8px">Fair questions, honest answers</h2>
+  <details><summary>My kid is shy.</summary>
+    <p>So were half the kids who&rsquo;ve stood on our stage. Nobody is pushed into a bigger part than they want. Some kids find their voice in the ensemble first. That counts.</p></details>
+  <details><summary>How is this different from their shows and classes?</summary>
+    <p>Camp is its own thing. One full day, its own piece, performed by 4:15. No lines to learn ahead, no costumes to track, nothing carries home. It fills the days the calendar leaves empty.</p></details>
+  <details><summary>What if our schedule changes?</summary>
+    <p>That&rsquo;s the point of the punch card. Pick days now or as the school year unfolds. Credits are good through June 30, 2027 and live in your My NOVAPA account.</p></details>
+  <details><summary>Is a full day long for a five year old?</summary>
+    <p>It&rsquo;s 8:30 to 4:15 broken into short bursts: games, music, movement, snack, stage. They&rsquo;re far more likely to ask to stay late than to ask to leave early.</p></details>
+  <details><summary>How do the snow days work?</summary>
+    <p>When your school division closes for snow and we run a Snow Day Fun Day, a snow credit covers it. We decide early and post by 7 AM. Snow credits come free with packs booked by Labor Day.</p></details>
+  <details><summary>Do dates fill?</summary>
+    <p>Yes. Every camp day is capped by age group, and once a date fills, it&rsquo;s filled. Credit holders come first on snow days.</p></details>
+</div>
+
+<div class="wrap">
+  <p class="urgent">The Labor Day Sale ends Monday at midnight.</p>
+  <a class="btn" data-reg href="/register/?activity=990010">Get the Camp Pack</a>
+  <p class="tiny">$349 per camper. Nothing else to decide today.</p>
+</div>
+
+<footer>
+  Northern Virginia Performing Arts &middot; National Conference Center, Leesburg VA<br>
+  <a href="/day-camps">See the camp calendar</a> &middot; <a href="/policies">Policies</a> &middot; <a href="mailto:info@novapa.org">info@novapa.org</a>
+</footer>
+
+<script>
+  (function(){
+    var t = new Date('2026-09-08T03:59:59Z').getTime();
+    var el = { d: document.getElementById('cdD'), h: document.getElementById('cdH'), m: document.getElementById('cdM'), s: document.getElementById('cdS') };
+    function tick(){
+      var ms = t - Date.now();
+      if (ms <= 0) {
+        document.getElementById('cd').style.display = 'none';
+        document.getElementById('cdlabel').textContent = 'The Labor Day Sale has ended. The pack is still $349; the free snow days were the sale.';
+        return;
+      }
+      el.d.textContent = Math.floor(ms / 86400000);
+      el.h.textContent = String(Math.floor(ms / 3600000) % 24).padStart(2, '0');
+      el.m.textContent = String(Math.floor(ms / 60000) % 60).padStart(2, '0');
+      el.s.textContent = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
+      setTimeout(tick, 1000);
+    }
+    tick();
+  })();
+  // forward utm/fbclid params into checkout so attribution survives the hop
+  (function(){
+    var qs = location.search.replace(/^\?/, '');
+    if (!qs) return;
+    document.querySelectorAll('a[data-reg]').forEach(function(a){
+      a.href = a.href + (a.href.indexOf('?') === -1 ? '?' : '&') + qs;
+    });
+  })();
+</script>
+</body>
+</html>
