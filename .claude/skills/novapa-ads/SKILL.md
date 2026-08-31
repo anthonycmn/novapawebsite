@@ -94,7 +94,18 @@ have hit the wrong ad twice out of three times.
 | `120249662513130479` | DCU — video v1 | DC Metro — Quiz funnel | `quiz-video` | $19.15 — **PAUSED 28 Aug** |
 | `120249662527220479` | DCU — $699 price | DC Metro — Main website | `site-price` | — PAUSED |
 
-The four NOVAPA/Frozen ads carry **no `utm_content` at all**, which is why
+Added 31 Aug 2026, adset "NOVAPA Free class" (static creatives beside the
+video, utm_content `freeclass-static-<slug>`): `120249706877910479` kids,
+`120249706878280479` spotlight, `120249706878800479` shrek,
+`120249706878970479` castle, `120249706879580479` gingerbread.
+
+**API gotcha that cost an hour:** POSTing `object_story_spec` with curl `-d`
+breaks on long messages (newlines/spaces reach Meta unencoded) and returns the
+useless spec error 1815166 — always use `--data-urlencode`. Creating creatives
+that post as the Page also requires the PAGE asset assigned to the system user
+(error 1341012), and the app must be published/Live (error 1885183, dev mode).
+
+The four original NOVAPA/Frozen ads carry **no `utm_content` at all**, which is why
 NOVAPA-side creative attribution is guesswork. Adding url_tags to those is the
 single highest-value fix to the measurement setup.
 
