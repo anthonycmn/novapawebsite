@@ -2062,7 +2062,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         esc(a.name) + '</div>' +
         '<div class="tiny" style="text-align:left;margin:0 0 4px">' + esc(a.age_range || '') +
         (a.schedule_name ? ' · ' + esc(a.schedule_name) : '') + '</div>' +
-        '<div class="tiny" style="text-align:left;margin:0 0 8px;color:var(--gold3)">' + priceLine + '</div>' + rows + '</div>';
+        '<div class="tiny" style="text-align:left;margin:0 0 8px;color:var(--gold3)">' + priceLine + '</div>' +
+        (a.description ? '<div class="tiny" style="text-align:left;margin:0 0 10px;color:var(--ink-dim)">' + esc(a.description) + '</div>' : '') + rows + '</div>';
       return poster ? '<div class="showb">' + poster + inner + '</div>' : inner;
     }).join('');
     html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
