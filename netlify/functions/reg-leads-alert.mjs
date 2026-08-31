@@ -77,6 +77,11 @@ Prescreens <b>${esc(a.prescreen || "?")}</b> &middot; decision <b>${esc(a.certai
 }
 
 export default async () => {
+  // KILL SWITCH (Aug 31 2026): this function spammed the team every tick when
+  // its blob state stopped persisting. OFF unless explicitly re-enabled.
+  if (String(process.env.LEADS_ALERT_ENABLED || "").toLowerCase() !== "on") {
+    return new Response(JSON.stringify({ skipped: "disabled" }), { status: 200 });
+  }
   const base = process.env.DCU_SUPABASE_URL;
   const key = process.env.DCU_SERVICE_KEY;
   const resend = process.env.RESEND_API_KEY;
