@@ -2388,6 +2388,8 @@
   $('ldBoard').addEventListener('click', function(e){
     // the mailto:/tel: links are the whole point of the card — never swallow them
     if (e.target.closest('a')) return;
+    // clicks inside the notes editor are edits, not open/close gestures
+    if (e.target.closest('.ldd-notes')) return;
     var c = e.target.closest('.ldcard');
     if (!c) return;
     LD_OPEN = LD_OPEN === c.dataset.key ? null : c.dataset.key;
