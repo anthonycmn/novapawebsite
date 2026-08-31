@@ -186,10 +186,20 @@ wizard; the step then renders a real permission picker.
 
 ## Ads Manager UI gotchas (why you should prefer the API)
 
-- **Two Chrome profiles.** Jason's personal profile (`iamjasonstacks`, Stacks
-  Industries portfolio) has NO access to this ad account. The NOVAPA profile
-  does. If Ads Manager says "you don't have access to any ad accounts", you are
-  in the wrong profile — do not conclude the account is missing.
+- **Identity check BEFORE any click, every time.** Two traps produce the same
+  symptom ("no access" / "no apps" / "content isn't available"): Jason's
+  personal Chrome profile (`iamjasonstacks`) lacking access, and — subtler —
+  the ONE extension-connected Chrome having its facebook.com session switched
+  to the wrong Facebook profile (the avatar menu toggles between the NOVAPA
+  Page profile and Jason Jones; developer + Business Settings surfaces need
+  Jason Jones, and a checkpoint or portal flow can leave it switched). The
+  rule: load the target surface with the explicit business_id
+  (1750191982259607), screenshot, and confirm the "Northern Virginia
+  Performing Arts" header or Jason Jones identity renders before ANY click.
+  Wrong identity -> switch via the avatar menu (facebook.com top right ->
+  profile switcher), reload, re-verify. Never conclude access is missing from
+  one wrong-identity screen, and never drive a flow on a page that failed the
+  identity check.
 - **The Amount spent / Impressions / Reach columns render blank** on the login
   used so far, even when scrolled into view. Results and cost-per-result do
   show. Treat spend as unavailable from the UI; use the API.
