@@ -2202,7 +2202,17 @@
     }
     h += ldRow('First seen', x.created_at ? dt(x.created_at) : '');
     if (x.updated_at && x.updated_at !== x.created_at) h += ldRow('Updated', dt(x.updated_at));
-    return '<div class="ldd">' + (h || '<span class="sub">Nothing else on file.</span>') + '</div>';
+    // Notes: DCU carries coach_notes (shared with the Atlas coach board,
+    // append-only from here); NOVAPA leads keep theirs on lead_stages.
+    var noteText = x._stream === 'dcu' ? (x.coach_notes || '') : (x.notes || '');
+    h += '<div class="ldd-notes">' +
+      '<div class="sub" style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin:10px 0 4px">Notes</div>' +
+      (noteText ? '<div class="ldd-notetext" style="white-space:pre-wrap;font-size:12.5px;margin-bottom:8px">' + esc(noteText) + '</div>' : '') +
+      '<div style="display:flex;gap:6px">' +
+        '<input type="text" class="ldNoteInput" placeholder="Add a note…" maxlength="500" style="flex:1;min-width:0">' +
+        '<button class="act ldNoteSave" data-key="' + ldAttr(x.key) + '">SAVE</button>' +
+      '</div></div>';
+    return '<div class="ldd">' + h + '</div>';
   }
   function ldCard(x){
     var locked = ldLocked(x);
@@ -2366,6 +2376,36 @@
       try { e.dataTransfer.setData('text/plain', LD_DRAG); } catch (err) {}
     }
   });
+  $('ldBoard').addEventListener('click', function(e){
+    var btn = e.target.closest('.ldNoteSave');
+    if (!btn) return;
+    e.stopPropagation();
+    var card = btn.closest('.ldcard');
+    var input = card && card.querySelector('.ldNoteInput');
+    var note = input && input.value.trim();
+    if (!note) return;
+    btn.disabled = true; btn.textContent = 'SAVING…';
+    ldApi({ action: 'add_note', key: btn.dataset.key, note: note }).then(function(r){
+      if (!r || r.error) { LD_MSG = 'note not saved: ' + ((r && r.error) || 'error'); btn.disabled = false; btn.textContent = 'SAVE'; renderLeads(); return; }
+      LD_MSG = '';
+      // optimistic append so the note shows instantly; the next refresh
+      // brings the server-stamped copy
+      var x = ldFind(btn.dataset.key);
+      if (x) {
+        if (x._stream === 'dcu') x.coach_notes = (x.coach_notes ? x.coach_notes + '\n' : '') + r.line;
+        else x.notes = (x.notes ? x.notes + '\n' : '') + r.line;
+      }
+      renderLeads();
+      loadLeads();
+    }).catch(function(){ btn.disabled = false; btn.textContent = 'SAVE'; LD_MSG = 'note not saved: network error'; renderLeads(); });
+  }, true);
+  // typing in the note field must not toggle or drag the card
+  $('ldBoard').addEventListener('mousedown', function(e){
+    if (e.target.closest('.ldNoteInput, .ldNoteSave')) e.stopPropagation();
+  }, true);
+  $('ldBoard').addEventListener('dragstart', function(e){
+    if (e.target.closest && e.target.closest('.ldNoteInput')) e.preventDefault();
+  }, true);
   $('ldBoard').addEventListener('dragend', function(){
     LD_DRAG = null;
     if (LEADS) renderLeads();

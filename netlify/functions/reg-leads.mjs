@@ -163,9 +163,9 @@ async function dcuSetStage(id, stage, by) {
 // somebody actually dragged, so it stays far smaller than the lead lists.
 async function loadStageMap() {
   try {
-    const rows = await db("lead_stages?select=board,lead_id,stage&limit=5000");
+    const rows = await db("lead_stages?select=board,lead_id,stage,notes&limit=5000");
     const m = new Map();
-    for (const r of rows || []) m.set(`${r.board}:${r.lead_id}`, r.stage);
+    for (const r of rows || []) m.set(`${r.board}:${r.lead_id}`, { stage: r.stage, notes: r.notes || "" });
     return m;
   } catch { return new Map(); }
 }
@@ -246,6 +246,54 @@ export default async (req) => {
     return Response.json({ error: "bad_key" }, { status: 400 });
   }
 
+  if (action === "add_note") {
+    const key = String(body.key || "");
+    const note = String(body.note || "").trim().slice(0, 500);
+    if (!note) return Response.json({ error: "empty_note" }, { status: 400 });
+    const cut = key.indexOf(":");
+    const prefix = cut < 0 ? "" : key.slice(0, cut);
+    const id = cut < 0 ? "" : key.slice(cut + 1);
+    if (!id) return Response.json({ error: "bad_key" }, { status: 400 });
+    const by = emailFromToken(auth) || body.by || "novapa-admin";
+
+    if (prefix === "dcu") {
+      // Appended on their side by leads_api.add_lead_note — append-only so a
+      // DCU coach's own free-text edits are never clobbered from this board.
+      const base = process.env.DCU_SUPABASE_URL;
+      const dkey = process.env.DCU_SERVICE_KEY;
+      if (!base || !dkey) return Response.json({ error: "dcu_not_configured" }, { status: 502 });
+      const r = await fetch(`${base}/rest/v1/rpc/add_lead_note`, {
+        method: "POST",
+        headers: { apikey: dkey, Authorization: `Bearer ${dkey}`, "Content-Type": "application/json", "Content-Profile": "leads_api" },
+        body: JSON.stringify({ p_id: id, p_note: note, p_by: by }),
+      });
+      const t = await r.text();
+      if (!r.ok) return Response.json({ error: `dcu ${r.status}: ${t.slice(0, 160)}` }, { status: 502 });
+      return Response.json({ ok: true, line: JSON.parse(t) });
+    }
+    if (prefix === "quiz" || prefix === "free") {
+      // Read-append-write on the side table; single-admin traffic, so the
+      // tiny race window is acceptable and an upsert overwrite is not.
+      try {
+        const existing = await db(`lead_stages?board=eq.${prefix}&lead_id=eq.${encodeURIComponent(id)}&select=stage,notes&limit=1`);
+        const cur = existing && existing[0] ? existing[0] : {};
+        const stamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+        const line = `${stamp} - ${note} (${by})`;
+        const notes = cur.notes ? `${cur.notes}
+${line}` : line;
+        await dbPost(
+          "lead_stages",
+          { board: prefix, lead_id: id, stage: cur.stage || "new", notes, updated_at: new Date().toISOString(), updated_by: by },
+          "resolution=merge-duplicates"
+        );
+        return Response.json({ ok: true, line });
+      } catch (e) {
+        return Response.json({ error: String(e.message).slice(0, 200) }, { status: 502 });
+      }
+    }
+    return Response.json({ error: "bad_key" }, { status: 400 });
+  }
+
   if (action !== "list") {
     return Response.json({ error: "unknown_action" }, { status: 400 });
   }
@@ -259,14 +307,16 @@ export default async (req) => {
 
   const quizRows = (quiz || []).map((q) => ({
     id: q.id, key: `quiz:${q.id}`, board: "novapa",
-    stage: stageMap.get(`quiz:${q.id}`) || "new",
+    stage: (stageMap.get(`quiz:${q.id}`) || {}).stage || "new",
+    notes: (stageMap.get(`quiz:${q.id}`) || {}).notes || "",
     created_at: q.created_at, parent_name: q.parent_name,
     email: q.email, phone: q.phone, child_name: q.child_name, age_band: q.age_band,
     persona: q.persona, source: q.source,
   }));
   const freeRows = (freeclass || []).map((f) => ({
     id: f.id, key: `free:${f.id}`, board: "novapa",
-    stage: stageMap.get(`free:${f.id}`) || "new",
+    stage: (stageMap.get(`free:${f.id}`) || {}).stage || "new",
+    notes: (stageMap.get(`free:${f.id}`) || {}).notes || "",
     created_at: f.created_at, parent_name: f.parent_name,
     email: f.email, phone: f.phone, child_name: f.child_name,
     child_age: f.child_age, cast_key: f.cast_key, class_date: f.class_date,
