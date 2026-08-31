@@ -286,9 +286,15 @@
   .ldd-row span { color:var(--dim); flex:0 0 86px; }
   .ldd-row b { font-weight:500; flex:1; word-break:break-word; white-space:pre-wrap; }
   .ldd-notes { display:flex; flex-direction:column; gap:6px; }
-  .ldd-notetext { white-space:pre-wrap; font-size:12.5px; line-height:1.55; color:var(--ink);
-    background:rgba(8,17,31,0.55); border:1px solid var(--line); border-radius:8px; padding:8px 10px;
-    max-height:180px; overflow-y:auto; }
+  .ldd-note { background:rgba(8,17,31,0.55); border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px 6px; }
+  .ldd-note-text { white-space:pre-wrap; font-size:12.5px; line-height:1.55; color:#fff; }
+  .ldd-note-meta { display:flex; align-items:center; margin-top:3px; }
+  .ldd-note-meta span { font-size:10.5px; color:var(--dim); }
+  .ldNoteDel { margin-left:auto; background:none; border:0; color:var(--dim); font-size:15px; line-height:1;
+    cursor:pointer; padding:0 2px; border-radius:4px; opacity:0; transition:opacity .12s, color .12s; }
+  .ldd-note:hover .ldNoteDel { opacity:1; }
+  .ldNoteDel:hover { color:var(--bad, #e06d60); }
   .ldNoteInput { width:100%; resize:vertical; min-height:64px; padding:8px 10px; border-radius:8px;
     border:1px solid var(--line); background:rgba(8,17,31,0.55); color:var(--ink);
     font-family:inherit; font-size:12.5px; line-height:1.5; }
@@ -2213,6 +2219,16 @@
     if (val == null || val === '') return '';
     return '<div class="ldd-row"><span>' + esc(label) + '</span><b>' + esc(val) + '</b></div>';
   }
+  // "Aug 31 11:26 - did the thing (jason@novapa.org)" -> text + subtle meta.
+  // Lines that do not match the stamp shape (older free-text coach notes from
+  // the Atlas board) render whole, with no meta and still deletable.
+  function ldNoteLines(raw){
+    return String(raw || '').split('\n').filter(function(l){ return l.trim(); }).map(function(l){
+      var m = l.match(/^([A-Z][a-z]{2} \d{2} \d{2}:\d{2}) - ([\s\S]*) \(([^()]+)\)$/);
+      if (m) return { line: l, text: m[2], meta: m[3] + ' · ' + m[1] };
+      return { line: l, text: l, meta: '' };
+    });
+  }
   function ldDetail(x){
     var h = '';
     if (x._stream === 'dcu') {
@@ -2234,10 +2250,18 @@
     if (x.updated_at && x.updated_at !== x.created_at) h += ldRow('Updated', dt(x.updated_at));
     // Notes: DCU carries coach_notes (shared with the Atlas coach board,
     // append-only from here); NOVAPA leads keep theirs on lead_stages.
+    // Rendered as comments: white text, subtle author + time, delete on the row.
     var noteText = x._stream === 'dcu' ? (x.coach_notes || '') : (x.notes || '');
+    var noteRows = ldNoteLines(noteText).map(function(n, i){
+      return '<div class="ldd-note">' +
+        '<div class="ldd-note-text">' + esc(n.text) + '</div>' +
+        '<div class="ldd-note-meta"><span>' + esc(n.meta) + '</span>' +
+          '<button class="ldNoteDel" data-key="' + ldAttr(x.key) + '" data-i="' + i + '" title="Delete note">&times;</button>' +
+        '</div></div>';
+    }).join('');
     h += '<div class="ldd-notes">' +
-      '<div class="sub" style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin:10px 0 4px">Notes</div>' +
-      (noteText ? '<div class="ldd-notetext">' + esc(noteText) + '</div>' : '') +
+      '<div class="sub" style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin:10px 0 2px">Notes</div>' +
+      noteRows +
       '<textarea class="ldNoteInput" placeholder="Add a note…" maxlength="500" rows="3"></textarea>' +
       '<button class="act ldNoteSave" data-key="' + ldAttr(x.key) + '">SAVE NOTE</button></div>';
     return '<div class="ldd">' + h + '</div>';
@@ -2407,6 +2431,29 @@
     }
   });
   $('ldBoard').addEventListener('click', function(e){
+    var del = e.target.closest('.ldNoteDel');
+    if (del) {
+      e.stopPropagation();
+      var dx = ldFind(del.dataset.key);
+      if (!dx) return;
+      var raw = dx._stream === 'dcu' ? (dx.coach_notes || '') : (dx.notes || '');
+      var entry = ldNoteLines(raw)[+del.dataset.i];
+      if (!entry) return;
+      if (!confirm('Delete this note?\n\n' + entry.text)) return;
+      del.disabled = true;
+      ldApi({ action: 'delete_note', key: del.dataset.key, line: entry.line }).then(function(r){
+        if (!r || r.error || r.ok === false) { LD_MSG = 'note not deleted: ' + ((r && r.error) || 'not found'); renderLeads(); return; }
+        var lines = raw.split('\n');
+        var li = lines.indexOf(entry.line);
+        if (li >= 0) lines.splice(li, 1);
+        var next = lines.join('\n');
+        if (dx._stream === 'dcu') dx.coach_notes = next; else dx.notes = next;
+        LD_MSG = '';
+        renderLeads();
+        loadLeads();
+      }).catch(function(){ LD_MSG = 'note not deleted: network error'; renderLeads(); });
+      return;
+    }
     var btn = e.target.closest('.ldNoteSave');
     if (!btn) return;
     e.stopPropagation();

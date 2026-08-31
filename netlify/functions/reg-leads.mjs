@@ -305,6 +305,50 @@ ${line}` : line;
     return Response.json({ error: "bad_key" }, { status: 400 });
   }
 
+  if (action === "delete_note") {
+    const key = String(body.key || "");
+    const line = String(body.line || "");
+    if (!line) return Response.json({ error: "empty_line" }, { status: 400 });
+    const cut = key.indexOf(":");
+    const prefix = cut < 0 ? "" : key.slice(0, cut);
+    const id = cut < 0 ? "" : key.slice(cut + 1);
+    if (!id) return Response.json({ error: "bad_key" }, { status: 400 });
+
+    if (prefix === "dcu") {
+      const base = process.env.DCU_SUPABASE_URL;
+      const dkey = process.env.DCU_SERVICE_KEY;
+      if (!base || !dkey) return Response.json({ error: "dcu_not_configured" }, { status: 502 });
+      const r = await fetch(`${base}/rest/v1/rpc/delete_lead_note`, {
+        method: "POST",
+        headers: { apikey: dkey, Authorization: `Bearer ${dkey}`, "Content-Type": "application/json", "Content-Profile": "leads_api" },
+        body: JSON.stringify({ p_id: id, p_line: line }),
+      });
+      const t = await r.text();
+      if (!r.ok) return Response.json({ error: `dcu ${r.status}: ${t.slice(0, 160)}` }, { status: 502 });
+      return Response.json({ ok: t.trim() === "true" });
+    }
+    if (prefix === "quiz" || prefix === "free") {
+      try {
+        const existing = await db(`lead_stages?board=eq.${prefix}&lead_id=eq.${encodeURIComponent(id)}&select=stage,notes&limit=1`);
+        const cur = existing && existing[0] ? existing[0] : null;
+        if (!cur || !cur.notes) return Response.json({ ok: false });
+        const lines = cur.notes.split("\n");
+        const idx = lines.indexOf(line);
+        if (idx < 0) return Response.json({ ok: false });
+        lines.splice(idx, 1);
+        await dbPost(
+          "lead_stages",
+          { board: prefix, lead_id: id, stage: cur.stage || "new", notes: lines.join("\n") || null, updated_at: new Date().toISOString() },
+          "resolution=merge-duplicates"
+        );
+        return Response.json({ ok: true });
+      } catch (e) {
+        return Response.json({ error: String(e.message).slice(0, 200) }, { status: 502 });
+      }
+    }
+    return Response.json({ error: "bad_key" }, { status: 400 });
+  }
+
   if (action !== "list") {
     return Response.json({ error: "unknown_action" }, { status: 400 });
   }
