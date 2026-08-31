@@ -3227,7 +3227,28 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         });
       }
     }
-    ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents });
+    // Punch-card handoff (Jason, Aug 30): a pack purchase is credits, not
+    // bookings — say so plainly and offer both redemption paths right here.
+    var packCount = (items || []).filter(function(it){ return it.activity_id === 990010; }).length;
+    if (packCount) {
+      var recapEl = $('doneRecap');
+      recapEl.innerHTML = packCount + ' Camp Pack' + (packCount>1?'s':'') + ' locked in — ' +
+        (packCount*5) + ' camp day credits' +
+        (new Date() <= new Date('2026-09-08T03:59:59Z') ? ' plus ' + (packCount*2) + ' free Snow Day credits' : '') +
+        ', ready to use.';
+      var pc = document.createElement('div');
+      pc.className = 'card';
+      pc.innerHTML = '<div class="sumrow head"><span>Pick their camp days</span><span></span></div>' +
+        '<p class="sub" style="margin:6px 0 10px; font-size:14.5px">Choose from any day camp on the calendar — ' +
+        'your credits apply automatically at checkout, so each day prices at $0. Or save them and decide whenever ' +
+        'the school calendar does.</p>' +
+        '<a class="btn" href="/day-camps#schedule" style="display:block;text-align:center;margin-bottom:8px">Choose camp days now</a>' +
+        '<p class="tiny" style="margin:0">Later works too: your credits live in <a href="/register/account.html">My NOVAPA</a>, ' +
+        'and snow-day credits unlock automatically when a snow day is called.</p>';
+      var doneCard = document.querySelector('#st-done .card');
+      doneCard.parentNode.insertBefore(pc, doneCard);
+    }
+    ev('reg_completed', { plan: state.plan, items: items.length, total_cents: p.total_cents, packs: packCount });
     try { gtag('event', 'conversion', { send_to: 'AW-18370900407/p5eoCJ3V6tscELfj9rdE', value: (p.total_cents || 0) / 100, currency: 'USD', transaction_id: state.piId || '' }); } catch (e) {}
     // Value is the whole program commitment, not the deposit taken today, so
     // Meta optimises toward families worth having rather than cheap first
