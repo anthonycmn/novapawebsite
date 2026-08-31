@@ -133,7 +133,9 @@ Full list in the NOVAPA admin dashboard under Leads.</div></div>`;
   if (!ok) {
     return new Response(JSON.stringify({ error: "resend failed", leads: leadRes }), { status: 200 });
   }
-  await store.set(KEY, rows[rows.length - 1].updated_at);
+  await store.set(KEY, maxSeen || rows[rows.length - 1].updated_at);
+  for (const x of rows) alreadyAlerted.add(x.id);
+  await store.set("team-alerted", JSON.stringify([...alreadyAlerted].slice(-2000)));
   return new Response(JSON.stringify({ alerted: rows.length, hot: hotCount, leads: leadRes }), { status: 200 });
 };
 
