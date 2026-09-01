@@ -29,7 +29,15 @@ export default async (req) => {
   const c = rows[0];
   const t = await mailer();
   const unsub = unsubUrl(String(body.test_to));
-  const { text, html } = renderEmail(c.body, { first_name: "Jason", unsub_url: unsub, email: encodeURIComponent(String(body.test_to)) });
+  const vars = { first_name: "Jason", unsub_url: unsub, email: encodeURIComponent(String(body.test_to)) };
+  if (c.body.includes("{ref_link}")) {
+    // show the tester their own real link, house code if they have none
+    const fams = await (await fetch(
+      `${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(String(body.test_to))}&select=ref_code&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` } })).json();
+    vars.ref_link = `https://www.northernvirginiaperformingarts.org/register/?ref=${fams[0]?.ref_code || "NOVAPA4747"}`;
+  }
+  const { text, html } = renderEmail(c.body, vars);
   await t.sendMail({
     from: FROM, replyTo: REPLY_TO, to: String(body.test_to),
     subject: c.subject,

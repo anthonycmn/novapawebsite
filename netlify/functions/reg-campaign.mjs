@@ -229,11 +229,22 @@ export default async () => {
 
   const transporter = await mailer();
 
+  // {ref_link} — the family's own referral link (give-2-get-2 campaigns).
+  // Looked up once per invocation, only when the body actually uses it; a
+  // family without a code gets the house code so the link still credits.
+  let refCodes = null;
+  if (c.body.includes("{ref_link}")) {
+    const fams = await svcAll("families?select=email,ref_code&order=email");
+    refCodes = new Map(fams.map((f) => [(f.email || "").toLowerCase(), f.ref_code]));
+  }
+
   const batch = audience.slice(0, BATCH_SIZE);
   let sent = 0;
   for (const r of batch) {
     const unsub = unsubUrl(r.email);
-    const { text, html } = renderEmail(c.body, { first_name: r.first, unsub_url: unsub, email: encodeURIComponent(r.email) });
+    const vars = { first_name: r.first, unsub_url: unsub, email: encodeURIComponent(r.email) };
+    if (refCodes) vars.ref_link = `https://www.northernvirginiaperformingarts.org/register/?ref=${refCodes.get(r.email) || "NOVAPA4747"}`;
+    const { text, html } = renderEmail(c.body, vars);
     try {
       // CLAIM before send (Aug 10 duplicate-test incident): Netlify scheduled
       // ticks are at-least-once, so two invocations can race. The stamp insert
