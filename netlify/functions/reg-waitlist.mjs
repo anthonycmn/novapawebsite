@@ -71,7 +71,9 @@ export default async (req) => {
         body: JSON.stringify(msg),
       }).catch((e) => console.error("reg-waitlist email:", e.message));
 
-      const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
+      // Waitlist alerts are Jason-only (Aug 31) — LEADS_ALERT_TO would copy
+      // Jen and Katie, who only need new-lead emails.
+      const to = (process.env.WAITLIST_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
       const posr = await fetch(
         `${SUPABASE_URL}/rest/v1/cast_waitlist?activity_id=eq.${activityId}&select=id`,
         { headers: { ...hdrs, Prefer: "count=exact", Range: "0-0" } });
