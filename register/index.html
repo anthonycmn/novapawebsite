@@ -606,6 +606,20 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   </div>
 </div>
 
+<!-- cast waitlist modal: a Full pill opens this instead of dead-ending -->
+<div class="modal-back" id="cwlModal">
+  <div class="modal" style="width:100%;max-width:420px;text-align:left">
+    <h3 style="text-align:center">Join the waitlist</h3>
+    <p class="tiny" id="cwlSub" style="text-align:left;margin-top:8px"></p>
+    <input type="text" id="cwlKid" placeholder="Camper's full name" autocomplete="off" style="margin-top:8px">
+    <input type="text" id="cwlParent" placeholder="Parent name" autocomplete="name" style="margin-top:8px">
+    <input type="email" id="cwlEmail" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
+    <div class="err" id="cwlErr"></div>
+    <button class="btn" id="cwlJoin">Join Waitlist</button>
+    <button class="btn btn-ghost" id="cwlCancel">Cancel</button>
+  </div>
+</div>
+
 <!-- guest email modal: the cart is built, now we need somewhere to send it -->
 <div class="modal-back" id="guestEmailModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
@@ -1764,7 +1778,21 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         var i = +cb.dataset.i, sKey = cb.dataset.fall, k = state.kids[i];
         if (cb.checked) {
           var sd = FALL_SHOWS.filter(function(x){ return x.key === sKey; })[0];
-          setFallCast(i, sKey, defaultCastFor(sKey, ageOn(k.bday, sd.start)) || fallActsFor(sKey)[0].id);
+          var castId = defaultCastFor(sKey, ageOn(k.bday, sd.start)) || fallActsFor(sKey)[0].id;
+          var acts = fallActsFor(sKey);
+          var chosen = acts.filter(function(a){ return a.id === castId; })[0];
+          // default cast full -> fall over to any open cast; every cast
+          // full -> waitlist instead of a cart that can't check out
+          if (chosen && chosen.remaining != null && chosen.remaining <= 0) {
+            var open = acts.filter(function(a){ return a.remaining == null || a.remaining > 0; })[0];
+            if (open) { castId = open.id; }
+            else {
+              cb.checked = false;
+              openCastWaitlist(chosen.id, k.name, castLabel(chosen));
+              return;
+            }
+          }
+          setFallCast(i, sKey, castId);
         } else setFallCast(i, sKey, null);
         ev('reg_show_kid_toggled', { key: sKey + '|' + i, on: cb.checked });
         renderShowKids(); saveCart();
@@ -1772,7 +1800,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
     blocks.querySelectorAll('.pill[data-fall]').forEach(function(p){
       p.addEventListener('click', function(){
-        if (p.dataset.full) return;
+        if (p.dataset.full) {
+          var wk = state.kids[+p.dataset.i];
+          openCastWaitlist(+p.dataset.cast, wk && wk.name,
+            (p.textContent || '').replace(/Full\s*$/, '').trim());
+          return;
+        }
         setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
         renderShowKids(); saveCart();
       });
@@ -3359,6 +3392,52 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       });
     });
   }
+
+  // cast waitlist — a Full pill opens this instead of dead-ending. The
+  // server re-checks fullness (a stale page may show Full after a
+  // cancellation), and joining twice is harmless: one row, one email.
+  var cwlActivity = null;
+  function openCastWaitlist(actId, kidName, castName){
+    cwlActivity = actId;
+    $('cwlSub').textContent = (castName ? castName + ' is full right now.' : 'This cast is full right now.') +
+      " Join the waitlist and we'll email you first if a spot opens — no payment, no commitment.";
+    if (kidName && !$('cwlKid').value) $('cwlKid').value = kidName;
+    if (state.email && !$('cwlEmail').value) $('cwlEmail').value = state.email;
+    $('cwlErr').textContent = '';
+    var b = $('cwlJoin'); b.disabled = false; b.textContent = 'Join Waitlist';
+    $('cwlModal').classList.add('on');
+    ev('reg_waitlist_open', { activity: actId });
+  }
+  $('cwlCancel').addEventListener('click', function(){ $('cwlModal').classList.remove('on'); });
+  $('cwlJoin').addEventListener('click', function(){
+    var kid = $('cwlKid').value.trim(), pn = $('cwlParent').value.trim(), em = $('cwlEmail').value.trim();
+    if (kid.length < 2) { $('cwlErr').textContent = "Please add the camper's name."; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { $('cwlErr').textContent = 'Please enter a valid email.'; return; }
+    var b = $('cwlJoin'); b.disabled = true; b.textContent = 'Joining…';
+    fetch('/api/reg-waitlist', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ activity_id: cwlActivity, camper_name: kid, parent_name: pn, email: em })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d && d.open) {
+        // a spot freed up since the page loaded — let them grab it
+        $('cwlModal').classList.remove('on');
+        ev('reg_waitlist_spot_open', { activity: cwlActivity });
+        location.reload();
+        return;
+      }
+      if (d && d.ok) {
+        b.textContent = d.already ? "You're already on the list ✓" : "You're on the list ✓";
+        ev('reg_waitlist_joined', { activity: cwlActivity, already: !!d.already });
+        setTimeout(function(){ $('cwlModal').classList.remove('on'); }, 1800);
+        return;
+      }
+      b.disabled = false; b.textContent = 'Join Waitlist';
+      $('cwlErr').textContent = (d && d.error) || 'Something went wrong — try again.';
+    }).catch(function(){
+      b.disabled = false; b.textContent = 'Join Waitlist';
+      $('cwlErr').textContent = 'Something went wrong — try again.';
+    });
+  });
 
   // back buttons
   // Arrivals from the Frozen landing page (direct referral, or a Meta ad
