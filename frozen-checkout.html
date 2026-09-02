@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Disney's Frozen Jr. — Fall Season — Enroll Now — NOVAPA</title>
+<!-- A/B variant checkout (1 Sep 2026): Banjo's one-page design wired to the
+     real rails via /api/frozen-pay. Tested against the register app at $50/day
+     each. Deliberate departures from the design file, all reality-driven:
+     no split-in-two (Todd's rule: installments must clear before rehearsals,
+     which start Sep 15/16 — no plan can exist), no save-5% math ($695 IS the
+     price), an age selector so the cast/night is truthful BEFORE payment,
+     real per-cast seat counts (never fake the bar), and the Mermaid order
+     bump deferred. Full casts route into /api/reg-waitlist. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="/posthog.js" defer></script>
+<!-- Meta Pixel (NOVAPA + shared) -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2191001311729801');
+fbq('init', '902777265812159');
+fbq('track', 'PageView');
+fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content_type: 'product' });
+</script>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+  :root{
+    --navy:#0B1626; --navy-2:#111E33; --paper:#FFFDF7;
+    --marquee:#F5C245; --marquee-hover:#FFD35C; --curtain:#D03A2E;
+    --green:#2E9E5B; --ink:#141B27; --muted:#5C6673;
+    --muted-light:rgba(255,253,247,.68); --line-light:rgba(255,253,247,.14);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Geist",-apple-system,sans-serif;background:var(--navy);color:var(--paper);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+  .shell{max-width:560px;margin:0 auto;padding:28px 18px 70px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+  .back{color:var(--muted-light);font-size:13.5px;text-decoration:none}
+  .back:hover{color:var(--paper)}
+  h1{font-weight:900;font-size:clamp(24px,5vw,32px);line-height:1.15;letter-spacing:-.015em}
+  .class-meta{margin-top:8px;font-size:13.5px;color:var(--muted-light)}
+  .spots{margin-top:16px;display:none;align-items:center;gap:12px;background:rgba(245,194,69,.1);border:1px solid rgba(245,194,69,.4);border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:600}
+  .spots.on{display:flex}
+  .spots .bar{flex:1;height:7px;border-radius:99px;background:rgba(255,253,247,.15);overflow:hidden}
+  .spots .fill{height:100%;width:0;background:var(--marquee);border-radius:99px;transition:width .4s ease}
+  .spots b{color:var(--marquee);white-space:nowrap}
+  .card{margin-top:20px;background:var(--navy-2);border:1px solid var(--line-light);border-radius:18px;padding:26px 24px}
+  .sec-label{font-size:11.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--marquee);margin-bottom:12px;display:block}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12.5px;font-weight:700;color:var(--paper)}
+  .field input,.field select{font-family:"Geist",sans-serif;font-size:15.5px;padding:12px 14px;border:1.5px solid rgba(255,253,247,.2);border-radius:10px;background:var(--paper);color:var(--ink);width:100%}
+  .field input:focus,.field select:focus{outline:2px solid var(--marquee);border-color:var(--marquee)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .band-line{margin-top:12px;background:rgba(245,194,69,.12);border:1px solid rgba(245,194,69,.45);border-radius:12px;padding:12px 15px;font-size:13.5px;color:var(--muted-light);display:none}
+  .band-line.on{display:block}
+  .band-line b{color:var(--paper)}
+  .price-block{text-align:center;padding:6px 0 2px}
+  .price-row{display:flex;align-items:baseline;justify-content:center;gap:12px}
+  .price-row .now{font-size:42px;font-weight:900;letter-spacing:-.02em;color:var(--paper)}
+  .price-note{margin-top:4px;font-size:12.5px;color:var(--marquee);font-weight:700}
+  .assure{margin-top:16px;display:flex;gap:10px;align-items:flex-start;background:rgba(46,158,91,.1);border:1px solid rgba(46,158,91,.4);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--muted-light)}
+  .assure .tick{color:var(--green);font-weight:900;flex:0 0 auto}
+  .assure b{color:var(--paper)}
+  .terms{margin-top:14px;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--muted-light)}
+  .terms input{margin-top:3px;accent-color:var(--marquee);width:16px;height:16px;flex:0 0 auto}
+  .terms a{color:var(--paper)}
+  .cta{display:block;width:100%;font-family:"Geist",sans-serif;font-weight:800;font-size:17px;letter-spacing:.02em;color:var(--ink);background:var(--marquee);border:none;border-radius:999px;padding:18px;margin-top:18px;cursor:pointer;transition:background .12s ease, transform .12s ease}
+  .cta:hover{background:var(--marquee-hover);transform:translateY(-1px)}
+  .cta:active{transform:translateY(1px)}
+  .cta:disabled{opacity:.6;cursor:default;transform:none}
+  .cta:focus-visible{outline:3px solid var(--paper);outline-offset:3px}
+  .secure{margin-top:12px;font-size:12px;color:var(--muted-light);text-align:center}
+  .err{margin-top:10px;font-size:13px;color:#FFC4BD;text-align:center;min-height:18px}
+  .goal-echo{display:none;margin-top:14px;background:rgba(245,194,69,.12);border:1px solid rgba(245,194,69,.45);border-radius:12px;padding:12px 15px;font-size:13.5px;color:var(--muted-light);text-align:left}
+  .goal-echo b{color:var(--paper)}
+  .rehearsal-line{margin-top:10px;font-size:13px;font-weight:700;color:#FFC4BD;text-align:center}
+  .cd-timer{margin-top:14px;background:rgba(224,90,78,.14);border:1px solid rgba(224,90,78,.5);border-radius:12px;padding:13px 16px;text-align:center}
+  .cd-timer .cd-lbl{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#FFC4BD}
+  .cd-timer .cd-val{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.03em;margin-top:3px}
+  .ps{margin-top:14px;font-size:12.5px;color:var(--muted-light);text-align:center;font-style:italic}
+  .mini-quote{margin-top:22px;font-size:13.5px;color:var(--muted-light);text-align:center}
+  .mini-quote .stars{color:var(--marquee);font-size:11px;letter-spacing:.16em;display:block;margin-bottom:5px}
+  .mini-quote b{color:var(--paper)}
+  #pay-el{margin-top:14px;background:var(--paper);border-radius:12px;padding:14px}
+  .hide{display:none !important}
+  .done{ text-align:center; padding:14px 0 6px }
+  .done .big{font-size:44px}
+  .done h2{font-weight:900;font-size:24px;margin-top:8px}
+  .done p{margin-top:10px;font-size:14.5px;color:var(--muted-light)}
+  .done b{color:var(--paper)}
+  footer{color:rgba(255,253,247,.4);text-align:center;padding:26px 18px 40px;font-size:11.5px;line-height:1.7}
+  @media (max-width:480px){ .two-col{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="top">
+    <img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px">
+    <a class="back" href="/be-in-frozen">&lsaquo; Back</a>
+  </div>
+
+  <div id="view-checkout">
+  <h1>Enroll <span id="kid-name">your child</span> in Disney's Frozen Jr.</h1>
+  <p class="class-meta">One evening a week &middot; Sep 2026 &ndash; Jan 2027 &middot; Ends on a real stage</p>
+  <p class="class-meta" style="margin-top:4px">Three casts by age: 5&ndash;9, 9&ndash;12, and 12&ndash;17. <b style="color:var(--paper)">Pick your child's age below and we'll show you their cast and rehearsal night.</b></p>
+
+  <div class="spots" id="spots">
+    <span><b id="spots-taken">—</b> of <span id="spots-cap">—</span> spots taken in this cast</span>
+    <span class="bar"><span class="fill" id="spots-fill"></span></span>
+    <b id="spots-tag">Filling fast</b>
+  </div>
+
+  <div class="goal-echo" id="goal-echo"></div>
+
+  <div class="card">
+    <span class="sec-label">1 &middot; Who's enrolling</span>
+    <div class="two-col">
+      <div class="field"><label for="f-kid">Child's name (first &amp; last)</label><input id="f-kid" type="text" autocomplete="off"></div>
+      <div class="field"><label for="f-age">Child's age</label>
+        <select id="f-age">
+          <option value="">Select age</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option><option>9</option>
+          <option>10</option><option>11</option><option>12</option><option>13</option><option>14</option>
+          <option>15</option><option>16</option><option>17</option>
+        </select>
+      </div>
+    </div>
+    <div class="two-col" style="margin-top:10px">
+      <div class="field"><label for="f-parent">Your name</label><input id="f-parent" type="text" autocomplete="name"></div>
+      <div class="field"><label for="f-phone">Your phone</label><input id="f-phone" type="tel" autocomplete="tel"></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label for="f-email">Your email</label><input id="f-email" type="email" autocomplete="email"></div>
+
+    <div class="band-line" id="band-line"></div>
+
+    <span class="sec-label" style="margin-top:24px">2 &middot; Lock the spot</span>
+    <div class="cd-timer" aria-live="off">
+      <div class="cd-lbl" id="cd-lbl">Rehearsals start September 15</div>
+      <div class="cd-val" id="cd-val">&mdash; : &mdash; : &mdash; : &mdash;</div>
+    </div>
+
+    <div class="price-block">
+      <div class="price-row"><span class="now" id="price-now">$695</span></div>
+      <p class="price-note">Pay once. That's the whole season &mdash; every rehearsal and the show.</p>
+    </div>
+
+    <div class="assure">
+      <span class="tick">&#10003;</span>
+      <span><b>Don't like the class? Switch free.</b> Move to any other NOVAPA class or program, anytime &mdash; the spot travels with your child.</span>
+    </div>
+
+    <label class="terms">
+      <input type="checkbox" id="f-terms" checked>
+      <span>I agree to NOVAPA's <a href="/terms" target="_blank">terms</a>, <a href="/policies" target="_blank">policies</a>, and <a href="/terms#photo" target="_blank">Photo &amp; Media Release</a> &mdash; all sales are final (no refunds; free class switches always available).</span>
+    </label>
+
+    <div id="pay-el" class="hide"></div>
+
+    <button class="cta" id="pay-btn">Continue to payment</button>
+    <p class="err" id="err"></p>
+    <p class="secure">Secure payment by Stripe &middot; No booking fees &middot; Receipt lands instantly</p>
+    <p class="rehearsal-line" id="rehearsal-line"></p>
+    <p class="ps">P.S. With the free class switch, the only decision that can't be undone is waiting until the cast fills.</p>
+  </div>
+
+  <p class="mini-quote">
+    <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+    "He'd never been in a play before. <b>After the first day he was all smiles.</b>" &mdash; Stefania Whittington, NOVAPA Parent
+  </p>
+  </div>
+
+  <div id="view-done" class="hide">
+    <div class="card done">
+      <div class="big">&#127917;</div>
+      <h2>They're in the cast!</h2>
+      <p><b id="done-kid"></b> has a spot in <b id="done-band"></b>.</p>
+      <p id="done-night"></p>
+      <p>Your confirmation and receipt are on the way to <b id="done-email"></b>. If it's not in your inbox in a few minutes, check spam or promotions.</p>
+      <p style="margin-top:16px">Questions before the first rehearsal? Reply to the confirmation email &mdash; a real person reads it.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120<br>
+  This site is not a part of the Facebook website or Facebook Inc. and is NOT endorsed by Facebook in any way.<br>&copy; 2026 Northern Virginia Performing Arts.
+</footer>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  // Stripe PUBLISHABLE key — same account as the register app (register/config.js)
+  var PK = "pk_live_51TvMGTGWP2ZbtaszSIFv1Ee0L7eyPtRVfvkaaR7xtnLTEMtGvngtbTwJngTlJKq70OkQ9LyGH5xt0y4JfziZVdTx001CwdMSlg";
+  var state = { bands: null, band: null, stripe: null, elements: null, clientSecret: null };
+
+  // ---------- commitment echo (quiz handoff) ----------
+  var goalLines = {
+    confidence: 'You said <b>confidence</b> matters most. A season ends with them comfortable in front of a full audience, not just a classroom.',
+    friends: 'You said <b>real friendships</b> matter most. A cast rehearsing together for months is exactly where their people get made.',
+    passion: 'You said you want them to find <b>a passion of their own</b>. A full season is how a fun evening becomes their thing.',
+    fun: 'You said you want them to have <b>an incredible few months</b>. That is the baseline here. Everything else comes free with it.'
+  };
+  var p = new URLSearchParams(location.search);
+  var goal = p.get('goal');
+  if (goal && goalLines[goal]) { $('goal-echo').innerHTML = '✓ ' + goalLines[goal]; $('goal-echo').style.display = 'block'; }
+  var kidParam = (p.get('kid') || '').replace(/[<>&"]/g, '').slice(0, 40);
+  if (kidParam) { $('kid-name').textContent = kidParam; $('f-kid').value = kidParam; }
+  if (p.get('email')) $('f-email').value = p.get('email').slice(0, 200);
+  if (p.get('phone')) $('f-phone').value = p.get('phone').slice(0, 40);
+  if (p.get('age')) { $('f-age').value = p.get('age'); }
+
+  // ---------- honest countdown to the real first rehearsal ----------
+  (function(){
+    var target = new Date('2026-09-15T00:00:00-04:00');
+    function tick(){
+      var d = target - Date.now();
+      if (d <= 0) { document.querySelector('.cd-timer').style.display = 'none'; $('rehearsal-line').style.display='none'; return; }
+      var days = Math.floor(d/864e5), hrs = Math.floor(d%864e5/36e5), min = Math.floor(d%36e5/6e4), sec = Math.floor(d%6e4/1e3);
+      var pad = function(n){ return String(n).padStart(2,'0'); };
+      $('cd-val').textContent = days + 'd : ' + pad(hrs) + 'h : ' + pad(min) + 'm : ' + pad(sec) + 's';
+      $('rehearsal-line').textContent = 'First rehearsal: September 15. The cast starts with or without an empty seat.';
+      setTimeout(tick, 1000);
+    }
+    tick();
+  })();
+
+  // ---------- live band data: price, nights, honest seat counts ----------
+  fetch('/api/frozen-pay').then(function(r){ return r.json(); }).then(function(d){
+    state.bands = d.bands || [];
+    routeBand();
+  }).catch(function(){ /* page still works; server re-validates on POST */ });
+
+  // Age -> cast routing. Strict band first, then the overlap/grace neighbor
+  // if the strict cast is full. All full -> waitlist.
+  function bandsForAge(age){
+    var K = 1959789, J = 1959787, T = 1959805;
+    if (age >= 5 && age <= 8) return [K, J];       // 8 can stretch to Junior (grace)
+    if (age === 9) return [J, K];                   // overlap year
+    if (age === 10) return [J];
+    if (age === 11) return [J, T];                  // grace into Teens
+    if (age === 12) return [T, J];                  // overlap year
+    if (age >= 13 && age <= 17) return [T];
+    return [];
+  }
+  function bandById(id){ return (state.bands || []).filter(function(b){ return b.activity_id === id; })[0]; }
+  function label(b){
+    return b.activity_id === 1959789 ? 'the 5–9 cast (Frozen Kids)'
+      : b.activity_id === 1959787 ? 'the 9–12 cast (Frozen Junior)'
+      : 'the 12–17 cast (Frozen Teens)';
+  }
+
+  function routeBand(){
+    var age = parseInt($('f-age').value, 10);
+    state.band = null;
+    $('band-line').className = 'band-line';
+    $('spots').className = 'spots';
+    if (!age || !state.bands) return;
+    var pref = bandsForAge(age), open = null, strict = bandById(pref[0]);
+    for (var i = 0; i < pref.length; i++) {
+      var b = bandById(pref[i]);
+      if (b && b.available) { open = b; break; }
+    }
+    if (!open) {
+      if (strict) {
+        $('band-line').innerHTML = '<b>' + label(strict).replace(/^the /, 'The ') + ' is full.</b> ' +
+          'Join the waitlist and we’ll email you first if a spot opens — fill in your details above and press the button below.';
+        $('band-line').className = 'band-line on';
+        $('pay-btn').textContent = 'Join the waitlist';
+        state.waitlistBand = strict;
+      }
+      return;
+    }
+    state.waitlistBand = null;
+    state.band = open;
+    $('price-now').textContent = '$' + Math.round(open.price_cents / 100);
+    $('band-line').innerHTML = 'At age ' + age + ', your child is in <b>' + label(open) + '</b> — ' +
+      '<b>' + open.day + ' ' + open.time.replace(' EDT','') + '</b>, ' + open.dates + '.';
+    $('band-line').className = 'band-line on';
+    if (open.taken != null && open.capacity) {
+      $('spots-taken').textContent = open.taken;
+      $('spots-cap').textContent = open.capacity;
+      $('spots-fill').style.width = Math.round(open.taken / open.capacity * 100) + '%';
+      $('spots-tag').textContent = open.left != null && open.left <= 10 ? 'Almost full' : 'Filling fast';
+      $('spots').className = 'spots on';
+    }
+    if (!state.clientSecret) $('pay-btn').textContent = 'Continue to payment';
+  }
+  $('f-age').addEventListener('change', routeBand);
+  if ($('f-age').value) routeBand();
+
+  function showErr(m){ $('err').textContent = m || ''; }
+  function fieldVals(){
+    return {
+      kid: $('f-kid').value.trim(), age: parseInt($('f-age').value, 10),
+      parent: $('f-parent').value.trim(), email: $('f-email').value.trim().toLowerCase(),
+      phone: $('f-phone').value.trim()
+    };
+  }
+  function validate(v){
+    if (v.kid.length < 2) return 'Please add your child’s name.';
+    if (!v.age) return 'Please pick your child’s age.';
+    if (v.parent.length < 2) return 'Please add your name.';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.email)) return 'Please enter a valid email.';
+    if (v.phone.replace(/\D/g, '').length < 10) return 'Please add a 10-digit phone number.';
+    if (!$('f-terms').checked) return 'Please agree to the terms to continue.';
+    return null;
+  }
+
+  $('pay-btn').addEventListener('click', function(){
+    showErr('');
+    var v = fieldVals();
+    var bad = validate(v);
+    if (bad) { showErr(bad); return; }
+    var btn = $('pay-btn');
+
+    // Full cast -> waitlist path (same API the register app uses)
+    if (state.waitlistBand) {
+      btn.disabled = true; btn.textContent = 'Joining…';
+      fetch('/api/reg-waitlist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activity_id: state.waitlistBand.activity_id, camper_name: v.kid, parent_name: v.parent, email: v.email })
+      }).then(function(r){ return r.json(); }).then(function(d){
+        if (d && (d.ok || d.open)) { btn.textContent = d.open ? 'A spot just opened — reload' : 'You’re on the list ✓'; }
+        else { btn.disabled = false; btn.textContent = 'Join the waitlist'; showErr((d && d.error) || 'Something went wrong — try again.'); }
+      }).catch(function(){ btn.disabled = false; btn.textContent = 'Join the waitlist'; showErr('Something went wrong — try again.'); });
+      return;
+    }
+
+    if (!state.band) { showErr('Please pick your child’s age.'); return; }
+
+    // Step 2 already mounted -> this click confirms the payment
+    if (state.clientSecret) {
+      btn.disabled = true; btn.textContent = 'Processing…';
+      state.stripe.confirmPayment({ elements: state.elements, redirect: 'if_required',
+        confirmParams: { return_url: location.origin + '/frozen-checkout?paid=1' } })
+        .then(function(result){
+          if (result.error) {
+            btn.disabled = false; btn.textContent = 'Pay $' + Math.round(state.band.price_cents/100) + ' — lock the spot';
+            return showErr(result.error.message || 'Your payment could not be completed.');
+          }
+          try {
+            fbq('track', 'Purchase', {
+              value: state.band.price_cents / 100, currency: 'USD',
+              content_name: 'Frozen Fall 2026 - ' + state.band.name,
+              content_ids: [String(state.band.activity_id)], content_type: 'product', num_items: 1
+            }, { eventID: (result.paymentIntent && result.paymentIntent.id) || undefined });
+          } catch(e){}
+          try { window.posthog && posthog.capture('reg_completed', { funnel: 'frozen-checkout', activity_id: state.band.activity_id, value: state.band.price_cents / 100 }); } catch(e){}
+          $('done-kid').textContent = v.kid;
+          $('done-band').textContent = label(state.band);
+          $('done-night').innerHTML = 'Rehearsals are <b>' + state.band.day + 's, ' + state.band.time.replace(' EDT','') + '</b> — ' + state.band.dates + '.';
+          $('done-email').textContent = v.email;
+          $('view-checkout').className = 'hide';
+          $('view-done').className = '';
+          window.scrollTo({ top: 0 });
+        });
+      return;
+    }
+
+    // Step 1 -> create the PaymentIntent and mount the payment element
+    btn.disabled = true; btn.textContent = 'One moment…';
+    try { fbq('track', 'InitiateCheckout', { value: state.band.price_cents / 100, currency: 'USD', content_ids: [String(state.band.activity_id)] }); } catch(e){}
+    try { window.posthog && posthog.capture('reg_payment_started', { funnel: 'frozen-checkout', activity_id: state.band.activity_id }); } catch(e){}
+    fetch('/api/frozen-pay', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        activity_id: state.band.activity_id, camper_name: v.kid,
+        parent_name: v.parent, email: v.email, phone: v.phone
+      })
+    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+      .then(function(res){
+        if (!res.ok || !res.j.client_secret) {
+          btn.disabled = false; btn.textContent = 'Continue to payment';
+          if (res.j && res.j.error === 'sold_out') { routeBandAfterSoldOut(); return; }
+          return showErr(errText(res.j && res.j.error));
+        }
+        state.clientSecret = res.j.client_secret;
+        state.stripe = state.stripe || Stripe(PK);
+        state.elements = state.stripe.elements({
+          clientSecret: state.clientSecret,
+          appearance: { theme: 'flat', variables: {
+            colorPrimary: '#F5C245', colorBackground: '#ffffff', colorText: '#141B27',
+            fontFamily: 'Geist, system-ui, sans-serif', borderRadius: '9px'
+          } }
+        });
+        state.elements.create('payment', { layout: 'tabs' }).mount('#pay-el');
+        $('pay-el').className = '';
+        btn.disabled = false;
+        btn.textContent = 'Pay $' + Math.round(state.band.price_cents/100) + ' — lock the spot';
+        $('pay-el').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      })
+      .catch(function(){ btn.disabled = false; btn.textContent = 'Continue to payment'; showErr('Network error. Please try again.'); });
+  });
+
+  function routeBandAfterSoldOut(){
+    // seat vanished between page load and click — refresh counts and re-route
+    fetch('/api/frozen-pay').then(function(r){ return r.json(); }).then(function(d){
+      state.bands = d.bands || []; state.clientSecret = null; routeBand();
+      showErr('That cast just filled — here’s the updated availability.');
+    });
+  }
+  function errText(code){
+    return code === 'bad_phone' ? 'Please add a 10-digit phone number.'
+      : code === 'bad_email' ? 'Please enter a valid email.'
+      : code === 'missing_name' ? 'Please add your name and your child’s name.'
+      : 'Something went wrong — please try again.';
+  }
+})();
+</script>
+</body>
+</html>

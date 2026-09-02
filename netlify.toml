@@ -60,6 +60,11 @@
 
 # Ad landing page for the Frozen fall production — clean URL for Meta ads.
 [[redirects]]
+  from = "/frozen-checkout"
+  to = "/frozen-checkout.html"
+  status = 200
+
+[[redirects]]
   from = "/be-in-frozen"
   to = "/be-in-frozen.html"
   status = 200
