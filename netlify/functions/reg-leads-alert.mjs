@@ -28,6 +28,19 @@ function esc(s) {
 function card(x) {
   const a = (() => { try { return JSON.parse(x.answers || "{}"); } catch { return {}; } })();
   const m = (() => { try { return JSON.parse(x.matches || "[]"); } catch { return []; } })();
+  // weekend-info = the light email hook on dcunifieds.com/one-weekend (Sep 1):
+  // no quiz answers to show, so the card is just the contact + where they came from
+  if (a.quiz === "weekend-info") {
+    return { hot: false, info: true, html: `<div style="max-width:620px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif">
+<div style="font:700 21px/1.2 Helvetica,Arial,sans-serif;color:#0B1422;letter-spacing:-0.02em">Weekend-info request (DCU)</div>
+<div style="font:14px/1.7 Helvetica,Arial,sans-serif;margin-top:10px">
+<a href="mailto:${esc(x.email)}" style="color:#0B1422">${esc(x.email)}</a>${x.name && x.name !== "Info request" ? " &middot; " + esc(x.name) : ""}</div>
+<div style="font:13px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:6px">
+Asked for the weekend rundown on dcunifieds.com/one-weekend &mdash; a researcher, not a quiz taker.
+${esc([x.utm_campaign, x.utm_content].filter(Boolean).join(" / "))}</div>
+<div style="font:12px/1.6 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:14px">
+They already got the info email. On the Leads board (DC Unifieds) in the admin dashboard.</div></div>` };
+  }
   const hot = a.certainty === "locked" && a.prescreen === "filmed";
   const pill = hot
     ? '<span style="background:#1F7A38;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:8px">HOT</span>'
@@ -91,13 +104,15 @@ export default async () => {
     const won = await claim.json();
     if (!Array.isArray(won) || !won.length) continue; // someone else already sent
 
-    const { hot, html } = card(x);
+    const { hot, info, html } = card(x);
     const ok = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: FROM, to,
-        subject: `New Find Your 5 lead: ${x.name}${hot ? " (hot)" : ""}`,
+        subject: info
+          ? `DCU weekend-info request: ${x.email}`
+          : `New Find Your 5 lead: ${x.name}${hot ? " (hot)" : ""}`,
         html,
       }),
     });
