@@ -197,13 +197,39 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"/></n
     }
     tick();
   })();
+  // A/B: 50% of visitors check out through the register portal, 50% through
+  // the one-page /frozen-checkout (1 Sep 2026 test, done here client-side so
+  // the single $100/day Meta campaign stays untouched). The coin is flipped
+  // once and remembered, so a returning visitor always lands in the same arm.
+  // Measurement: reg_payment_started/reg_completed both carry the arm — the
+  // portal via the ab= param on its URL, the checkout via its funnel prop.
+  var AB_ARM = (function(){
+    try {
+      var v = localStorage.getItem('frozen_ab');
+      if (v !== 'portal' && v !== 'checkout') {
+        v = Math.random() < 0.5 ? 'portal' : 'checkout';
+        localStorage.setItem('frozen_ab', v);
+      }
+      return v;
+    } catch(e) { return 'portal'; } // storage blocked -> the proven default
+  })();
+  (function(){
+    if (AB_ARM === 'checkout') {
+      document.querySelectorAll('a[data-reg]').forEach(function(a){
+        a.href = '/frozen-checkout';
+      });
+    }
+    try { window.posthog && posthog.capture('frozen_ab_assigned', { arm: AB_ARM }); } catch(e){}
+  })();
   // forward the ad's utm/fbclid params into registration so attribution
-  // survives the hop from ad -> this page -> checkout
+  // survives the hop from ad -> this page -> checkout (runs after the A/B
+  // rewrite so both arms carry the params)
   (function(){
     var qs = location.search.replace(/^\?/, '');
-    if (!qs) return;
+    var tag = 'ab=' + AB_ARM;
     document.querySelectorAll('a[data-reg]').forEach(function(a){
-      a.href = a.href + (a.href.indexOf('?') === -1 ? '?' : '&') + qs;
+      var extra = qs ? qs + '&' + tag : tag;
+      a.href = a.href + (a.href.indexOf('?') === -1 ? '?' : '&') + extra;
     });
   })();
 </script>
