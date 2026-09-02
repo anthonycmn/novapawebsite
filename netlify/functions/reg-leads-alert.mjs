@@ -32,14 +32,14 @@ function card(x) {
   // no quiz answers to show, so the card is just the contact + where they came from
   if (a.quiz === "weekend-info") {
     return { hot: false, info: true, html: `<div style="max-width:620px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif">
-<div style="font:700 21px/1.2 Helvetica,Arial,sans-serif;color:#0B1422;letter-spacing:-0.02em">Weekend-info request (DCU)</div>
+<div style="font:700 21px/1.2 Helvetica,Arial,sans-serif;color:#0B1422;letter-spacing:-0.02em">Started a DCU registration</div>
 <div style="font:14px/1.7 Helvetica,Arial,sans-serif;margin-top:10px">
-<a href="mailto:${esc(x.email)}" style="color:#0B1422">${esc(x.email)}</a>${x.name && x.name !== "Info request" ? " &middot; " + esc(x.name) : ""}</div>
+<a href="mailto:${esc(x.email)}" style="color:#0B1422">${esc(x.email)}</a>${x.phone ? " &middot; <a href=\"tel:" + esc(x.phone) + "\" style=\"color:#0B1422\">" + esc(x.phone) + "</a>" : ""}${x.name && x.name !== "Info request" ? " &middot; " + esc(x.name) : ""}</div>
 <div style="font:13px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:6px">
-Asked for the weekend rundown on dcunifieds.com/one-weekend &mdash; a researcher, not a quiz taker.
+Entered the register flow from dcunifieds.com/one-weekend. If no purchase follows, this is a warm call.
 ${esc([x.utm_campaign, x.utm_content].filter(Boolean).join(" / "))}</div>
 <div style="font:12px/1.6 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:14px">
-They already got the info email. On the Leads board (DC Unifieds) in the admin dashboard.</div></div>` };
+They already got the weekend-details email. On the Leads board (DC Unifieds) in the admin dashboard.</div></div>` };
   }
   const hot = a.certainty === "locked" && a.prescreen === "filmed";
   const pill = hot

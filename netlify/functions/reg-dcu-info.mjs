@@ -28,6 +28,11 @@ export default async (req) => {
   try { body = await req.json(); } catch {}
   const email = pick(body.email, 160).toLowerCase();
   const name = pick(body.name, 80);
+  const phone = pick(body.phone, 40);
+  const phoneDigits = (() => {
+    const d = phone.replace(/\D/g, "");
+    return d.length === 11 && d.startsWith("1") ? d.slice(1) : d;
+  })();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return Response.json({ error: "That email doesn't look right — mind checking it?" }, { status: 400 });
   }
@@ -39,6 +44,8 @@ export default async (req) => {
       body: JSON.stringify({
         p_email: email,
         p_name: name,
+        p_phone: phone,
+        p_phone_digits: phoneDigits,
         p_utm_source: pick(body.utm_source, 80),
         p_utm_medium: pick(body.utm_medium, 80),
         p_utm_campaign: pick(body.utm_campaign, 80),
@@ -74,7 +81,7 @@ export default async (req) => {
           html: `<div style="max-width:600px;margin:0 auto;padding:28px 22px;font-family:Helvetica,Arial,sans-serif;color:#0B1422">
 <div style="font:700 22px/1.3 Helvetica,Arial,sans-serif;letter-spacing:-0.02em">The weekend, in one email</div>
 <div style="font:15px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:10px">
-Hi${first ? " " + esc(first) : ""} &mdash; here's what you were reading about, so you have it when the family talk happens.</div>
+Hi${first ? " " + esc(first) : ""} &mdash; here's everything about the weekend in one place, so you have it on hand whether you finish registering tonight or talk it over first.</div>
 
 <table style="border-collapse:collapse;margin-top:16px;font:14.5px/1.6 Helvetica,Arial,sans-serif">
 <tr><td style="padding:5px 12px 5px 0;color:#5B6472;white-space:nowrap">What it is</td><td style="padding:5px 0">Your student auditions once and is seen by 25+ college theatre programs &mdash; musical theatre, acting, dance, and tech &amp; design. Grades 9&ndash;12.</td></tr>
@@ -94,7 +101,7 @@ Hi${first ? " " + esc(first) : ""} &mdash; here's what you were reading about, s
 Questions &mdash; fit, tracks, travel, anything? Just reply to this email; a coach reads these.</div>
 
 <div style="font:11.5px/1.9 Helvetica,Arial,sans-serif;color:#9AA1AC;margin-top:24px;border-top:1px solid #E4E7ED;padding-top:12px">
-You asked for the weekend details at dcunifieds.com &mdash; this is that one email, not a mailing list.<br>
+You started a registration at dcunifieds.com &mdash; this is that one email, not a mailing list.<br>
 DC Unifieds &middot; The National Conference Center &middot; Leesburg, VA</div>
 </div>`,
         }),
