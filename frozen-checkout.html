@@ -123,6 +123,11 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
   <div class="goal-echo" id="goal-echo"></div>
 
   <div class="card">
+    <div class="cd-timer" aria-live="off" style="margin:0 0 20px">
+      <div class="cd-lbl" id="cd-lbl">Rehearsals start September 15</div>
+      <div class="cd-val" id="cd-val">&mdash; : &mdash; : &mdash; : &mdash;</div>
+    </div>
+
     <span class="sec-label">1 &middot; Who's enrolling</span>
     <div class="two-col">
       <div class="field"><label for="f-kid">Child's name (first &amp; last)</label><input id="f-kid" type="text" autocomplete="off"></div>
@@ -144,24 +149,15 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
     <div class="band-line" id="band-line"></div>
 
     <span class="sec-label" style="margin-top:24px">2 &middot; Lock the spot</span>
-    <div class="cd-timer" aria-live="off">
-      <div class="cd-lbl" id="cd-lbl">Rehearsals start September 15</div>
-      <div class="cd-val" id="cd-val">&mdash; : &mdash; : &mdash; : &mdash;</div>
-    </div>
 
     <div class="price-block">
       <div class="price-row"><span class="now" id="price-now">$695</span></div>
       <p class="price-note">Pay once. That's the whole season &mdash; every rehearsal and the show.</p>
     </div>
 
-    <div class="assure">
-      <span class="tick">&#10003;</span>
-      <span><b>Don't like the class? Switch free.</b> Move to any other NOVAPA class or program, anytime &mdash; the spot travels with your child.</span>
-    </div>
-
     <label class="terms">
       <input type="checkbox" id="f-terms" checked>
-      <span>I agree to NOVAPA's <a href="/terms" target="_blank">terms</a>, <a href="/policies" target="_blank">policies</a>, and <a href="/terms#photo" target="_blank">Photo &amp; Media Release</a> &mdash; all sales are final (no refunds; free class switches always available).</span>
+      <span>I agree to NOVAPA's <a href="/terms" target="_blank">terms</a>, <a href="/policies" target="_blank">policies</a>, and <a href="/terms#photo" target="_blank">Photo &amp; Media Release</a> &mdash; all sales are final (no refunds).</span>
     </label>
 
     <div id="pay-el" class="hide"></div>
@@ -170,7 +166,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
     <p class="err" id="err"></p>
     <p class="secure">Secure payment by Stripe &middot; No booking fees &middot; Receipt lands instantly</p>
     <p class="rehearsal-line" id="rehearsal-line"></p>
-    <p class="ps">P.S. With the free class switch, the only decision that can't be undone is waiting until the cast fills.</p>
+    <p class="ps">P.S. The only decision that can't be undone is waiting until the cast fills.</p>
   </div>
 
   <p class="mini-quote">
