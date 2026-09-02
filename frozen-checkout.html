@@ -91,6 +91,8 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
   .mini-quote .stars{color:var(--marquee);font-size:11px;letter-spacing:.16em;display:block;margin-bottom:5px}
   .mini-quote b{color:var(--paper)}
   #pay-el{margin-top:14px;background:var(--paper);border-radius:12px;padding:14px}
+  .hchip{font-family:"Geist",sans-serif;font-size:13px;color:var(--paper);background:rgba(255,253,247,.06);border:1.5px solid rgba(255,253,247,.2);border-radius:999px;padding:8px 14px;cursor:pointer}
+  .hchip:hover{border-color:var(--marquee)}
   .hide{display:none !important}
   .done{ text-align:center; padding:14px 0 6px }
   .done .big{font-size:44px}
@@ -182,6 +184,18 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
       <p id="done-night"></p>
       <p>Your confirmation and receipt are on the way to <b id="done-email"></b>. If it's not in your inbox in a few minutes, check spam or promotions.</p>
       <p style="margin-top:16px">Questions before the first rehearsal? Reply to the confirmation email &mdash; a real person reads it.</p>
+      <div style="margin-top:22px;border-top:1px solid var(--line-light);padding-top:16px">
+        <p style="font-size:13.5px;color:var(--muted-light)">Quick one: how did you hear about us?</p>
+        <div id="heardChips" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px">
+          <button class="hchip" data-heard="friend">Friend or family</button>
+          <button class="hchip" data-heard="facebook-instagram">Facebook / Instagram</button>
+          <button class="hchip" data-heard="google">Google search</button>
+          <button class="hchip" data-heard="school">School</button>
+          <button class="hchip" data-heard="saw-show">Saw a show</button>
+          <button class="hchip" data-heard="other">Other</button>
+        </div>
+        <p id="heardThanks" style="display:none;font-size:13px;color:var(--muted-light);margin-top:10px">Thank you! That genuinely helps.</p>
+      </div>
     </div>
   </div>
 
@@ -405,6 +419,14 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
       showErr('That cast just filled — here’s the updated availability.');
     });
   }
+  document.getElementById('heardChips').addEventListener('click', function(e){
+    var c = e.target.closest('[data-heard]');
+    if (!c) return;
+    try { window.posthog && posthog.capture('heard_about_us', { source: c.dataset.heard, funnel: 'frozen-checkout' }); } catch(err){}
+    document.getElementById('heardChips').style.display = 'none';
+    document.getElementById('heardThanks').style.display = 'block';
+  });
+
   function errText(code){
     return code === 'bad_phone' ? 'Please add a 10-digit phone number.'
       : code === 'bad_email' ? 'Please enter a valid email.'

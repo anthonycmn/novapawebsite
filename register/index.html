@@ -569,6 +569,21 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       </p>
     </div>
     <div class="card" id="profileForms"></div>
+    <!-- one-tap source survey: most sales arrive with no referrer data (dark
+         organic), and this is the only place the family can tell us which
+         free channel actually produced them (Jason, Sep 2 2026) -->
+    <div class="card" id="heardCard">
+      <div class="sumrow head"><span>Quick one: how did you hear about us?</span><span></span></div>
+      <div id="heardChips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+        <span class="pill" data-heard="friend">Friend or family</span>
+        <span class="pill" data-heard="facebook-instagram">Facebook / Instagram</span>
+        <span class="pill" data-heard="google">Google search</span>
+        <span class="pill" data-heard="school">School</span>
+        <span class="pill" data-heard="saw-show">Saw a show</span>
+        <span class="pill" data-heard="other">Other</span>
+      </div>
+      <p class="tiny" id="heardThanks" style="display:none;margin:10px 0 0">Thank you! That genuinely helps.</p>
+    </div>
     <p class="tiny">Friends want in? Send them to <b>novapa.org/summer-2027</b>.</p>
   </section>
 
@@ -3392,6 +3407,16 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       });
     });
   }
+
+  // one-tap "how did you hear about us" on the done screen — the only
+  // attribution we can get for dark-organic buyers (Sep 2 2026)
+  $('heardChips').addEventListener('click', function(e){
+    var p = e.target.closest('[data-heard]');
+    if (!p) return;
+    ev('heard_about_us', { source: p.dataset.heard });
+    $('heardChips').style.display = 'none';
+    $('heardThanks').style.display = 'block';
+  });
 
   // cast waitlist — a Full pill opens this instead of dead-ending. The
   // server re-checks fullness (a stale page may show Full after a
