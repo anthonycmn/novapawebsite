@@ -219,7 +219,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"/></n
         a.href = '/frozen-checkout';
       });
     }
-    try { window.posthog && posthog.capture('frozen_ab_assigned', { arm: AB_ARM }); } catch(e){}
+    // posthog.js loads deferred, so this inline script runs before it exists —
+    // poll briefly instead of capturing into the void (the silent bug that
+    // logged zero assignments for the test's first 36 hours)
+    (function captureArm(tries){
+      try {
+        if (window.posthog && posthog.capture) { posthog.capture('frozen_ab_assigned', { arm: AB_ARM }); return; }
+      } catch(e){ return; }
+      if (tries > 0) setTimeout(function(){ captureArm(tries - 1); }, 500);
+    })(20);
   })();
   // forward the ad's utm/fbclid params into registration so attribution
   // survives the hop from ad -> this page -> checkout (runs after the A/B
