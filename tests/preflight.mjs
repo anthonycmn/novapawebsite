@@ -290,7 +290,9 @@ async function checkLive() {
     // DEH (1805731) left this list 17 Aug: its show runs that week and
     // registration was closed on purpose (bookable=false, audit trail
     // confirms). Only listings that SHOULD currently sell belong here.
-    const DIRECT_LINK_IDS = [1960809, 1960811, 990010];
+    // Sweeney Todd (1960809) left 2 Sep: rehearsals underway, registration
+    // closed on purpose per Jason (bookable=false, updated_by stamped).
+    const DIRECT_LINK_IDS = [1960811, 990010];
     const r = await fetch(`${SB}/rest/v1/rpc/activity_facts`, {
       method: "POST",
       headers: { apikey: AK, Authorization: `Bearer ${AK}`, "Content-Type": "application/json" },
@@ -306,7 +308,7 @@ async function checkLive() {
       const missing = DIRECT_LINK_IDS.length - rows.length;
       if (dead.length) fail("live", `direct-link listings refuse to sell (sells_now=false): ${dead.join(", ")}`);
       else if (missing) fail("live", `activity_facts returned ${rows.length}/${DIRECT_LINK_IDS.length} direct-link listings`);
-      else ok(`direct-link listings all sell (Sweeney, Hadestown, DEH, credit pack)`);
+      else ok(`direct-link listings all sell (Hadestown, credit pack)`);
     }
   } catch (err) { fail("live", `activity_facts probe -> ${err.message}`); }
 
