@@ -400,6 +400,10 @@
       <h2>Tuition Insurance</h2>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
         <select id="insYear" style="width:auto;padding:9px 12px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13.5px"></select>
+        <label class="sub" style="display:flex;align-items:center;gap:6px">from
+          <input type="date" id="insFrom" style="width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13px"></label>
+        <label class="sub" style="display:flex;align-items:center;gap:6px">to
+          <input type="date" id="insTo" style="width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13px"></label>
         <span class="sub" id="insStatus"></span>
       </div>
       <div id="insBody" style="display:none">
@@ -463,6 +467,10 @@
           <option value="payment">By payment date</option>
           <option value="program">By program date</option>
         </select>
+        <label class="sub" style="display:flex;align-items:center;gap:6px">from
+          <input type="date" id="accFrom" style="width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13px"></label>
+        <label class="sub" style="display:flex;align-items:center;gap:6px">to
+          <input type="date" id="accTo" style="width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13px"></label>
         <button class="tag" id="accCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
         <span class="sub" id="accStatus"></span>
       </div>
@@ -470,6 +478,7 @@
         <h2>By program / show</h2>
         <div class="wrap-scroll"><table id="tblAccProg"></table></div>
         <h2 style="margin-top:22px">Reconciliation</h2>
+        <p class="sub" style="margin:-6px 0 10px">Always the whole selected year &mdash; payouts and fees can't be split by a date window, so the date filter above does not apply here.</p>
         <div class="wrap-scroll"><table id="tblAccRec"></table></div>
         <h2 style="margin-top:22px">Transactions</h2>
         <div class="wrap-scroll"><table id="tblAccTx"></table></div>
@@ -534,6 +543,10 @@
     <section class="sec" id="s-cashflow">
       <h2>Cash flow forecast</h2>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+        <label class="sub" style="display:flex;align-items:center;gap:6px">from
+          <input type="date" id="cfFrom" style="width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13px"></label>
+        <label class="sub" style="display:flex;align-items:center;gap:6px">to
+          <input type="date" id="cfTo" style="width:auto;padding:8px 10px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,0.14));background:rgba(8,17,31,0.85);color:#fff;font-family:inherit;font-size:13px"></label>
         <button class="tag" id="cfCsv" style="cursor:pointer;border:0;padding:8px 16px;display:none">Export CSV</button>
         <span class="sub" id="cfStatus"></span>
       </div>
@@ -542,9 +555,11 @@
         <div class="wrap-scroll"><table id="tblCfMonth"></table></div>
         <h2 style="margin-top:22px">Every scheduled payment</h2>
         <div class="wrap-scroll"><table id="tblCfDetail"></table></div>
-        <p class="sub" style="margin-top:12px">Every future auto-billing pull Stripe currently has on file &mdash; camp installments and class tuition.
-        All pulls are charged on the 1st of the month. This is <em>scheduled</em> cash, not guaranteed: a failed card keeps appearing until Stripe's retries give up,
-        and nothing here includes new registrations that haven't happened yet.</p>
+        <p class="sub" style="margin-top:12px">Every future auto-billing pull Stripe currently has on file &mdash; camp installments, class tuition and Regpack
+        migration plans. Everything sold through our own checkout bills on the <b>1st of the month</b>. <b>Migration plans do not</b>: they were set up through
+        Stripe payment links, which bill monthly on whatever day the family first paid, so those pulls land throughout the month (verified Sep 4 &mdash; 22 plans,
+        roughly $3.3k/month, billing on the 6th through the 31st). This is <em>scheduled</em> cash, not guaranteed: a failed card keeps appearing until Stripe's
+        retries give up, and nothing here includes new registrations that haven't happened yet.</p>
       </div>
     </section>
 
@@ -2046,7 +2061,8 @@
     }).filter(Boolean);
   }
   function renderInsurance(){
-    var rows = insRows(INS);
+    var range = dateRange('insFrom', 'insTo');
+    var rows = insRows(INS).filter(function(r){ return range.test(String(r.o.created_at).slice(0,10)); });
     var bought = rows.filter(function(r){ return r.cents > 0; });
     var eligible = rows.filter(function(r){ return r.eligible; });
     var passed = eligible.filter(function(r){ return r.cents <= 0; });
@@ -2096,6 +2112,8 @@
     }).catch(function(){ $('insStatus').textContent = 'network error'; });
   }
   $('insYear').addEventListener('change', function(){ INS = null; loadInsurance(); });
+  $('insFrom').addEventListener('change', function(){ if (INS) renderInsurance(); });
+  $('insTo').addEventListener('change', function(){ if (INS) renderInsurance(); });
 
   // ---- Star Pages (Zoe builds the playbill from these) ----
   function loadStars(){
@@ -2670,36 +2688,69 @@
       renderCashflow();
     }).catch(function(){ $('cfStatus').textContent = 'network error'; });
   }
+  // Shared by the three money tabs: an optional from/to window over an
+  // ISO 'YYYY-MM-DD' string. Empty inputs mean "no bound on that side", so
+  // string compare is enough and no Date parsing can go off by a timezone.
+  function dateRange(fromId, toId){
+    var f = $(fromId).value, t = $(toId).value;
+    return {
+      active: !!(f || t),
+      test: function(iso){
+        if (!iso) return true;
+        if (f && iso < f) return false;
+        if (t && iso > t) return false;
+        return true;
+      }
+    };
+  }
+  function cfKindLabel(u){
+    if (u.kind === 'installment') return 'camp installment';
+    if (u.kind === 'migration/monthly') return 'migration plan';
+    return 'class tuition';
+  }
+  function cfFiltered(){
+    var range = dateRange('cfFrom', 'cfTo');
+    return (CF || []).filter(function(u){ return range.test(u.date); });
+  }
   function renderCashflow(){
-    var up = CF || [];
+    var up = cfFiltered();
+    var filtered = dateRange('cfFrom', 'cfTo').active;
     var byMonth = {};
     up.forEach(function(u){
       var m = u.date.slice(0,7);
-      var g = byMonth[m] = byMonth[m] || { total:0, n:0, inst:0, cls:0 };
+      var g = byMonth[m] = byMonth[m] || { total:0, n:0, inst:0, cls:0, mig:0 };
       g.total += u.amount; g.n += 1;
-      if (u.kind === 'installment') g.inst += u.amount; else g.cls += u.amount;
+      if (u.kind === 'installment') g.inst += u.amount;
+      else if (u.kind === 'migration/monthly') g.mig += u.amount;
+      else g.cls += u.amount;
     });
     var months = Object.keys(byMonth).sort();
     var upTot = up.reduce(function(s,u){ return s + u.amount; }, 0);
     var run = 0;
-    $('cfStatus').textContent = up.length + ' scheduled payments · ' + money0(upTot) + ' across ' + months.length + ' months';
+    $('cfStatus').textContent = up.length + ' scheduled payments · ' + money0(upTot) + ' across ' + months.length + ' months' +
+      (filtered ? ' (date filter on)' : '');
     $('tblCfMonth').innerHTML = months.length
-      ? '<tr><th>month</th><th class="num">payments</th><th class="num">camp installments</th><th class="num">class tuition</th><th class="num">expected cash</th><th class="num">running total</th></tr>' +
+      ? '<tr><th>month</th><th class="num">payments</th><th class="num">camp installments</th><th class="num">class tuition</th><th class="num">migration plans</th><th class="num">expected cash</th><th class="num">running total</th></tr>' +
         months.map(function(m){
           var g = byMonth[m]; run += g.total;
           return '<tr><td>' + cfMonthLabel(m) + '</td><td class="num">' + g.n + '</td><td class="num">' + money0(g.inst) +
-            '</td><td class="num">' + money0(g.cls) + '</td><td class="num"><b>' + money0(g.total) + '</b></td><td class="num sub">' + money0(run) + '</td></tr>';
+            '</td><td class="num">' + money0(g.cls) + '</td><td class="num">' + money0(g.mig) +
+            '</td><td class="num"><b>' + money0(g.total) + '</b></td><td class="num sub">' + money0(run) + '</td></tr>';
         }).join('') +
-        '<tr><td><b>TOTAL scheduled</b></td><td class="num">' + up.length + '</td><td></td><td></td><td class="num"><b>' + money0(upTot) + '</b></td><td></td></tr>'
-      : '<tr><td class="empty">no scheduled future payments</td></tr>';
+        '<tr><td><b>TOTAL scheduled</b></td><td class="num">' + up.length + '</td><td></td><td></td><td></td><td class="num"><b>' + money0(upTot) + '</b></td><td></td></tr>'
+      : '<tr><td class="empty">no scheduled ' + (filtered ? 'payments in this date range' : 'future payments') + '</td></tr>';
     $('tblCfDetail').innerHTML = up.length
-      ? '<tr><th>date</th><th>family</th><th>type</th><th class="num">amount</th></tr>' +
+      ? '<tr><th>date</th><th>bills on</th><th>family</th><th>type</th><th class="num">amount</th></tr>' +
         up.map(function(u){
-          return '<tr><td>' + u.date + '</td><td>' + esc(u.email || u.ref) + '</td><td><span class="tag">' +
-            (u.kind === 'installment' ? 'camp installment' : 'class tuition') + '</span></td><td class="num">' + money0(u.amount) + '</td></tr>';
+          var day = +u.date.slice(8,10);
+          return '<tr><td>' + u.date + '</td><td class="sub">the ' + day + (day===1?'st':day===2?'nd':day===3?'rd':day===21?'st':day===22?'nd':day===23?'rd':day===31?'st':'th') + '</td>' +
+            '<td>' + esc(u.email || u.ref) + '</td><td><span class="tag">' + cfKindLabel(u) +
+            '</span></td><td class="num">' + money0(u.amount) + '</td></tr>';
         }).join('')
       : '';
   }
+  $('cfFrom').addEventListener('change', function(){ if (CF) renderCashflow(); });
+  $('cfTo').addEventListener('change', function(){ if (CF) renderCashflow(); });
   function cfMonthLabel(m){
     var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var b = m.split('-');
@@ -2708,9 +2759,8 @@
   $('cfCsv').addEventListener('click', function(){
     if (!CF) return;
     var rows = [['scheduled_date','family','type','amount','stripe_ref']];
-    CF.forEach(function(u){
-      rows.push([u.date, u.email || '', u.kind === 'installment' ? 'camp installment' : 'class tuition',
-                 (u.amount/100).toFixed(2), u.ref]);
+    cfFiltered().forEach(function(u){
+      rows.push([u.date, u.email || '', cfKindLabel(u), (u.amount/100).toFixed(2), u.ref]);
     });
     var csv = rows.map(function(r){ return r.map(function(c){ return '"' + String(c).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
     var a = document.createElement('a');
@@ -2721,6 +2771,8 @@
 
   $('accProgram').addEventListener('change', function(){ if (ACC) renderAccounting(); });
   $('accBasis').addEventListener('change', function(){ if (ACC) renderAccounting(); });
+  $('accFrom').addEventListener('change', function(){ if (ACC) renderAccounting(); });
+  $('accTo').addEventListener('change', function(){ if (ACC) renderAccounting(); });
   function accActsById(){
     var m = {}; (ACC.activities||[]).forEach(function(a){ m[a.id] = a; }); return m;
   }
@@ -2728,6 +2780,7 @@
     var d = ACC, byId = accActsById(), year = d.year;
     var progFilter = $('accProgram').value;
     var basis = $('accBasis').value;
+    var range = dateRange('accFrom', 'accTo');
     var txByPi = {}; d.transactions.forEach(function(t){ txByPi[t.pi] = t; });
 
     // per-order rollup rows -> aggregate per program
@@ -2739,10 +2792,11 @@
       var oProgs = {}; its.forEach(function(it){ oProgs[accProgOf(it, byId)] = 1; });
       var progList = Object.keys(oProgs);
       if (progFilter && progList.indexOf(progFilter) === -1) return;
-      var oYear = basis === 'program'
-        ? Math.max.apply(null, its.map(function(it){ return +accProgDate(it, byId).slice(0,4); }))
-        : +String(o.created_at).slice(0,4);
-      if (oYear !== year) return;
+      var oDate = basis === 'program'
+        ? its.map(function(it){ return accProgDate(it, byId); }).sort().pop()
+        : String(o.created_at).slice(0,10);
+      if (+oDate.slice(0,4) !== year) return;
+      if (!range.test(oDate)) return;
       var t = txByPi[o.stripe_payment_intent] || {};
       var m = t.metadata || {};
       var free = String(o.stripe_payment_intent||'').indexOf('free_') === 0;
@@ -2815,7 +2869,9 @@
     var ordByPi = {}; d.orders.forEach(function(o){ ordByPi[o.stripe_payment_intent] = o; });
     $('tblAccTx').innerHTML =
       '<tr><th>payment date</th><th>payer</th><th>students</th><th>program(s)</th><th>session</th><th>order</th><th>transaction</th><th class="num">amount</th><th class="num">fee</th><th class="num">refunded</th><th>method</th><th>payout date</th></tr>' +
-      d.transactions.filter(function(t){ return t.status === 'succeeded'; }).map(function(t){
+      d.transactions.filter(function(t){
+        return t.status === 'succeeded' && range.test(new Date(t.created*1000).toISOString().slice(0,10));
+      }).map(function(t){
         var o = ordByPi[t.pi];
         var its = o ? (d.items_by_order[o.id]||[]) : [];
         var pset = {}; var sset = {}; var kset = {};
@@ -2913,7 +2969,10 @@
     var rows = [['payment_date','payer','students','programs','session_dates','order_id','transaction_id','amount','fee','refunded','method','processor','payout_date']];
     var byId = accActsById();
     var ordByPi = {}; ACC.orders.forEach(function(o){ ordByPi[o.stripe_payment_intent] = o; });
-    ACC.transactions.filter(function(t){ return t.status === 'succeeded'; }).forEach(function(t){
+    var accRange = dateRange('accFrom', 'accTo');
+    ACC.transactions.filter(function(t){
+      return t.status === 'succeeded' && accRange.test(new Date(t.created*1000).toISOString().slice(0,10));
+    }).forEach(function(t){
       var o = ordByPi[t.pi]; var its = o ? (ACC.items_by_order[o.id]||[]) : [];
       rows.push([
         new Date(t.created*1000).toISOString().slice(0,10),

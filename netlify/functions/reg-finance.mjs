@@ -281,7 +281,11 @@ export default async (req) => {
       for (let i = 0; i < 14; i++) {
         const ts = Math.floor(d.getTime() / 1000);
         if (ts > stop) break;
-        if (ts > nowSec) upcoming.push({ date: d.toISOString().slice(0, 10), amount: monthly, kind: "class/monthly", email: o ? o.email : null, ref: s.id });
+        // A subscription with no order row behind it was not created by our
+        // checkout — it came from a Regpack-migration payment link (or a
+        // hand-made Stripe sub). Those bill on the day the family first paid,
+        // not the 1st, and Todd reads this split off the Cash Flow tab.
+        if (ts > nowSec) upcoming.push({ date: d.toISOString().slice(0, 10), amount: monthly, kind: o ? "class/monthly" : "migration/monthly", email: o ? o.email : null, ref: s.id });
         d = addMonth(d);
       }
     }
