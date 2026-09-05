@@ -163,3 +163,34 @@
   to = "/teen-conservatory.html"
   status = 301
   force = true
+
+# Clean URL for the team page — short enough to say out loud and to print.
+[[redirects]]
+  from = "/team"
+  to = "/meet-the-team.html"
+  status = 200
+
+[[redirects]]
+  from = "/meet-the-team"
+  to = "/meet-the-team.html"
+  status = 200
+
+# faculty.html was the earlier team page: one bio and a "more of our team,
+# coming shortly" placeholder. meet-the-team.html supersedes it with the
+# whole roster, and Tony's credentials carry over inside his bio. Nothing
+# on the site ever linked to faculty.html — the sweep had flagged it as an
+# orphan for weeks — but it stayed live and indexable, so a family
+# searching "novapa staff" could land on the thinner page. The file is
+# kept, unlinked, for its screening-and-training block, which is also on
+# safety.html (CJ, 5 Sep 2026).
+[[redirects]]
+  from = "/faculty"
+  to = "/meet-the-team.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/faculty.html"
+  to = "/meet-the-team.html"
+  status = 301
+  force = true
