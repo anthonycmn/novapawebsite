@@ -383,6 +383,42 @@ A(!/runs about 60 minutes/.test(plain(read('frozen-kids.html'))),
   'frozen-kids.html no longer publishes the slot as the run');
 
 // ── season pages and cards ──────────────────────────────────────────────
+// ── rehearsal night and time ────────────────────────────────────────────
+// The Mermaid cards were built by copying the Frozen ones, and the copy was
+// never corrected to the spring schedule. For months the site advertised a
+// Tuesday 6:15 Junior call that the portal sold at 6:45, and a Wednesday Teen
+// call the portal sold on Thursday — a parent would have arrived half an hour
+// early, and on the wrong day entirely (CJ, 6 Sep 2026).
+//
+// The portal is the authority here: it is what families check out against.
+// These are recorded from activities.class_times. To refresh the snapshot:
+//   select name, schedule_name, class_times from activities
+//    where schedule_name ~* 'broadway bound' and class_times is not null;
+console.log('\nREHEARSAL SCHEDULE');
+const REHEARSAL = [
+  // season row on the card          night          time              cast
+  ['Sep 16, 2026 – Jan 20, 2027', 'Wednesdays', '5:15 – 6:45 PM', 'Frozen Kids'],
+  ['Sep 15, 2026 – Jan 26, 2027', 'Tuesdays', '6:15 – 7:45 PM', 'Frozen Junior'],
+  ['Sep 16, 2026 – Feb 3, 2027', 'Wednesdays', '7:00 – 9:00 PM', 'Frozen Teen'],
+  ['Feb 3 – May 12, 2027', 'Wednesdays', '5:15 – 6:45 PM', 'Mermaid Kids'],
+  ['Feb 9 – May 18, 2027', 'Tuesdays', '6:45 – 8:15 PM', 'Mermaid Junior'],
+  ['Feb 25 – May 27, 2027', 'Thursdays', '7:00 – 9:00 PM', 'Mermaid Teen'],
+];
+for (const file of ['broadway-bound.html', 'summer-2027.html']) {
+  const blocks = plain(read(file).replace(/"data:[^"]*"/g, '""'))
+    .match(/<div class="pgm-rows">[\s\S]*?<\/div><\/div>/g) || [];
+  for (const [season, night, time, cast] of REHEARSAL) {
+    const hit = blocks.filter((b) => b.includes('>' + season + '<'));
+    A(hit.length === 1,
+      file + ' · ' + cast + ': one card runs ' + season + ' — found ' + hit.length);
+    if (hit.length !== 1) continue;
+    const rows = [...hit[0].matchAll(/<span>([^<]*)<\/span><span[^>]*>([^<]*)<\/span>/g)];
+    const got = rows.length ? rows[0][1] + ' ' + rows[0][2] : '(none)';
+    A(got === night + ' ' + time,
+      '  …and rehearses ' + night + ' ' + time + ' — got "' + got + '"');
+  }
+}
+
 console.log('\nSEASON PAGES AND CARDS');
 // Each entry: the page, the text that must be on it, and why.
 const first = (k) => S.monthDay(S.byKey(k).performances[0].at);
