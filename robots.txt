@@ -9,4 +9,4 @@ Allow: /
 #   /camp-info-2026-archive.html  /faculty.html  /press-submit.html
 #   /deh/  /sweeney/  /register/ (account, signin, catalog, admin)
 
-Sitemap: https://www.northernvirginiaperformingarts.org/sitemap.xml
+Sitemap: https://novapa.org/sitemap.xml
