@@ -23,9 +23,13 @@ not the account.
 
 | Campaign | Daily budget | Brand |
 |---|---|---|
-| DC Unifieds 2026 — Back to School Sale | $100 | DCU |
-| NOVAPA Main Funnel | $50 | NOVAPA |
-| Frozen JR Fall 2026 — Sales | $50 | NOVAPA |
+| DC Unifieds 2026 — Back to School Sale | **$50** (cut from $100 on 7 Sep, Todd's $100/day total cap) | DCU |
+| NOVAPA Main Funnel | **PAUSED 1 Sep** (was $50) | NOVAPA |
+| Frozen JR Fall 2026 — Sales | **$50** (was $100 since 1 Sep; halved 7 Sep for Todd's cap; revisit Sep 14 when rehearsals start) | NOVAPA |
+
+Todd's directive 7 Sep 2026: total ad spend capped at $100/day. Split $50/$50
+across the two active campaigns so the new DCU creatives still deliver while
+Frozen (the converter) keeps running.
 
 ## Pixels — and the attribution trap
 
@@ -98,6 +102,50 @@ Added 31 Aug 2026, adset "NOVAPA Free class" (static creatives beside the
 video, utm_content `freeclass-static-<slug>`): `120249706877910479` kids,
 `120249706878280479` spotlight, `120249706878800479` shrek,
 `120249706878970479` castle, `120249706879580479` gingerbread.
+
+Changes 1 Sep 2026 (data-driven, Jason-approved): PAUSED both remaining DCU
+video ads (`120249659225520479`, `120249662527240479` — $342/wk, ≤1 ambiguous
+sale) and the free-class video (`120249662804750479` — $66/lead; the five
+statics keep running, re-judge ~Sep 4). Maryland (region key 3863) is now
+EXCLUDED on the two DCU sale adsets (`120249587398030479` college-bound,
+`120249662527250479` main website) — zero MD purchases ever; the quiz adset
+deliberately stays broad because leads convert by phone. Adset-targeting
+updates via JSON POST need the access_token in the URL, not just the body.
+Added 4 Sep 2026, adset "Lookalike + Local — Frozen JR": nine age-split
+static creatives from Banjo (versions 1.0/2.0/3.0 × ages 5-9/9-12/13-17),
+ads `120249788744520479`–`120249788754380479`, all -> be-in-frozen with
+utm_content `ad{1,2,3}-{age}` so creative attribution works from birth and
+the landing-page A/B still applies to them. Age-matched bodies name the
+casts (5–9 Wed, 9–12 Tue "final spot", 12–17 Wed).
+
+Added 7 Sep 2026, adset "DC Metro — College-bound families": four new DCU
+ads from Banjo's Drive folder, all -> one-weekend, utm_content from birth.
+`120249826813680479` carousel-dark (5 cards: hook + 30-school list),
+`120249826814410479` carousel-light (3 cards, logo chips),
+`120249826814550479` joah-1 / `120249826814770479` joah-2 (Meet Joah Ditto,
+Broadway's The Outsiders, appearing at the event — same copy, image test).
+Copy is deliberately price-free. Carousels keep card order with
+multi_share_optimized=false. Sep 8: the older `weekend`/`site-weekend` ads
+("$699 through Labor Day") were swapped to price-free post-sale creatives
+(1078557257895654 / 2936943670002055, same image + utm_content); DCU prices
+restored to 995/695/295 and DCU-FF499 bumped to $496 off the same morning.
+
+Frozen A/B (live 1 Sep 2026): NOT a Meta split — the single Frozen campaign
+($100/day) is untouched, and be-in-frozen.html flips a sticky localStorage
+coin per visitor: 50% keep /register/?season=fall (`ab=portal` param), 50%
+get every CTA rewritten to /frozen-checkout (one-page checkout on the
+reg-frozen-pay.mjs rails, funnel:'frozen-checkout' on its PostHog events).
+`frozen_ab_assigned` fires with the arm on the landing page. A Meta-side $50
+test campaign was created then deleted the same day (Jason chose the
+client-side split). Adset-creation gotcha kept for posterity: a fresh
+campaign needs bid_strategy LOWEST_COST_WITHOUT_CAP or adset creation
+demands bid_amount (error 1815857).
+
+Audiences: all three NOVAPA adsets share ONE lookalike (US 1%,
+meta_seed_audience.csv) over Leesburg/Purcellville/Sterling — they compete in
+the auction; DCU adsets have no custom audience (DC +50mi geo only).
+Conversions are hyper-local: every NOVAPA registration is Loudoun/west-Fairfax
+VA; Meta's region breakdown drops conversion joins, use PostHog geoip.
 
 **API gotcha that cost an hour:** POSTing `object_story_spec` with curl `-d`
 breaks on long messages (newlines/spaces reach Meta unencoded) and returns the

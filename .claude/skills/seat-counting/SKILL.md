@@ -106,8 +106,11 @@ Nothing in our database records that a Sawyer order was cancelled. The Orders
 Report export (Financials > Orders > Download Reports > Orders Report, emailed
 as a link that expires in 3 hours) has a `Canceled` column: 10 of 727 orders are
 cancelled. Lindsay Rockwood's Frozen JR order is one, which is why a $0 "Ryley
-Rockwood / Broadway Bound | Frozen, Jr" row exists and must NOT be treated as a
-registrant. Pull that export before trusting any row with $0 paid.
+Rockwood" row (legacy_enrollments id 721, order 7930828) exists and must NOT be
+treated as a registrant. Its activity_text now carries a CANCELLED IN SAWYER
+annotation (Sep 4 2026) because CJ's staff-portal views route unlinked legacy
+rows by normalized activity_text — the original text made her count on his
+Frozen Jr register. Pull that export before trusting any row with $0 paid.
 
 The export is order-level, not line-item: `Student Name` and `Activities` are
 comma-joined. Of 717 live orders, 690 are unambiguous (one student, or one

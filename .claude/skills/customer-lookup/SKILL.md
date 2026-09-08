@@ -23,6 +23,14 @@ Payments: the Regpack payment CSV is at
 Jason's dashboard — the restricted key at `~/.config/novapa/stripe_rk` cannot
 read payments.
 
+**FIFTH check when a family insists they registered and all four systems say
+no: grep the Regpack payment CSV by name.** The Regpack sweep missed entire
+users, not just cart items — Riley Kilmartin (Sep 4 2026) had a $92.93 improv
+class payment in the CSV and zero rows anywhere in our systems; the parent was
+nearly told to re-register a class she'd already paid for. Known sweep-missed
+payers (past-summer history gaps, still unbackfilled): Reese Bazow, Bree
+McKay, Ella Pfeiffer, Mackenzie Georgelas, part of the Bugaj family.
+
 ## How to query
 
 Supabase management API (full SQL, service-level):
