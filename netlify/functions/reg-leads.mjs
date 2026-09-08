@@ -378,15 +378,18 @@ ${line}` : line;
     status: f.status,
   }));
 
-  // DCU carries its own purchased_at; our two funnels only know they paid
-  // because an order exists, so both lists get looked up in one pass.
-  const paid = await loadPaidEmails([...quizRows, ...freeRows].map((l) => l.email));
+  // DCU carries its own purchased_at, but that only covers purchases their
+  // app saw. Our dcu-pay checkout never writes it, so a gate/register-page
+  // lead who then bought would sit on the board looking abandoned — and the
+  // whole point of the board is the call list. Cross-check every lead email
+  // against paid orders on our side too (one pass for all three lists).
+  const paid = await loadPaidEmails([...dcu.rows, ...quizRows, ...freeRows].map((l) => l.email));
   const isPaid = (e) => !!e && paid.has(String(e).trim().toLowerCase());
 
   return Response.json({
     stages: STAGES,
     free_stages: FREE_STAGES,
-    dcu: dcu.rows.map((d) => applyPaid(d, !!d.purchased_at)),
+    dcu: dcu.rows.map((d) => applyPaid(d, !!d.purchased_at || isPaid(d.email))),
     dcu_status: dcu.status,
     quiz: quizRows.map((q) => applyPaid(q, isPaid(q.email))),
     freeclass: freeRows.map((f) => applyPaid(f, isPaid(f.email))),
