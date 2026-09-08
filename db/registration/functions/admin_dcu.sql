@@ -40,6 +40,11 @@ begin
           'student', i.camper_name,
           'parent', o.parent_name,
           'email', o.email,
+          -- families.phone added Sep 8 2026: DCU checkout phones recovered
+          -- from Stripe customers now live there, and reg-webhook keeps it
+          -- fresh for new orders.
+          'phone', (select f.phone from families f
+                    where lower(f.email) = lower(o.email) limit 1),
           'plan', o.plan,
           'status', o.status,
           'track', a.name,

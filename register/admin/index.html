@@ -3246,7 +3246,8 @@
       regs.map(function(r){
         return '<tr><td>' + new Date(r.created_at).toLocaleDateString() + '</td>' +
           '<td>' + esc(r.student || '') + '</td>' +
-          '<td>' + esc(r.parent || '') + '<br><span style="color:var(--dim);font-size:12px">' + esc(r.email || '') + '</span></td>' +
+          '<td>' + esc(r.parent || '') + '<br><span style="color:var(--dim);font-size:12px">' + esc(r.email || '') + '</span>' +
+            (r.phone ? '<br><a href="tel:' + esc(String(r.phone).replace(/[^\d+]/g,'')) + '" style="color:var(--gold);font-size:12px">' + esc(r.phone) + '</a>' : '') + '</td>' +
           '<td>' + esc((r.track || '').replace('DC Unifieds 2026 | ', '')) + '</td>' +
           '<td>' + esc(r.plan || '') + '</td>' +
           '<td class="num">' + usd2(r.paid_today_cents) + '</td>' +
