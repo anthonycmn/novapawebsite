@@ -31,6 +31,13 @@ const CLASSES = {
 };
 const MIN_DAYS_OUT = 7;    // Jason: bookable only 7+ days ahead
 const DATES_SHOWN = 3;     // next N valid dates per class
+// The season's real boundaries. Without the floor, late-August bookings were
+// offered "next Tuesday" dates BEFORE classes began — two families were told
+// Sep 8 and one Sep 10, and one walked into an empty building (Sep 8 2026).
+// The ceiling prevents the mirror bug in June (offering July dates for
+// classes that ended).
+const SEASON_START = "2026-09-14";
+const SEASON_END = "2027-06-12";
 const FREE_SEATS_PER_DATE = 6;  // ops cap per class per date, not a sales number
 const VENUE = "National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176";
 
@@ -63,13 +70,15 @@ function weekdayOf(iso) {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
-// next N occurrences of `day` that are at least MIN_DAYS_OUT days from today
+// next N occurrences of `day` that are at least MIN_DAYS_OUT days from today,
+// clamped inside the season
 function upcomingDates(day) {
-  const start = addDays(todayEastern(), MIN_DAYS_OUT);
+  let start = addDays(todayEastern(), MIN_DAYS_OUT);
+  if (start < SEASON_START) start = SEASON_START;
   const offset = (day - weekdayOf(start) + 7) % 7;
   let d = addDays(start, offset);
   const out = [];
-  while (out.length < DATES_SHOWN) { out.push(d); d = addDays(d, 7); }
+  while (out.length < DATES_SHOWN && d <= SEASON_END) { out.push(d); d = addDays(d, 7); }
   return out;
 }
 
