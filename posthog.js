@@ -3,9 +3,16 @@
  * Shared by every page via <script src="/posthog.js" defer></script>.
  *
  * Consent: integrates with the CookieYes banner already on the site.
- * Before analytics consent, PostHog runs with in-memory persistence
- * (no cookies / localStorage); once the visitor accepts the
- * "analytics" category, persistence is upgraded.
+ * Before analytics consent, PostHog persists to sessionStorage: the
+ * identity is stable across pages WITHIN one visit (so a buyer's
+ * origin -> purchase journey connects) but dies with the tab — nothing
+ * durable is stored pre-consent. Accepting the "analytics" category
+ * upgrades to localStorage+cookie (cross-visit journeys).
+ *
+ * Why not memory: memory persistence minted a NEW distinct_id on every
+ * page load, so every internal navigation looked like a fresh visitor
+ * referred by our own site. Sep 2026 attribution week: 7 of 8 Frozen
+ * buyers untraceable, 784 phantom "visitors" with 1 view each.
  */
 (function () {
   var POSTHOG_KEY = 'phc_pKwTDgnhHKjG34dvXmjtw2NJzCsGkK3L6MfMp9TUvYkw';
@@ -31,7 +38,7 @@
   }
 
   function persistenceMode() {
-    return cookieYesAnalyticsConsent() ? 'localStorage+cookie' : 'memory';
+    return cookieYesAnalyticsConsent() ? 'localStorage+cookie' : 'sessionStorage';
   }
 
   var script = document.createElement('script');
