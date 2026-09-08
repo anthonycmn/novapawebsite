@@ -536,6 +536,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       <div id="shirtBlock" style="display:none;margin-top:8px"></div>
       <label class="tiny" for="parentName" style="display:block;text-align:left;margin:14px 0 4px">Parent name</label>
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)">
+      <label class="tiny" for="parentPhone" style="display:block;text-align:left;margin:14px 0 4px">Mobile number</label>
+      <input type="tel" id="parentPhone" placeholder="(571) 555-0100" autocomplete="tel" inputmode="tel">
+      <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:8px;cursor:pointer">
+        <input type="checkbox" id="smsOk" style="width:17px;height:17px;flex-shrink:0;accent-color:var(--gold2)">
+        <span>Text me schedule changes and reminders about my camper's programs. Msg &amp; data rates may apply; reply STOP to opt out.</span>
+      </label>
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:28px;cursor:pointer">
         <input type="checkbox" id="insOk" style="width:17px;height:17px;flex-shrink:0;accent-color:var(--gold2)">
         <span id="insLabel"><b>Add tuition insurance</b></span>
@@ -3062,6 +3068,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     $('payErr').classList.remove('on');
     if (shirtsBlocked()) return;
     if (policyBlocked()) return;
+    var phv = $('parentPhone').value.trim();
+    if (phv.replace(/\D/g, '').length < 10) {
+      $('payErr').textContent = 'Please enter a mobile number (10 digits) so we can reach you about your registration.';
+      $('payErr').classList.add('on');
+      $('parentPhone').focus();
+      return;
+    }
     var pnv = $('parentName').value.trim();
     if (pnv) state.guest || sb.rpc('set_my_parent_name', { p_name: pnv });
     persistKidData();
@@ -3074,7 +3087,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         return fetch('/api/reg-pay', {
           method: 'POST',
           headers: fh,
-          body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: pnv, insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, confirm_free: true, ref: refCode(), email: token ? undefined : state.email, bdays: token ? undefined : guestBdays() })
+          body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: pnv, phone: phv, sms_consent: $('smsOk').checked, insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, confirm_free: true, ref: refCode(), email: token ? undefined : state.email, bdays: token ? undefined : guestBdays() })
         });
       }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
       .then(function(res){
@@ -3090,7 +3103,17 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       });
       return;
     }
-    confirmNow().then(function(res){
+    // The intent was created before the parent typed their number (schedulePay
+    // auto-starts), so attach the phone to it now — best-effort: a failure
+    // here must never block the payment itself.
+    var attach = state.clientSecret
+      ? fetch('/api/reg-pay', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attach_phone: true, intent: state.clientSecret.split('_secret')[0],
+            hold_id: state.hold.id, phone: phv, sms_consent: $('smsOk').checked })
+        }).catch(function(){})
+      : Promise.resolve();
+    attach.then(function(){ return confirmNow(); }).then(function(res){
       $('paySubmit').disabled = false;
       if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed'); return; }
       var itn = res.paymentIntent || res.setupIntent;

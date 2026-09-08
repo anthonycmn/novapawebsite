@@ -65,12 +65,54 @@ export default async (req) => {
 
   let body;
   try { body = await req.json(); } catch { return Response.json({ error: "bad_json" }, { status: 400 }); }
+
+  // attach_phone: the pay view creates the intent BEFORE the parent types
+  // (schedulePay auto-starts 350ms in), so the phone number is attached to
+  // the existing intent's metadata at the moment they click Pay. Auth is the
+  // {intent, hold_id} pairing — the intent's own metadata must name the same
+  // unguessable hold. reg-webhook then persists it to families.phone.
+  if ((body || {}).attach_phone) {
+    const intentId = String((body || {}).intent || "");
+    const ph = String((body || {}).phone || "").trim().slice(0, 40);
+    const holdId = String((body || {}).hold_id || "");
+    const consent = (body || {}).sms_consent === true || (body || {}).sms_consent === "1";
+    if (!/^(pi|seti)_[A-Za-z0-9]+$/.test(intentId) || !holdId || ph.replace(/\D/g, "").length < 10) {
+      return Response.json({ error: "bad_request" }, { status: 400 });
+    }
+    try {
+      const stripeA = new Stripe(process.env.STRIPE_SECRET_KEY);
+      const isSetup = intentId.startsWith("seti_");
+      const cur = isSetup ? await stripeA.setupIntents.retrieve(intentId)
+                          : await stripeA.paymentIntents.retrieve(intentId);
+      if (!cur || (cur.metadata || {}).hold_id !== holdId) {
+        return Response.json({ error: "not_found" }, { status: 404 });
+      }
+      const md = { phone: ph, sms_consent: consent ? "1" : "0" };
+      if (isSetup) await stripeA.setupIntents.update(intentId, { metadata: md });
+      else await stripeA.paymentIntents.update(intentId, { metadata: md });
+      return Response.json({ ok: true });
+    } catch (e) {
+      console.error("attach_phone failed:", e.message);
+      return Response.json({ error: "attach_failed" }, { status: 500 });
+    }
+  }
+
   const { hold_id, plan, parent_name } = body || {};
   const insurance = !!(body || {}).insurance;
   const couponCode = String((body || {}).coupon || "").trim();
   if (!hold_id || !["deposit", "full", "subscription"].includes(plan)) {
     return Response.json({ error: "bad_request" }, { status: 400 });
   }
+  // Phone (Sep 8 2026): the checkout asks for it, but the server tolerates
+  // its absence — a browser running yesterday's cached JS must still be able
+  // to pay. When present it must look like a real number; it rides the PI
+  // metadata and reg-webhook writes it to families.phone. sms_consent is the
+  // explicit opt-in checkbox (Telnyx 10DLC), never inferred.
+  const phone = String((body || {}).phone || "").trim().slice(0, 40);
+  if (phone && phone.replace(/\D/g, "").length < 10) {
+    return Response.json({ error: "bad_phone" }, { status: 400 });
+  }
+  const smsConsent = (body || {}).sms_consent === true || (body || {}).sms_consent === "1";
 
   // Two identities: a session (returning families), or a typed email plus a
   // hold that was ACQUIRED for that same email (guest checkout — the hold id
@@ -424,13 +466,21 @@ export default async (req) => {
         await svc("apply_credit_events", { p_pi: "free_" + hold_id, p_email: email, p_detail: { grants, redemptions } });
       }
     } catch (e) { console.error("free order: credit events failed:", e.message); }
-    if (parent_name && email) {
+    if ((parent_name || phone) && email) {
       try {
         const famId = await familyIdByEmail(email, { apikey: key, Authorization: `Bearer ${key}` });
+        const patch = {};
+        if (parent_name) patch.parent_name = parent_name;
+        // Free orders never reach Stripe or the webhook, so the phone (and
+        // consent) must be written here or a comped family's number is lost.
+        if (phone) {
+          patch.phone = phone;
+          if (smsConsent) { patch.sms_consent = true; patch.sms_consent_at = new Date().toISOString(); }
+        }
         if (famId) await fetch(`${SUPABASE_URL}/rest/v1/families?id=eq.${famId}`, {
           method: "PATCH",
           headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ parent_name }),
+          body: JSON.stringify(patch),
         });
       } catch {}
     }
@@ -451,7 +501,7 @@ export default async (req) => {
   if (plan === "subscription" && pricing.firstMonthFree && pricing.todayCents === 0) {
     const stripeS = new Stripe(process.env.STRIPE_SECRET_KEY);
     const customerS = await stripeS.customers.create({
-      email, name: parent_name || undefined, metadata: { source: "novapa-register" },
+      email, name: parent_name || undefined, phone: phone || undefined, metadata: { source: "novapa-register" },
     });
     const si = await stripeS.setupIntents.create({
       customer: customerS.id,
@@ -459,6 +509,7 @@ export default async (req) => {
       metadata: {
         hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
         parent_name: (parent_name || "").slice(0, 100),
+        phone, sms_consent: smsConsent ? "1" : "0",
         total_cents: "0", installment_cents: "0", n_installments: "0",
         first_installment_utc: "0", insurance_cents: "0", insured: "0",
         coupon: "", coupon_cents: "0", plan_fee_cents: "0", fsa_eligible: "0",
@@ -513,7 +564,7 @@ export default async (req) => {
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const customer = await stripe.customers.create({
-    email, name: parent_name || undefined,
+    email, name: parent_name || undefined, phone: phone || undefined,
     metadata: { source: "novapa-register" },
   });
 
@@ -533,6 +584,7 @@ export default async (req) => {
     metadata: {
       hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
       parent_name: (parent_name || "").slice(0, 100),
+      phone, sms_consent: smsConsent ? "1" : "0",
       total_cents: String(pricing.totalCents),
       installment_cents: String(pricing.installmentCents),
       n_installments: String(pricing.nInstallments),

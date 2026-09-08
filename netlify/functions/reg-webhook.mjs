@@ -200,6 +200,27 @@ export default async (req) => {
       } catch (e) { console.error("parent_name save failed:", e.message); }
     }
 
+    // Save the parent's phone number (and SMS consent, when the box was
+    // checked) onto the family row. Phone rides PI metadata, so this also
+    // captures frozen-checkout buyers, whose metadata has carried `phone`
+    // since that funnel launched. sms_consent_at is the consent timestamp
+    // carriers expect us to be able to produce.
+    if (m.phone && m.email) {
+      try {
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const patch = { phone: m.phone };
+        if (m.sms_consent === "1") {
+          patch.sms_consent = true;
+          patch.sms_consent_at = new Date().toISOString();
+        }
+        await fetch(`${SUPABASE_URL}/rest/v1/families?or=(email.ilike.${encodeURIComponent(m.email)},cc_email.ilike.${encodeURIComponent(m.email)})`, {
+          method: "PATCH",
+          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        });
+      } catch (e) { console.error("phone save failed:", e.message); }
+    }
+
     const paymentMethodId = typeof pi.payment_method === "string"
       ? pi.payment_method : pi.payment_method?.id;
     const customerId = typeof pi.customer === "string" ? pi.customer : pi.customer?.id;
