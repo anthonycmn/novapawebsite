@@ -62,7 +62,9 @@
   btn.addEventListener("click", function(){
     btn.disabled = true;
     btn.textContent = "One moment…";
-    location.href = SUPABASE_URL + "/auth/v1/verify?token_hash=" + encodeURIComponent(tokenHash)
+    // GET /auth/v1/verify names the hashed-token parameter "token" (the
+    // template variable is TokenHash, but the query param is token).
+    location.href = SUPABASE_URL + "/auth/v1/verify?token=" + encodeURIComponent(tokenHash)
       + "&type=" + encodeURIComponent(type) + "&redirect_to=" + encodeURIComponent(redirectTo);
   });
 })();
