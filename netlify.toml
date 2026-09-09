@@ -58,6 +58,13 @@
   status = 301
   force = true
 
+# Auth email interstitial — sign-in/reset emails link here so mail scanners
+# can't burn the one-time token (the button click does the real verify).
+[[redirects]]
+  from = "/auth-continue"
+  to = "/auth-continue.html"
+  status = 200
+
 # Ad landing page for the Frozen fall production — clean URL for Meta ads.
 [[redirects]]
   from = "/frozen-checkout"

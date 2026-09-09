@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Continue to sign in — NOVAPA</title>
+<!--
+  Why this page exists (Sep 9 2026): sign-in and password-reset emails used
+  to link straight to the Supabase verify endpoint. Those links are one-time,
+  and several families' email providers prefetch every link on arrival — the
+  scanner's GET consumed the token, so the family's real click always landed
+  on "link expired" (Kelly Watson, Brian Carey). The auth email templates now
+  link HERE instead, carrying token_hash/type/redirect_to. Loading this page
+  consumes nothing; only the button click (JS navigation, which scanners
+  don't execute) hits the verify endpoint. Do not turn the button into a
+  plain <a href> and do not auto-redirect — either one re-opens the bug.
+-->
+<style>
+  :root{ --navy:#08111F; --navy2:#0F1E36; --gold:#C8892A; --gold2:#E8B84B; --line:rgba(255,255,255,0.14); }
+  *{ box-sizing:border-box; }
+  body{ margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(900px 600px at 30% -10%, var(--navy2), var(--navy)), var(--navy);
+    font:16px/1.6 "DM Sans","Segoe UI",system-ui,sans-serif; color:#EDF1F8; padding:20px; }
+  .card{ max-width:430px; width:100%; background:rgba(22,43,82,0.45); border:1px solid var(--line);
+    border-radius:16px; padding:36px 34px; text-align:center; }
+  h1{ font-family:"Cormorant Garamond",Georgia,serif; font-weight:600; font-size:30px; margin:0 0 10px; color:#fff; }
+  p{ color:rgba(237,241,248,0.72); margin:0 0 22px; }
+  button{ width:100%; border:0; border-radius:12px; padding:15px 20px; cursor:pointer;
+    background:linear-gradient(90deg, var(--gold), var(--gold2)); color:#1a1206;
+    font:700 14px/1 "DM Sans",sans-serif; letter-spacing:.12em; text-transform:uppercase; }
+  button:disabled{ opacity:.6; cursor:default; }
+  .tiny{ font-size:12.5px; color:rgba(237,241,248,0.45); margin-top:18px; }
+  #err{ display:none; color:#E8B84B; margin-top:14px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="h">Almost there</h1>
+  <p id="p">Click below to finish signing in to your NOVAPA account.</p>
+  <button id="go">Continue to sign in</button>
+  <p id="err"></p>
+  <p class="tiny">This extra step keeps your sign-in link private to you.<br>Northern Virginia Performing Arts</p>
+</div>
+<script>
+(function(){
+  var SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
+  var q = new URLSearchParams(location.search);
+  var tokenHash = q.get("token_hash") || "";
+  var type = q.get("type") || "magiclink";
+  var redirectTo = q.get("redirect_to") || (location.origin + "/register/");
+  var LABELS = { recovery: "Continue to reset your password", signup: "Confirm my email",
+                 invite: "Accept invitation", email_change: "Confirm email change" };
+  var btn = document.getElementById("go");
+  if (LABELS[type]) btn.textContent = LABELS[type];
+  if (!tokenHash) {
+    document.getElementById("p").textContent =
+      "This link is missing its sign-in code. Please request a fresh link and try again.";
+    btn.style.display = "none";
+    return;
+  }
+  btn.addEventListener("click", function(){
+    btn.disabled = true;
+    btn.textContent = "One moment…";
+    location.href = SUPABASE_URL + "/auth/v1/verify?token_hash=" + encodeURIComponent(tokenHash)
+      + "&type=" + encodeURIComponent(type) + "&redirect_to=" + encodeURIComponent(redirectTo);
+  });
+})();
+</script>
+</body>
+</html>
