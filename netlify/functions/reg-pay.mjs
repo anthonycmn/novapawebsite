@@ -15,7 +15,7 @@ import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
   SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
-  DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CREDITS, DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END,
+  DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CREDITS, DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END, dayCampPack,
 } from "./reg-config.mjs";
 
 // first day of care per summer camp — the date the IRS under-13 test runs on
@@ -452,8 +452,8 @@ export default async (req) => {
     // touches Stripe, so the webhook never runs) — keyed by the synthetic PI
     try {
       const grants = [
-        ...items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
-          .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
+        ...items.filter((it) => dayCampPack(it.activity_id))
+          .map((it) => ({ camper: it.camper || "", day: dayCampPack(it.activity_id).credits,
             snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 })),
         ...(new Date() <= DAY_CAMP_PACK_SNOW_END
           ? Object.entries(pricing.dayPacksByKid || {}).map(([k, n]) =>
@@ -623,8 +623,8 @@ export default async (req) => {
       // pack purchases grant per-camper credits; redeemed credits deduct —
       // both applied by the webhook via apply_credit_events (exactly-once)
       credit_grants: JSON.stringify([
-        ...items.filter((it) => it.activity_id === DAY_CAMP_PACK_ID)
-          .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
+        ...items.filter((it) => dayCampPack(it.activity_id))
+          .map((it) => ({ camper: it.camper || "", day: dayCampPack(it.activity_id).credits,
             snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 })),
         // cart-form packs: the camper books all 5 days now, so no day credits —
         // just the snow-day bonus (packs bought by DAY_CAMP_PACK_SNOW_END)
