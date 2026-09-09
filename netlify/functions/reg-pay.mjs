@@ -627,7 +627,7 @@ export default async (req) => {
           .map((it) => ({ camper: it.camper || "", day: DAY_CAMP_PACK_CREDITS,
             snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 })),
         // cart-form packs: the camper books all 5 days now, so no day credits —
-        // just the Labor Day snow-day bonus
+        // just the snow-day bonus (packs bought by DAY_CAMP_PACK_SNOW_END)
         ...(new Date() <= DAY_CAMP_PACK_SNOW_END
           ? Object.entries(pricing.dayPacksByKid || {}).map(([k, n]) =>
               ({ camper: k, day: 0, snow: DAY_CAMP_PACK_SNOW_BONUS * n }))

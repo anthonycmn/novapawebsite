@@ -119,7 +119,7 @@ export const PLAN_FEE_PCT = 5;   // surcharge for choosing a payment plan
 export const DAY_CAMP_MAX_CENTS = 20000;
 // Day Camp Credit Pack (the product /day-camps has advertised; CJ priced it
 // Aug 2 2026): $349 buys ONE CAMPER 5 day-camp credits, good through Jun 30
-// 2027, credits never shared between siblings. Bought by Labor Day, the pack
+// 2027, credits never shared between siblings. Bought by Sep 21 2026 (extended from Labor Day by CJ on Sep 9), the pack
 // adds 2 free Snow Day credits for that camper. Credits auto-redeem at
 // checkout: a day camp for a camper with a day credit prices at $0 (snow-day
 // events consume snow credits instead). The webhook grants/deducts via
@@ -129,7 +129,7 @@ export const DAY_CAMP_PACK_SIZE = 5;
 export const DAY_CAMP_PACK_CENTS = 34900;
 export const DAY_CAMP_PACK_CREDITS = 5;
 export const DAY_CAMP_PACK_SNOW_BONUS = 2;
-export const DAY_CAMP_PACK_SNOW_END = new Date("2026-09-08T03:59:59Z"); // end of Labor Day ET
+export const DAY_CAMP_PACK_SNOW_END = new Date("2026-09-22T03:59:59Z"); // end of Mon Sep 21 2026 ET (extended from Labor Day by CJ on Sep 9 2026)
 export const isSnowDayName = (name) => /snow day/i.test(name || "");
 
 export const SHOWS = {
@@ -414,7 +414,7 @@ export function priceCart(cart, plan, opts = {}) {
   // pack product UX): a camper booked into 5 day camps in ONE order pays
   // $349 flat for those 5 (per camper, packs stack). Applied by scaling the
   // camper's priciest day-camp units so every downstream number inherits it.
-  // The webhook still grants 2 snow-day credits per pack bought by Labor Day.
+  // The webhook still grants 2 snow-day credits per pack bought by Sep 21 2026.
   const byKidDc = {};
   for (const it of priced) {
     if (it.daycamp && !it.coaching && !it.pack) (byKidDc[kidKey(it)] = byKidDc[kidKey(it)] || []).push(it);
