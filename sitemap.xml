@@ -8,9 +8,15 @@
   </url>
   <url>
     <loc>https://novapa.org/blog/</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://novapa.org/blog/best-audition-songs-for-kids.html</loc>
+    <lastmod>2026-09-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://novapa.org/blog/voice-lessons-cost-how-to-choose-a-teacher.html</loc>
