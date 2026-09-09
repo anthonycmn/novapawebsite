@@ -132,6 +132,19 @@ export const DAY_CAMP_PACK_SNOW_BONUS = 2;
 export const DAY_CAMP_PACK_SNOW_END = new Date("2026-09-22T03:59:59Z"); // end of Mon Sep 21 2026 ET (extended from Labor Day by CJ on Sep 9 2026)
 export const isSnowDayName = (name) => /snow day/i.test(name || "");
 
+// Every purchasable day-camp credit pack, keyed by activity id. The 5-pack is
+// the original product; the 10-pack was added Sep 9 2026 at CJ's direction
+// ($675, $67.50 a day, one tier below the 5-pack's $69.80). Credits, price and
+// the snow bonus are all read from here, so adding another pack never means
+// editing the grant logic again -- that hard-coding is exactly how a pack could
+// have taken money and granted nothing.
+export const DAY_CAMP_PACKS = {
+  [DAY_CAMP_PACK_ID]: { credits: DAY_CAMP_PACK_CREDITS, cents: DAY_CAMP_PACK_CENTS, size: DAY_CAMP_PACK_SIZE },
+  990011: { credits: 10, cents: 67500, size: 10 },
+};
+// Returns null for anything that is not a pack, so callers use it as a predicate.
+export const dayCampPack = (id) => DAY_CAMP_PACKS[id] || null;
+
 export const SHOWS = {
   httyd: "How to Train Your Dragon JR.",
   charlie: "Charlie and the Chocolate Factory JR.",
@@ -362,8 +375,9 @@ export function priceCart(cart, plan, opts = {}) {
   const priced = cart.map((it) => {
     // credit pack: flat $349, settled today like a day camp, outside every
     // discount (no tier, no sibling, no insurance, never financed)
-    if (it.activity_id === DAY_CAMP_PACK_ID) {
-      return { ...it, unit: DAY_CAMP_PACK_CENTS, rate: 0, daycamp: true, pack: true };
+    const packDef = dayCampPack(it.activity_id);
+    if (packDef) {
+      return { ...it, unit: packDef.cents, rate: 0, daycamp: true, pack: true };
     }
     if (it.show) {
       const kid = kidKey(it);
