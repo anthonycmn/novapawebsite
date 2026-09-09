@@ -835,7 +835,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     return null;
   }
   var PACK_ID = 990010, PACK_CENTS = 34900;
-  var PACK_SNOW_END = new Date('2026-09-08T03:59:59Z');
+  var PACK_SNOW_END = new Date('2026-09-22T03:59:59Z'); // end of Mon Sep 21 2026 ET, extended from Labor Day
   // Day Camp 5-Pack, cart form: a camper booked into 5 day camps in one order
   // pays $349 flat for those 5 (per camper, packs stack) — mirrors priceCart:
   // priciest lines scaled so the pack sums exactly.
@@ -1637,7 +1637,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var allLabel = dayPriceLabel(dayCampsList());
     var snowOn = new Date() <= PACK_SNOW_END;
     var packNote = '<div class="tiny" style="text-align:left;margin:10px 0 4px;color:var(--gold3)">Do all 5 day camps for $349 (save $46)' +
-      (snowOn ? ' + 2 free Snow Day camps if booked by Labor Day' : '') + ' \u2014 applied automatically</div>';
+      (snowOn ? ' + 2 free Snow Day camps if booked by September 21' : '') + ' \u2014 applied automatically</div>';
     host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps' +
       (allLabel ? ' \u00b7 ' + allLabel : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div>' + packNote +
       groups.map(function(g, gi){
@@ -2701,7 +2701,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if ((p.credited && p.credited[i]) || (p.packed && p.packed[i])) return sum;
       return sum + Math.max(0, fullPrice(it) - p.units[i]);
     }, 0);
-    // the Labor Day snow-day bonus shows as its own FREE line so the value
+    // the September 21 snow-day bonus shows as its own FREE line so the value
     // of the pack is visible at the moment of payment
     var totalPacks = Object.keys(p.packsByKid || {}).reduce(function(x, k){ return x + p.packsByKid[k]; }, 0);
     var snowRow = (totalPacks > 0 && new Date() <= PACK_SNOW_END)
@@ -3308,7 +3308,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       var recapEl = $('doneRecap');
       recapEl.innerHTML = packCount + ' Camp Pack' + (packCount>1?'s':'') + ' locked in — ' +
         (packCount*5) + ' camp day credits' +
-        (new Date() <= new Date('2026-09-08T03:59:59Z') ? ' plus ' + (packCount*2) + ' free Snow Day credits' : '') +
+        (new Date() <= new Date('2026-09-22T03:59:59Z') ? ' plus ' + (packCount*2) + ' free Snow Day credits' : '') +
         ', ready to use.';
       var pc = document.createElement('div');
       pc.className = 'card';
