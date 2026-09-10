@@ -141,14 +141,25 @@
 
     // ── Teen Conservatory ────────────────────────────────────────────────
     {
+      // Moved from the August 14-16 run to September 25-27 (CJ, 9 Sep 2026)
+      // to match BookTix event DEHFP. The page was repointed then; this file
+      // was not, which is what the suite had been failing on. The Saturday
+      // matinee is 3:00 PM here, not the usual 2:00.
+      //
+      // The only production not in our own room, so it is the only one that
+      // overrides `venue` and `houseOpens`. The 30 minutes is what the page has
+      // said since the venue moved — CJ to confirm it against Franklin Park's
+      // own front-of-house time.
       key: 'deh', season: 'Teen Conservatory', title: 'Dear Evan Hansen',
       company: 'Teen Conservatory', ages: '13–18', runMinutes: 150,
+      venue: 'Franklin Park Arts Center, Purcellville',
+      houseOpens: 30,
       page: 'dear-evan-hansen.html',
       performances: [
-        { at: '2026-08-14 19:00' },
-        { at: '2026-08-15 14:00' },
-        { at: '2026-08-15 19:00' },
-        { at: '2026-08-16 14:00' }
+        { at: '2026-09-25 19:00' },
+        { at: '2026-09-26 15:00' },
+        { at: '2026-09-26 19:00' },
+        { at: '2026-09-27 14:00' }
       ]
     },
     {
@@ -299,9 +310,23 @@
     return n + ' performance' + (n === 1 ? '' : 's') + ' — ' + out.join(' | ');
   }
 
+  // House-open time is a fact about a room, not about a production, so a show
+  // playing somewhere else carries its own. Everything reads it through these
+  // two helpers rather than the constant.
+  function houseOpensFor(show) {
+    return (show && show.houseOpens) || HOUSE_OPENS_MINUTES;
+  }
+  function houseNoteFor(show) {
+    return 'House opens ' + houseOpensFor(show) + ' minutes before every curtain.';
+  }
+  function venueFor(show) { return (show && show.venue) || VENUE; }
+
   root.NOVAPA_SHOWS = {
     houseOpensMinutes: HOUSE_OPENS_MINUTES,
     houseOpensNote: 'House opens ' + HOUSE_OPENS_MINUTES + ' minutes before every curtain.',
+    houseOpensFor: houseOpensFor,
+    houseNoteFor: houseNoteFor,
+    venueFor: venueFor,
     venue: VENUE,
     shows: SHOWS,
     parse: parse,

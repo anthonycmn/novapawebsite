@@ -287,7 +287,7 @@ for (const file of ['index.html', 'calendar.html', 'broadway-bound.html', 'froze
 // calendar's word, and shows.js has to answer to it, not the other way round.
 console.log('\nNOVAPA ADMIN CALENDAR');
 const ADMIN_CALENDAR = {
-  deh: ['2026-08-14 19:00', '2026-08-15 14:00', '2026-08-15 19:00', '2026-08-16 14:00'],
+  deh: ['2026-09-25 19:00', '2026-09-26 15:00', '2026-09-26 19:00', '2026-09-27 14:00'],
   sweeney: ['2026-10-23 19:00', '2026-10-24 14:00', '2026-10-24 19:00', '2026-10-25 14:00',
     '2026-10-30 19:00', '2026-10-31 14:00', '2026-11-01 14:00'],
   carol: ['2026-12-04 19:00', '2026-12-05 14:00', '2026-12-05 19:00', '2026-12-06 14:00',
@@ -351,7 +351,11 @@ for (const [file, keys] of Object.entries(PAGE_BLOCKS)) {
     file + ' prints exactly its ' + want.length + ' performances' +
     (JSON.stringify(onPage) === JSON.stringify(want) ? ''
       : '\n        page: ' + onPage.join(' · ') + '\n        want: ' + want.join(' · ')));
-  A(html.includes(S.houseOpensNote), file + ' carries the house-opens note');
+  // Per show, not per site: Dear Evan Hansen plays Franklin Park rather than
+  // our own room, and the house time belongs to the room.
+  const houseNote = S.houseNoteFor(S.byKey(keys[0]));
+  A(html.includes(houseNote),
+    file + ' carries the house-opens note (' + S.houseOpensFor(S.byKey(keys[0])) + ' min)');
   // Case-insensitive on purpose: this check used to be anchored on a capital
   // D and sailed straight past hadestown.html's lowercase "doors open 30
   // minutes", which sat under a full list of curtain times for weeks.
@@ -577,7 +581,9 @@ const STALE = [
   ['Sun May 16', 'the dropped Mermaid KIDS Sunday'],
   ['Sun Jun 6', 'the dropped Mermaid Teen Sunday'],
   ['Thu Oct 29', 'the dropped Sweeney Thursday'],
-  ['3:00 PM', 'the old 3pm matinee'],
+  // '3:00 PM' used to be banned outright as a retired matinee slot. Dear
+  // Evan Hansen's September run really does open at 3:00 on the Saturday,
+  // so a blanket ban would now fail correct copy.
   ['Jan 22&ndash;24', 'the old Frozen KIDS range'],
   ['Jan 29&ndash;31', 'the old Frozen JR. range'],
   ['Feb 5&ndash;7', 'the old Frozen Teen range'],
