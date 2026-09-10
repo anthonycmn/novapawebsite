@@ -29,7 +29,9 @@ const CLASSES = {
   "improv-13-17":      { name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
   "acting-mt-sat":     { name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
 };
-const MIN_DAYS_OUT = 7;    // Jason: bookable only 7+ days ahead
+const MIN_DAYS_OUT = 2;    // 48 hours (CJ, Sep 10 2026; was 7 per Jason Aug 26).
+// The SEASON_START floor below is what stops pre-season dates being offered,
+// not this number, so shortening the notice does not reopen the Sep 8 bug.
 const DATES_SHOWN = 3;     // next N valid dates per class
 // The season's real boundaries. Without the floor, late-August bookings were
 // offered "next Tuesday" dates BEFORE classes began — two families were told
