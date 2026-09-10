@@ -13,34 +13,149 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
 <style>html{background:#08111F}</style>
-<link rel="stylesheet" href="/brand.css">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--navy:#08111F;--navy2:#0F1E36;--navy3:#162B52;--gold:#C8892A;--gold2:#E8B84B;--crimson:#8B1A2F}
-html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--navy);color:#fff;overflow-x:hidden}
-h1{font-family:'Protest Strike',sans-serif;font-weight:400;letter-spacing:0.01em}
-.blog-hero{padding:150px 24px 60px;text-align:center;max-width:820px;margin:0 auto}
-.blog-hero .eyebrow{font-size:11px;font-weight:700;letter-spacing:0.22em;color:var(--gold2);text-transform:uppercase;margin-bottom:18px}
-.blog-hero h1{font-size:clamp(38px,6vw,64px);line-height:1.05;margin-bottom:22px}
-.blog-hero p{font-size:17px;line-height:1.75;color:rgba(255,255,255,0.72);font-weight:300}
-.blog-hero p a{color:var(--gold2);text-decoration:none}
-.blog-hero p a:hover{text-decoration:underline}
-.blog-grid{max-width:1080px;margin:40px auto 100px;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:26px}
-.post-card{display:flex;flex-direction:column;background:var(--navy2);border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:30px 28px;text-decoration:none;color:#fff;transition:transform .2s,border-color .2s}
-.post-card:hover{transform:translateY(-4px);border-color:rgba(232,184,75,0.45)}
-.post-card .pc-tag{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold2);margin-bottom:14px}
-.post-card h2{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;line-height:1.25;margin-bottom:12px}
-.post-card p{font-size:14px;line-height:1.65;color:rgba(255,255,255,0.62);font-weight:300;flex:1}
-.post-card .pc-meta{margin-top:20px;font-size:12px;color:rgba(255,255,255,0.4)}
-.blog-empty{max-width:640px;margin:30px auto 120px;padding:44px 32px;text-align:center;background:var(--navy2);border:1px dashed rgba(232,184,75,0.35);border-radius:18px}
-.blog-empty .be-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;margin-bottom:12px}
-.blog-empty p{font-size:15px;line-height:1.7;color:rgba(255,255,255,0.65);font-weight:300}
-.blog-footer{border-top:1px solid rgba(255,255,255,0.08);padding:44px 24px 60px;text-align:center}
-.blog-footer p{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.8;max-width:560px;margin:0 auto}
-.blog-footer a{color:var(--gold2);text-decoration:none}
-.blog-footer a:hover{text-decoration:underline}
+  :root{
+    --navy:#08111f;
+    --panel-a:rgba(22,43,82,.45);
+    --panel-b:rgba(8,17,31,.55);
+    --hair:rgba(255,255,255,.12);
+    --gold:#e8b84b;
+    --gold-deep:#c8892a;
+    --white:#fff;
+    --w70:rgba(255,255,255,.70);
+    --w55:rgba(255,255,255,.55);
+    --w38:rgba(255,255,255,.38);
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--navy);color:var(--white);
+    font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  .display{font-family:"Protest Strike","DM Sans",sans-serif;font-weight:400;letter-spacing:.01em}
+  .kicker{font-size:11.5px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+
+  /* ---------- hero ---------- */
+  .hero{padding:60px 0 26px;position:relative;overflow:hidden}
+  .hero canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
+  .hero .wrap{position:relative}
+  h1{font-size:58px;line-height:1.04;margin:0 0 18px;max-width:16ch;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--gold)}
+  .lede{max-width:58ch;color:var(--w55);font-size:17px;margin:0}
+  .lede a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(232,184,75,.35)}
+  .lede a:hover{color:#f3cf7a}
+
+  /* ---------- controls ---------- */
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:22px 0 20px}
+  .spacer{flex:1}
+  .toggle{
+    font:inherit;font-size:12.5px;color:var(--gold);background:none;border:1px solid rgba(232,184,75,.4);
+    border-radius:999px;padding:8px 16px;cursor:pointer;transition:all .25s var(--ease);
+  }
+  .toggle:hover{background:rgba(232,184,75,.12)}
+
+  /* ---------- spotlight layout ---------- */
+  .company{display:grid;grid-template-columns:1fr 344px;gap:22px;align-items:start;padding-bottom:20px}
+
+  .panels{position:relative}
+  .panel{
+    display:none;grid-template-columns:340px 1fr;gap:32px;
+    background:linear-gradient(160deg,var(--panel-a),var(--panel-b));
+    border:1px solid var(--hair);border-radius:18px;padding:28px;
+  }
+  .panel.on{display:grid;animation:rise .5s var(--ease) both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  .stage{position:relative;width:340px;aspect-ratio:3/2}
+  .beam{
+    position:absolute;inset:-52px;z-index:0;border-radius:26px;pointer-events:none;
+    background:radial-gradient(circle at 50% 42%,rgba(232,184,75,.30) 0%,rgba(232,184,75,.20) 52%,rgba(232,184,75,.06) 72%,rgba(232,184,75,0) 84%);
+    filter:blur(22px);
+    opacity:0;transition:opacity .7s var(--ease);
+  }
+  .panel.on .beam{opacity:1}
+  .shot{
+    position:relative;z-index:1;width:100%;height:100%;border-radius:14px;object-fit:cover;display:block;
+    border:1px solid rgba(232,184,75,.35);
+    box-shadow:0 18px 44px rgba(0,0,0,.55);
+  }
+
+  .detail{padding-top:4px;min-width:0}
+  .dept{font-size:10.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--w38);margin:0 0 10px}
+  .panel .name{font-family:"Cormorant Garamond",Georgia,serif;font-size:34px;font-weight:700;line-height:1.14;margin:0 0 6px}
+  .panel .name a{color:inherit;text-decoration:none}
+  .panel .name a:hover{color:var(--gold)}
+  .panel .role{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin:0 0 18px}
+  .bio{margin:0 0 13px;color:var(--w70);font-size:15.5px;max-width:62ch}
+  .link{display:inline-block;margin-top:16px;font-size:13.5px;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(232,184,75,.4)}
+  .link:hover{color:#f3cf7a}
+
+  /* ---------- call board ---------- */
+  .board{
+    background:linear-gradient(160deg,var(--panel-a),var(--panel-b));
+    border:1px solid var(--hair);border-radius:18px;padding:12px;position:sticky;top:82px;
+  }
+  .boardhead{font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--w38);padding:8px 12px 12px;display:flex;justify-content:space-between}
+  .boardhead b{color:var(--gold);font-weight:700}
+  .row{
+    display:grid;grid-template-columns:52px 1fr 14px;gap:12px;align-items:center;width:100%;
+    background:none;border:0;border-radius:12px;padding:9px 12px;cursor:pointer;text-align:left;
+    color:inherit;font:inherit;transition:background .25s var(--ease);
+  }
+  .row:hover{background:rgba(255,255,255,.05)}
+  .row.on{background:rgba(232,184,75,.13)}
+  .thumb{
+    width:52px;height:52px;border-radius:10px;object-fit:cover;display:block;
+    filter:grayscale(.55) brightness(.62);transition:filter .45s var(--ease),box-shadow .45s var(--ease);
+    border:1px solid var(--hair);
+  }
+  .row:hover .thumb,.row.on .thumb{filter:none;box-shadow:0 0 0 1px rgba(232,184,75,.55),0 6px 18px rgba(232,184,75,.18)}
+  .rowtext{min-width:0}
+  .rowtext b{display:block;font-size:14.5px;font-weight:500;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rowtext i{display:block;font-style:normal;font-size:11.5px;color:var(--w38);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row.on .rowtext b{color:var(--gold)}
+  .cue{width:6px;height:6px;border-radius:50%;background:var(--hair);transition:all .35s var(--ease);justify-self:end}
+  .row.on .cue{background:var(--gold);box-shadow:0 0 0 4px rgba(232,184,75,.18)}
+
+  /* ---------- all-posts mode ---------- */
+  body.all .company{grid-template-columns:1fr}
+  body.all .board{display:none}
+  body.all .panel{display:grid;margin-bottom:18px;animation:none}
+  body.all .panel .beam{opacity:.55}
+
+  footer{border-top:1px solid var(--hair);margin-top:44px;padding:28px 0 46px;color:var(--w38);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  footer b{color:var(--w70);font-weight:500}
+  footer a{color:var(--gold);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    html{scroll-behavior:auto}
+  }
+  @media (max-width:1000px){
+    .company{grid-template-columns:1fr}
+    .board{position:static;order:-1}
+    .row{grid-template-columns:44px 1fr 14px}
+    .thumb{width:44px;height:44px}
+  }
+  @media (max-width:720px){
+    h1{font-size:38px}
+    /* .beam bleeds 52px outside .stage to make the glow. On desktop .stage is a
+       fixed 340px and the bleed lands inside the card; here .stage goes full
+       width, so the bleed would reach past the viewport and scroll the page
+       sideways. Clip at the card: the glow is kept, the scrollbar is not. */
+    .panel{grid-template-columns:1fr;gap:22px;padding:20px;overflow:hidden}
+    .stage{width:100%}
+    .panel .name{font-size:27px}
+  }
 </style>
+<link rel="stylesheet" href="/brand.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -83,46 +198,187 @@ h1{font-family:'Protest Strike',sans-serif;font-weight:400;letter-spacing:0.01em
 </script>
 </head>
 <body class="has-u-nav">
+
 <script src="/nav.js"></script>
 
-<header class="blog-hero">
-  <div class="eyebrow">The NOVAPA Blog</div>
-  <h1>Notes from the <em style="color:var(--gold2);font-style:normal">Director's Table</em></h1>
-  <p>Practical answers for theatre families and students across Northern Virginia — choosing a class, surviving audition season, getting into a BFA program, and what actually happens on our stages. Written by <a href="https://tony-cimino.com/">Tony Cimino-Johnson</a>, founder of Northern Virginia Performing Arts and author of <em>The Theatre Leader's Playbook</em>.</p>
+<header class="hero">
+  <canvas id="haze" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <p class="kicker">The NOVAPA Blog</p>
+    <h1 class="display">Notes from the <em>Director's Table</em></h1>
+    <p class="lede">Practical answers for theatre families across Northern Virginia — choosing a class, surviving audition season, getting into a BFA program, and what actually happens on our stages. Written by <a href="https://tony-cimino.com/">Tony Cimino-Johnson</a>, founder of Northern Virginia Performing Arts and author of <em>The Theatre Leader's Playbook</em>.</p>
+  </div>
 </header>
 
-<!-- POSTS:BEGIN — newest first; each card is added by the publishing pipeline -->
-<main class="blog-grid">
-  <a class="post-card" href="/blog/what-age-should-a-child-start-theatre-classes.html">
-    <div class="pc-tag">Classes</div>
-    <h2>What Age Should a Child Start Theatre Classes?</h2>
-    <p>What a five-year-old can actually do in a class, what changes at nine and again at thirteen, five signs your child is ready, and why the internet's answer is a casting answer, not a teaching one.</p>
-    <div class="pc-meta">Tony Cimino-Johnson &middot; September 2026</div>
-  </a>
-  <a class="post-card" href="/blog/best-audition-songs-for-kids.html">
-    <div class="pc-tag">Auditions</div>
-    <h2>The Best Audition Songs for Kids, From the Director's Side of the Table</h2>
-    <p>What to sing at ages 6 to 13, the overdone songs directors quietly dread (and when they're still fine), and how to cut sixteen bars that actually show your child off.</p>
-    <div class="pc-meta">Tony Cimino-Johnson &middot; September 2026</div>
-  </a>
-  <a class="post-card" href="/blog/voice-lessons-cost-how-to-choose-a-teacher.html">
-    <div class="pc-tag">Lessons</div>
-    <h2>How Much Do Voice Lessons Cost? A Director's Guide to Prices and Picking the Right Teacher</h2>
-    <p>The real 2026 price ranges, why rates run $30 to $150 an hour, and the seven questions that separate a voice teacher from a hobbyist — from the hiring side of the table.</p>
-    <div class="pc-meta">Tony Cimino-Johnson &middot; September 2026</div>
-  </a>
-  <a class="post-card" href="/blog/summer-theatre-camps-northern-virginia.html">
-    <div class="pc-tag">Summer Camps</div>
-    <h2>Summer Theatre Camps in Northern Virginia: A Director's Honest Guide</h2>
-    <p>What a real production camp costs, what your child should get for the money, and the five questions that separate true theatre camps from expensive babysitting.</p>
-    <div class="pc-meta">Tony Cimino-Johnson &middot; September 2026</div>
-  </a>
-</main>
-<!-- POSTS:END -->
+<main class="wrap">
+  <div class="controls">
+    <span class="spacer"></span>
+    <button class="toggle" id="viewToggle" type="button" aria-pressed="false">Show all posts</button>
+  </div>
 
-<footer class="blog-footer">
-  <p>Northern Virginia Performing Arts &middot; Leesburg, VA &middot; <a href="mailto:info@novapa.org">info@novapa.org</a><br>
-  By Tony Cimino-Johnson ("Mr. CJ") — <a href="https://tony-cimino.com/">tony-cimino.com</a> &middot; <a href="/faculty.html">Meet the faculty</a> &middot; <a href="/policies.html">Policies</a></p>
+  <div class="company">
+    <!-- POSTS:BEGIN — newest first. Each post needs a .panel here AND a .row in the call board below; the data-id must match. -->
+    <div class="panels">
+
+      <article class="panel on" id="panel-what-age" role="tabpanel" aria-labelledby="tab-what-age">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <img class="shot" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="Young performers in a NOVAPA theatre class for ages 5 to 8, arms raised in an open presentational pose" width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Classes</p>
+          <h2 class="name"><a href="/blog/what-age-should-a-child-start-theatre-classes.html">What Age Should a Child Start Theatre Classes?</a></h2>
+          <p class="role">September 10, 2026</p>
+          <p class="bio">What a five-year-old can actually do in a class, what changes at nine and again at thirteen, and five signs your child is ready.</p>
+          <p class="bio">The answer you find everywhere else — "ages 8 to 11" — is a casting statistic, not a teaching one. Here is the version written from inside the room, with our published prices as a benchmark you can measure any program against.</p>
+          <a class="link" href="/blog/what-age-should-a-child-start-theatre-classes.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-audition-songs" role="tabpanel" aria-labelledby="tab-audition-songs">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <img class="shot" src="/img/blog/young-actors-kids-musical-theatre-shrek-jr.jpg" alt="Child performers in costume onstage in a youth production of Shrek The Musical Jr." width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Auditions</p>
+          <h2 class="name"><a href="/blog/best-audition-songs-for-kids.html">The Best Audition Songs for Kids, From the Director's Side of the Table</a></h2>
+          <p class="role">September 9, 2026</p>
+          <p class="bio">What to sing at ages 6 to 13, the overdone songs directors quietly dread (and when they are still fine), and how to cut sixteen bars that actually show your child off.</p>
+          <p class="bio">Nobody is scoring difficulty. A hard song at seventy percent reads as a warning; a simple song at a hundred percent reads as a professional.</p>
+          <a class="link" href="/blog/best-audition-songs-for-kids.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-voice-lessons" role="tabpanel" aria-labelledby="tab-voice-lessons">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <img class="shot" src="/img/blog/private-acting-lesson-coaching-session.jpg" alt="Tony Cimino-Johnson coaching a teenage student through a monologue in a private lesson studio" width="1600" height="1600" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Lessons</p>
+          <h2 class="name"><a href="/blog/voice-lessons-cost-how-to-choose-a-teacher.html">How Much Do Voice Lessons Cost? A Director's Guide to Prices and Picking the Right Teacher</a></h2>
+          <p class="role">September 7, 2026</p>
+          <p class="bio">The real 2026 price ranges, why rates run $30 to $150 an hour, and the seven questions that separate a voice teacher from a hobbyist.</p>
+          <p class="bio">Written from the hiring side of the table, by someone who has interviewed a lot of teachers and turned most of them down.</p>
+          <a class="link" href="/blog/voice-lessons-cost-how-to-choose-a-teacher.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-summer-camps" role="tabpanel" aria-labelledby="tab-summer-camps">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <img class="shot" src="/img/blog/broadway-bound-summer-camp-cast.jpg" alt="The full cast of a NOVAPA Broadway Bound summer theatre camp production onstage" width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Summer Camps</p>
+          <h2 class="name"><a href="/blog/summer-theatre-camps-northern-virginia.html">Summer Theatre Camps in Northern Virginia: A Director's Honest Guide</a></h2>
+          <p class="role">September 6, 2026</p>
+          <p class="bio">What a real production camp costs, what your child should get for the money, and the five questions that separate true theatre camps from expensive babysitting.</p>
+          <p class="bio">Almost nobody in this area publishes prices. We do, and here is what each tier actually buys.</p>
+          <a class="link" href="/blog/summer-theatre-camps-northern-virginia.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+    </div>
+
+    <aside class="board" role="tablist" aria-label="All posts">
+      <div class="boardhead"><span>The Call Board</span><b>4 posts</b></div>
+
+      <button class="row on" type="button" role="tab" id="tab-what-age" data-id="what-age" aria-selected="true" aria-controls="panel-what-age">
+        <img class="thumb" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>What Age Should a Child Start Theatre Classes?</b><i>Classes &middot; Sep 10, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-audition-songs" data-id="audition-songs" aria-selected="false" tabindex="-1" aria-controls="panel-audition-songs">
+        <img class="thumb" src="/img/blog/young-actors-kids-musical-theatre-shrek-jr.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>The Best Audition Songs for Kids</b><i>Auditions &middot; Sep 9, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-voice-lessons" data-id="voice-lessons" aria-selected="false" tabindex="-1" aria-controls="panel-voice-lessons">
+        <img class="thumb" src="/img/blog/private-acting-lesson-coaching-session.jpg" alt="" width="1600" height="1600" loading="lazy">
+        <span class="rowtext"><b>How Much Do Voice Lessons Cost?</b><i>Lessons &middot; Sep 7, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-summer-camps" data-id="summer-camps" aria-selected="false" tabindex="-1" aria-controls="panel-summer-camps">
+        <img class="thumb" src="/img/blog/broadway-bound-summer-camp-cast.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>Summer Theatre Camps in NoVA</b><i>Summer Camps &middot; Sep 6, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+    </aside>
+    <!-- POSTS:END -->
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><b>Northern Virginia Performing Arts</b> &middot; Leesburg, VA &middot; <a href="mailto:info@novapa.org">info@novapa.org</a></span>
+    <span>By Tony Cimino-Johnson ("Mr. CJ") &middot; <a href="https://tony-cimino.com/">tony-cimino.com</a> &middot; <a href="/meet-the-team.html">Meet the team</a> &middot; <a href="/policies.html">Policies</a></span>
+  </div>
 </footer>
+
+<script>
+(function(){
+  var rows=[].slice.call(document.querySelectorAll('.row'));
+  var panels=[].slice.call(document.querySelectorAll('.panel'));
+  var toggle=document.getElementById('viewToggle');
+
+  function select(id,focus){
+    rows.forEach(function(r){
+      var on=r.dataset.id===id;
+      r.classList.toggle('on',on);
+      r.setAttribute('aria-selected',on?'true':'false');
+      r.tabIndex=on?0:-1;
+      if(on&&focus)r.focus();
+    });
+    panels.forEach(function(p){p.classList.toggle('on',p.id==='panel-'+id);});
+  }
+
+  rows.forEach(function(r){
+    r.addEventListener('click',function(){select(r.dataset.id);});
+  });
+
+  document.querySelector('.board').addEventListener('keydown',function(e){
+    var i=rows.indexOf(document.activeElement);
+    if(i<0)return;
+    var n=null;
+    if(e.key==='ArrowDown'||e.key==='ArrowRight')n=rows[(i+1)%rows.length];
+    if(e.key==='ArrowUp'||e.key==='ArrowLeft')n=rows[(i-1+rows.length)%rows.length];
+    if(e.key==='Home')n=rows[0];
+    if(e.key==='End')n=rows[rows.length-1];
+    if(n){e.preventDefault();select(n.dataset.id,true);}
+  });
+
+  toggle.addEventListener('click',function(){
+    var on=document.body.classList.toggle('all');
+    toggle.setAttribute('aria-pressed',on?'true':'false');
+    toggle.textContent=on?'Back to the call board':'Show all posts';
+  });
+
+  /* slow gold haze behind the hero, like house light through a smoke cue */
+  var c=document.getElementById('haze');
+  if(c&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var x=c.getContext('2d'),W,H,t=0;
+    function size(){W=c.width=c.offsetWidth;H=c.height=c.offsetHeight;}
+    size();window.addEventListener('resize',size);
+    var blobs=[[0.18,0.30,260],[0.44,0.68,200],[0.72,0.22,300]];
+    (function draw(){
+      t+=0.0032;x.clearRect(0,0,W,H);
+      blobs.forEach(function(b,i){
+        var cx=W*(b[0]+Math.sin(t+i*2.1)*0.05), cy=H*(b[1]+Math.cos(t*0.8+i)*0.10), r=b[2];
+        var g=x.createRadialGradient(cx,cy,0,cx,cy,r);
+        g.addColorStop(0,'rgba(232,184,75,0.13)');
+        g.addColorStop(1,'rgba(232,184,75,0)');
+        x.fillStyle=g;x.beginPath();x.arc(cx,cy,r,0,6.2832);x.fill();
+      });
+      requestAnimationFrame(draw);
+    })();
+  }
+})();
+</script>
 </body>
 </html>
