@@ -249,23 +249,29 @@ if (tierPages.length) {
 }
 
 // ── 4. the house ────────────────────────────────────────────────────────
-// One rule, every production, and it is printed by hand on every show page.
-const HOUSE = shows.houseOpensMinutes;
+// One rule per room, printed by hand on every show page. It used to be one
+// rule for the whole site, which would have had --fix quietly rewrite Dear
+// Evan Hansen's 30 minutes at Franklin Park down to our own room's 15.
 const HOUSE_RX = /(?:house|doors)\s+opens?\s+(\d+)\s+minutes/gi;
+const showForPage = (f) => shows.shows.find((s) => s.page === f);
 for (const f of htmlFiles()) {
   const src = read(f);
-  const wrong = [...visible(src).matchAll(HOUSE_RX)].filter((m) => Number(m[1]) !== HOUSE);
+  const house = shows.houseOpensFor(showForPage(f));
+  const wrong = [...visible(src).matchAll(HOUSE_RX)].filter((m) => Number(m[1]) !== house);
   if (!wrong.length) continue;
+  const show = showForPage(f);
   add('fix', 'house', `says the house opens ${wrong.map((m) => m[1]).join('/')} minutes ` +
-    `before curtain; every production opens ${HOUSE}`, [f]);
+    `before curtain; ${show && show.houseOpens
+      ? `${show.title} at ${shows.venueFor(show)} opens ${house}`
+      : `every production in our own room opens ${house}`}`, [f]);
   if (FIX) {
     const after = src.replace(
       /[Cc]urtain times are released when tickets go on sale &mdash; doors open \d+ minutes before each performance\./g,
-      shows.houseOpensNote)
+      shows.houseNoteFor(show))
       .replace(/([Dd]oors|[Hh]ouse) open(s?) \d+ minutes before (each|every) (performance|curtain)/g,
         (m, w, s2) => (w[0] === w[0].toUpperCase() ? 'House' : 'house') + ' open' + s2 +
-          ' ' + HOUSE + ' minutes before every curtain');
-    if (after !== src) { write(f, after); fixed.push(f + ' — house opens ' + HOUSE + ' minutes'); }
+          ' ' + house + ' minutes before every curtain');
+    if (after !== src) { write(f, after); fixed.push(f + ' — house opens ' + house + ' minutes'); }
   }
 }
 
