@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import * as acorn from "acorn";
 import * as walk from "acorn-walk";
+import { CLASSES } from "../netlify/functions/reg-freeclass.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LIVE = process.argv.includes("--live");
@@ -311,6 +312,38 @@ async function checkLive() {
       else ok(`direct-link listings all sell (Hadestown, credit pack)`);
     }
   } catch (err) { fail("live", `activity_facts probe -> ${err.message}`); }
+
+  // The free-class catalogue in reg-freeclass.mjs is maintained by hand, and
+  // every trial booking now writes the listing id it finds there. A listing
+  // retired between seasons leaves that map pointing at nothing, and the
+  // booking would then attach a child to a class that no longer exists —
+  // quietly, because the page still answers 200. So ask the catalogue.
+  try {
+    const SB = "https://tlkuqwsqicxcjdmumkje.supabase.co";
+    const AK = "sb_publishable_8ar97CkK-C0YlWuOGtI_tA_mwTDVE6H";
+    const wanted = Object.entries(CLASSES).map(([key, c]) => [key, c.activityId]);
+    const r = await fetch(`${SB}/rest/v1/rpc/activity_facts`, {
+      method: "POST",
+      headers: { apikey: AK, Authorization: `Bearer ${AK}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_ids: wanted.map(([, id]) => id) }),
+    });
+    if (r.status === 404) {
+      ok("activity_facts not deployed yet — free-class listings unverified");
+    } else if (!r.ok) {
+      fail("live", `free-class listing probe -> HTTP ${r.status}`);
+    } else {
+      const rows = await r.json();
+      const live = new Map(rows.map((a) => [Number(a.id), a]));
+      const gone = wanted.filter(([, id]) => !live.has(id));
+      const shut = wanted.filter(([, id]) => live.get(id)?.sells_now === false);
+      if (gone.length)
+        fail("live", `free-class classes point at listings that do not exist: ${gone.map(([k, id]) => `${k} -> ${id}`).join(", ")}`);
+      else if (shut.length)
+        fail("live", `free-class classes point at listings that refuse to sell: ${shut.map(([k, id]) => `${k} -> ${id}`).join(", ")}`);
+      else
+        ok(`all ${wanted.length} free-class listings exist and sell`);
+    }
+  } catch (err) { fail("live", `free-class listing probe -> ${err.message}`); }
 
   // A half-deployed or truncated page still answers 200.
   try {

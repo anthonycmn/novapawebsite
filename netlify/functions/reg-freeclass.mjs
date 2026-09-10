@@ -14,21 +14,37 @@ const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 // Weekly schedule verified against classes.html (Aug 26 2026).
 // day: 0=Sun..6=Sat. Adult classes are deliberately absent — this funnel
 // books kids.
+//
+// activityId is the listing a trial is a visit to. Bookings used to store a
+// hardcoded 0, so a free seat belonged to no class and nothing could count it:
+// the register page, the staff portal and the teacher's roster each had their
+// own idea of who was in the room. Every id below was matched to a live
+// listing on day of week + start time + age range (Sep 10 2026). All thirteen
+// are the `bookable` FULL YEAR listings; the seven that are not bookable
+// (ballet, hip-hop, K-Pop, the Wednesday Triple Threat) are absent on purpose,
+// because they are not offered as trials.
+//
+// This table is maintained by hand and will drift from the catalogue.
+// tests/free-class-classes.test.mjs pins its shape, and `npm run check:live`
+// asks the database whether each id is still a listing that sells.
 const CLASSES = {
-  "acting-5-8":        { name: "Acting",                                ages: [5, 8],   day: 1, time: "6:00 PM" },
-  "triple-threat":     { name: "Triple Threat Musical Theatre Training", ages: [13, 17], day: 1, time: "7:00 PM" },
-  "mt-5-8":            { name: "Musical Theatre",                       ages: [5, 8],   day: 2, time: "5:00 PM" },
-  "mt-dance-13-17":    { name: "Musical Theatre Dance",                 ages: [13, 17], day: 2, time: "7:00 PM" },
-  "mt-acting-13-17":   { name: "Musical Theatre Acting",                ages: [13, 17], day: 2, time: "8:00 PM" },
-  "hs-mt":             { name: "Homeschool Musical Theatre",            ages: [9, 13],  day: 3, time: "1:00 PM" },
-  "hs-theatre":        { name: "Homeschool Theatre",                    ages: [9, 13],  day: 3, time: "2:00 PM" },
-  "acting-9-12":       { name: "Acting",                                ages: [9, 12],  day: 3, time: "5:15 PM" },
-  "mt-dance-9-12":     { name: "Musical Theatre Dance",                 ages: [9, 12],  day: 3, time: "6:15 PM" },
-  "mt-acting-9-12":    { name: "Musical Theatre Acting",                ages: [9, 12],  day: 3, time: "7:15 PM" },
-  "improv-9-12":       { name: "Improv for Actors",                     ages: [9, 12],  day: 4, time: "6:30 PM" },
-  "improv-13-17":      { name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
-  "acting-mt-sat":     { name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
+  "acting-5-8":        { activityId: 1960867, name: "Acting",                                ages: [5, 8],   day: 1, time: "6:00 PM" },
+  "triple-threat":     { activityId: 1960898, name: "Triple Threat Musical Theatre Training", ages: [13, 17], day: 1, time: "7:00 PM" },
+  "mt-5-8":            { activityId: 1960924, name: "Musical Theatre",                       ages: [5, 8],   day: 2, time: "5:00 PM" },
+  "mt-dance-13-17":    { activityId: 1960925, name: "Musical Theatre Dance",                 ages: [13, 17], day: 2, time: "7:00 PM" },
+  "mt-acting-13-17":   { activityId: 1960927, name: "Musical Theatre Acting",                ages: [13, 17], day: 2, time: "8:00 PM" },
+  "hs-mt":             { activityId: 1962566, name: "Homeschool Musical Theatre",            ages: [9, 13],  day: 3, time: "1:00 PM" },
+  "hs-theatre":        { activityId: 1962567, name: "Homeschool Theatre",                    ages: [9, 13],  day: 3, time: "2:00 PM" },
+  "acting-9-12":       { activityId: 1960936, name: "Acting",                                ages: [9, 12],  day: 3, time: "5:15 PM" },
+  "mt-dance-9-12":     { activityId: 1960939, name: "Musical Theatre Dance",                 ages: [9, 12],  day: 3, time: "6:15 PM" },
+  "mt-acting-9-12":    { activityId: 1960945, name: "Musical Theatre Acting",                ages: [9, 12],  day: 3, time: "7:15 PM" },
+  "improv-9-12":       { activityId: 1960959, name: "Improv for Actors",                     ages: [9, 12],  day: 4, time: "6:30 PM" },
+  "improv-13-17":      { activityId: 1960961, name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
+  "acting-mt-sat":     { activityId: 1962562, name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
 };
+// Exported for the tests and the preflight live check, nothing else reads it.
+export { CLASSES };
+
 const MIN_DAYS_OUT = 2;    // 48 hours (CJ, Sep 10 2026; was 7 per Jason Aug 26).
 // The SEASON_START floor below is what stops pre-season dates being offered,
 // not this number, so shortening the notice does not reopen the Sep 8 bug.
@@ -219,6 +235,14 @@ export default async (req) => {
   if (date < addDays(todayEastern(), MIN_DAYS_OUT))
     return Response.json({ error: `Free classes are booked ${MIN_DAYS_OUT} or more days ahead. Pick a later date.` }, { status: 400 });
 
+  // Not a user error. A catalogue entry added without its listing id would
+  // otherwise write a booking attached to no class, which is the bug this
+  // whole change exists to remove. Refuse the booking instead, loudly.
+  if (!Number.isInteger(cls.activityId) || cls.activityId <= 0) {
+    console.error(`reg-freeclass: CLASSES["${clsKey}"] has no activityId`);
+    return Response.json({ error: "That class is not bookable right now. Email info@novapa.org and we will book it for you." }, { status: 500 });
+  }
+
   try {
     const existing = await db("GET",
       `free_class_bookings?status=eq.booked&cast_key=eq.${clsKey}&class_date=eq.${date}&select=id,email,child_name`);
@@ -233,7 +257,7 @@ export default async (req) => {
 
     const rows = await db("POST", "free_class_bookings", {
       parent_name: parent, email, phone: phone || null, child_name: child,
-      child_age: age, cast_key: clsKey, activity_id: 0,
+      child_age: age, cast_key: clsKey, activity_id: cls.activityId,
       class_date: date, utm,
     });
     const booking = rows[0];
