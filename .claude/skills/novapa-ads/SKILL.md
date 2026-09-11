@@ -129,6 +129,11 @@ multi_share_optimized=false. Sep 8: the older `weekend`/`site-weekend` ads
 ("$699 through Labor Day") were swapped to price-free post-sale creatives
 (1078557257895654 / 2936943670002055, same image + utm_content); DCU prices
 restored to 995/695/295 and DCU-FF499 bumped to $496 off the same morning.
+Sep 11 consolidation (Jason): PAUSED both weekend ads (0 leads/sales since
+relaunch), Joah v1 and carousel-light (lost their tests). DCU now runs
+three ads: Joah v2 (breakout, $0.21 clicks), carousel-dark, find-top-5
+(~$8/lead). Quiz adset 120249662513140479 carries daily_min_spend_target
+$15 inside the $50 CBO so lead flow can't get starved.
 
 Frozen A/B (live 1 Sep 2026): NOT a Meta split — the single Frozen campaign
 ($100/day) is untouched, and be-in-frozen.html flips a sticky localStorage
