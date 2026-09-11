@@ -81,6 +81,26 @@ export function trialSeatsLeft(trialsOnDate, roomLeft, cap = FREE_SEATS_PER_DATE
                : roomLeft - trialsOnDate;
   return Math.max(0, Math.min(byCap, byRoom));
 }
+
+// Whether this child has already had their free visit, and what to tell the
+// family if so. CJ, 10 Sep 2026: "a no show burns the free visit." The offer is
+// a first class free, singular: a visit that was used, or booked and skipped,
+// or that became an enrolment, is the one visit. A visit still booked in the
+// future does not count here; the per-class duplicate check handles that.
+//
+//   prior   the child's earlier bookings, any class: [{ status, class_date }]
+//   returns null when a new booking is allowed, else the sentence to send
+export function freeVisitUsed(prior) {
+  const by = (st) => prior.find((p) => p.status === st);
+  const noShow = by("no_show");
+  if (noShow)
+    return `This child's free visit was booked for ${prettyDate(noShow.class_date)} and not used, so there is not another one. Register at novapa.org/register, or email info@novapa.org and we will help.`;
+  if (by("converted"))
+    return "This child is enrolled already, so the free visit is done. Register for another class at novapa.org/register.";
+  if (by("attended"))
+    return "This child has had their free class. Register at novapa.org/register, or email info@novapa.org if you want to try a different class first.";
+  return null;
+}
 const VENUE = "National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176";
 
 async function db(method, path, body) {
@@ -284,6 +304,13 @@ export default async (req) => {
   }
 
   try {
+    // One free visit per child. Asked before the seat arithmetic, because a
+    // family that has used theirs should hear that, not "that date is full".
+    const prior = await db("GET",
+      `free_class_bookings?email=eq.${encodeURIComponent(email)}&child_name=ilike.${encodeURIComponent(child)}&status=in.(no_show,attended,converted)&select=status,class_date`);
+    const used = freeVisitUsed(prior || []);
+    if (used) return Response.json({ error: used }, { status: 409 });
+
     const existing = await db("GET",
       `free_class_bookings?status=eq.booked&cast_key=eq.${clsKey}&class_date=eq.${date}&select=id,email,child_name`);
     if (existing.some((r) => r.email === email && r.child_name.toLowerCase() === child.toLowerCase()))
