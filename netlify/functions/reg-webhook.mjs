@@ -304,6 +304,16 @@ export default async (req) => {
         await serviceRpc("mark_registered", { p_email: m.email || "", p_items: holdItems });
       }
     } catch (e) { console.error("mark_registered failed:", e.message); }
+    // A free first class that turned into this order. The booking is matched
+    // by email, listing and the child's first name and marked converted with
+    // this order id, so the trial-to-enrolment rate can be read off the table.
+    // Idempotent in the database, so a redelivered event converts nothing
+    // twice. Logged and skipped on failure, like everything else here: a
+    // bookkeeping miss must never fail a checkout.
+    try {
+      const converted = await serviceRpc("convert_free_class_trials", { p_order_id: orderId });
+      if (converted > 0) console.log(`converted ${converted} free-class trial(s) for order ${orderId}`);
+    } catch (e) { console.error("trial conversion failed:", e.message); }
     if (m.coupon) {
       // coupon_cents is what the order actually applied; a credit is spent down
       // by exactly that, so an unused balance survives for the next purchase
