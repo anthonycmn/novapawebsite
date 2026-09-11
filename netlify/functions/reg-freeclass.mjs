@@ -228,6 +228,36 @@ async function sendConfirmation(b, cls) {
   });
 }
 
+// A confirmation that never sent has to leave a trace someone will see: a
+// note on the booking for whoever opens the roster, and mail to the team so
+// it is chased today rather than discovered by the parent.
+async function noteSendFailure(b, err) {
+  const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+  await db("PATCH", `free_class_bookings?id=eq.${b.id}`, {
+    notes: [b.notes, `[${stamp}] confirmation email FAILED to ${b.email}: ${String(err.message).slice(0, 140)}`]
+      .filter(Boolean).join("\n"),
+  });
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+  const admins = await db("GET", "admin_emails?select=email")
+    .then((rows) => (rows || []).map((r) => r.email).filter(Boolean))
+    .catch(() => []);
+  if (!admins.length) return;
+  const { default: nodemailer } = await import("nodemailer");
+  await nodemailer.createTransport({
+    host: "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  }).sendMail({
+    from: `NOVAPA <${process.env.SMTP_USER}>`,
+    to: admins.join(", "),
+    replyTo: "info@novapa.org",
+    subject: `Free class confirmation did NOT send: ${b.child_name}`,
+    html: `<p><b>${b.child_name}</b> has a free class seat on ${prettyDate(b.class_date)}, `
+      + `but the confirmation to <b>${b.email}</b> failed twice.</p>`
+      + `<p>The seat is held. Please send the details by hand today.</p>`
+      + `<p style="color:#888;font-size:12px">${String(err.message).slice(0, 200)}</p>`,
+  });
+}
+
 export default async (req) => {
   if (req.method === "GET") {
     try {
@@ -338,8 +368,25 @@ export default async (req) => {
     });
     const booking = rows[0];
 
-    try { await sendConfirmation(booking, cls); }
-    catch (e) { console.error("freeclass email failed:", e.message); }
+    // Joy Roque booked Semira at 6:05 and Pio at 6:06 on 11 Sep 2026 and only
+    // Pio's confirmation arrived. Both seats were held correctly; one Gmail
+    // send just failed, and this catch swallowed it — the booking returned ok,
+    // the parent got nothing, and nobody knew until she emailed in. A seat a
+    // family cannot see is the same to them as no seat. Retry once, then make
+    // the failure visible instead of silent.
+    try {
+      await sendConfirmation(booking, cls);
+    } catch (first) {
+      console.error("freeclass email failed, retrying:", first.message);
+      try {
+        await new Promise((r) => setTimeout(r, 1500));
+        await sendConfirmation(booking, cls);
+      } catch (e) {
+        console.error("freeclass email failed twice:", e.message);
+        await noteSendFailure(booking, e).catch((n) =>
+          console.error("freeclass: could not record the failed send:", n.message));
+      }
+    }
 
     return Response.json({
       ok: true,
