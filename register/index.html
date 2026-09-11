@@ -494,6 +494,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <section class="step" id="st-assign">
     <h1>Who's <em>enrolling?</em></h1>
     <p class="sub">Check each camper in, and confirm their birthday.</p>
+    <div id="seatOfferLine2" style="display:none"></div>
     <div id="assignBlocks"></div>
     <div class="err" id="catErr"></div>
     <button class="btn" id="catNext">Continue →</button>
@@ -1240,16 +1241,34 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // The server decides whether it is any good (seat_offer_peek); the page's
   // only job is to stop treating that one activity as full, carry the token
   // on the hold item, and say plainly what happened when the link is spent.
+  // Never allowed to fail the sign-in: supabase-js's builder is a thenable
+  // with no .catch (Blair W, 11 Sep 2026 — the first offer link ever sent
+  // sat on "Signing you in" forever), so it is wrapped in a real Promise and
+  // any failure reads as "no offer", which the page already knows how to do.
   function seatOfferPeek(){
     if (!state.seat) return Promise.resolve({ data: null });
-    return sb.rpc('seat_offer_peek', { p_token: state.seat }).catch(function(){ return { data: null }; });
+    return new Promise(function(resolve){
+      try {
+        Promise.resolve(sb.rpc('seat_offer_peek', { p_token: state.seat }))
+          .then(function(r){ resolve(r || { data: null }); }, function(){ resolve({ data: null }); });
+      } catch(e) { resolve({ data: null }); }
+    });
   }
   function escSO(v){ return String(v == null ? '' : v).replace(/[<>&"]/g, ''); }
   function applySeatOffer(peek){
+    try { applySeatOffer2(peek); } catch(e) { state.seatOffer = null; }
+  }
+  function applySeatOffer2(peek){
     var o = peek && peek.data;
     state.seatOffer = null;
     if (!state.seat || !o) return;
-    var line = $('seatOfferLine');
+    // The notice lives on both steps a link can land on: the show picker
+    // and the ?activity= "Who's enrolling?" step.
+    var lines = [$('seatOfferLine'), $('seatOfferLine2')].filter(Boolean);
+    if (!lines.length) return;
+    var line = { set textContent(v){ lines.forEach(function(l){ l.textContent = v; }); },
+                 set innerHTML(v){ lines.forEach(function(l){ l.innerHTML = v; }); },
+                 set className(v){ lines.forEach(function(l){ l.className = v; }); } };
     if (o.state !== 'open') {
       var why = o.state === 'redeemed' ? 'has already been used'
               : o.state === 'expired'  ? 'has expired'
