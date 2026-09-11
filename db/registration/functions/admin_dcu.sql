@@ -1,7 +1,8 @@
 -- DC Unifieds registrations for the admin dashboard (Aug 24 2026).
 -- CJ asked for DCU visibility inside the portal; these orders already live
 -- in the shared orders/order_items tables (dcu-pay.mjs writes them with
--- activity ids 970601 In Person / 970602 Virtual Live / 970603 Virtual),
+-- activity ids 970601 In Person / 970602 Virtual Live / 970603 Virtual /
+-- 970604 Rising Star, added Sep 11 2026),
 -- they just had no surfaced view. One jsonb result: per-track counts,
 -- revenue totals, and the registration list, paid orders only.
 
@@ -23,7 +24,7 @@ begin
                     where i.activity_id = a.id
                       and o.status in ('paid','confirmed','complete')))
         order by a.id)
-      from activities a where a.id in (970601, 970602, 970603)),
+      from activities a where a.id in (970601, 970602, 970603, 970604)),
     'revenue', (
       select jsonb_build_object(
           'orders', count(*),
@@ -33,7 +34,7 @@ begin
       where o.status in ('paid','confirmed','complete')
         and exists (select 1 from order_items i
                     where i.order_id = o.id
-                      and i.activity_id in (970601, 970602, 970603))),
+                      and i.activity_id in (970601, 970602, 970603, 970604))),
     'regs', (
       select coalesce(jsonb_agg(jsonb_build_object(
           'created_at', o.created_at,
@@ -54,7 +55,7 @@ begin
       from order_items i
       join orders o on o.id = i.order_id
       join activities a on a.id = i.activity_id
-      where i.activity_id in (970601, 970602, 970603)
+      where i.activity_id in (970601, 970602, 970603, 970604)
         and o.status in ('paid','confirmed','complete'))
   );
 end; $function$;
