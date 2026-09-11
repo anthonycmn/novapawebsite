@@ -5,7 +5,7 @@
 -- count where it is and opens the door for the person the office chose.
 --
 -- How it travels: the staff portal mints a row (portal_offer_seat, migration
--- 0271 over there) and emails the family a link carrying the token —
+-- 0273 over there) and emails the family a link carrying the token —
 --   /register/?activity=<id>&seat=<token>
 -- The register page peeks at the token, unlocks that one activity, and puts
 -- `seat_offer` on the hold item. acquire_hold_guest / acquire_hold_v2 count a
