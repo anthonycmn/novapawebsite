@@ -57,6 +57,30 @@ const DATES_SHOWN = 3;     // next N valid dates per class
 const SEASON_START = "2026-09-14";
 const SEASON_END = "2027-06-12";
 const FREE_SEATS_PER_DATE = 6;  // ops cap per class per date, not a sales number
+
+// How many trial seats are open on one date of one class.
+//
+// A trial is a visit to a single session; an enrolment is for the term. So a
+// trial is never subtracted from what a paying family can buy (catalog_list's
+// `remaining` is untouched, paid always wins), but a trial CAN fill the room
+// on its own date, and CJ's rule (10 Sep 2026) is that it may not take a seat
+// in a full class. The six-per-date ops cap and the room's real capacity
+// reconcile as the smaller of the two.
+//
+//   trialsOnDate  booked trials already on that date
+//   roomLeft      the public page's remaining figure for the listing:
+//                   a number  -> that many paid seats are still open
+//                   null      -> the listing has no capacity set, so the room
+//                                does not limit trials, only the cap does
+//                   undefined -> the listing is not for sale at all, so there
+//                                is nothing to visit; treated as full
+export function trialSeatsLeft(trialsOnDate, roomLeft, cap = FREE_SEATS_PER_DATE) {
+  const byCap = cap - trialsOnDate;
+  const byRoom = roomLeft === undefined ? 0
+               : roomLeft === null      ? Infinity
+               : roomLeft - trialsOnDate;
+  return Math.max(0, Math.min(byCap, byRoom));
+}
 const VENUE = "National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176";
 
 async function db(method, path, body) {
@@ -100,11 +124,27 @@ function upcomingDates(day) {
   return out;
 }
 
+// Paid seats still open per listing, keyed by activity id, from the same
+// function and the same arithmetic the public register page uses, so the two
+// cannot disagree. A listing catalog_list does not return (retired, or hidden
+// and not asked for) is absent from the map, which trialSeatsLeft reads as
+// "nothing to visit". A listing that is listed but not currently bookable is
+// mapped to 0 for the same reason: no sale, no trial.
+async function paidSeatsLeft() {
+  const ids = Object.values(CLASSES).map((c) => c.activityId);
+  const rows = await db("POST", "rpc/catalog_list", { p_ids: ids });
+  const out = {};
+  for (const r of rows || []) out[r.id] = r.bookable ? r.remaining : 0;
+  return out;
+}
+
 async function availability() {
-  const rows = await db("GET",
-    "free_class_bookings?status=eq.booked&select=cast_key,class_date");
+  const [rows, room] = await Promise.all([
+    db("GET", "v_free_class_trials?select=activity_id,class_date,trials"),
+    paidSeatsLeft(),
+  ]);
   const used = {};
-  for (const r of rows) used[`${r.cast_key}|${r.class_date}`] = (used[`${r.cast_key}|${r.class_date}`] || 0) + 1;
+  for (const r of rows) used[`${r.activity_id}|${r.class_date}`] = r.trials;
   return Object.entries(CLASSES).map(([key, c]) => ({
     key,
     name: c.name,
@@ -112,7 +152,7 @@ async function availability() {
     day: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][c.day],
     time: c.time,
     dates: upcomingDates(c.day)
-      .map((d) => ({ date: d, left: Math.max(0, FREE_SEATS_PER_DATE - (used[`${key}|${d}`] || 0)) })),
+      .map((d) => ({ date: d, left: trialSeatsLeft(used[`${c.activityId}|${d}`] || 0, room[c.activityId]) })),
   }));
 }
 
@@ -248,8 +288,17 @@ export default async (req) => {
       `free_class_bookings?status=eq.booked&cast_key=eq.${clsKey}&class_date=eq.${date}&select=id,email,child_name`);
     if (existing.some((r) => r.email === email && r.child_name.toLowerCase() === child.toLowerCase()))
       return Response.json({ error: "This child already has a seat in that class. Check your inbox." }, { status: 409 });
-    if (existing.length >= FREE_SEATS_PER_DATE)
-      return Response.json({ error: "That date just filled for this class. Pick another." }, { status: 409 });
+    const room = (await paidSeatsLeft())[cls.activityId];
+    if (trialSeatsLeft(existing.length, room) <= 0) {
+      // Say which limit was hit. A full class is not going to open up next
+      // week, so send that family to the waitlist rather than another date.
+      const classFull = room === undefined || (room !== null && room - existing.length <= 0);
+      return Response.json({
+        error: classFull
+          ? "That class is full, so there is no seat to visit. Pick another class, or join the waitlist at novapa.org/register."
+          : "That date just filled for this class. Pick another.",
+      }, { status: 409 });
+    }
 
     const utm = body.utm && typeof body.utm === "object"
       ? Object.fromEntries(Object.entries(body.utm).slice(0, 8).map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 120)]))
