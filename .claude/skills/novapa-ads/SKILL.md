@@ -86,8 +86,8 @@ have hit the wrong ad twice out of three times.
 | ad_id | Name | Adset | utm_content | Lifetime spend |
 |---|---|---|---|---|
 | `120249587398010479` | DCU — Audition in one weekend | DC Metro — College-bound families | `weekend` | $254.96 |
-| `120249565986060479` | Frozen JR — Canva graphic v1 | Lookalike + Local — Frozen JR | *(none)* | $201.14 |
-| `120249659582000479` | Frozen JR — video v1 | Lookalike + Local — Frozen JR | *(none)* | $78.54 |
+| `120249565986060479` | Frozen JR — Canva graphic v1 | Lookalike + Local — Frozen JR | *(none)* | PAUSED 10 Sep — CJ dislikes his photo in it; do NOT re-enable without a new image |
+| `120249659582000479` | Frozen JR — video v1 | Lookalike + Local — Frozen JR | *(none)* | PAUSED 10 Sep — COPYRIGHT problem in the video; never re-enable this creative |
 | `120249662590280479` | DCU — find top 5 | DC Metro — Quiz funnel | `find-top-5` | $57.17 |
 | `120249659225520479` | DCU — video v1 | DC Metro — College-bound families | `video` | $56.64 |
 | `120249662527230479` | DCU — Audition in one weekend | DC Metro — Main website | `site-weekend` | $51.40 |

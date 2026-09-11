@@ -45,9 +45,13 @@ const CLASSES = {
 // Exported for the tests and the preflight live check, nothing else reads it.
 export { CLASSES };
 
-const MIN_DAYS_OUT = 2;    // 48 hours (CJ, Sep 10 2026; was 7 per Jason Aug 26).
+// Booking cutoff (Jason, Sep 11 2026; supersedes CJ's 48 hours of Sep 10,
+// which superseded Jason's original 7 days): a family can book right up
+// until ONE HOUR before the session starts, Eastern time. Same-day walk-ups
+// are welcome; staff checks the visitor register day-of.
 // The SEASON_START floor below is what stops pre-season dates being offered,
 // not this number, so shortening the notice does not reopen the Sep 8 bug.
+const CUTOFF_MINUTES = 60;
 const DATES_SHOWN = 3;     // next N valid dates per class
 // The season's real boundaries. Without the floor, late-August bookings were
 // offered "next Tuesday" dates BEFORE classes began — two families were told
@@ -132,15 +136,38 @@ function weekdayOf(iso) {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
-// next N occurrences of `day` that are at least MIN_DAYS_OUT days from today,
-// clamped inside the season
-function upcomingDates(day) {
-  let start = addDays(todayEastern(), MIN_DAYS_OUT);
+// "5:00 PM" -> minutes since midnight
+function timeToMinutes(t) {
+  const m = String(t).match(/(\d+):(\d+)\s*(AM|PM)/i);
+  let h = (+m[1]) % 12;
+  if (/pm/i.test(m[3])) h += 12;
+  return h * 60 + (+m[2]);
+}
+function nowEasternMinutes() {
+  const p = new Intl.DateTimeFormat("en-US",
+    { timeZone: "America/New_York", hour12: false, hour: "2-digit", minute: "2-digit" }).format(new Date());
+  const [h, mm] = p.split(":").map(Number);
+  return (h % 24) * 60 + mm;
+}
+// A session is bookable until CUTOFF_MINUTES before its Eastern start time.
+export function bookable(dateIso, timeStr) {
+  const today = todayEastern();
+  if (dateIso < SEASON_START || dateIso > SEASON_END) return false;
+  if (dateIso > today) return true;
+  if (dateIso < today) return false;
+  return timeToMinutes(timeStr) - nowEasternMinutes() >= CUTOFF_MINUTES;
+}
+// next N bookable occurrences of `day`, clamped inside the season
+function upcomingDates(day, time) {
+  let start = todayEastern();
   if (start < SEASON_START) start = SEASON_START;
   const offset = (day - weekdayOf(start) + 7) % 7;
   let d = addDays(start, offset);
   const out = [];
-  while (out.length < DATES_SHOWN && d <= SEASON_END) { out.push(d); d = addDays(d, 7); }
+  while (out.length < DATES_SHOWN && d <= SEASON_END) {
+    if (bookable(d, time)) out.push(d);
+    d = addDays(d, 7);
+  }
   return out;
 }
 
@@ -171,7 +198,7 @@ async function availability() {
     ages: `${c.ages[0]}–${c.ages[1]}`,
     day: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][c.day],
     time: c.time,
-    dates: upcomingDates(c.day)
+    dates: upcomingDates(c.day, c.time)
       .map((d) => ({ date: d, left: trialSeatsLeft(used[`${c.activityId}|${d}`] || 0, room[c.activityId]) })),
   }));
 }
@@ -261,7 +288,7 @@ async function noteSendFailure(b, err) {
 export default async (req) => {
   if (req.method === "GET") {
     try {
-      return Response.json({ classes: await availability(), venue: VENUE, min_days_out: MIN_DAYS_OUT });
+      return Response.json({ classes: await availability(), venue: VENUE, booking_cutoff_minutes: CUTOFF_MINUTES });
     } catch (e) {
       console.error("reg-freeclass GET", e);
       return Response.json({ error: "server error" }, { status: 500 });
@@ -322,8 +349,8 @@ export default async (req) => {
     return Response.json({ error: `${cls.name} is for ages ${cls.ages[0]}–${cls.ages[1]}. Pick a class that matches your child's age.` }, { status: 400 });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || weekdayOf(date) !== cls.day)
     return Response.json({ error: "Pick a date" }, { status: 400 });
-  if (date < addDays(todayEastern(), MIN_DAYS_OUT))
-    return Response.json({ error: `Free classes are booked ${MIN_DAYS_OUT} or more days ahead. Pick a later date.` }, { status: 400 });
+  if (!bookable(date, cls.time))
+    return Response.json({ error: "That class has already started or starts within the hour. Pick the next date." }, { status: 400 });
 
   // Not a user error. A catalogue entry added without its listing id would
   // otherwise write a booking attached to no class, which is the bug this
