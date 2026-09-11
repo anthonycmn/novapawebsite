@@ -10,6 +10,7 @@
 //  - classes {activity_id, camper}: must be alone, plan=subscription
 //    ($90/mo, 5% sibling for 2nd+ child, insurance = monthly x1.10)
 import Stripe from "stripe";
+import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
@@ -432,12 +433,15 @@ export default async (req) => {
       if (!r.ok) throw new Error(`rpc ${fn} failed ${r.status}: ${t.slice(0, 200)}`);
       try { return JSON.parse(t); } catch { return t; }
     };
-    await svc("confirm_order", {
+    const freeOrderId = await svc("confirm_order", {
       p_hold_id: hold_id, p_email: email, p_parent_name: parent_name || null,
       p_plan: "full", p_amount_today_cents: 0, p_total_cents: 0,
       p_installment_cents: null, p_stripe_payment_intent: "free_" + hold_id,
       p_stripe_customer: null, p_unit_prices: pricing.unitPrices,
     });
+    // A seat offer spent on a $0 order still gets the Chief told.
+    try { await alertSeatOffersRedeemed(freeOrderId); }
+    catch (e) { console.error("seat offer alert failed:", e.message); }
     try {
       const held = await svc("hold_items_admin", { p_hold_id: hold_id });
       if (Array.isArray(held) && held.length) await svc("mark_registered", { p_email: email, p_items: held });

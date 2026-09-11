@@ -39,8 +39,12 @@ create table if not exists public.seat_offers (
   emailed_at    timestamptz,
   redeemed_at   timestamptz,
   order_id      uuid references public.orders(id),
-  revoked_at    timestamptz
+  revoked_at    timestamptz,
+  -- when the Chief was emailed that it was redeemed (reg-seat-offer-alert.mjs);
+  -- Stripe redelivers webhooks, so this is what keeps it to one email a seat
+  alerted_at    timestamptz
 );
+alter table public.seat_offers add column if not exists alerted_at timestamptz;
 create index if not exists seat_offers_activity_idx on public.seat_offers (activity_id);
 create index if not exists seat_offers_email_idx on public.seat_offers (lower(email));
 alter table public.seat_offers enable row level security;

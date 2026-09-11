@@ -3,6 +3,7 @@
 // and for deposit plans create the 8-installment subscription schedule.
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
+import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
@@ -314,6 +315,10 @@ export default async (req) => {
       const converted = await serviceRpc("convert_free_class_trials", { p_order_id: orderId });
       if (converted > 0) console.log(`converted ${converted} free-class trial(s) for order ${orderId}`);
     } catch (e) { console.error("trial conversion failed:", e.message); }
+    // A seat offer this order spent: tell the Chief (CJ, 11 Sep 2026). One
+    // email per seat however many times Stripe redelivers; see the module.
+    try { await alertSeatOffersRedeemed(orderId); }
+    catch (e) { console.error("seat offer alert failed:", e.message); }
     if (m.coupon) {
       // coupon_cents is what the order actually applied; a credit is spent down
       // by exactly that, so an unused balance survives for the next purchase
