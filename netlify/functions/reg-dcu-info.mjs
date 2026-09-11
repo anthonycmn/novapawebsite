@@ -61,7 +61,7 @@ export default async (req) => {
     let tiers = [];
     try {
       tiers = await (await fetch(
-        `${SUPABASE_URL}/rest/v1/activities?id=in.(970601,970602,970603)&select=id,name,price_cents&order=price_cents.desc`,
+        `${SUPABASE_URL}/rest/v1/activities?id=in.(970601,970602,970603,970604)&select=id,name,price_cents&order=price_cents.desc`,
         { headers: { apikey: svc, Authorization: `Bearer ${svc}` } })).json();
     } catch (e) { console.error("dcu-info prices:", e.message); }
     const tierRow = (a) => `<tr>
@@ -85,7 +85,7 @@ Hi${first ? " " + esc(first) : ""} &mdash; here's everything about the weekend i
 
 <table style="border-collapse:collapse;margin-top:16px;font:14.5px/1.6 Helvetica,Arial,sans-serif">
 <tr><td style="padding:5px 12px 5px 0;color:#5B6472;white-space:nowrap">What it is</td><td style="padding:5px 0">Your student auditions once and is seen by 25+ college theatre programs &mdash; musical theatre, acting, dance, and tech &amp; design. Grades 9&ndash;12.</td></tr>
-<tr><td style="padding:5px 12px 5px 0;color:#5B6472">When</td><td style="padding:5px 0">October 15&ndash;18, 2026</td></tr>
+<tr><td style="padding:5px 12px 5px 0;color:#5B6472">When</td><td style="padding:5px 0">October 15&ndash;17, 2026</td></tr>
 <tr><td style="padding:5px 12px 5px 0;color:#5B6472">Where</td><td style="padding:5px 0">The National Conference Center, Leesburg, VA</td></tr>
 <tr><td style="padding:5px 12px 5px 0;color:#5B6472">Included</td><td style="padding:5px 0">The audition itself, workshops, and callbacks with attending programs &mdash; application and audition fees waived.</td></tr>
 </table>

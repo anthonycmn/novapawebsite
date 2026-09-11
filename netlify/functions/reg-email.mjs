@@ -264,7 +264,8 @@ async function ccFor(email) {
 const DCU_PINK = "#ff2d8f", DCU_INK = "#0d0d0d";
 const DCU_VENUE = "The National Conference Center, 18665 Conference Center Drive, Leesburg, VA 20176";
 const DCU_TRACKS = {
-  970601: { when: "October 15–18, 2026", where: DCU_VENUE, note: null },
+  970601: { when: "October 15–17, 2026", where: DCU_VENUE, note: null },
+  970604: { when: "October 15–17, 2026", where: DCU_VENUE, note: null },
   970602: { when: "October 24–25, 2026", where: "Online — live callback weekend",
             note: "Your join details will be emailed to you before the event." },
   // No submission deadline is published on the site, so this promises a
