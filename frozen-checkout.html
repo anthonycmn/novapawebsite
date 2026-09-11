@@ -228,6 +228,10 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
   if (p.get('email')) $('f-email').value = p.get('email').slice(0, 200);
   if (p.get('phone')) $('f-phone').value = p.get('phone').slice(0, 40);
   if (p.get('age')) { $('f-age').value = p.get('age'); }
+  // seat offer (?seat=<token>): the office let this family past a full cast.
+  // The server (GET ?seat=) marks that cast available and says for whom.
+  var seatParam = (p.get('seat') || '').trim().toLowerCase();
+  if (!/^[a-f0-9]{16,80}$/.test(seatParam)) seatParam = '';
 
   // ---------- honest countdown to the real first rehearsal ----------
   (function(){
@@ -245,8 +249,17 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
   })();
 
   // ---------- live band data: price, nights, honest seat counts ----------
-  fetch('/api/frozen-pay').then(function(r){ return r.json(); }).then(function(d){
+  fetch('/api/frozen-pay' + (seatParam ? '?seat=' + seatParam : '')).then(function(r){ return r.json(); }).then(function(d){
     state.bands = d.bands || [];
+    state.offer = d.offer && d.offer.state === 'open' ? d.offer : null;
+    if (d.offer && d.offer.state && d.offer.state !== 'open') {
+      showErr('This seat offer ' + (d.offer.state === 'redeemed' ? 'has already been used' : d.offer.state === 'expired' ? 'has expired' : 'is no longer valid') +
+        '. Reply to the email it came in, or write to info@novapa.org.');
+    }
+    if (state.offer) {
+      if (!$('f-email').value) $('f-email').value = state.offer.email || '';
+      if (!$('f-kid').value && state.offer.camper_name) { $('f-kid').value = state.offer.camper_name; $('kid-name').textContent = state.offer.camper_name; }
+    }
     routeBand();
   }).catch(function(){ /* page still works; server re-validates on POST */ });
 
@@ -276,7 +289,11 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
     $('spots').className = 'spots';
     if (!age || !state.bands) return;
     var pref = bandsForAge(age), open = null, strict = bandById(pref[0]);
-    for (var i = 0; i < pref.length; i++) {
+    // A seat offer names its cast; that is the cast, whatever the age ladder
+    // would have picked and however full it reads.
+    var offeredBand = state.offer ? bandById(Number(state.offer.activity_id)) : null;
+    if (offeredBand) open = offeredBand;
+    for (var i = 0; !open && i < pref.length; i++) {
       var b = bandById(pref[i]);
       if (b && b.available) { open = b; break; }
     }
@@ -385,7 +402,8 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         activity_id: state.band.activity_id, camper_name: v.kid,
-        parent_name: v.parent, email: v.email, phone: v.phone
+        parent_name: v.parent, email: v.email, phone: v.phone,
+        seat: state.offer && state.band.activity_id === Number(state.offer.activity_id) ? seatParam : undefined
       })
     }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
       .then(function(res){

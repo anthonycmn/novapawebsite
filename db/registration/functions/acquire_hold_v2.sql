@@ -1,4 +1,4 @@
--- Exported from live DB (tlkuqwsqicxcjdmumkje) on 2026-08-11.
+-- Exported from live DB (tlkuqwsqicxcjdmumkje) on 2026-08-11; seat offers added 2026-09-11.
 -- ACL at export: =X/postgres | postgres=X/postgres | anon=X/postgres | authenticated=X/postgres | service_role=X/postgres
 
 CREATE OR REPLACE FUNCTION public.acquire_hold_v2(p_items jsonb)
@@ -50,17 +50,26 @@ begin
   end loop;
 
   -- catalog items: capacity check only when capacity is set
+  -- Seat offers (db/registration/seat_offers.sql): an item carrying a usable
+  -- `seat_offer` token for this email and activity is a seat the office has
+  -- already granted, so only the UNOFFERED items have to fit in what is left.
+  -- Distinct tokens, because one offer is one seat however many items quote
+  -- it. With no offers on the cart this is the same check it always was.
   for r in
-    select (it->>'activity_id')::bigint as aid, count(*)::int as needed
+    select (it->>'activity_id')::bigint as aid, count(*)::int as needed,
+           count(distinct it->>'seat_offer') filter (
+             where it ? 'seat_offer'
+               and seat_offer_usable(it->>'seat_offer', (it->>'activity_id')::bigint, v_email)
+           )::int as offered
     from jsonb_array_elements(p_items) it
     where it ? 'activity_id'
     group by 1
   loop
     select capacity into v_cap from activities where id = r.aid and bookable for update;
     if not found then raise exception 'unknown activity %', r.aid; end if;
-    if v_cap is not null then
+    if v_cap is not null and r.needed > r.offered then
       select v_cap - sold - booked_offline - held_count_activity(r.aid) into v_avail from activities where id = r.aid;
-      if v_avail < r.needed then raise exception 'SOLD_OUT_ACTIVITY:%', r.aid; end if;
+      if v_avail < r.needed - r.offered then raise exception 'SOLD_OUT_ACTIVITY:%', r.aid; end if;
     end if;
   end loop;
 
@@ -68,5 +77,5 @@ begin
   returning id into v_hold_id;
   return jsonb_build_object('hold_id', v_hold_id, 'expires_at', v_expires);
 end;
-$function$
+$function$;
 

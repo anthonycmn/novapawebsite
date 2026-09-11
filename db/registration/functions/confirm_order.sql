@@ -1,4 +1,4 @@
--- Exported from live DB (tlkuqwsqicxcjdmumkje) on 2026-08-11.
+-- Exported from live DB (tlkuqwsqicxcjdmumkje) on 2026-08-11; seat offers added 2026-09-11.
 -- ACL at export: postgres=X/postgres | service_role=X/postgres
 
 CREATE OR REPLACE FUNCTION public.confirm_order(p_hold_id uuid, p_email text, p_parent_name text, p_plan text, p_amount_today_cents integer, p_total_cents integer, p_installment_cents integer, p_stripe_payment_intent text, p_stripe_customer text, p_unit_prices jsonb)
@@ -36,6 +36,11 @@ begin
     if it ? 'activity_id' then
       update activities set sold = sold + 1 where id = (it->>'activity_id')::bigint;
     end if;
+    -- A seat offer is spent by the order that carries it (seat_offers.sql).
+    if it ? 'seat_offer' then
+      update seat_offers set redeemed_at = now(), order_id = v_order_id
+      where token = it->>'seat_offer' and redeemed_at is null;
+    end if;
     insert into order_items (order_id, show, band, camper_name, unit_price_cents, activity_id)
     values (v_order_id, it->>'show', it->>'band', coalesce(it->>'camper','TBD'),
             coalesce((p_unit_prices->>i)::int, 0), (it->>'activity_id')::bigint);
@@ -43,5 +48,5 @@ begin
   end loop;
   return v_order_id;
 end;
-$function$
+$function$;
 

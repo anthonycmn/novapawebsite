@@ -85,6 +85,10 @@
   .btn-ghost { background:none; border:1px solid var(--line); color:var(--ink); box-shadow:none; font-weight:500; }
   .tiny { font-size:12.5px; color:var(--ink-dim); margin-top:10px; line-height:1.55; text-align:center; }
   .err { display:none; color:var(--danger); font-size:14px; margin-top:10px; font-weight:500; }
+  /* seat offer (?seat=): the office held a seat for this family */
+  .seat-offer { display:block !important; margin:12px 0; padding:12px 14px; border-radius:10px; font-size:14px; line-height:1.55;
+    background:#EEF7F0; color:#14532D; border:1px solid #BBE5C6; }
+  .seat-offer.bad { background:#FDF2F2; color:#7F1D1D; border-color:#F5C2C2; }
   .err.on { display:block; }
 
   /* show cards */
@@ -479,6 +483,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
     <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; equal monthly payments, the first at checkout and the rest on autopay.</p>
     <div class="err" id="assignErr"></div>
+    <div id="seatOfferLine" style="display:none"></div>
     <!-- Sticky so a long show list never hides the way forward; the upsell
          toast is pinned higher up so the two never overlap. -->
     <button class="btn" id="assignNext" style="position:sticky;bottom:10px;z-index:60;display:none">Continue →</button>
@@ -678,6 +683,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
+    // seat offer (?seat=<token>): the office let this family past a full
+    // cast. Peeked once the catalog loads — see applySeatOffer().
+    var sm0 = location.search.match(/[?&]seat=([a-f0-9]{16,80})/i);
+    state.seat = sm0 ? sm0[1].toLowerCase() : null;
+    state.seatOffer = null;
     // referral link (?ref=CODE): remember it for this browser; sent with
     // payment so the webhook can credit both families
     var rm = location.search.match(/[?&]ref=([A-Za-z0-9]+)/);
@@ -997,11 +1007,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     go('st-loading');
     Promise.all([
       sb.rpc('inventory_status'),
-      sb.rpc('catalog_list', { p_ids: state.catIds })
+      sb.rpc('catalog_list', { p_ids: state.catIds }),
+      seatOfferPeek()
     ]).then(function(results){
       (results[0].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[1].data || [];
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+      applySeatOffer(results[2]);
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
       state.family = { campers: [] };
       state.kids = [];
@@ -1223,6 +1235,44 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (!cur || cur.id !== 'st-shows') go('st-loading');
     sb.rpc('ensure_my_family').then(function(){ loadFamily2(); });
   }
+  // ---------- seat offers (db/registration/seat_offers.sql) ----------
+  // A link the office sends when a cast is full: ?activity=<id>&seat=<token>.
+  // The server decides whether it is any good (seat_offer_peek); the page's
+  // only job is to stop treating that one activity as full, carry the token
+  // on the hold item, and say plainly what happened when the link is spent.
+  function seatOfferPeek(){
+    if (!state.seat) return Promise.resolve({ data: null });
+    return sb.rpc('seat_offer_peek', { p_token: state.seat }).catch(function(){ return { data: null }; });
+  }
+  function escSO(v){ return String(v == null ? '' : v).replace(/[<>&"]/g, ''); }
+  function applySeatOffer(peek){
+    var o = peek && peek.data;
+    state.seatOffer = null;
+    if (!state.seat || !o) return;
+    var line = $('seatOfferLine');
+    if (o.state !== 'open') {
+      var why = o.state === 'redeemed' ? 'has already been used'
+              : o.state === 'expired'  ? 'has expired'
+              : o.state === 'revoked'  ? 'was withdrawn'
+              : 'is not one we recognize';
+      line.textContent = 'This seat offer ' + why + '. If you think that\u2019s wrong, reply to the email it came in or write to info@novapa.org.';
+      line.className = 'seat-offer bad';
+      return;
+    }
+    state.seatOffer = o;
+    (state.allCat || []).forEach(function(a){
+      // one seat, held open for this family only — the public count is untouched
+      if (a.id === o.activity_id && a.remaining != null && a.remaining < 1) a.remaining = 1;
+    });
+    if (state.catIds.indexOf(o.activity_id) === -1) state.catIds.push(o.activity_id);
+    state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+    var until = new Date(o.expires_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
+    line.innerHTML = 'A seat in <b>' + escSO(o.activity_name) + '</b> is being held for ' +
+      (o.camper_name ? '<b>' + escSO(o.camper_name) + '</b>' : 'your family') +
+      ' until ' + until + ' ET. Check out with <b>' + escSO(o.email) + '</b> \u2014 the offer is tied to that address.';
+    line.className = 'seat-offer';
+  }
+
   function loadFamily2(){
     Promise.all([
       sb.rpc('get_my_family'),
@@ -1231,12 +1281,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       sb.rpc('family_fee_due', { p_email: state.email }),
       sb.rpc('my_camper_birthdates'),
       sb.rpc('my_parent_name'),
-      sb.rpc('my_camper_shirts')
+      sb.rpc('my_camper_shirts'),
+      seatOfferPeek()
     ]).then(function(results){
       var fam = results[0].data;
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[2].data || [];
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+      applySeatOffer(results[7]);
       state.feeDue = !!results[3].data;
       var bdays = results[4] && results[4].data ? results[4].data : {};
       var pn = results[5] && results[5].data;
@@ -2155,6 +2207,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   function buildItems(){
     var items = [];
+    var so = state.seatOffer;
+    // The token rides on the item, so acquire_hold_* and confirm_order see
+    // it without a new parameter. Only items for the offered activity carry
+    // it; the server counts distinct tokens, so one offer is still one seat.
+    function stamp(list){
+      if (so) list.forEach(function(it){ if (it.activity_id === so.activity_id) it.seat_offer = state.seat; });
+      return list;
+    }
     if (isCatMode()) {
       state.catItems.forEach(function(a){
         state.kids.forEach(function(k, i){
@@ -2163,7 +2223,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           if (sel && sel.on) items.push({ activity_id: a.id, camper: k.name, ci: i });
         });
       });
-      return items;
+      return stamp(items);
     }
     state.shows.forEach(function(show){
       state.kids.forEach(function(k, i){
@@ -2190,7 +2250,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       var id = state.addons[key];
       if (id) items.push({ activity_id: id, camper: key.split('|')[1] });
     });
-    return items;
+    return stamp(items);
   }
   $('assignNext').addEventListener('click', function(){
     // classes bill monthly and need their own Stripe order (mixed_cart guard):
@@ -2244,6 +2304,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       try {
         var gpe = new URLSearchParams(location.search).get('pe');
         if (gpe && gpe.indexOf('@') !== -1 && !$('guestEmailInput').value) $('guestEmailInput').value = gpe.trim();
+        // a seat offer is bound to one address; start them on it
+        if (state.seatOffer && state.seatOffer.email && !$('guestEmailInput').value) $('guestEmailInput').value = state.seatOffer.email;
       } catch(e){}
       $('guestEmailErr').classList.remove('on');
       gemReset();

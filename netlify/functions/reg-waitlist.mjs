@@ -71,9 +71,10 @@ export default async (req) => {
         body: JSON.stringify(msg),
       }).catch((e) => console.error("reg-waitlist email:", e.message));
 
-      // Waitlist alerts are Jason-only (Aug 31) — LEADS_ALERT_TO would copy
-      // Jen and Katie, who only need new-lead emails.
-      const to = (process.env.WAITLIST_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
+      // Waitlist alerts go to whoever decides capacity — WAITLIST_ALERT_TO,
+      // cj@ since 11 Sep 2026 (Jason's last day is the 16th). LEADS_ALERT_TO
+      // would copy Jen and Katie, who only need new-lead emails.
+      const to = (process.env.WAITLIST_ALERT_TO || "cj@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
       const posr = await fetch(
         `${SUPABASE_URL}/rest/v1/cast_waitlist?activity_id=eq.${activityId}&select=id`,
         { headers: { ...hdrs, Prefer: "count=exact", Range: "0-0" } });
@@ -89,7 +90,7 @@ export default async (req) => {
 ${esc(a.name)} (full)${position ? ` &middot; #${position} on the list` : ""}<br>
 Parent: ${esc(parentName || "?")} &middot; <a href="mailto:${esc(email)}" style="color:#0B1422">${esc(email)}</a></div>
 <div style="font:13px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:14px">
-If a seat opens, offer it here first and stamp notified_at so nobody is offered twice.</div></div>`,
+If a seat opens, offer it from the staff portal &mdash; Offerings &rsaquo; Waitlist &rsaquo; Offer a seat &mdash; which emails the family a link that checks out past the cap and marks them as told.</div></div>`,
         }),
         send({
           from: "NOVAPA <hello@mail.novapa.org>", to: [email], reply_to: "info@novapa.org",

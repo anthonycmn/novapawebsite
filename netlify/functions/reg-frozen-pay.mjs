@@ -15,6 +15,10 @@
 // - Availability includes booked_offline (the migrated Regpack seats) — the
 //   Frozen bands carry real offline enrollment and ignoring it would oversell
 //   the capped casts.
+// - A seat offer (db/registration/seat_offers.sql, Sep 11) is the one way
+//   past "sold_out": the office mints a token for one family and one cast,
+//   the page sends it as `seat`, and seat_offer_usable() decides. The hold
+//   item carries it so confirm_order can stamp it spent.
 import Stripe from "stripe";
 import { SUPABASE_URL } from "./reg-config.mjs";
 
@@ -56,13 +60,33 @@ async function seatsLeft(act) {
   return Math.max(0, act.capacity - (act.sold || 0) - (act.booked_offline || 0) - held);
 }
 
-// GET /api/frozen-pay — live band data the page renders from: price, night,
-// and honest per-cast seat counts (the design's rule: never fake the bar).
-async function quote() {
+// Is this token a live offer for this cast and this address? The database
+// answers, so this and the register app's hold functions cannot disagree.
+async function offerUsable(token, activityId, email) {
+  if (!token) return false;
+  try {
+    return (await serviceRpc("seat_offer_usable", { p_token: token, p_activity_id: activityId, p_email: email })) === true;
+  } catch { return false; }
+}
+
+// GET /api/frozen-pay?seat=<token> — live band data the page renders from:
+// price, night, and honest per-cast seat counts (the design's rule: never
+// fake the bar). With a seat offer on the query, the offered cast is
+// reported available whatever the count says, and `offer` says for whom.
+async function quote(seat) {
   const rows = await bands();
+  let offer = null;
+  if (seat) {
+    try {
+      const o = await serviceRpc("seat_offer_peek", { p_token: seat });
+      if (o && o.state === "open" && FROZEN_IDS.has(Number(o.activity_id))) offer = o;
+      else if (o && o.state) offer = { state: o.state };
+    } catch { /* no offer, ordinary page */ }
+  }
   const out = [];
   for (const a of rows) {
     const left = await seatsLeft(a);
+    const offered = !!offer && offer.state === "open" && Number(offer.activity_id) === a.id;
     const ct = Array.isArray(a.class_times) ? a.class_times[0] : null;
     out.push({
       activity_id: a.id,
@@ -72,21 +96,25 @@ async function quote() {
       capacity: a.capacity,
       taken: a.capacity != null && left != null ? a.capacity - left : null,
       left,
-      available: !!a.bookable && !a.hidden && (left == null || left > 0),
+      available: !!a.bookable && !a.hidden && (left == null || left > 0 || offered),
+      offered,
       day: ct?.title_text || "",
       time: (ct?.primary_text || [])[0] || "",
       dates: ct?.secondary_text || "",
       starts_on: a.starts_on,
     });
   }
-  return Response.json({ bands: out });
+  return Response.json({ bands: out, offer });
 }
 
 export default async (req) => {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return Response.json({ error: "payments_not_configured" }, { status: 503 });
   }
-  if (req.method === "GET") return quote();
+  if (req.method === "GET") {
+    const seat = (new URL(req.url).searchParams.get("seat") || "").trim().toLowerCase();
+    return quote(/^[a-f0-9]{16,80}$/.test(seat) ? seat : null);
+  }
   if (req.method !== "POST") return Response.json({ error: "method_not_allowed" }, { status: 405 });
   if (!process.env.STRIPE_SECRET_KEY) {
     return Response.json({ error: "payments_not_configured" }, { status: 503 });
@@ -100,6 +128,7 @@ export default async (req) => {
   const parentName = clean(body.parent_name, 100);
   const camperName = clean(body.camper_name, 100);
   const phone = clean(body.phone, 40);
+  const seat = clean(body.seat, 80).toLowerCase();
 
   if (!FROZEN_IDS.has(activityId)) return Response.json({ error: "unknown_activity" }, { status: 400 });
   if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email)) return Response.json({ error: "bad_email" }, { status: 400 });
@@ -110,7 +139,9 @@ export default async (req) => {
   if (!act) return Response.json({ error: "unknown_activity" }, { status: 400 });
   if (!act.bookable || act.hidden) return Response.json({ error: "not_for_sale" }, { status: 409 });
   const left = await seatsLeft(act);
-  if (left != null && left <= 0) return Response.json({ error: "sold_out" }, { status: 409 });
+  const offered = left != null && left <= 0 && /^[a-f0-9]{16,80}$/.test(seat)
+    ? await offerUsable(seat, activityId, email) : false;
+  if (left != null && left <= 0 && !offered) return Response.json({ error: "sold_out" }, { status: 409 });
 
   const totalCents = act.price_cents || 0;
   if (totalCents < 50) return Response.json({ error: "bad_price" }, { status: 500 });
@@ -122,7 +153,9 @@ export default async (req) => {
     headers: { ...svcHeaders(), Prefer: "return=representation" },
     body: JSON.stringify({
       email,
-      items: [{ activity_id: activityId, camper: camperName }],
+      items: [offered
+        ? { activity_id: activityId, camper: camperName, seat_offer: seat }
+        : { activity_id: activityId, camper: camperName }],
       expires_at: new Date(Date.now() + HOLD_MINUTES * 60 * 1000).toISOString(),
       status: "active",
     }),
@@ -169,6 +202,7 @@ export default async (req) => {
       credit_redeems: "[]",
       funnel: "frozen-checkout",
       phone,
+      seat_offer: offered ? "1" : "0",
     },
   });
 
