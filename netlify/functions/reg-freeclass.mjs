@@ -12,22 +12,25 @@
 const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 
 // Weekly schedule verified against classes.html (Aug 26 2026).
+// activity_id added 11 Sep 2026: CJ's staff portal joins free_class_bookings
+// to its class register on activity_id (staff_portal.v_class_visitors), and
+// the old placeholder 0 made every trial kid invisible to staffing.
 // day: 0=Sun..6=Sat. Adult classes are deliberately absent — this funnel
 // books kids.
 const CLASSES = {
-  "acting-5-8":        { name: "Acting",                                ages: [5, 8],   day: 1, time: "6:00 PM" },
-  "triple-threat":     { name: "Triple Threat Musical Theatre Training", ages: [13, 17], day: 1, time: "7:00 PM" },
-  "mt-5-8":            { name: "Musical Theatre",                       ages: [5, 8],   day: 2, time: "5:00 PM" },
-  "mt-dance-13-17":    { name: "Musical Theatre Dance",                 ages: [13, 17], day: 2, time: "7:00 PM" },
-  "mt-acting-13-17":   { name: "Musical Theatre Acting",                ages: [13, 17], day: 2, time: "8:00 PM" },
-  "hs-mt":             { name: "Homeschool Musical Theatre",            ages: [9, 13],  day: 3, time: "1:00 PM" },
-  "hs-theatre":        { name: "Homeschool Theatre",                    ages: [9, 13],  day: 3, time: "2:00 PM" },
-  "acting-9-12":       { name: "Acting",                                ages: [9, 12],  day: 3, time: "5:15 PM" },
-  "mt-dance-9-12":     { name: "Musical Theatre Dance",                 ages: [9, 12],  day: 3, time: "6:15 PM" },
-  "mt-acting-9-12":    { name: "Musical Theatre Acting",                ages: [9, 12],  day: 3, time: "7:15 PM" },
-  "improv-9-12":       { name: "Improv for Actors",                     ages: [9, 12],  day: 4, time: "6:30 PM" },
-  "improv-13-17":      { name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
-  "acting-mt-sat":     { name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
+  "acting-5-8":        { activity_id: 1960867, name: "Acting",                                ages: [5, 8],   day: 1, time: "6:00 PM" },
+  "triple-threat":     { activity_id: 1960898, name: "Triple Threat Musical Theatre Training", ages: [13, 17], day: 1, time: "7:00 PM" },
+  "mt-5-8":            { activity_id: 1960924, name: "Musical Theatre",                       ages: [5, 8],   day: 2, time: "5:00 PM" },
+  "mt-dance-13-17":    { activity_id: 1960925, name: "Musical Theatre Dance",                 ages: [13, 17], day: 2, time: "7:00 PM" },
+  "mt-acting-13-17":   { activity_id: 1960927, name: "Musical Theatre Acting",                ages: [13, 17], day: 2, time: "8:00 PM" },
+  "hs-mt":             { activity_id: 1962566, name: "Homeschool Musical Theatre",            ages: [9, 13],  day: 3, time: "1:00 PM" },
+  "hs-theatre":        { activity_id: 1962567, name: "Homeschool Theatre",                    ages: [9, 13],  day: 3, time: "2:00 PM" },
+  "acting-9-12":       { activity_id: 1960936, name: "Acting",                                ages: [9, 12],  day: 3, time: "5:15 PM" },
+  "mt-dance-9-12":     { activity_id: 1960939, name: "Musical Theatre Dance",                 ages: [9, 12],  day: 3, time: "6:15 PM" },
+  "mt-acting-9-12":    { activity_id: 1960945, name: "Musical Theatre Acting",                ages: [9, 12],  day: 3, time: "7:15 PM" },
+  "improv-9-12":       { activity_id: 1960959, name: "Improv for Actors",                     ages: [9, 12],  day: 4, time: "6:30 PM" },
+  "improv-13-17":      { activity_id: 1960961, name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
+  "acting-mt-sat":     { activity_id: 1962562, name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
 };
 const MIN_DAYS_OUT = 7;    // Jason: bookable only 7+ days ahead
 const DATES_SHOWN = 3;     // next N valid dates per class
@@ -231,7 +234,7 @@ export default async (req) => {
 
     const rows = await db("POST", "free_class_bookings", {
       parent_name: parent, email, phone: phone || null, child_name: child,
-      child_age: age, cast_key: clsKey, activity_id: 0,
+      child_age: age, cast_key: clsKey, activity_id: cls.activity_id,
       class_date: date, utm,
     });
     const booking = rows[0];
