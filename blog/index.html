@@ -220,7 +220,23 @@
     <!-- POSTS:BEGIN — newest first. Each post needs a .panel here AND a .row in the call board below; the data-id must match. -->
     <div class="panels">
 
-      <article class="panel on" id="panel-what-age" role="tabpanel" aria-labelledby="tab-what-age">
+      <article class="panel on" id="panel-adult-acting" role="tabpanel" aria-labelledby="tab-adult-acting">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <!-- PHOTO:PENDING adult class photo — placeholder until Tony sends one -->
+          <img class="shot" src="/img/blog/private-acting-lesson-coaching-session.jpg" alt="An adult acting class in progress at NOVAPA in Leesburg" width="1600" height="1600" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Adult Classes</p>
+          <h2 class="name"><a href="/blog/adult-acting-classes-for-beginners.html">Adult Acting Classes for Beginners: It Is Never Too Late to Take the Stage</a></h2>
+          <p class="role">September 11, 2026</p>
+          <p class="bio">Who actually takes adult acting classes (almost never future actors), whether you are too old, and what happens minute by minute on the first night.</p>
+          <p class="bio">Nobody is going to discover you in an adult acting class, and that is precisely the point. The three fears everyone walks in with, answered, plus what a class costs.</p>
+          <a class="link" href="/blog/adult-acting-classes-for-beginners.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-what-age" role="tabpanel" aria-labelledby="tab-what-age">
         <div class="stage">
           <div class="beam" aria-hidden="true"></div>
           <img class="shot" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="Young performers in a NOVAPA theatre class for ages 5 to 8, arms raised in an open presentational pose" width="1800" height="1200" loading="lazy">
@@ -283,9 +299,15 @@
     </div>
 
     <aside class="board" role="tablist" aria-label="All posts">
-      <div class="boardhead"><span>The Call Board</span><b>4 posts</b></div>
+      <div class="boardhead"><span>The Call Board</span><b>5 posts</b></div>
 
-      <button class="row on" type="button" role="tab" id="tab-what-age" data-id="what-age" aria-selected="true" aria-controls="panel-what-age">
+      <button class="row on" type="button" role="tab" id="tab-adult-acting" data-id="adult-acting" aria-selected="true" aria-controls="panel-adult-acting">
+        <img class="thumb" src="/img/blog/private-acting-lesson-coaching-session.jpg" alt="" width="1600" height="1600" loading="lazy">
+        <span class="rowtext"><b>Adult Acting Classes for Beginners</b><i>Adult Classes &middot; Sep 11, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-what-age" data-id="what-age" aria-selected="false" tabindex="-1" aria-controls="panel-what-age">
         <img class="thumb" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="" width="1800" height="1200" loading="lazy">
         <span class="rowtext"><b>What Age Should a Child Start Theatre Classes?</b><i>Classes &middot; Sep 10, 2026</i></span>
         <span class="cue" aria-hidden="true"></span>
