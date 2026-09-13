@@ -3,8 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Register — NOVAPA Summer 2027 Broadway Bound Camps</title>
-<meta name="description" content="Reserve your student's spot in NOVAPA's Summer 2027 Broadway Bound camps — How to Train Your Dragon Jr., Charlie and the Chocolate Factory Jr., and Trolls Jr.">
+<title>Register | NOVAPA</title>
+<!-- Product identity is set per activity at runtime by setPageIdentity(); what
+     follows are neutral defaults only. These used to name the Summer 2027 shows,
+     so a parent buying a Day Camp Pack in September saw "How to Train Your
+     Dragon Jr." in the tab and in every shared link preview. Do not name one
+     program here again. -->
+<meta name="description" content="Register for NOVAPA programs: camps, classes, day camps and Broadway Bound. Northern Virginia Performing Arts, Leesburg, Virginia.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Northern Virginia Performing Arts">
+<meta property="og:title" content="Register | NOVAPA">
+<meta property="og:description" content="Register for NOVAPA programs: camps, classes, day camps and Broadway Bound. Northern Virginia Performing Arts, Leesburg, Virginia.">
+<meta property="og:url" content="https://novapa.org/register/">
+<meta property="og:image" content="https://novapa.org/camp-friends.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="robots" content="noindex"><!-- remove at public launch -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -84,6 +96,9 @@
   .btn[disabled] { opacity:0.5; cursor:default; transform:none; }
   .btn-ghost { background:none; border:1px solid var(--line); color:var(--ink); box-shadow:none; font-weight:500; }
   .tiny { font-size:12.5px; color:var(--ink-dim); margin-top:10px; line-height:1.55; text-align:center; }
+  /* the digits are letterspaced so they are easy to read back against the
+     email; the placeholder is a word and should not be */
+  #otpInput::placeholder { letter-spacing:normal; }
   .err { display:none; color:var(--danger); font-size:14px; margin-top:10px; font-weight:500; }
   /* seat offer (?seat=): the office held a seat for this family */
   .seat-offer { display:block !important; margin:12px 0; padding:12px 14px; border-radius:10px; font-size:14px; line-height:1.55;
@@ -356,8 +371,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <h1>We just emailed you a <em>sign-in link.</em></h1>
     <p class="sub">Sent to <b id="sentTo"></b>. Open it on this device and you'll land right back here with your family loaded. (Check spam if it's not there in a minute.)</p>
     <div class="card center">
-      <button class="btn btn-ghost" id="resendBtn">Resend link</button>
+      <p class="tiny" style="margin:0 0 10px">Rather not leave this page? The same email has a sign-in code. Type it here and stay where you are.</p>
+      <input type="text" id="otpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Sign-in code" style="text-align:center;letter-spacing:.3em;font-size:20px">
+      <button class="btn" id="otpGo">Sign me in</button>
+      <div class="err" id="otpErr"></div>
+      <button class="btn btn-ghost" id="resendBtn" style="margin-top:10px">Resend link</button>
       <p class="tiny">Wrong email? <a href="#" id="restartLink">Start over</a></p>
+      <p class="tiny" style="opacity:.75;margin-top:12px">The email comes from NOVAPA. We will never ask for a password or payment details by email. If anything looks off, call the office at <a href="tel:+15715712120" style="color:var(--gold3)">571-571-2120</a>.</p>
     </div>
   </section>
 
@@ -1022,6 +1042,36 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (!linkError) { if (C.GUEST_CHECKOUT) enterGuest(); else openEmailSignup(); }
   });
 
+  // ---------- page identity ----------
+  // The tab, the description and the step eyebrows used to say "Summer 2027
+  // Broadway Bound" no matter what was in the cart, so a September Day Camp
+  // Pack checkout announced a July show. Once the catalog for this activity is
+  // loaded, the page renames itself after what is actually being bought.
+  function setPageIdentity(){
+    try {
+      if (!state.catItems.length) return;
+      // portal names carry their own pipe ("Broadway Bound Junior | Frozen,
+      // Jr."), which would make the tab read like a broken breadcrumb once we
+      // append "| NOVAPA"
+      var names = state.catItems.map(function(a){
+        return String(a.name || '').replace(/\s*\|\s*/g, ' \u00b7 ').trim();
+      }).filter(Boolean);
+      if (!names.length) return;
+      var label = names.length === 1 ? names[0]
+        : names.slice(0, 2).join(' and ') + (names.length > 2 ? ' and more' : '');
+      var text = 'Register for ' + label + ' with Northern Virginia Performing Arts in Leesburg, Virginia.';
+      document.title = 'Register: ' + label + ' | NOVAPA';
+      var d = document.querySelector('meta[name="description"]');
+      if (d) d.setAttribute('content', text);
+      var ogt = document.querySelector('meta[property="og:title"]');
+      if (ogt) ogt.setAttribute('content', 'Register: ' + label + ' | NOVAPA');
+      var ogd = document.querySelector('meta[property="og:description"]');
+      if (ogd) ogd.setAttribute('content', text);
+      var eb = $('gateEyebrow'); if (eb) eb.textContent = label;
+      var wb = $('wlEyebrow'); if (wb) wb.textContent = label;
+    } catch(e){}
+  }
+
   // ---------- guest entry: browse first, email at the cart step ----------
   function enterGuest(){
     if (entered) return;
@@ -1037,6 +1087,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       (results[0].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[1].data || [];
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+      setPageIdentity();
       applySeatOffer(results[2]);
       if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
       state.family = { campers: [] };
@@ -1227,6 +1278,43 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('resendBtn').addEventListener('click', sendLink);
   $('restartLink').addEventListener('click', function(e){ e.preventDefault(); openEmailSignup(); });
 
+  // A magic link is a round trip out of the browser, and the Instagram and
+  // Facebook in-app browsers frequently never come back to the tab that sent
+  // it. The same Supabase email carries a sign-in code, so a parent can finish
+  // without leaving this page. Aug 27 2026 also showed the link itself reads as
+  // phishing to some families (one forwarded it to the office asking if it was
+  // a scam), so the code is also the answer to "I did not want to click that".
+  //
+  // Do NOT hardcode a code length here. Supabase is currently set to eight
+  // digits, and the live emails carry eight. On 11 Sep 2026 the parent portal
+  // reset page accepted only six, so it rejected correct codes and CJ had to
+  // write to the families it turned away. Take what the email sends.
+  function verifyCode(){
+    var errEl = $('otpErr'); errEl.classList.remove('on');
+    var code = ($('otpInput').value || '').replace(/[^0-9]/g, '');
+    if (code.length < 6 || code.length > 10) {
+      errEl.textContent = 'Enter the sign-in code from the email, digits only.';
+      errEl.classList.add('on'); return;
+    }
+    var btn = $('otpGo'); btn.disabled = true; btn.textContent = 'Signing you in\u2026';
+    Promise.resolve(sb.auth.verifyOtp({ email: state.email, token: code, type: 'email' })).then(function(res){
+      btn.disabled = false; btn.textContent = 'Sign me in';
+      if (res && res.error) {
+        errEl.textContent = 'That code did not work. It may have expired. Use Resend link for a new one.';
+        errEl.classList.add('on');
+        ev('reg_otp_failed', { len: code.length });
+        return;
+      }
+      ev('reg_otp_ok', { len: code.length });
+      enterWith(res && res.data && res.data.session);
+    }, function(){
+      btn.disabled = false; btn.textContent = 'Sign me in';
+      errEl.textContent = 'Something went wrong. Try again.'; errEl.classList.add('on');
+    });
+  }
+  $('otpGo').addEventListener('click', verifyCode);
+  $('otpInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') verifyCode(); });
+
   // ---------- step: new family email signup ----------
   function wlGo(){
     var errEl = $('wlErr'); errEl.classList.remove('on');
@@ -1308,6 +1396,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
     if (state.catIds.indexOf(o.activity_id) === -1) state.catIds.push(o.activity_id);
     state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+    setPageIdentity();
     var until = new Date(o.expires_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
     line.innerHTML = 'A seat in <b>' + escSO(o.activity_name) + '</b> is being held for ' +
       (o.camper_name ? '<b>' + escSO(o.camper_name) + '</b>' : 'your family') +
@@ -1330,6 +1419,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[2].data || [];
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
+      setPageIdentity();
       applySeatOffer(results[7]);
       state.feeDue = !!results[3].data;
       var bdays = results[4] && results[4].data ? results[4].data : {};
@@ -1352,7 +1442,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         ? 'Welcome back — registering <em>' + esc(firstNames()) + '</em> again?'
         : 'Who\'s coming to <em>camp?</em>';
       $('famSub').textContent = returning
-        ? 'Confirm who\'s in for Summer 2027 — add or uncheck anyone.'
+        ? (isCatMode() ? 'Confirm who is registering. Add or uncheck anyone.'
+                       : 'Confirm who\'s in for Summer 2027 — add or uncheck anyone.')
         : 'Add each camper\'s name and age — we\'ll match them to the right group.';
       $('whoami').textContent = state.email;
       $('whoami2').textContent = state.email;

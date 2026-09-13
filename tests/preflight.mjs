@@ -221,7 +221,33 @@ function checkFunctions() {
 }
 
 // ---------------------------------------------------------------------------
-// Check 3 — live probes. An auth error is the healthy answer: a 500 is what a
+// Check 3 — a sign-in code field must not assume how long the code is.
+//
+// Supabase's OTP length is a project setting. This project sends EIGHT digits;
+// Supabase's default is six. On Sep 11 2026 the parent portal reset page
+// accepted only six, so it rejected correct codes, and CJ wrote to three
+// families on Sep 13 to apologise for turning them away. The same mistake on
+// the registration checkout would reject a parent at the last step, which is
+// the one place we cannot afford to. See docs/supabase-signin-email.md.
+
+function checkCodeLength() {
+  const rel = "register/index.html";
+  const f = join(ROOT, rel);
+  if (!existsSync(f)) return;
+  const html = readFileSync(f, "utf8");
+  if (!/id="otpInput"/.test(html)) return; // no code field, nothing to guard
+  const bad = [];
+  const m = html.match(/id="otpInput"[^>]*maxlength="(\d+)"/);
+  if (m && Number(m[1]) < 10) bad.push(`the code input caps at ${m[1]} characters; the email sends 8`);
+  // an exact-length test on the typed code, e.g. length !== 6
+  const exact = html.match(/\.length\s*(?:!==|!=|===|==)\s*([4-9])\b(?=[^\n]*(?:code|token|otp))/i);
+  if (exact) bad.push(`the code is checked against an exact length of ${exact[1]}`);
+  if (bad.length) for (const b of bad) fail("otp-length", `${rel}: ${b}`);
+  else ok("the sign-in code field takes whatever length the email sends");
+}
+
+// ---------------------------------------------------------------------------
+// Check 4 — live probes. An auth error is the healthy answer: a 500 is what a
 // broken shared import looks like from outside.
 
 async function probe(path, opts = {}) {
@@ -364,6 +390,7 @@ async function checkLive() {
 
 checkUndeclared();
 checkFunctions();
+checkCodeLength();
 if (LIVE) await checkLive();
 
 // --alert emails on failure, for unattended runs. Silent when healthy, so a
