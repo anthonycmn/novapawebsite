@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text Updates | Northern Virginia Performing Arts</title>
+<meta name="description" content="Sign up for NOVAPA text updates: registration confirmations, rehearsal and camp reminders, and waitlist alerts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#08111F; --navy2:#0F1E36;
+  --gold:#C8892A; --gold2:#E8B84B;
+  --paper:#F7F1E4; --ink:#0B1424;
+}
+body{
+  min-height:100vh;
+  font-family:'DM Sans',sans-serif;line-height:1.6;color:#fff;
+  background:
+    radial-gradient(ellipse at 80% 0%, rgba(200,137,42,0.16) 0%, transparent 55%),
+    radial-gradient(ellipse at 0% 100%, rgba(139,26,47,0.18) 0%, transparent 50%),
+    linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+  display:flex;align-items:center;justify-content:center;
+  padding:44px 20px;
+}
+.card{
+  width:100%;max-width:520px;
+  background:rgba(22,43,82,0.45);
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:16px;
+  padding:38px 34px 32px;
+}
+.brand{font-size:11.5px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold2);margin-bottom:14px}
+h1{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:34px;line-height:1.15;margin-bottom:10px}
+.sub{color:rgba(255,255,255,0.75);font-size:15px;margin-bottom:22px}
+label.fld{display:block;margin-bottom:14px}
+label.fld span{display:block;font-size:11.5px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px}
+input[type=tel],input[type=email],input[type=text]{
+  width:100%;padding:12px 14px;font:inherit;font-size:15.5px;color:#fff;
+  background:rgba(8,17,31,0.55);border:1px solid rgba(255,255,255,0.18);border-radius:10px;
+}
+input:focus{outline:none;border-color:var(--gold2)}
+.consent{display:flex;gap:10px;align-items:flex-start;margin:18px 0 6px;cursor:pointer}
+.consent input{width:17px;height:17px;margin-top:3px;flex-shrink:0;accent-color:var(--gold2)}
+.consent span{font-size:12.5px;line-height:1.55;color:rgba(255,255,255,0.72)}
+.consent a{color:var(--gold2)}
+.btn{
+  width:100%;margin-top:16px;padding:15px 20px;border:0;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);
+  font:inherit;font-weight:600;font-size:13.5px;letter-spacing:0.16em;text-transform:uppercase;
+}
+.btn:disabled{opacity:0.55;cursor:not-allowed}
+.msg{margin-top:12px;font-size:14px;display:none}
+.msg.err{color:#ff9c9c}
+.msg.ok{color:var(--gold2)}
+.alt{
+  margin-top:26px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.14);
+  font-size:13.5px;color:rgba(255,255,255,0.72);
+}
+.alt b{color:#fff;font-weight:600}
+.fine{margin-top:14px;font-size:11.5px;line-height:1.6;color:rgba(255,255,255,0.5)}
+.fine a{color:rgba(232,184,75,0.8)}
+.hp{position:absolute;left:-5000px;top:-5000px}
+.done{display:none;text-align:center;padding:26px 0 8px}
+.done h2{font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:8px}
+.done p{color:rgba(255,255,255,0.75);font-size:15px}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">NOVAPA · Northern Virginia Performing Arts</div>
+  <div id="formWrap">
+    <h1>Text updates for your family</h1>
+    <p class="sub">Registration confirmations, rehearsal and camp reminders, and waitlist alerts for our youth theatre programs in Leesburg, VA.</p>
+
+    <form id="f" novalidate>
+      <label class="fld"><span>Mobile number</span>
+        <input type="tel" id="phone" placeholder="(571) 555-0100" autocomplete="tel" inputmode="tel" required></label>
+      <label class="fld"><span>Email (optional, links texts to your account)</span>
+        <input type="email" id="email" placeholder="parent@email.com" autocomplete="email"></label>
+      <input type="text" id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <!-- The consent copy below is the 10DLC language of record: the exact
+           string is stored with every opt-in (consent_text) and quoted in the
+           Telnyx campaign. Change it only alongside the campaign. -->
+      <label class="consent">
+        <input type="checkbox" id="ok">
+        <span id="consentText">By checking this box, you agree to receive recurring text messages from NOVAPA (Northern Virginia Performing Arts) about registrations, schedules, and programs at the number provided. Message frequency varies. Message and data rates may apply. Reply HELP for help or STOP to cancel at any time. Consent is not a condition of purchase. Your mobile information will not be sold or shared with third parties for promotional or marketing purposes.</span>
+      </label>
+
+      <button class="btn" id="go" type="submit">Sign up for texts</button>
+      <p class="msg err" id="err"></p>
+    </form>
+
+    <div class="alt">
+      Prefer to start from your phone? Text <b>START</b> to <b>+1&nbsp;(571)&nbsp;720&#8209;6643</b> and we will confirm your subscription. Message frequency varies. Message and data rates may apply. Reply HELP for help or STOP to cancel.
+    </div>
+    <p class="fine">See our <a href="/privacy#sms">Privacy Policy</a> and <a href="/terms">Terms</a>. NOVAPA, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176.</p>
+  </div>
+
+  <div class="done" id="done">
+    <h2>You are signed up.</h2>
+    <p>We will text you at the number you provided. Reply STOP at any time to cancel.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  $('f').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var err = $('err'); err.style.display = 'none';
+    var phone = $('phone').value.trim();
+    var digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) { err.textContent = 'Please enter a valid mobile number.'; err.style.display = 'block'; return; }
+    if (!$('ok').checked) { err.textContent = 'Please check the consent box to sign up.'; err.style.display = 'block'; return; }
+    var btn = $('go'); btn.disabled = true; btn.textContent = 'Signing up…';
+    fetch('/api/reg-sms-optin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: phone,
+        email: $('email').value.trim(),
+        consent: true,
+        consent_text: $('consentText').textContent.trim(),
+        source: 'sms-page',
+        hp: $('hp').value
+      })
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if (j && j.ok) { $('formWrap').style.display = 'none'; $('done').style.display = 'block'; return; }
+      throw new Error((j && j.error) || 'server');
+    }).catch(function(){
+      btn.disabled = false; btn.textContent = 'Sign up for texts';
+      err.textContent = 'Something went wrong. Please try again, or email info@novapa.org.';
+      err.style.display = 'block';
+    });
+  });
+})();
+</script>
+</body>
+</html>

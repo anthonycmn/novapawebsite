@@ -544,9 +544,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)">
       <label class="tiny" for="parentPhone" style="display:block;text-align:left;margin:14px 0 4px">Mobile number</label>
       <input type="tel" id="parentPhone" placeholder="(571) 555-0100" autocomplete="tel" inputmode="tel">
-      <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:8px;cursor:pointer">
-        <input type="checkbox" id="smsOk" style="width:17px;height:17px;flex-shrink:0;accent-color:var(--gold2)">
-        <span>Text me schedule changes and reminders about my camper's programs. Msg &amp; data rates may apply; reply STOP to opt out.</span>
+      <!-- 10DLC consent language of record (Telnyx campaign 4b3001a0-5b2f-…).
+           Must match sms.html's consent copy; change only alongside the
+           campaign. Box unchecked by default — consent is never inferred. -->
+      <label class="tiny" style="display:flex;align-items:flex-start;gap:8px;text-align:left;margin-top:8px;cursor:pointer">
+        <input type="checkbox" id="smsOk" style="width:17px;height:17px;flex-shrink:0;margin-top:2px;accent-color:var(--gold2)">
+        <span>By checking this box, you agree to receive recurring text messages from NOVAPA (Northern Virginia Performing Arts) about registrations, schedules, and programs at the number provided. Message frequency varies. Message and data rates may apply. Reply HELP for help or STOP to cancel at any time. Consent is not a condition of purchase. Your mobile information will not be sold or shared with third parties for promotional or marketing purposes. See our <a href="/privacy#sms" target="_blank" rel="noopener">Privacy Policy</a>.</span>
       </label>
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:28px;cursor:pointer">
         <input type="checkbox" id="insOk" style="width:17px;height:17px;flex-shrink:0;accent-color:var(--gold2)">
