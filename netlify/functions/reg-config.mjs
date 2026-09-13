@@ -138,6 +138,27 @@ export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;  // O
 // Jun 30 keeps the last pull at Jun 1 with a full day of margin (Jason,
 // Aug 17: "all class subscriptions should end on June 30th").
 export const CLASS_SEASON_END_UTC = Date.UTC(2027, 5, 30, 4, 0, 0) / 1000;
+
+// When a class subscription pulls next, and when it stops (CJ, Sep 13 2026).
+// The month covered at checkout is the class's first month — or the current
+// month for a mid-season signup — so the first recurring invoice lands on the
+// 1st of the FOLLOWING month, never before the Oct 1 season anchor. The
+// subscription cancels the day after the class's last session (the last pull
+// is the 1st of that final month), capped at the season end. A class with no
+// dates on file falls back to the old behaviour on both ends.
+export function classBillingWindow(acts, now = new Date()) {
+  const firstOfMonthAfter = (d) => Math.floor(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 4, 0, 0) / 1000);
+  const starts = (acts || []).map((a) => a && a.starts_on).filter(Boolean).sort();
+  const ends = (acts || []).map((a) => a && a.ends_on).filter(Boolean).sort();
+  const startsAt = starts[0] ? new Date(starts[0] + "T12:00:00-04:00") : null;
+  const coveredMonth = startsAt && startsAt > now ? startsAt : now;
+  const nextBillUTC = Math.max(CLASS_BILL_ANCHOR_UTC, firstOfMonthAfter(coveredMonth));
+  const lastEnd = ends.length ? ends[ends.length - 1] : null;
+  const cancelAtUTC = lastEnd
+    ? Math.min(CLASS_SEASON_END_UTC, Math.floor(new Date(lastEnd + "T04:00:00Z").getTime() / 1000) + 86400)
+    : CLASS_SEASON_END_UTC;
+  return { nextBillUTC, cancelAtUTC };
+}
 export const SIBLING_PCT = 5;
 export const INSURANCE_PCT = 10;
 export const PLAN_FEE_PCT = 5;   // surcharge for choosing a payment plan

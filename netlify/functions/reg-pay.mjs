@@ -14,7 +14,7 @@ import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
-  CLASS_PRICE_CENTS, classMonthlyCents, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  CLASS_PRICE_CENTS, classMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
   SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
   DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CREDITS, DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END, dayCampPack,
 } from "./reg-config.mjs";
@@ -346,6 +346,13 @@ export default async (req) => {
       }
     } catch (e) { console.error("first-month-free check failed:", e.message); }
 
+    // The month paid (or waived) at checkout is the class's FIRST month, so the
+    // first recurring pull is the 1st of the month after the class starts —
+    // never before Oct 1 — and the subscription stops when the class does.
+    // Before Sep 13 2026 the anchor was simply "Oct 1 or the 1st of next
+    // month", which billed the October adult class twice before its first
+    // Tuesday and would have kept billing a December-ending class into June.
+    const classBilling = classBillingWindow(classItems.map((it) => byId[it.activity_id]));
     pricing = {
       todayCents: firstMonthFree ? 0 : subtotal - couponCents,
       totalCents: firstMonthFree ? 0 : subtotal - couponCents,
@@ -354,6 +361,7 @@ export default async (req) => {
       installmentCents: 0, nInstallments: 0, firstInstallmentUTC: 0,
       unitPrices, monthlyItems: unitPrices, discountPct: 0,
       firstMonthFree,
+      nextBillUTC: classBilling.nextBillUTC, cancelAtUTC: classBilling.cancelAtUTC,
     };
     description = classItems
       .map((it) => `${it.camper || "Camper"} — ${byId[it.activity_id].name}`)
@@ -518,6 +526,7 @@ export default async (req) => {
         first_installment_utc: "0", insurance_cents: "0", insured: "0",
         coupon: "", coupon_cents: "0", plan_fee_cents: "0", fsa_eligible: "0",
         first_month_free: "1",
+        class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
         unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
         monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
         n_items: String(items.length),
@@ -535,6 +544,7 @@ export default async (req) => {
         n_installments: 0, first_installment_utc: 0,
         monthly_cents: pricing.monthlyItems.reduce((s, v) => s + v, 0),
         first_month_free: true,
+        next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
       },
     });
   }
@@ -622,6 +632,7 @@ export default async (req) => {
       ) ? "1" : "0",
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
+      class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
       // pack purchases grant per-camper credits; redeemed credits deduct —
@@ -660,6 +671,7 @@ export default async (req) => {
       n_installments: pricing.nInstallments,
       first_installment_utc: pricing.firstInstallmentUTC,
       monthly_items: pricing.monthlyItems,
+      next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
     },
   });
 };

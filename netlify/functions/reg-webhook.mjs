@@ -239,12 +239,21 @@ export default async (req) => {
         const nowUTC = new Date();
         const firstOfNextMonth = Math.floor(
           Date.UTC(nowUTC.getUTCFullYear(), nowUTC.getUTCMonth() + 1, 1, 4, 0, 0) / 1000);
-        const trialEnd = Math.max(CLASS_BILL_ANCHOR_UTC, firstOfNextMonth);
+        // reg-pay now says when this class's next pull and last day are
+        // (class_next_bill_utc / class_cancel_at_utc, Sep 13 2026): the month
+        // paid at checkout is the class's first month, so an October class
+        // bills next on Nov 1 and a December-ending class stops in December.
+        // Intents minted before that carry neither and keep the old anchor.
+        const metaNext = parseInt(m.class_next_bill_utc || "0", 10) || 0;
+        const metaCancel = parseInt(m.class_cancel_at_utc || "0", 10) || 0;
+        const trialEnd = metaNext > Math.floor(Date.now() / 1000)
+          ? metaNext : Math.max(CLASS_BILL_ANCHOR_UTC, firstOfNextMonth);
+        const cancelAt = metaCancel > trialEnd ? metaCancel : CLASS_SEASON_END_UTC;
         const sub = await stripe.subscriptions.create({
           customer: customerId,
           default_payment_method: paymentMethodId || undefined,
           trial_end: trialEnd,
-          cancel_at: CLASS_SEASON_END_UTC, // season ends after the Jun 1 pull
+          cancel_at: cancelAt, // the class's own end, capped at the season end (Jun 30)
           proration_behavior: "none",
           items: monthly.map((cents) => ({
             quantity: 1,

@@ -2927,6 +2927,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('couponApply').addEventListener('click', applyCoupon);
   $('couponInput').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); applyCoupon(); } });
 
+  var MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtBillDate(utcSec){ var d = new Date(utcSec * 1000); return MONTHS_SHORT[d.getUTCMonth()] + ' ' + d.getUTCDate(); }
+  // The last pull before a cancel_at: the 1st of the month cancel_at falls in.
+  function lastPullBefore(cancelSec){ var d = new Date(cancelSec * 1000); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 4, 0, 0) / 1000; }
   function renderServerBreakdown(p){
     // The server's number is what actually gets charged. In catalog mode the
     // summary card's own "Due today" was never reconciled against it, so when
@@ -2935,6 +2939,18 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (isCatMode() && p.today_cents != null) {
       var tot = $('summaryCard').querySelector('.sumrow.total span:last-child');
       if (tot) tot.textContent = money(p.today_cents);
+    }
+    // Class carts: the server knows the class's real first pull and last day
+    // (an October class bills next on Nov 1; a December class stops in
+    // December). Replace the placeholder copy with those dates.
+    if (state.plan === 'subscription' && p.next_bill_utc) {
+      var nb = fmtBillDate(p.next_bill_utc), fb = p.cancel_at_utc ? fmtBillDate(lastPullBefore(p.cancel_at_utc)) : 'Jun 1';
+      if (!p.first_month_free) {
+        $('payBreakdown').innerHTML =
+          '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>' + money(p.today_cents) + '</span></div>' +
+          '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill ' + nb + ', final bill ' + fb + '). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>';
+      }
+      return;
     }
     if (state.plan !== 'deposit' || !p.n_installments) return;
     var first = p.first_installment_utc ? new Date(p.first_installment_utc * 1000) : null;
@@ -3080,7 +3096,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (state.setupMode) {
         $('payBreakdown').innerHTML =
           '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>$0.00</span></div>' +
-          '<p class="tiny" style="text-align:left;margin-top:2px"><b>First month free</b> \u2014 your family already has a show registration this season. Monthly tuition of <b>' + money(res.j.pricing.monthly_cents) + '</b> starts Oct 1, automatic on this card. Cancel with 30 days\u2019 notice.</p>';
+          '<p class="tiny" style="text-align:left;margin-top:2px"><b>First month free</b> \u2014 your family already has a show registration this season. Monthly tuition of <b>' + money(res.j.pricing.monthly_cents) + '</b> starts ' + (res.j.pricing.next_bill_utc ? fmtBillDate(res.j.pricing.next_bill_utc) : 'Oct 1') + ', automatic on this card. Cancel with 30 days\u2019 notice.</p>';
       }
       setPayH1(res.j.pricing.today_cents);
       mountStripe();
@@ -3187,6 +3203,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // rides along on the intent; an empty one is simply empty.
     if (policyBlocked()) return;
     var phv = $('parentPhone').value.trim();
+    if (phv.replace(/D/g, '').length < 10) phv = ''; // optional field: a partial number is simply not sent
     var pnv = $('parentName').value.trim();
     if (pnv) state.guest || sb.rpc('set_my_parent_name', { p_name: pnv });
     persistKidData();
@@ -3381,7 +3398,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var items = state.hold.items;
     if (isCatMode()) {
       $('doneRecap').innerHTML = items.length + ' enrollment' + (items.length>1?'s':'') + ' locked in — ' +
-        money(p.today_cents) + ' paid today' + (catAllClasses() ? ', monthly tuition on autopilot from Oct 1.' : '.');
+        money(p.today_cents) + ' paid today' + (catAllClasses() ? ', monthly tuition on autopilot from ' + (p.next_bill_utc ? fmtBillDate(p.next_bill_utc) : 'Oct 1') + '.' : '.');
     } else {
       $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
         Math.round((p.discount_pct||0)) + '% off</b>' +
