@@ -636,7 +636,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   </div>
 </div>
 
-<!-- cast waitlist modal: a Full pill opens this instead of dead-ending -->
+<!-- cast waitlist modal: a Waitlist only pill opens this instead of dead-ending -->
 <div class="modal-back" id="cwlModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
     <h3 style="text-align:center">Join the waitlist</h3>
@@ -1616,7 +1616,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         var a = state.assign[key];
         var pills = (!a.on || already) ? '' : bandsFor(kAge).map(function(b){
           var left = state.inventory[show + '|' + b];
-          var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Full' : left + ' more spots available') + '</span>' : '';
+          var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Waitlist only' : left + ' more spots available') + '</span>' : '';
           return '<span class="pill' + (a.band === b ? ' sel' : '') + '" data-key="' + esc(key) + '" data-band="' + b + '">' + bandLabel(b) + leftTag + '</span>';
         }).join('');
         // showtimes differ by age group, so state them once a group is chosen —
@@ -1726,7 +1726,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
             pills = '<div class="pills">' + eligible.map(function(a){
               var r = castRange(a);
               var left = a.remaining;
-              var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Full' : left + ' more spots available') + '</span>' : '';
+              var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Waitlist only' : left + ' more spots available') + '</span>' : '';
               return '<span class="pill' + (on === a.id ? ' sel' : '') + '" data-dayg="' + gi + '" data-i="' + i + '" data-act="' + a.id + '">Ages ' + r.min + '\u2013' + r.max + leftTag + '</span>';
             }).join('') + '</div>';
           }
@@ -1844,7 +1844,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         var soloTag = '';
         if (acts.length === 1) {
           var l1 = acts[0].remaining;
-          if (l1 != null && l1 < 20) soloTag = ' <span class="left">' + (l1 <= 0 ? 'Full' : l1 + ' more spots available') + '</span>';
+          if (l1 != null && l1 < 20) soloTag = ' <span class="left">' + (l1 <= 0 ? 'Waitlist only' : l1 + ' more spots available') + '</span>';
         }
         var pills = '';
         if (onCast && eligible && acts.length > 1) {
@@ -1853,7 +1853,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
             if (age != null && !(age >= r.min - 1 && age <= castTop(a))) return '';
             var left = a.remaining;
             var full = left != null && left <= 0;
-            var leftTag = (left != null && left < 20) ? ' <span class="left">' + (full ? 'Full' : left + ' more spots available') + '</span>' : '';
+            var leftTag = (left != null && left < 20) ? ' <span class="left">' + (full ? 'Waitlist only' : left + ' more spots available') + '</span>' : '';
             return '<span class="pill' + (onCast === a.id ? ' sel' : '') + '" data-fall="' + sKey + '" data-i="' + i + '" data-cast="' + a.id + '"' + (full ? ' data-full="1"' : '') + '>' + castLabel(a) + leftTag + '</span>';
           }).join('');
         }
@@ -1898,7 +1898,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         if (p.dataset.full) {
           var wk = state.kids[+p.dataset.i];
           openCastWaitlist(+p.dataset.cast, wk && wk.name,
-            (p.textContent || '').replace(/Full\s*$/, '').trim());
+            (p.textContent || '').replace(/Waitlist only\s*$/, '').trim());
           return;
         }
         setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
@@ -3570,8 +3570,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     $('heardThanks').style.display = 'block';
   });
 
-  // cast waitlist — a Full pill opens this instead of dead-ending. The
-  // server re-checks fullness (a stale page may show Full after a
+  // cast waitlist — a Waitlist only pill opens this instead of dead-ending.
+  // The server re-checks fullness (a stale page may still show seats after a
   // cancellation), and joining twice is harmless: one row, one email.
   var cwlActivity = null;
   function openCastWaitlist(actId, kidName, castName){

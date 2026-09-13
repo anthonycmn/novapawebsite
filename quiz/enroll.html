@@ -354,7 +354,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
     state.cast = state.casts[state.band] || null;
     hideErr();
     if (state.cast && state.cast.remaining != null && state.cast.remaining <= 0) {
-      showErr('This cast just filled up. Email info@novapa.org and we’ll help.');
+      showErr('This cast is full and is waitlist only. Email info@novapa.org and we’ll add your child to the waitlist.');
       state.cast = null;
     }
     renderProgram();
@@ -434,7 +434,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
         if (msg.indexOf('DUPLICATE:') !== -1) {
           showErr(f.name + ' is already registered for this show — no need to register twice. Questions? info@novapa.org');
         } else if (msg.indexOf('SOLD_OUT') !== -1) {
-          showErr('This cast just filled up. Email info@novapa.org and we’ll help.');
+          showErr('This cast is full and is waitlist only. Email info@novapa.org and we’ll add your child to the waitlist.');
         } else if (msg.indexOf('GATED') !== -1) {
           showErr('Registration is limited to returning NOVAPA families right now.');
         } else {
