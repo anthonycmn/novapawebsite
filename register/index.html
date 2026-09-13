@@ -1105,7 +1105,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('guestReturnLink').addEventListener('click', toSignin);
       ev('reg_guest_entered', {});
       restoreCart();
-      if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
+      if (isCatMode()) {
+        var kidKnown = applyUrlKid();
+        renderCatAssign(); go('st-assign'); startSoftTimer();
+        if (kidKnown && catBirthdaysReady()) acquireHold();
+        return;
+      }
       go('st-shows'); renderShowKids(); startSoftTimer();
     }).catch(function(){
       // network hiccup on the two catalog calls — fall back to the email
@@ -1450,7 +1455,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
       restoreCart();
-      if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
+      if (isCatMode()) {
+        var kidKnown = applyUrlKid();
+        renderCatAssign(); go('st-assign'); startSoftTimer();
+        // The family's campers loaded with their birthdays, the child is
+        // checked in everywhere: nothing left to ask on this step.
+        if (kidKnown && catBirthdaysReady()) acquireHold();
+        return;
+      }
       go('st-shows'); renderShowKids(); startSoftTimer();
     });
   }
@@ -1516,6 +1528,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // their saved campers with one emailed code before they retype anything.
     // The offer must never block checkout — any hiccup just proceeds as guest.
     var b = $('guestEmailGo'); b.disabled = true; b.textContent = 'One moment…';
+    // A family sent from the parent portal is already signed in over there and
+    // arrived with ?pe= set to their own address; the "load your students with
+    // a code" offer would be a second sign-in for no gain.
+    if (fromPortal()) {
+      try {
+        var ppe = (new URLSearchParams(location.search).get('pe') || '').trim().toLowerCase();
+        if (ppe && ppe === v) { b.disabled = false; b.textContent = 'Continue'; guestEmailProceed(v); return; }
+      } catch(e){}
+    }
     sb.rpc('email_known', { p_email: v }).then(function(res){
       b.disabled = false; b.textContent = 'Continue';
       if (res && res.data) {
@@ -2261,6 +2282,47 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (!(key in state.assign)) state.assign[key] = { on: false };
       state.assign[key].on = (a.id === castId);
     });
+  }
+  // ---- ?kid=<name> (13 Sep 2026): the parent portal's punch card hands a
+  // family here with the days already in ?activity= and the child named. CJ:
+  // "click click click — no friction and easy to use." The child is
+  // pre-checked into every listed item; a signed-in family whose campers
+  // loaded with a birthday goes straight to the pay step, and a guest (or a
+  // family with no camper by that name) lands on the usual "Who's
+  // enrolling?" step with the name already typed in, one birthday short.
+  // Nothing else about the step changes: it is the same cart, the same hold,
+  // the same reg-pay call. back=portal only adds a way home on the last page.
+  function urlKid(){
+    try { return (new URLSearchParams(location.search).get('kid') || '').trim(); } catch(e){ return ''; }
+  }
+  function fromPortal(){
+    try { return new URLSearchParams(location.search).get('back') === 'portal'; } catch(e){ return false; }
+  }
+  // Returns true when the named child was found among the loaded campers and
+  // is now the only one checked into each ?activity= item.
+  function applyUrlKid(){
+    var want = urlKid();
+    if (!want || !isCatMode() || state.kidApplied) return false;
+    state.kidApplied = true;
+    var idx = -1;
+    for (var j = 0; j < state.kids.length; j++) {
+      if (state.kids[j].name.trim().toLowerCase() === want.toLowerCase()) { idx = j; break; }
+    }
+    var known = idx !== -1;
+    if (!known) {
+      // Guest checkout, or a family whose campers do not include this name:
+      // the name is typed in for them, the birthday is still theirs to give.
+      state.kids.push({ name: want, age: null, bday: null, already: [], sel: true });
+      idx = state.kids.length - 1;
+    }
+    state.kids[idx].sel = true;
+    state.catItems.forEach(function(a){
+      state.kids.forEach(function(k, ki){
+        state.assign['act' + a.id + '|' + ki] = { on: ki === idx, band: null };
+      });
+    });
+    ev('reg_portal_kid', { known: known });
+    return known;
   }
   function renderCatAssign(){
     var today = new Date().toISOString().slice(0,10);
@@ -3576,6 +3638,17 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       }, { eventID: state.piId || undefined });
     } catch (e) {}
     $('doneH1').innerHTML = "One more <em>step!</em>";
+    if (fromPortal() && !document.getElementById('backToPortal')) {
+      // They came from the punch card; the days they just paid for are
+      // waiting there, booked, the moment they get back.
+      var home = document.createElement('div');
+      home.className = 'card';
+      home.id = 'backToPortal';
+      home.innerHTML = '<a class="btn" href="https://portal.novapa.org/day-camps" style="display:block;text-align:center">Back to your punch card</a>' +
+        '<p class="tiny" style="margin:8px 0 0">The days you just booked are on it now.</p>';
+      var firstCard = document.querySelector('#st-done .card');
+      firstCard.parentNode.insertBefore(home, firstCard);
+    }
     go('st-done');
   }
   function renderProfileForms(items){

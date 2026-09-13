@@ -193,6 +193,52 @@ export const DAY_CAMP_PACKS = {
 // Returns null for anything that is not a pack, so callers use it as a predicate.
 export const dayCampPack = (id) => DAY_CAMP_PACKS[id] || null;
 
+// The credit movements an order causes, in the shape apply_credit_events reads:
+// { grants: [{camper, day, snow}], redemptions: [{camper, day, snow}] }.
+//
+// ONE PLACE, AND NAMED BY THE CAMPER. Until 13 Sep 2026 reg-pay built these
+// arrays twice (Stripe metadata and the $0 path) and keyed the cart-form pack
+// bonus and every redemption by kidKey -- "i0", the camper's position in the
+// cart -- while apply_credit_events matches campers by NAME within the family.
+// Nothing matched, so nothing moved: Eva Pruitt redeemed two days and kept all
+// five credits; the Bays bought two 5-day packs before the snow deadline and
+// got no snow days. Pack-product grants were fine only because they read
+// it.camper directly. So the key is translated back to the name here, once,
+// and a line with no name is dropped rather than sent -- a nameless event
+// cannot land on the wrong child, but it must never be silently "applied".
+export function creditEventsFor(items, pricing, now = new Date()) {
+  const nameByKey = {};
+  for (const it of items || []) {
+    const name = String((it && it.camper) || "").trim();
+    if (name && !nameByKey[kidKey(it)]) nameByKey[kidKey(it)] = name;
+  }
+  const snowOn = now <= DAY_CAMP_PACK_SNOW_END;
+  const grants = [];
+  for (const it of items || []) {
+    const pack = dayCampPack(it && it.activity_id);
+    if (!pack) continue;
+    const name = String(it.camper || "").trim();
+    if (!name) { console.error("credit grant with no camper name dropped:", JSON.stringify(it)); continue; }
+    grants.push({ camper: name, day: pack.credits, snow: snowOn ? DAY_CAMP_PACK_SNOW_BONUS : 0 });
+  }
+  // cart-form packs: the camper books all 5 days now, so no day credits --
+  // just the snow-day bonus (packs bought by DAY_CAMP_PACK_SNOW_END)
+  if (snowOn) {
+    for (const [k, n] of Object.entries((pricing && pricing.dayPacksByKid) || {})) {
+      const name = nameByKey[k];
+      if (!name) { console.error("cart-pack snow grant with no camper name dropped:", k); continue; }
+      grants.push({ camper: name, day: 0, snow: DAY_CAMP_PACK_SNOW_BONUS * n });
+    }
+  }
+  const redemptions = [];
+  for (const [k, u] of Object.entries((pricing && pricing.creditsUsed) || {})) {
+    const name = nameByKey[k];
+    if (!name) { console.error("credit redemption with no camper name dropped:", k); continue; }
+    redemptions.push({ camper: name, day: (u && u.day) || 0, snow: (u && u.snow) || 0 });
+  }
+  return { grants, redemptions };
+}
+
 export const SHOWS = {
   httyd: "How to Train Your Dragon JR.",
   charlie: "Charlie and the Chocolate Factory JR.",
