@@ -8,7 +8,7 @@
 import {
   priceCart, dayCampPack, DAY_CAMP_PACKS,
   DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CENTS, DAY_CAMP_PACK_CREDITS,
-  DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END,
+  DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END, creditEventsFor,
 } from "../netlify/functions/reg-config.mjs";
 
 let fails = 0;
@@ -55,14 +55,13 @@ eq("a 10-pack and a 5-pack together bill $1024",
   pBoth.items.reduce((s, it) => s + it.unit, 0), 67500 + 34900);
 
 // ── Grants: this is the part that used to silently drop ────────────────────
-// Mirrors the shape reg-pay.mjs builds for apply_credit_events.
-const grantsFor = (items, now) => items
-  .filter((it) => dayCampPack(it.activity_id))
-  .map((it) => ({
-    camper: it.camper || "",
-    day: dayCampPack(it.activity_id).credits,
-    snow: now <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0,
-  }));
+// The REAL function reg-pay.mjs calls, not a mirror of it. Until 13 Sep 2026
+// this file tested a local copy of the grant logic while reg-pay keyed the
+// cart-form bonus and every redemption by cart position ("i0"), which
+// apply_credit_events could not match to a child. A mirror cannot catch the
+// thing it mirrors; these run the export.
+const grantsFor = (items, now) =>
+  creditEventsFor(items, priceCart(items, "full", { now }), now).grants;
 
 eq("buying the 10-pack grants 10 day credits",
   grantsFor([packItem(TEN_PACK_ID, "Kid A")], beforeSnowEnd),
@@ -85,6 +84,51 @@ eq("after Sep 21 the 10-pack still grants 10 days, 0 snow",
 // A plain day camp must never mint credits.
 eq("a single day camp grants nothing",
   grantsFor([{ activity_id: 1962598, camper: "Kid A", price_cents: 7900 }], beforeSnowEnd), []);
+
+// ── Named by the camper, never by cart position ───────────────────────────
+// The checkout sends items as { activity_id, camper, ci } and priceCart keys
+// its per-kid figures by kidKey = "i<ci>". apply_credit_events matches by
+// lower(name) inside the family, so "i0" reaches nobody. Live evidence, 13 Sep
+// 2026: credit_events free_87e977b5… (Eva Pruitt) redemptions [{camper:"i0"}]
+// and pi_3U7zL3GWP2Zbtasz2k4RK6M4 (the Bays) grants [{camper:"i0"},{camper:"i1"}].
+const day = (activity_id, camper, ci) => ({ activity_id, camper, ci, name: "Day Camp", price_cents: 7900 });
+const fiveDays = (camper, ci) => [1962598, 1962615, 991111, 991115, 991118].map((id) => day(id, camper, ci));
+
+// Two cart-form packs (the Bays' order of 24 Aug 2026): 2 snow each, by name.
+{
+  const items = [...fiveDays("Mable Bay", 0), ...fiveDays("Miles Bay", 1)];
+  const ev = creditEventsFor(items, priceCart(items, "full", { now: beforeSnowEnd }), beforeSnowEnd);
+  eq("cart-form packs grant the snow bonus to each camper BY NAME",
+    ev.grants, [{ camper: "Mable Bay", day: 0, snow: 2 }, { camper: "Miles Bay", day: 0, snow: 2 }]);
+  eq("cart-form packs redeem nothing", ev.redemptions, []);
+  eq("no event is ever keyed by cart position",
+    JSON.stringify(ev).includes('"i0"') || JSON.stringify(ev).includes('"i1"'), false);
+}
+
+// A credit holder booking two days (Eva Pruitt, 3 and 8 Sep 2026): 2 redeemed, by name.
+{
+  const items = [day(991108, "Eva Pruitt", 0), day(1962622, "Eva Pruitt", 0)];
+  const pricing = priceCart(items, "full", { now: beforeSnowEnd, creditsByKid: { i0: { day: 5, snow: 2 } } });
+  eq("credits zero the lines", pricing.items.map((it) => it.unit), [0, 0]);
+  const ev = creditEventsFor(items, pricing, beforeSnowEnd);
+  eq("redemptions name the camper", ev.redemptions, [{ camper: "Eva Pruitt", day: 2, snow: 0 }]);
+  eq("a fully credited cart grants nothing", ev.grants, []);
+}
+
+// Cart-form pack after the snow deadline: no events at all (days are booked, not credited).
+{
+  const items = fiveDays("Kid A", 0);
+  const ev = creditEventsFor(items, priceCart(items, "full", { now: afterSnowEnd }), afterSnowEnd);
+  eq("after Sep 21 a cart-form pack moves no credits", ev, { grants: [], redemptions: [] });
+}
+
+// A line with no camper name is dropped, never sent as "" — apply_credit_events
+// would match nobody, and the silence is the failure this file exists to end.
+{
+  const items = [{ ...packItem(DAY_CAMP_PACK_ID, ""), ci: 0 }];
+  const ev = creditEventsFor(items, priceCart(items, "full", { now: beforeSnowEnd }), beforeSnowEnd);
+  eq("a nameless pack grant is dropped, not sent", ev.grants, []);
+}
 
 console.log(fails ? `\n${fails} failing` : "\nAll green.");
 process.exit(fails ? 1 : 0);

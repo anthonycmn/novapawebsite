@@ -16,7 +16,7 @@ import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
   SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
-  DAY_CAMP_PACK_ID, DAY_CAMP_PACK_CREDITS, DAY_CAMP_PACK_SNOW_BONUS, DAY_CAMP_PACK_SNOW_END, dayCampPack,
+  creditEventsFor,
 } from "./reg-config.mjs";
 
 // first day of care per summer camp — the date the IRS under-13 test runs on
@@ -463,17 +463,8 @@ export default async (req) => {
     // credits still move on a $0 order (a fully-credited day-camp cart never
     // touches Stripe, so the webhook never runs) — keyed by the synthetic PI
     try {
-      const grants = [
-        ...items.filter((it) => dayCampPack(it.activity_id))
-          .map((it) => ({ camper: it.camper || "", day: dayCampPack(it.activity_id).credits,
-            snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 })),
-        ...(new Date() <= DAY_CAMP_PACK_SNOW_END
-          ? Object.entries(pricing.dayPacksByKid || {}).map(([k, n]) =>
-              ({ camper: k, day: 0, snow: DAY_CAMP_PACK_SNOW_BONUS * n }))
-          : []),
-      ];
-      const redemptions = Object.entries(pricing.creditsUsed || {})
-        .map(([k, u]) => ({ camper: k, day: u.day || 0, snow: u.snow || 0 }));
+      // Named by the camper, never by cart position -- see creditEventsFor.
+      const { grants, redemptions } = creditEventsFor(items, pricing);
       if (grants.length || redemptions.length) {
         await svc("apply_credit_events", { p_pi: "free_" + hold_id, p_email: email, p_detail: { grants, redemptions } });
       }
@@ -582,6 +573,9 @@ export default async (req) => {
     metadata: { source: "novapa-register" },
   });
 
+  // What this order does to the family's day-camp credits, for the webhook.
+  const creditEvents = creditEventsFor(items, pricing);
+
   const pi = await stripe.paymentIntents.create({
     amount: pricing.todayCents,
     currency: "usd",
@@ -636,20 +630,10 @@ export default async (req) => {
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
       // pack purchases grant per-camper credits; redeemed credits deduct —
-      // both applied by the webhook via apply_credit_events (exactly-once)
-      credit_grants: JSON.stringify([
-        ...items.filter((it) => dayCampPack(it.activity_id))
-          .map((it) => ({ camper: it.camper || "", day: dayCampPack(it.activity_id).credits,
-            snow: new Date() <= DAY_CAMP_PACK_SNOW_END ? DAY_CAMP_PACK_SNOW_BONUS : 0 })),
-        // cart-form packs: the camper books all 5 days now, so no day credits —
-        // just the snow-day bonus (packs bought by DAY_CAMP_PACK_SNOW_END)
-        ...(new Date() <= DAY_CAMP_PACK_SNOW_END
-          ? Object.entries(pricing.dayPacksByKid || {}).map(([k, n]) =>
-              ({ camper: k, day: 0, snow: DAY_CAMP_PACK_SNOW_BONUS * n }))
-          : []),
-      ]).slice(0, 450),
-      credit_redeems: JSON.stringify(Object.entries(pricing.creditsUsed || {})
-        .map(([k, u]) => ({ camper: k, day: u.day || 0, snow: u.snow || 0 }))).slice(0, 450),
+      // both applied by the webhook via apply_credit_events (exactly-once).
+      // Named by the camper, never by cart position -- see creditEventsFor.
+      credit_grants: JSON.stringify(creditEvents.grants).slice(0, 450),
+      credit_redeems: JSON.stringify(creditEvents.redemptions).slice(0, 450),
       ...refMeta,
     },
   });
