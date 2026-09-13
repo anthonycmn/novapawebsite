@@ -2425,7 +2425,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // ---------- step: pay ----------
   document.querySelectorAll('.plan-opt').forEach(function(opt){
     opt.addEventListener('click', function(){
-      if (isCatMode()) return;
+      // Catalog carts used to ignore these tiles entirely, which left "Pay in
+      // full — save 5%" as a dead button on every show cart. Only class carts
+      // are locked (they are always the monthly subscription); shows and camps
+      // can choose. Found Sep 13 2026 while opening Frozen to installments.
+      if (isCatMode() && catAllClasses()) return;
+      if (opt.dataset.plan === state.plan) return;
       document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
       opt.classList.add('sel');
       state.plan = opt.dataset.plan;
