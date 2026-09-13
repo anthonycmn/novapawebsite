@@ -124,7 +124,7 @@
           '<div class="nm">' + esc(r.name) + '</div>' +
           '<div class="meta">' + esc(r.age_range || '') + (r.schedule_name ? ' · ' + esc(r.schedule_name) : '') + '</div>' +
           (r.description ? '<div class="desc">' + esc(r.description) + '</div>' : '') +
-          (r.bookable && r.remaining != null && r.remaining < 20 ? '<div class="meta" style="color:var(--gold3);font-weight:700">' + (r.remaining <= 0 ? 'Full' : r.remaining + ' more spots available') + '</div>' : '') +
+          (r.bookable && r.remaining != null && r.remaining < 20 ? '<div class="meta" style="color:var(--gold3);font-weight:700">' + (r.remaining <= 0 ? 'Waitlist only' : r.remaining + ' more spots available') + '</div>' : '') +
           '<div class="tags">' + (r.widget_tags||[]).slice(0,3).map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>' +
           '<div class="ft"><span class="pr">' + esc((r.pricing||[])[0] || '') + '</span>' +
           '<span class="sp" style="color:var(--gold2);font-weight:700">' + cta + '</span></div>' +

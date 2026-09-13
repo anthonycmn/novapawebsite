@@ -152,8 +152,10 @@
   .pgm-foot{ margin-top:auto; padding-top:16px; display:flex; align-items:baseline; gap:9px; }
   .pgm-price{ font-size:26px; font-weight:700; color:var(--gold3); }
   .pgm-per{ font-size:10.5px; color:rgba(255,255,255,0.44); letter-spacing:0.05em; }
+  .pgm-wait{ align-self:flex-start; width:fit-content; margin-top:8px; padding:3px 9px; border:1px solid rgba(232,184,75,0.45); border-radius:999px; font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold2); }
   .pgm-card:has(.pgm-cardlink){ position:relative; cursor:pointer; }
   .pgm-card:has(.pgm-cardlink) .pgm-body::after{ content:"Register \2192"; display:block; margin-top:12px; font-weight:700; font-size:12.5px; letter-spacing:.05em; color:var(--gold2); }
+  .pgm-card:has(.pgm-wait) .pgm-body::after{ content:"Join the waitlist \2192"; }
   .pgm-cardlink{ position:absolute; inset:0; z-index:6; }
 </style>
 <link rel="stylesheet" href="reg-banner.css">
@@ -287,8 +289,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         <div class="pgm-body">
           <div class="pgm-tag">Fall Production</div>
           <h3 class="pgm-name">Disney&rsquo;s Frozen JR.</h3>
-          <a class="pgm-cardlink" href="/register/?season=fall" target="_blank" rel="noopener" aria-label="Disney&rsquo;s Frozen JR. — details and registration"></a>
+          <a class="pgm-cardlink" href="/register/?season=fall" target="_blank" rel="noopener" aria-label="Disney&rsquo;s Frozen JR., ages 9 to 12 — waitlist only"></a>
           <div class="pgm-ages">Ages 9&ndash;12</div>
+          <div class="pgm-wait">Waitlist only</div>
           <div class="pgm-rows"><div class="pgm-row"><span>Tuesdays</span><span>6:15 &ndash; 7:45 PM</span></div><div class="pgm-row"><span>Season</span><span>Sep 15, 2026 &ndash; Jan 26, 2027</span></div><div class="pgm-row"><span>Performances</span><span style="color:var(--gold2);font-weight:700">Jan 29&ndash;30, 2027</span></div><div class="pgm-row"><span>Curtains</span><span style="text-align:right;line-height:1.5">Jan 29 7pm &middot; Jan 30 2pm &amp; 7pm</span></div></div>
           <div class="pgm-foot"><span class="pgm-price">$695</span><span class="pgm-per">per performer &middot; a la carte</span></div>
         </div>
