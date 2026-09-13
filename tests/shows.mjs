@@ -94,9 +94,12 @@ A(cardIds.length === cardCount,
   'every class card links to a registration activity — ' + cardIds.length + ' of ' + cardCount +
   (cardIds.length === cardCount ? '' : '; a card with no link advertises something nobody can book'));
 
-// the ids the portal listed as bookable on 12 Aug 2026
+// the ids the portal listed as bookable on 13 Sep 2026. The two homeschool
+// classes (1962566, 1962567) came off the portal and off the site together
+// in "The homeschool classes come down until they roll out"; the counts below
+// moved with them, from 14 to 12.
 const PORTAL_CLASS_IDS = ['1960867', '1960898', '1960924', '1960925', '1960927', '1960936',
-  '1960939', '1960945', '1960959', '1960961', '1962562', '1962566', '1962567', '1962568'];
+  '1960939', '1960945', '1960959', '1960961', '1962562', '1962568'];
 const onPage = [...new Set(cardIds.map((m) => m[2]))].sort();
 const extra = onPage.filter((id) => !PORTAL_CLASS_IDS.includes(id));
 A(extra.length === 0, 'no class card sells something the portal does not' +
@@ -119,8 +122,8 @@ A(JSON.stringify(stated) === JSON.stringify(realCounts),
 const cal = read('calendar.html');
 const weekly = (cal.match(/WEEKLY_CLASSES = \[[\s\S]*?\];/) || [''])[0];
 const weeklyRows = (weekly.match(/\[\d,'/g) || []).length;
-A(weeklyRows === 19,
-  'the weekly grid holds 19 rows: 14 classes plus 5 rehearsal/conservatory — got ' + weeklyRows);
+A(weeklyRows === 17,
+  'the weekly grid holds 17 rows: 12 classes plus 5 rehearsal/conservatory — got ' + weeklyRows);
 for (const dead of ['Tiny Tots', 'Bollywood', 'K-Pop', 'Hip-Hop', 'Film & TV',
   'Ballet', 'Junior Thespian', 'Adult Voice']) {
   A(!weekly.includes(dead), '  …and does not list ' + dead);
@@ -128,7 +131,7 @@ for (const dead of ['Tiny Tots', 'Bollywood', 'K-Pop', 'Hip-Hop', 'Film & TV',
 // the classes on the grid and the classes on classes.html are the same set
 const gridNames = [...weekly.matchAll(/\[\d,'[^']*','([^']*)','[^']*','(?!Production|Conservatory)[^']*'\]/g)]
   .map((m) => m[1]);
-A(gridNames.length === 14, 'the grid lists exactly the 14 sold classes — got ' + gridNames.length);
+A(gridNames.length === 12, 'the grid lists exactly the 12 sold classes — got ' + gridNames.length);
 
 // ── licensed titles ─────────────────────────────────────────────────────
 // We license Frozen KIDS, Frozen JR., Little Mermaid KIDS and Little Mermaid

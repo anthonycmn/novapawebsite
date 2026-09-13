@@ -636,11 +636,17 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   </div>
 </div>
 
-<!-- cast waitlist modal: a Waitlist only pill opens this instead of dead-ending -->
+<!-- Cast is full. Offer the casts this child's age actually allows, and the
+     waitlist for the one they wanted. Never move a child between age bands
+     without asking. -->
 <div class="modal-back" id="cwlModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
-    <h3 style="text-align:center">Join the waitlist</h3>
+    <h3 id="cwlTitle" style="text-align:center">Join the waitlist</h3>
     <p class="tiny" id="cwlSub" style="text-align:left;margin-top:8px"></p>
+    <div id="cwlAltWrap" style="display:none">
+      <div id="cwlAlts"></div>
+      <p class="tiny" id="cwlOr" style="text-align:left;margin:16px 0 4px"></p>
+    </div>
     <input type="text" id="cwlKid" placeholder="Camper's full name" autocomplete="off" style="margin-top:8px">
     <input type="text" id="cwlParent" placeholder="Parent name" autocomplete="name" style="margin-top:8px">
     <input type="email" id="cwlEmail" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
@@ -792,6 +798,20 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       : 'Kids';
     var r = castRange(a);
     return nm + ' (' + r.min + '\u2013' + r.max + ')';
+  }
+  // Casts this child's age actually allows, that still have room. The old
+  // fallback took "the first cast with a seat", which put a ten year old in
+  // the 5-9 Kids cast or the 12-17 Teens cast without telling anyone. The
+  // grace year here is the same one the cast pills already allow.
+  function openCastsFor(showKey, age, exceptId){
+    return fallActsFor(showKey).filter(function(a){
+      if (a.id === exceptId) return false;
+      if (/tech/i.test(String(a.name || ''))) return false;
+      if (a.remaining != null && a.remaining <= 0) return false;
+      if (age == null) return true;
+      var r = castRange(a);
+      return age >= r.min - 1 && age <= castTop(a);
+    });
   }
   function defaultCastFor(showKey, age){
     var acts = fallActsFor(showKey);
@@ -1876,16 +1896,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           var castId = defaultCastFor(sKey, ageOn(k.bday, sd.start)) || fallActsFor(sKey)[0].id;
           var acts = fallActsFor(sKey);
           var chosen = acts.filter(function(a){ return a.id === castId; })[0];
-          // default cast full -> fall over to any open cast; every cast
-          // full -> waitlist instead of a cart that can't check out
+          // Their cast is full: offer the casts their age allows, or the
+          // waitlist. Either way the parent chooses; we never move a child
+          // into another age band on their behalf.
           if (chosen && chosen.remaining != null && chosen.remaining <= 0) {
-            var open = acts.filter(function(a){ return a.remaining == null || a.remaining > 0; })[0];
-            if (open) { castId = open.id; }
-            else {
-              cb.checked = false;
-              openCastWaitlist(chosen.id, k.name, castLabel(chosen));
-              return;
-            }
+            cb.checked = false;
+            openCastWaitlist(chosen.id, k.name, castLabel(chosen),
+              openCastsFor(sKey, ageOn(k.bday, sd.start), chosen.id), i, sKey);
+            return;
           }
           setFallCast(i, sKey, castId);
         } else setFallCast(i, sKey, null);
@@ -1896,9 +1914,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     blocks.querySelectorAll('.pill[data-fall]').forEach(function(p){
       p.addEventListener('click', function(){
         if (p.dataset.full) {
-          var wk = state.kids[+p.dataset.i];
-          openCastWaitlist(+p.dataset.cast, wk && wk.name,
-            (p.textContent || '').replace(/Waitlist only\s*$/, '').trim());
+          var pi = +p.dataset.i, wk = state.kids[pi], pKey = p.dataset.fall;
+          var ps = FALL_SHOWS.filter(function(x){ return x.key === pKey; })[0];
+          var fullId = +p.dataset.cast;
+          openCastWaitlist(fullId, wk && wk.name,
+            (p.textContent || '').replace(/Waitlist only\s*$/, '').trim(),
+            openCastsFor(pKey, wk ? ageOn(wk.bday, ps.start) : null, fullId), pi, pKey);
           return;
         }
         setFallCast(+p.dataset.i, p.dataset.fall, +p.dataset.cast);
@@ -3573,18 +3594,45 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // cast waitlist — a Waitlist only pill opens this instead of dead-ending.
   // The server re-checks fullness (a stale page may still show seats after a
   // cancellation), and joining twice is harmless: one row, one email.
-  var cwlActivity = null;
-  function openCastWaitlist(actId, kidName, castName){
+  var cwlActivity = null, cwlCtx = null;
+  function openCastWaitlist(actId, kidName, castName, alts, kidIdx, showKey){
     cwlActivity = actId;
+    cwlCtx = (kidIdx == null || !showKey) ? null : { i: kidIdx, sKey: showKey };
+    var list = cwlCtx ? (alts || []).slice(0, 3) : [];
+    $('cwlTitle').textContent = list.length ? 'That cast is full' : 'Join the waitlist';
     $('cwlSub').textContent = (castName ? castName + ' is full right now.' : 'This cast is full right now.') +
-      " Join the waitlist and we'll email you first if a spot opens — no payment, no commitment.";
+      (list.length
+        ? ' Your child can take a place in another cast of the same show, or wait for a spot in this one.'
+        : " Join the waitlist and we'll email you first if a spot opens — no payment, no commitment.");
+    $('cwlAlts').innerHTML = list.map(function(a){
+      var left = a.remaining;
+      return '<button type="button" class="btn" data-alt="' + a.id + '" style="margin-top:8px">' +
+        'Register for ' + esc(castLabel(a)) +
+        (left != null && left < 20 ? ' · ' + left + ' left' : '') + '</button>';
+    }).join('');
+    $('cwlAltWrap').style.display = list.length ? 'block' : 'none';
+    $('cwlOr').textContent = 'Or join the waitlist for ' + (castName || 'this cast') +
+      " and we'll email you first if a spot opens. No payment, no commitment.";
     if (kidName && !$('cwlKid').value) $('cwlKid').value = kidName;
     if (state.email && !$('cwlEmail').value) $('cwlEmail').value = state.email;
     $('cwlErr').textContent = '';
-    var b = $('cwlJoin'); b.disabled = false; b.textContent = 'Join Waitlist';
+    var b = $('cwlJoin');
+    b.disabled = false; b.textContent = 'Join Waitlist';
+    b.className = list.length ? 'btn btn-ghost' : 'btn';
     $('cwlModal').classList.add('on');
-    ev('reg_waitlist_open', { activity: actId });
+    ev('reg_waitlist_open', { activity: actId, alts: list.length });
   }
+  // Taking one of the offered casts is a deliberate choice, so it is the only
+  // thing that ever changes a child's band.
+  $('cwlAlts').addEventListener('click', function(e){
+    var t = e.target.closest('[data-alt]');
+    if (!t || !cwlCtx) return;
+    var to = +t.dataset.alt;
+    setFallCast(cwlCtx.i, cwlCtx.sKey, to);
+    $('cwlModal').classList.remove('on');
+    ev('reg_cast_swapped', { from: cwlActivity, to: to });
+    renderShowKids(); saveCart();
+  });
   $('cwlCancel').addEventListener('click', function(){ $('cwlModal').classList.remove('on'); });
   $('cwlJoin').addEventListener('click', function(){
     var kid = $('cwlKid').value.trim(), pn = $('cwlParent').value.trim(), em = $('cwlEmail').value.trim();
