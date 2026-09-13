@@ -542,7 +542,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       <div id="shirtBlock" style="display:none;margin-top:8px"></div>
       <label class="tiny" for="parentName" style="display:block;text-align:left;margin:14px 0 4px">Parent name</label>
       <input type="text" id="parentName" placeholder="Parent full name (for the receipt)">
-      <label class="tiny" for="parentPhone" style="display:block;text-align:left;margin:14px 0 4px">Mobile number</label>
+      <label class="tiny" for="parentPhone" style="display:block;text-align:left;margin:14px 0 4px">Mobile number <span style="opacity:.7">(optional &mdash; you can add it in your portal later)</span></label>
       <input type="tel" id="parentPhone" placeholder="(571) 555-0100" autocomplete="tel" inputmode="tel">
       <!-- 10DLC consent language of record (Telnyx campaign 4b3001a0-5b2f-…).
            Must match sms.html's consent copy; change only alongside the
@@ -557,7 +557,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       </label>
       <label class="tiny" style="display:flex;align-items:center;gap:8px;text-align:left;margin-top:10px;cursor:pointer">
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
-        <span>I agree to NOVAPA's <a href="/terms" target="_blank" rel="noopener">terms</a>, <a href="/policies" target="_blank" rel="noopener">policies</a>, and <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a> &mdash; <b>all sales are final (no refunds)</b>.</span>
+        <span>I agree to NOVAPA's <a href="/terms" target="_blank" rel="noopener">terms</a>, <a href="/policies" target="_blank" rel="noopener">policies</a>, and <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a> &mdash; <b>all sales are final (no refunds)</b>. Casting is at the director's discretion: not receiving a hoped-for role is not grounds for a refund or for stopping a payment plan.</span>
       </label>
       <button class="btn" id="payStart" style="display:none">Continue to Payment</button>
       <div id="expressWrap" style="display:none">
@@ -2343,6 +2343,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('assignNext').disabled = false; $('catNext').disabled = false;
       if (res.error) {
         var msg = res.error.message || '';
+        ev('reg_checkout_refused', { step: 'hold', code: msg.slice(0, 120), email: state.email || undefined });
         if (msg.indexOf('GATED') !== -1) {
           errEl.textContent = 'Registration is limited to returning NOVAPA families until August 1. Join the waitlist on the summer page for early access.';
           errEl.classList.add('on'); return;
@@ -2650,6 +2651,19 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       'so this cart is ' + (n + 1) + ' equal payments (the first at checkout) instead of ' + (sq.could + 1) + '. ' +
       'Checking out ' + esc(sq.names) + ' separately would let your other programs spread over ' + sq.could + ' months.</p>';
   }
+  // Mirrors FIXED_PLAN_DATES_UTC in reg-config.mjs (CJ, Sep 13 2026): Frozen
+  // KIDS and Frozen Teen finance on the 1st through Dec 1 no matter how close
+  // rehearsals are. The server is still the authority; this only keeps the
+  // estimate and the squeeze notice from contradicting it.
+  var FIXED_PLAN_DATES = { 1959789: ['2026-10-01','2026-11-01','2026-12-01'], 1959805: ['2026-10-01','2026-11-01','2026-12-01'] };
+  function fixedPlanCount(items){
+    var now = Date.now();
+    for (var i = 0; i < (items || []).length; i++) {
+      var dates = FIXED_PLAN_DATES[items[i].activity_id];
+      if (dates) return dates.filter(function(d){ return new Date(d + 'T04:00:00Z').getTime() > now; }).length;
+    }
+    return null;
+  }
   function instCountFor(startDate){
     if (!startDate) return 0;
     var lastOk = Math.min(startDate.getTime() - (C.PAY_FULL_CUTOFF_DAYS || 14) * 86400000,
@@ -2668,6 +2682,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // here while Stripe correctly split it into 3 payments of $605.50 (Surla,
   // Aug 21 2026). 0 means no plan window (server returns payFullOnly).
   function planMonthsFor(items){
+    var fixedN = fixedPlanCount(items);
+    if (fixedN != null) return fixedN;
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var starts = [];
     items.forEach(function(it){
@@ -2686,6 +2702,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // A cart's plan length is set by its EARLIEST program, so one autumn show can
   // compress payments for camps eleven months out. Detect only that case.
   function planSqueeze(items){
+    if (fixedPlanCount(items) != null) return null; // fixed calendar: nothing is squeezing anything
     var byIdAll = {}; state.allCat.forEach(function(a){ byIdAll[a.id] = a; });
     var rows = [];
     items.forEach(function(it){
@@ -2931,6 +2948,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   var SHIRT_SIZES = ['Youth XS','Youth S','Youth M','Youth L','Adult S','Adult M','Adult L','Adult XL'];
   function renderShirts(items){
     var host = $('shirtBlock');
+    // Collected in the parent portal now (CJ, Sep 13 2026); the block stays in
+    // the DOM only so nothing else that references it has to change.
+    host.innerHTML = ''; host.style.display = 'none';
+    if (host) return;
     var seen = {}, kids = [];
     (items || []).forEach(function(it){
       var i = it.ci;
@@ -3009,11 +3030,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         headers: hdrs,
         body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, ref: refCode(), email: token ? undefined : state.email, bdays: token ? undefined : guestBdays() })
       });
-    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, status: r.status, j: j }; }, function(){ return { ok: false, status: r.status, j: { error: 'http_' + r.status } }; }); })
     .then(function(res){
       if (mySeq !== paySeq) return; // user changed plan/insurance meanwhile — drop stale response
       $('payStart').disabled = false;
       if (!res.ok) {
+        // The server's reason, with the email, so a family who bounced off
+        // checkout can be found and called. Colure Caulfield, Aug 2026: four
+        // refusals in five days and no record anywhere of why.
+        ev('reg_checkout_refused', { step: 'reg-pay', code: res.j.error || ('http_' + res.status), http: res.status, plan: state.plan, email: state.email || undefined, hold_id: state.hold && state.hold.id });
         var msg = res.j.error === 'hold_expired' ? 'Your hold expired — re-hold your spots.'
           : res.j.error === 'pay_full_only' ? 'This program starts within 2 weeks — payment in full is required.'
           : res.j.error === 'bad_coupon' ? 'That coupon is no longer valid — it was removed from your order.'
@@ -3056,9 +3081,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       mountStripe();
       ev('reg_payment_started', { plan: state.plan, today_cents: res.j.pricing.today_cents });
       try { gtag('event', 'begin_checkout', { currency: 'USD', value: (res.j.pricing.total_cents || 0) / 100 }); } catch (e) {}
-    }).catch(function(){
+    }).catch(function(e){
       if (mySeq !== paySeq) return;
       $('payStart').disabled = false;
+      ev('reg_checkout_refused', { step: 'reg-pay', code: 'network', msg: String(e && e.message || e).slice(0, 120), email: state.email || undefined });
       $('payErr').textContent = 'Network error — try again.'; $('payErr').classList.add('on');
     });
   }
@@ -3150,15 +3176,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
   $('paySubmit').addEventListener('click', function(){
     $('payErr').classList.remove('on');
-    if (shirtsBlocked()) return;
+    // T-shirt sizes and the mobile number are no longer gates here (CJ, Sep 13
+    // 2026): both live in the parent portal, and every field between a parent
+    // and the pay button is a place to lose them. A number typed here still
+    // rides along on the intent; an empty one is simply empty.
     if (policyBlocked()) return;
     var phv = $('parentPhone').value.trim();
-    if (phv.replace(/\D/g, '').length < 10) {
-      $('payErr').textContent = 'Please enter a mobile number (10 digits) so we can reach you about your registration.';
-      $('payErr').classList.add('on');
-      $('parentPhone').focus();
-      return;
-    }
     var pnv = $('parentName').value.trim();
     if (pnv) state.guest || sb.rpc('set_my_parent_name', { p_name: pnv });
     persistKidData();
@@ -3199,7 +3222,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       : Promise.resolve();
     attach.then(function(){ return confirmNow(); }).then(function(res){
       $('paySubmit').disabled = false;
-      if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed'); return; }
+      if (res.error) { $('payErr').textContent = res.error.message; $('payErr').classList.add('on'); ev('reg_payment_failed', { code: res.error.code || res.error.type || '', decline: res.error.decline_code || '', email: state.email || undefined }); return; }
       var itn = res.paymentIntent || res.setupIntent;
       if (itn && itn.status === 'succeeded') finish();
     });

@@ -54,6 +54,33 @@ export const PAY_FULL_CUTOFF_DAYS = 14;      // all payments >= 2 weeks before s
 // Hard ceiling on the final installment date — May 1 2027 (summer money lands early).
 export const LAST_INSTALLMENT_UTC = Date.UTC(2027, 4, 1, 4, 0, 0);
 
+// Fixed installment calendars for shows that rehearse for months (CJ, Sep 13
+// 2026). The standard rule stops payments 14 days before the FIRST REHEARSAL,
+// which by opening week turned Frozen into "pay $695 today" and nothing else:
+// the pay-in-installments tile was on screen and refused every tap. These two
+// shows finance through the run instead — today's share at checkout, then the
+// 1st of the month through December 1. Dates already past are dropped, so a
+// late registrant gets fewer, larger payments rather than no plan. Frozen Jr.
+// keeps the standard rule until CJ says otherwise.
+const utc4 = (iso) => { const [y, m, d] = iso.split("-").map(Number); return Math.floor(Date.UTC(y, m - 1, d, 4, 0, 0) / 1000); };
+const FROZEN_FALL_DATES = ["2026-10-01", "2026-11-01", "2026-12-01"].map(utc4);
+export const FIXED_PLAN_DATES_UTC = {
+  1959789: FROZEN_FALL_DATES, // Broadway Bound | Frozen, Kids
+  1959805: FROZEN_FALL_DATES, // Broadway Bound Teens | Frozen, Jr
+};
+// The fixed calendar for a cart, or null when no item carries one. A cart that
+// mixes a fixed-plan show with anything else follows the fixed calendar for the
+// whole balance: the other item is paid off sooner than it had to be, never
+// later, and the family is never refused a plan they were promised.
+export function fixedPlanDates(activityIds, now = new Date()) {
+  const nowSec = Math.floor(now.getTime() / 1000);
+  for (const id of activityIds || []) {
+    const dates = FIXED_PLAN_DATES_UTC[Number(id)];
+    if (dates) return dates.filter((t) => t > nowSec);
+  }
+  return null;
+}
+
 // One-time account adjustments approved by Todd/CJ. The code is entered like a
 // coupon but locked to one family's email; any combination of: pctOffList
 // (replaces every program discount with a flat pct off LIST price),
@@ -490,7 +517,8 @@ export function priceCart(cart, plan, opts = {}) {
   // earliest start in cart governs the installment window
   const starts = cart.map((it) => it.show ? CAMP_START[it.show] : (it.start || showStartFor(it.name || "")))
     .filter(Boolean).sort();
-  const schedule = installmentDates(starts[0], now, (special && special.months) || 0);
+  const fixed = (special && special.months) ? null : fixedPlanDates(cart.map((it) => it.activity_id), now);
+  const schedule = fixed || installmentDates(starts[0], now, (special && special.months) || 0);
   const payFullOnly = schedule.length === 0;
 
   if (plan === "full" || payFullOnly) {
