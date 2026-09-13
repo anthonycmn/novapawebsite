@@ -220,7 +220,23 @@
     <!-- POSTS:BEGIN — newest first. Each post needs a .panel here AND a .row in the call board below; the data-id must match. -->
     <div class="panels">
 
-      <article class="panel on" id="panel-adult-acting" role="tabpanel" aria-labelledby="tab-adult-acting">
+      <article class="panel on" id="panel-stage-fright" role="tabpanel" aria-labelledby="tab-stage-fright">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <!-- PHOTO:PENDING stage fright photo. Placeholder until Tony sends one. -->
+          <img class="shot" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="Young performers in a NOVAPA theatre class" width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Parents</p>
+          <h2 class="name"><a href="/blog/how-to-help-a-child-with-stage-fright.html">How to Help a Child With Stage Fright: What Actually Works Backstage</a></h2>
+          <p class="role">September 13, 2026</p>
+          <p class="bio">The three different things parents call stage fright, what loving adults say that makes it worse, and the seven-step protocol we use in the wings when a child locks up.</p>
+          <p class="bio">Your child does not need to be more prepared. Your child needs to be less alone in the wing, less watched, and given a job.</p>
+          <a class="link" href="/blog/how-to-help-a-child-with-stage-fright.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-adult-acting" role="tabpanel" aria-labelledby="tab-adult-acting">
         <div class="stage">
           <div class="beam" aria-hidden="true"></div>
           <img class="shot" src="/img/blog/taking-the-stage-empty-theatre-house.jpg" alt="One person standing alone center stage, facing an empty theatre of red seats" width="1600" height="1478" loading="lazy">
@@ -298,9 +314,15 @@
     </div>
 
     <aside class="board" role="tablist" aria-label="All posts">
-      <div class="boardhead"><span>The Call Board</span><b>5 posts</b></div>
+      <div class="boardhead"><span>The Call Board</span><b>6 posts</b></div>
 
-      <button class="row on" type="button" role="tab" id="tab-adult-acting" data-id="adult-acting" aria-selected="true" aria-controls="panel-adult-acting">
+      <button class="row on" type="button" role="tab" id="tab-stage-fright" data-id="stage-fright" aria-selected="true" aria-controls="panel-stage-fright">
+        <img class="thumb" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>How to Help a Child With Stage Fright</b><i>Parents &middot; Sep 13, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-adult-acting" data-id="adult-acting" aria-selected="false" tabindex="-1" aria-controls="panel-adult-acting">
         <img class="thumb" src="/img/blog/taking-the-stage-empty-theatre-house.jpg" alt="" width="1600" height="1478" loading="lazy">
         <span class="rowtext"><b>Adult Acting Classes for Beginners</b><i>Adult Classes &middot; Sep 11, 2026</i></span>
         <span class="cue" aria-hidden="true"></span>
