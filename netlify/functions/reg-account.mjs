@@ -543,22 +543,38 @@ export default async (req) => {
       .filter((c) => c.day > 0 || c.snow > 0);
 
     // Only fetch the date list when somebody can actually use it.
+    //
+    // By offering_kind, not by name. Until 13 Sep 2026 this filtered on
+    // name=ilike.*day camp*, which only the Ages 5-9 rows carry ("Ages 5-9 Day
+    // Camp · Oct 12, 2026"); the 9-12 and 12-15 sessions are themed ("Improv
+    // Olympics", "Campaign Trail: The Musical") and were never offered, so a
+    // ten-year-old's family was shown nothing but the little kids' days. Eva
+    // Pruitt's mother booked hers by finding the catalog links herself.
+    // starts_on and age_range go out with each row so the picker can group a
+    // date's three sessions together and say which band each one is.
     let dayCamps = [];
     if (credits.length) {
       const rows = await svc(
-        `activities?select=id,name,price_cents,capacity,sold,booked_offline` +
-        `&active=is.true&bookable=is.true&hidden=is.false&name=ilike.*day camp*&order=name`);
+        `activities?select=id,name,price_cents,capacity,sold,booked_offline,starts_on,age_range` +
+        `&active=is.true&bookable=is.true&hidden=is.false&offering_kind=eq.day_camp&order=starts_on,age_range`);
       dayCamps = rows
         .map((a) => ({
           id: a.id,
           name: a.name,
           remaining: a.capacity == null ? null
             : Math.max(0, a.capacity - (a.sold || 0) - (a.booked_offline || 0)),
-          // "Ages 5–9 Day Camp · Mar 22, 2027" -> the date half, for sorting
-          when: (a.name.split("·")[1] || "").trim(),
+          starts_on: a.starts_on || null,
+          age_range: a.age_range || null,
+          // Kept for the cached account.html that still reads it: the date
+          // half of "Ages 5–9 Day Camp · Mar 22, 2027", or the date itself.
+          when: a.starts_on
+            ? new Date(a.starts_on + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+            : (a.name.split("·")[1] || "").trim(),
         }))
         .filter((a) => a.remaining === null || a.remaining > 0)
-        .sort((a, b) => (Date.parse(a.when) || 0) - (Date.parse(b.when) || 0));
+        .sort((a, b) =>
+          String(a.starts_on || "").localeCompare(String(b.starts_on || "")) ||
+          String(a.age_range || "").localeCompare(String(b.age_range || "")));
     }
 
     return Response.json({

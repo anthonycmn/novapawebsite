@@ -997,13 +997,28 @@
         var box = $('credits').querySelector('.picker[data-for="' + i + '"]');
         if (box.style.display === 'block') { box.style.display = 'none'; btn.textContent = 'PICK YOUR DATES'; return; }
         box.style.display = 'block'; btn.textContent = 'HIDE DATES';
+        // One heading per date, its sessions underneath. Every date runs
+        // three age bands (5–9, 9–12, 12–15) and the themed ones share
+        // names across dates, so the date is the heading and the band is
+        // what tells the rows apart — the name alone never could.
+        var byDate = [];
+        camps.forEach(function(a){
+          var key = a.starts_on || a.when || a.name;
+          var g = byDate.filter(function(x){ return x.key === key; })[0];
+          if (!g) { g = { key: key, label: a.when || a.name, rows: [] }; byDate.push(g); }
+          g.rows.push(a);
+        });
         box.innerHTML = '<div class="pickList">' +
-          '<div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:6px">Choose up to <b>' + kid.day + '</b> day' + (kid.day === 1 ? '' : 's') + ' for ' + esc(kid.name) + '.</div>' +
-          camps.map(function(a){
-            return '<label><input type="checkbox" value="' + a.id + '">' +
-              '<span>' + esc(a.when || a.name) + '</span>' +
-              (a.remaining !== null && a.remaining < 10 ? '<span class="left">' + a.remaining + ' left</span>' : '') +
-              '</label>';
+          '<div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:6px">Choose up to <b>' + kid.day + '</b> day' + (kid.day === 1 ? '' : 's') + ' for ' + esc(kid.name) + '. Each date runs three age groups — pick the one for ' + esc(kid.name.split(' ')[0]) + '.</div>' +
+          byDate.map(function(g){
+            return '<div style="font-size:12px;font-weight:700;margin:10px 0 2px">' + esc(g.label) + '</div>' +
+              g.rows.map(function(a){
+                var band = a.age_range ? 'Ages ' + a.age_range.replace(/\s*yrs?$/i, '') : '';
+                return '<label><input type="checkbox" value="' + a.id + '" data-date="' + esc(g.key) + '">' +
+                  '<span>' + esc(a.name) + (band ? ' <span style="color:var(--ink-dim)">· ' + esc(band) + '</span>' : '') + '</span>' +
+                  (a.remaining !== null && a.remaining < 10 ? '<span class="left">' + a.remaining + ' left</span>' : '') +
+                  '</label>';
+              }).join('');
           }).join('') +
           '<button class="act solid go-btn" style="margin-top:12px" disabled>SELECT DATES</button>' +
           '</div>';
@@ -1012,9 +1027,14 @@
         var go = box.querySelector('.go-btn');
         function sync(){
           var picked = [].filter.call(boxes, function(b){ return b.checked; });
+          var pickedDates = picked.map(function(b){ return b.getAttribute('data-date'); });
           // Never let them select more days than they hold credits for; the
-          // extra would silently become a charge at checkout.
-          boxes.forEach(function(b){ b.disabled = !b.checked && picked.length >= kid.day; });
+          // extra would silently become a charge at checkout. And one session
+          // per date: a child cannot be in two rooms on the same day.
+          boxes.forEach(function(b){
+            var sameDay = !b.checked && pickedDates.indexOf(b.getAttribute('data-date')) !== -1;
+            b.disabled = sameDay || (!b.checked && picked.length >= kid.day);
+          });
           go.disabled = picked.length === 0;
           go.textContent = picked.length
             ? 'BOOK ' + picked.length + ' DAY' + (picked.length === 1 ? '' : 'S') + ' WITH CREDITS'
