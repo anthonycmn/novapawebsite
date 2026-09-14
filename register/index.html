@@ -2906,14 +2906,18 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         : 'A <b>third class</b> for ' + nf + ' is only <b>' + money(classNextDelta(2)) + ' more</b> a month (' + money(classBundleCents(3)) + '/mo for all three).') +
         ' <a href="#" id="upsellAddClass">Add a class \u2192</a>';
       ub.style.display = '';
-      var uac = $('upsellAddClass');
-      if (uac) uac.addEventListener('click', function(e){
-        e.preventDefault();
-        ev('reg_upsell_clicked', { kind: 'class' });
-        renderCatAssign(); go('st-assign');
-        var pnl = $('addClassPanel');
-        if (pnl) { pnl.classList.add('flash'); setTimeout(function(){ pnl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60); }
-      });
+      // delegated, once: the server pass may rewrite this box's text
+      if (!ub.dataset.wired) {
+        ub.dataset.wired = '1';
+        ub.addEventListener('click', function(e){
+          if (!e.target.closest || !e.target.closest('#upsellAddClass')) return;
+          e.preventDefault();
+          ev('reg_upsell_clicked', { kind: 'class' });
+          renderCatAssign(); go('st-assign');
+          var pnl = $('addClassPanel');
+          if (pnl) { pnl.classList.add('flash'); setTimeout(function(){ pnl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60); }
+        });
+      }
     } else ub.style.display = 'none';
     updateInsurance(p.items, p.baseSubtotal);
     renderShirts(p.items);
@@ -3324,6 +3328,38 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // December). Replace the placeholder copy with those dates.
     if (state.plan === 'subscription' && p.next_bill_utc) {
       var nb = fmtBillDate(p.next_bill_utc), fb = p.cancel_at_utc ? fmtBillDate(lastPullBefore(p.cancel_at_utc)) : 'Jun 1';
+      // A returning family (CJ, Sep 14 2026): the server priced these lines
+      // as the next steps of a bundle the camper is already on — $60/mo for
+      // a second class, $30/mo for a third. The card drew $90 from cart-only
+      // math; let the server's per-line numbers replace it and say why.
+      var pc = p.prior_classes || [];
+      if (pc.length && p.unit_prices) {
+        var amts = $('summaryCard').querySelectorAll('.sumrow:not(.head):not(.total) span:last-child');
+        p.unit_prices.forEach(function(u, i){ if (amts[i]) amts[i].textContent = money(u) + '/mo'; });
+        var old = $('priorClassNote'); if (old) old.parentNode.removeChild(old);
+        var note = document.createElement('div');
+        note.id = 'priorClassNote'; note.className = 'sumrow';
+        note.innerHTML = '<span class="savings">' + pc.map(function(x){
+          var first = esc(String(x.camper || '').split(' ')[0]);
+          return first + ' already takes ' + esc(x.names.join(' and ')) + ' with us \u2014 ' + (x.n === 1 ? 'a second class' : 'the next class') + ' is priced on the bundle';
+        }).join('. ') + '.</span><span></span>';
+        var totRow = $('summaryCard').querySelector('.sumrow.total');
+        if (totRow) totRow.parentNode.insertBefore(note, totRow);
+        // the nudge above the card was written from the cart alone; with the
+        // prior classes counted, the camper's NEXT step is one further along
+        // (a third at $30) or there is nothing left to sell
+        var ub2 = $('upsellBox');
+        if (ub2) {
+          var cartByKid = {};
+          (state.hold && state.hold.items ? state.hold.items : buildItems()).forEach(function(it){ var c = String(it.camper || '').toLowerCase(); cartByKid[c] = (cartByKid[c] || 0) + 1; });
+          var next = null;
+          pc.forEach(function(x){ if (!next && x.n + (cartByKid[String(x.camper).toLowerCase()] || 0) === 2) next = x; });
+          if (next) {
+            ub2.innerHTML = 'A <b>third class</b> for ' + esc(String(next.camper).split(' ')[0]) + ' is only <b>' + money(classNextDelta(2)) + ' more</b> a month (' + money(classBundleCents(3)) + '/mo for all three). <a href="#" id="upsellAddClass">Add a class →</a>';
+            ub2.style.display = '';
+          } else ub2.style.display = 'none';
+        }
+      }
       if (!p.first_month_free) {
         // the class summary card already carries the Due today row
         $('payBreakdown').innerHTML =

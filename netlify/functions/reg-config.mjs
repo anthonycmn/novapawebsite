@@ -394,6 +394,15 @@ export function classNextDeltaCents(nClassesForKid) {
   const n = Math.max(0, nClassesForKid || 0);
   return Math.max(0, classMonthlyCents(n + 1) - classMonthlyCents(n));
 }
+// A camper already paying for nPrior classes adds nNew more: the new lines
+// are worth what they add to the bundle, never the bundle over again.
+// CJ, Sep 14 2026 ("price it separately"): the added classes become their
+// own subscription at this amount — $60/mo for a second, $30/mo for a
+// third — and the running subscription is left exactly as it is.
+export function classAddedMonthlyCents(nPrior, nNew) {
+  const p = Math.max(0, nPrior || 0), n = Math.max(0, nNew || 0);
+  return Math.max(0, classMonthlyCents(p + n) - classMonthlyCents(p));
+}
 
 export function siblingActive(isBB, now = new Date()) {
   // classes/non-BB: sibling runs now; BB camps/shows: only after the sale

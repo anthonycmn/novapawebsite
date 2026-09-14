@@ -2,7 +2,7 @@
 // classes is $180". The deltas are what the checkout dangles at a camper in
 // one class, so they are pinned here too — a change to the ladder must
 // change the nudge copy with it.
-import { classMonthlyCents, classNextDeltaCents, CLASS_BUNDLE_CENTS } from "../netlify/functions/reg-config.mjs";
+import { classMonthlyCents, classNextDeltaCents, classAddedMonthlyCents, CLASS_BUNDLE_CENTS } from "../netlify/functions/reg-config.mjs";
 
 let fails = 0;
 const eq = (label, got, want) => {
@@ -25,6 +25,15 @@ eq("second class is $60 more", classNextDeltaCents(1), 6000);
 eq("third class is $30 more", classNextDeltaCents(2), 3000);
 eq("fourth class is $30 more", classNextDeltaCents(3), 3000);
 eq("delta never negative", classNextDeltaCents(-2), 9000);
+
+// A returning family: the added classes are their own subscription at what
+// they add to the bundle; the running subscription is untouched.
+eq("returning: second class alone is $60/mo", classAddedMonthlyCents(1, 1), 6000);
+eq("returning: third class alone is $30/mo", classAddedMonthlyCents(2, 1), 3000);
+eq("returning: second and third together are $90/mo", classAddedMonthlyCents(1, 2), 9000);
+eq("returning: a fourth is $30/mo", classAddedMonthlyCents(3, 1), 3000);
+eq("nothing prior: same as the plain bundle", classAddedMonthlyCents(0, 2), classMonthlyCents(2));
+eq("prior + new never sums past the bundle", classMonthlyCents(1) + classAddedMonthlyCents(1, 1), classMonthlyCents(2));
 
 // The checkout client carries a copy of the ladder (register/index.html
 // only draws numbers; reg-pay reprices) — it must match to the cent.
