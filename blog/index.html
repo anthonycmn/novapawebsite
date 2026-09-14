@@ -220,7 +220,23 @@
     <!-- POSTS:BEGIN — newest first. Each post needs a .panel here AND a .row in the call board below; the data-id must match. -->
     <div class="panels">
 
-      <article class="panel on" id="panel-stage-fright" role="tabpanel" aria-labelledby="tab-stage-fright">
+      <article class="panel on" id="panel-audition-prep" role="tabpanel" aria-labelledby="tab-audition-prep">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <!-- PHOTO:PENDING audition prep photo; placeholder until Tony sends one -->
+          <img class="shot" src="/img/blog/young-actors-kids-musical-theatre-shrek-jr.jpg" alt="Young performers onstage in a kids musical" width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Auditions</p>
+          <h2 class="name"><a href="/blog/how-to-prepare-for-a-school-musical-audition.html">How to Prepare for a School Musical Audition: A Parent's Two-Week Plan From the Director's Chair</a></h2>
+          <p class="role">September 14, 2026</p>
+          <p class="bio">How to read the audition notice, a two-week plan that stops three days early, and what a director is actually scoring that your kid cannot see.</p>
+          <p class="bio">Not being called back does not mean not being cast. A callback is a question the director still has; not getting one is often the answer already being yes.</p>
+          <a class="link" href="/blog/how-to-prepare-for-a-school-musical-audition.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-stage-fright" role="tabpanel" aria-labelledby="tab-stage-fright">
         <div class="stage">
           <div class="beam" aria-hidden="true"></div>
           <img class="shot" src="/img/blog/young-cast-singing-together-onstage.jpg" alt="Four young performers singing together onstage, arms outstretched" width="1800" height="1200" loading="lazy">
@@ -313,9 +329,15 @@
     </div>
 
     <aside class="board" role="tablist" aria-label="All posts">
-      <div class="boardhead"><span>The Call Board</span><b>6 posts</b></div>
+      <div class="boardhead"><span>The Call Board</span><b>7 posts</b></div>
 
-      <button class="row on" type="button" role="tab" id="tab-stage-fright" data-id="stage-fright" aria-selected="true" aria-controls="panel-stage-fright">
+      <button class="row on" type="button" role="tab" id="tab-audition-prep" data-id="audition-prep" aria-selected="true" aria-controls="panel-audition-prep">
+        <img class="thumb" src="/img/blog/young-actors-kids-musical-theatre-shrek-jr.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>How to Prepare for a School Musical Audition</b><i>Auditions &middot; Sep 14, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-stage-fright" data-id="stage-fright" aria-selected="false" tabindex="-1" aria-controls="panel-stage-fright">
         <img class="thumb" src="/img/blog/young-cast-singing-together-onstage.jpg" alt="" width="1800" height="1200" loading="lazy">
         <span class="rowtext"><b>How to Help a Child With Stage Fright</b><i>Parents &middot; Sep 13, 2026</i></span>
         <span class="cue" aria-hidden="true"></span>
