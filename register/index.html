@@ -174,6 +174,20 @@
   .upsell b { color:var(--gold3); }
   .upsell button { width:auto; margin-top:10px; padding:10px 16px; font-size:14px; }
   #payElement { margin:16px 0; }
+  /* "Add a second class" panel on the class checkout (CJ, Sep 14 2026) */
+  .addcls { border:1px solid rgba(232,184,75,0.5); background:linear-gradient(135deg, rgba(200,137,42,0.14), rgba(22,43,82,0.4));
+    border-radius:14px; padding:16px 18px 10px; margin:4px 0 14px; }
+  .addcls .ah { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:700; color:#fff; line-height:1.15; }
+  .addcls .ah b { color:var(--gold3); }
+  .addcls .as { font-size:13px; color:var(--ink-dim); margin:4px 0 8px; }
+  .addcls .arow { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; padding:10px 0; border-top:1px solid var(--line); }
+  .addcls .an { flex:1 1 220px; min-width:0; }
+  .addcls .an .t { font-weight:700; color:#fff; font-size:15px; }
+  .addcls .an .d { font-size:12.5px; color:var(--ink-dim); margin-top:2px; }
+  .addcls .ak { display:flex; flex-wrap:wrap; gap:6px 14px; }
+  .addcls .ak label { display:flex; align-items:center; gap:7px; font-size:14px; cursor:pointer; white-space:nowrap; }
+  .addcls .ak label.off { opacity:.45; cursor:default; }
+  .addcls.flash { animation:fade .3s ease; box-shadow:0 0 0 3px rgba(232,184,75,0.35); }
   .bday-row { display:flex; align-items:center; gap:10px; padding-left:29px; }
   .bday-lbl { font-size:12.5px; color:var(--ink-dim); white-space:nowrap; }
   .bday-lbl .req { color:var(--gold3); }
@@ -885,6 +899,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function discRate(n){ if (new Date() > new Date(C.EARLYBIRD_END)) return 0; return n>=3?0.20:n===2?0.15:n>=1?0.10:0; }
   // Unified tiers (CJ, Jul 31): how many tier-counted shows a kid has —
   // summer camps + fall/MG casts picked in this session + prior registrations
+  // classes a kid is checked into on the Classes tab (the 'cls' assign keys)
+  function kidClassCount(i){
+    var n = 0;
+    Object.keys(state.assign).forEach(function(key){
+      if (key.indexOf('cls') === 0 && key.split('|')[1] === String(i) && state.assign[key] && state.assign[key].on) n++;
+    });
+    return n;
+  }
   function kidShowCount(i){
     var k = state.kids[i]; if (!k) return 0;
     var n = 0;
@@ -899,6 +921,18 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     for (var j = 0; j < state.kids.length; j++) if (state.kids[j].name === k) return state.kids[j];
     return null;
   }
+  // Class bundles, per registrant per month (CJ, Sep 14 2026: 1 = $90,
+  // 2 = $150, 3 = $180, each past three +$30). Mirrors CLASS_BUNDLE_CENTS in
+  // reg-config.mjs — the server reprices; this only draws the numbers.
+  var CLASS_BUNDLE = [0, 9000, 15000, 18000];
+  function classBundleCents(n){
+    if (n <= 0) return 0;
+    if (n < CLASS_BUNDLE.length) return CLASS_BUNDLE[n];
+    var top = CLASS_BUNDLE.length - 1;
+    return CLASS_BUNDLE[top] + (n - top) * (CLASS_BUNDLE[top] - CLASS_BUNDLE[top - 1]);
+  }
+  // what one more class costs a camper already in n — the nudge's number
+  function classNextDelta(n){ n = Math.max(0, n || 0); return Math.max(0, classBundleCents(n + 1) - classBundleCents(n)); }
   var PACK_ID = 990010, PACK_CENTS = 34900;
   var PACK_SNOW_END = new Date('2026-09-22T03:59:59Z'); // end of Mon Sep 21 2026 ET, extended from Labor Day
   // Day Camp 5-Pack, cart form: a camper booked into 5 day camps in one order
@@ -1934,7 +1968,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
     var nSel = Object.keys(selIds).length;
     state.classSel = Object.keys(selIds);
-    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 2 classes $159/mo \u00b7 3 classes $199/mo per camper \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
+    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per camper \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
       cls.map(function(a){
         // age gate (Jason, Jul 31): the card advertises an age range, so the
         // checkboxes honor it — age at the Sep 14 class start, one year of
@@ -1963,7 +1997,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       cb.addEventListener('change', function(){
         state.assign['cls' + cb.dataset.cls + '|' + cb.dataset.i] = { on: cb.checked };
         ev('reg_class_toggled', { id: +cb.dataset.cls, on: cb.checked });
-        renderClassCards();
+        renderClassCards(); saveCart(); upsellCheck();
       });
     });
     applySeasonFilter();
@@ -2133,6 +2167,36 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         }
       }
     }
+    // Second-class nudge (CJ, Sep 14 2026: "when they register for one
+    // class, encourage them to add a second"). A camper checked into one
+    // class sees what the next one costs on the bundle — $60 more a month
+    // for two, $30 more for a third — and the button scrolls them to the
+    // class list rather than guessing which class they'd want.
+    if (state.seasonFilter === 'class' || state.seasonFilter === 'all') {
+      var cbest = null;
+      state.kids.forEach(function(k, i){
+        if (cbest || !k.sel) return;
+        var n = kidClassCount(i);
+        if (n >= 1 && n < 3) cbest = { kid: i, n: n };
+      });
+      if (cbest) {
+        var csig = 'class|' + cbest.kid + '|' + cbest.n;
+        if (!toastSig.dismissed[csig]) {
+          if (toastSig.shown === csig && t.classList.contains('on')) return;
+          toastSig.shown = csig;
+          var cnm = esc((state.kids[cbest.kid].name || '').split(' ')[0]);
+          $('toastMsg').innerHTML = cbest.n === 1
+            ? 'Add a <b>second class</b> for ' + cnm + ' — just <b>' + money(classNextDelta(1)) + ' more</b> a month (' + money(classBundleCents(2)) + '/mo for both)!'
+            : 'A <b>third class</b> for ' + cnm + ' is only <b>' + money(classNextDelta(2)) + ' more</b> a month (' + money(classBundleCents(3)) + '/mo for all three)!';
+          t.dataset.mode = 'class'; t.dataset.kid = cbest.kid; t.dataset.sig = csig;
+          $('toastAdd').textContent = 'See classes';
+          t.classList.add('on');
+          ev('reg_upsell_toast', { show: 'class' + (cbest.n + 1), pct: 0 });
+          return;
+        }
+      }
+    }
+    $('toastAdd').textContent = 'Add';
     var best = null;
     if (saleOn() && state.seasonFilter !== 'year') {
       state.kids.forEach(function(k, i){
@@ -2197,6 +2261,16 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   $('toastAdd').addEventListener('click', function(){
     var t = $('toast');
+    if (t.dataset.mode === 'class') {
+      // nothing to add blindly — take them to the list, on the Classes tab
+      if (state.seasonFilter !== 'class' && state.seasonFilter !== 'all') { state.seasonFilter = 'class'; saveCart(); applySeasonFilter(); }
+      t.classList.remove('on');
+      toastSig.dismissed[t.dataset.sig] = true;
+      ev('reg_upsell_toast_added', { show: 'class' });
+      var cc = $('classCards');
+      if (cc) { var hd = cc.querySelector('#classHead'); (hd || cc).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      return;
+    }
     if (t.dataset.mode === 'daypack') {
       var di = +t.dataset.kid;
       dayGroups().forEach(function(g){
@@ -2338,9 +2412,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function renderCatAssign(){
     var today = new Date().toISOString().slice(0,10);
     var selCount = state.kids.filter(function(k){ return k.sel; }).length;
+    // with two or three classes in the cart the per-class line would add up
+    // to more than the bundle a camper actually pays — say the bundle too
+    var nCls = state.catItems.filter(function(a){ return a.category === 'class'; }).length;
+    var bundleNote = nCls >= 2
+      ? ' · ' + money(classBundleCents(nCls)) + '/mo for ' + (nCls === 2 ? 'both' : 'all ' + (nCls === 3 ? 'three' : nCls)) + ' when one camper takes them'
+      : '';
     var html = state.catItems.map(function(a){
       var priceLine = a.category === 'class'
-        ? ((a.pricing||[])[0] || '$90/month') + ' per camper · first month due today'
+        ? ((a.pricing||[])[0] || '$90/month') + ' per camper' + bundleNote + ' · first month due today'
         : a.category === 'coaching'
         // coaching is bought for one student and paid in full — "per camper"
         // reads wrong to a family booking a college audition package
@@ -2379,9 +2459,22 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         (a.description ? '<div class="tiny" style="text-align:left;margin:0 0 10px;color:var(--ink-dim)">' + esc(a.description) + '</div>' : '') + rows + '</div>';
       return poster ? '<div class="showb">' + poster + inner + '</div>' : inner;
     }).join('');
+    html += renderAddClassPanel();
     html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
     $('assignBlocks').innerHTML = html;
-    $('assignBlocks').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+    $('assignBlocks').querySelectorAll('input[data-addcls]').forEach(function(cb){
+      cb.addEventListener('change', function(){ addCatClass(+cb.dataset.addcls, +cb.dataset.i, cb.checked); });
+    });
+    var moreLink = $('addClsMore');
+    if (moreLink) moreLink.addEventListener('click', function(e){
+      e.preventDefault();
+      state.addClsMore = !state.addClsMore;
+      var r = $('addClsRest'); if (r) r.style.display = state.addClsMore ? '' : 'none';
+      moreLink.textContent = moreLink.textContent.replace(/^(Show|Hide)/, state.addClsMore ? 'Hide' : 'Show');
+    });
+    // [data-key] only: the add-a-class panel's boxes live here too and carry
+    // no assign key of their own
+    $('assignBlocks').querySelectorAll('input[type=checkbox][data-key]').forEach(function(cb){
       cb.addEventListener('change', function(){ state.assign[cb.dataset.key].on = cb.checked; renderCatAssign(); saveCart(); });
     });
     $('assignBlocks').querySelectorAll('.bdayInput').forEach(function(inp){
@@ -2411,6 +2504,80 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('sKidName').focus();
     });
     $('catNext').disabled = !catBirthdaysReady();
+  }
+  // classes this kid is checked into on the class checkout ('act' keys)
+  function catKidClassCount(ki){
+    var n = 0;
+    state.catItems.forEach(function(a){
+      var sel = state.assign['act' + a.id + '|' + ki];
+      if (a.category === 'class' && sel && sel.on) n++;
+    });
+    return n;
+  }
+  // "Add a second class" (CJ, Sep 14 2026). A family arriving from a class
+  // card on /classes lands here with ONE class in the cart; every other
+  // bookable class is offered right under it, priced at what it adds to the
+  // bundle ($60 more a month for two, $30 more for three). Checking one
+  // puts the class in the cart for that camper — same order, same
+  // subscription — and rewrites the URL so a refresh keeps it.
+  function renderAddClassPanel(){
+    if (!isCatMode() || !catAllClasses()) return '';
+    var kids = state.kids.map(function(k, ki){ return k.sel ? ki : -1; }).filter(function(ki){ return ki >= 0; });
+    if (!kids.length) return '';
+    var inCart = {}; state.catItems.forEach(function(a){ inCart[a.id] = 1; });
+    var others = state.allCat.filter(function(a){ return a.category === 'class' && a.bookable && !inCart[a.id] && !(a.remaining != null && a.remaining <= 0); })
+      .sort(function(a, b){ return String(a.name).localeCompare(String(b.name)); });
+    if (!others.length) return '';
+    // headline from the first camper who still gains a step on the bundle
+    var lead = null;
+    kids.forEach(function(ki){ if (lead == null && catKidClassCount(ki) < 3) lead = ki; });
+    if (lead == null) return '';
+    var n = catKidClassCount(lead);
+    var first = esc((state.kids[lead].name || '').split(' ')[0]);
+    var head = n <= 0
+      ? 'Two classes are <b>' + money(classBundleCents(2)) + '/mo</b> \u2014 the second is just ' + money(classNextDelta(1)) + ' more.'
+      : n === 1
+      ? 'Add a <b>second class</b> for ' + first + ' \u2014 just <b>' + money(classNextDelta(1)) + ' more</b> a month.'
+      : 'A <b>third class</b> for ' + first + ' is only <b>' + money(classNextDelta(2)) + ' more</b> a month.';
+    var sub = '1 class $90/mo \u00b7 2 classes ' + money(classBundleCents(2)) + '/mo \u00b7 3 classes ' + money(classBundleCents(3)) + '/mo, per camper. Same checkout, one monthly bill.';
+    // classes some camper here can take come first; the rest (other age
+    // bands) fold away so the panel stays short on a phone
+    var fit = [], rest = [];
+    others.forEach(function(a){
+      var isAdult = /adult/i.test(String(a.age_range || ''));
+      var cr = castRange(a);
+      var boxes = kids.map(function(ki){
+        var k = state.kids[ki];
+        var age = ageOn(k.bday, CLASS_START);
+        var ok = age == null || (isAdult ? age >= 18 : (age >= cr.min - 1 && age <= cr.max));
+        var why = ok ? '' : (isAdult ? 'adults 18+' : 'ages ' + cr.min + '\u2013' + cr.max);
+        return { ok: ok, html: '<label class="' + (ok ? '' : 'off') + '"' + (why ? ' title="for ' + why + '"' : '') + '><input type="checkbox" data-addcls="' + a.id + '" data-i="' + ki + '"' + (ok ? '' : ' disabled') + '> ' + esc(k.name.split(' ')[0]) + (why ? ' <span class="badge-done" style="opacity:.65">' + why + '</span>' : '') + '</label>' };
+      });
+      var row = '<div class="arow"><div class="an"><div class="t">' + esc(a.name) + '</div><div class="d">' + esc(classWhen(a)) +
+        (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/, '')) : '') + '</div></div><div class="ak">' + boxes.map(function(b){ return b.html; }).join('') + '</div></div>';
+      (boxes.some(function(b){ return b.ok; }) ? fit : rest).push(row);
+    });
+    var more = rest.length
+      ? '<div id="addClsRest" style="display:' + (state.addClsMore ? '' : 'none') + '">' + rest.join('') + '</div>' +
+        '<div class="arow" style="justify-content:center"><a href="#" id="addClsMore" class="tiny" style="margin:0">' +
+        (state.addClsMore ? 'Hide' : 'Show') + ' ' + rest.length + ' more ' + (rest.length === 1 ? 'class' : 'classes') + ' for other ages</a></div>'
+      : '';
+    return '<div class="addcls" id="addClassPanel"><div class="ah">' + head + '</div><div class="as">' + sub + '</div>' + fit.join('') + more + '</div>';
+  }
+  function addCatClass(id, ki, on){
+    var a = null; state.allCat.forEach(function(x){ if (x.id === id) a = x; });
+    if (!a || !on) return;
+    if (state.catIds.indexOf(id) === -1) state.catIds.push(id);
+    state.catItems = state.allCat.filter(function(x){ return state.catIds.indexOf(x.id) !== -1 && x.bookable; });
+    state.assign['act' + id + '|' + ki] = { on: true, band: null };
+    try {
+      var u = new URL(location.href);
+      u.searchParams.set('activity', state.catIds.join(','));
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    } catch(e){}
+    ev('reg_class_added_from_panel', { id: id, n: catKidClassCount(ki) });
+    setPageIdentity();
+    renderCatAssign(); saveCart();
   }
   function buildItems(){
     var items = [];
@@ -2661,14 +2828,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       else if (kidKey(it) !== firstChild) { u = Math.round(u * 0.95); sib[i] = true; }
       return u;
     });
-    // Class bundles (CJ, Jul 31): per registrant 1 = $90, 2 = $159, 3 = $199
-    // a month (each past three +$40) — spread across the kid's class lines
-    // exactly like the server so statements match
+    // Class bundles (CJ, Sep 14 2026): per registrant 1 = $90, 2 = $150,
+    // 3 = $180 a month (each past three +$30) — spread across the kid's class
+    // lines exactly like the server so statements match
     var clsByKid = {};
     items.forEach(function(it, i){ var a2 = byId[it.activity_id] || {}; if (a2.category === 'class') (clsByKid[kidKey(it)] = clsByKid[kidKey(it)] || []).push(i); });
     Object.keys(clsByKid).forEach(function(k){
       var idxs = clsByKid[k], n2 = idxs.length;
-      var bundle = n2 === 1 ? 9000 : n2 === 2 ? 15900 : 19900 + (n2 - 3) * 4000;
+      var bundle = classBundleCents(n2);
       var per = Math.floor(bundle / n2);
       idxs.forEach(function(idx, j){ units[idx] = j === n2 - 1 ? bundle - per * (n2 - 1) : per; });
     });
@@ -2720,7 +2887,34 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       (p.ins ? '<div class="sumrow"><span>Tuition insurance</span><span>' + money(p.ins) + '</span></div>' : '') +
       '<div class="sumrow total"><span>Due today</span><span>' + money(p.today) + '</span></div>';
     document.querySelector('.plan-toggle').style.display = 'none';
-    $('upsellBox').style.display = 'none';
+    // class cart: one more line of encouragement before the card form —
+    // the number is what the next class adds to the bundle, and the link
+    // goes back to the "Add a second class" panel (the hold is re-acquired
+    // on Continue, exactly as after any Back)
+    var ub = $('upsellBox'), nudge = null;
+    if (catAllClasses()) {
+      state.kids.forEach(function(k, ki){
+        if (nudge || !k.sel) return;
+        var n = catKidClassCount(ki);
+        if (n >= 1 && n < 3) nudge = { ki: ki, n: n };
+      });
+    }
+    if (nudge) {
+      var nf = esc((state.kids[nudge.ki].name || '').split(' ')[0]);
+      ub.innerHTML = (nudge.n === 1
+        ? 'Add a <b>second class</b> for ' + nf + ' \u2014 just <b>' + money(classNextDelta(1)) + ' more</b> a month (' + money(classBundleCents(2)) + '/mo for both).'
+        : 'A <b>third class</b> for ' + nf + ' is only <b>' + money(classNextDelta(2)) + ' more</b> a month (' + money(classBundleCents(3)) + '/mo for all three).') +
+        ' <a href="#" id="upsellAddClass">Add a class \u2192</a>';
+      ub.style.display = '';
+      var uac = $('upsellAddClass');
+      if (uac) uac.addEventListener('click', function(e){
+        e.preventDefault();
+        ev('reg_upsell_clicked', { kind: 'class' });
+        renderCatAssign(); go('st-assign');
+        var pnl = $('addClassPanel');
+        if (pnl) { pnl.classList.add('flash'); setTimeout(function(){ pnl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60); }
+      });
+    } else ub.style.display = 'none';
     updateInsurance(p.items, p.baseSubtotal);
     renderShirts(p.items);
     setPayH1(p.today);

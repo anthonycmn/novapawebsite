@@ -306,8 +306,8 @@ export default async (req) => {
 
   if (classItems.length) {
     if (plan !== "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
-    // Class bundles (CJ, Jul 31): per registrant 1 = $90, 2 = $159, 3 = $199
-    // a month. The kid's bundle is spread across their class lines so Stripe
+    // Class bundles (CJ, Sep 14 2026): per registrant 1 = $90, 2 = $150,
+    // 3 = $180 a month (classMonthlyCents is the source of truth). The kid's bundle is spread across their class lines so Stripe
     // statements stay per-class (remainder lands on the last line).
     const kk = (it) => (it && it.ci != null ? "i" + it.ci : (it && it.camper) || "");
     const byKidClasses = {};

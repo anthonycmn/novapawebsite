@@ -19,9 +19,10 @@
 //    last installment no later than 14 days before the item's start date
 //    AND no later than May 1, 2027 (CJ: collect summer money earlier).
 //    Within 14 days of start: pay-in-full only.
-//  - Classes (CJ, Jul 31 bundles): PER REGISTRANT 1 class $90/mo, 2 classes
-//    $159/mo, 3 classes $199/mo (each past three +$40). No sibling stacking
-//    on classes — the bundle IS the discount. First month at checkout, next
+//  - Classes (CJ, Sep 14 2026 — supersedes the Jul 31 $90/$159/$199 ladder):
+//    PER REGISTRANT 1 class $90/mo, 2 classes $150/mo, 3 classes $180/mo
+//    (each past three +$30, the 3rd-class step). No sibling stacking on
+//    classes — the bundle IS the discount. First month at checkout, next
 //    pull Oct 1, monthly through Jun 1 2027 (auto-cancels Jul 1 2027).
 //    Cancellation: 30 days notice (policy-enforced, not code).
 //  - Class + show cross-sell (CJ, Jul 31): a family with ANY 2026-27 show or
@@ -373,13 +374,25 @@ export function perKidRate(nCampsForKid, now = new Date()) {
   return 0;
 }
 
-// Class bundles (CJ, Jul 31): per registrant per month. The bundle replaces
-// the old per-class $90 + sibling math — no further stacking on classes.
+// Class bundles: per registrant per month. The bundle replaces the old
+// per-class $90 + sibling math — no further stacking on classes.
+// CJ, Sep 14 2026: "two classes is $150 and 3 classes is $180" (was
+// $159 / $199 from Jul 31). The second class is therefore $60 more than
+// one, the third $30 more than two — those two deltas are what the
+// checkout dangles when a camper is in one class.
+export const CLASS_BUNDLE_CENTS = [0, 9000, 15000, 18000];
 export function classMonthlyCents(nClassesForKid) {
   if (nClassesForKid <= 0) return 0;
-  if (nClassesForKid === 1) return 9000;
-  if (nClassesForKid === 2) return 15900;
-  return 19900 + (nClassesForKid - 3) * 4000; // past three: 3rd-class step
+  if (nClassesForKid < CLASS_BUNDLE_CENTS.length) return CLASS_BUNDLE_CENTS[nClassesForKid];
+  const top = CLASS_BUNDLE_CENTS.length - 1;
+  const step = CLASS_BUNDLE_CENTS[top] - CLASS_BUNDLE_CENTS[top - 1];
+  return CLASS_BUNDLE_CENTS[top] + (nClassesForKid - top) * step; // past three: 3rd-class step
+}
+// What one more class costs a camper already in n — the number the
+// "add a second class" nudge shows. Never negative.
+export function classNextDeltaCents(nClassesForKid) {
+  const n = Math.max(0, nClassesForKid || 0);
+  return Math.max(0, classMonthlyCents(n + 1) - classMonthlyCents(n));
 }
 
 export function siblingActive(isBB, now = new Date()) {
