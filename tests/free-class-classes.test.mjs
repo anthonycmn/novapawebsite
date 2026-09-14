@@ -37,8 +37,11 @@ const EXPECTED = {
   "mt-5-8":          1960924,   // Tue  5:00 PM   5-8
   "mt-dance-13-17":  1960925,   // Tue  7:00 PM  13-17
   "mt-acting-13-17": 1960927,   // Tue  8:00 PM  13-17
-  "hs-mt":           1962566,   // Wed  1:00 PM   9-13
-  "hs-theatre":      1962567,   // Wed  2:00 PM   9-13
+  // hs-mt 1962566 and hs-theatre 1962567 removed Sep 14 2026, both sides
+  // together per the rule above: check:live confirmed the listings refuse
+  // to sell (CJ retired the homeschool program Sep 11, active=false,
+  // bookable=false). Restore both here AND in reg-freeclass.mjs when the
+  // program rolls out again.
   "acting-9-12":     1960936,   // Wed  5:15 PM   9-12
   "mt-dance-9-12":   1960939,   // Wed  6:15 PM   9-12
   "mt-acting-9-12":  1960945,   // Wed  7:15 PM   9-12

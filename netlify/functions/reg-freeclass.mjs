@@ -33,8 +33,11 @@ const CLASSES = {
   "mt-5-8":            { activityId: 1960924, name: "Musical Theatre",                       ages: [5, 8],   day: 2, time: "5:00 PM" },
   "mt-dance-13-17":    { activityId: 1960925, name: "Musical Theatre Dance",                 ages: [13, 17], day: 2, time: "7:00 PM" },
   "mt-acting-13-17":   { activityId: 1960927, name: "Musical Theatre Acting",                ages: [13, 17], day: 2, time: "8:00 PM" },
-  "hs-mt":             { activityId: 1962566, name: "Homeschool Musical Theatre",            ages: [9, 13],  day: 3, time: "1:00 PM" },
-  "hs-theatre":        { activityId: 1962567, name: "Homeschool Theatre",                    ages: [9, 13],  day: 3, time: "2:00 PM" },
+  // Homeschool MT/Theatre (hs-mt 1962566, hs-theatre 1962567) removed
+  // Sep 14 2026: CJ retired the program Sep 11 ("take them down from the
+  // website and registration form") but the trial list was missed and
+  // check:live flagged trials pointing at listings that refuse to sell.
+  // Restore both keys here when the program rolls out again.
   "acting-9-12":       { activityId: 1960936, name: "Acting",                                ages: [9, 12],  day: 3, time: "5:15 PM" },
   "mt-dance-9-12":     { activityId: 1960939, name: "Musical Theatre Dance",                 ages: [9, 12],  day: 3, time: "6:15 PM" },
   "mt-acting-9-12":    { activityId: 1960945, name: "Musical Theatre Acting",                ages: [9, 12],  day: 3, time: "7:15 PM" },
