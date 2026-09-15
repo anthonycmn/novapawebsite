@@ -713,6 +713,17 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
+    // DC Unifieds tracks (970600–970699) are sold ONLY on dcunifieds.com —
+    // different brand, different coupon rules, no NOVAPA account. A DCU deep
+    // link that lands here shows NOVAPA pricing that disagrees with what DCU
+    // checkout charges (Kristin Burns hit this Sep 13 2026: her 100%-off DCU
+    // code rendered as applied while the pay button still asked for $699).
+    // reg-pay refuses these ids server-side too; this redirect is the UX half.
+    var dcuIds = state.catIds.filter(function(id){ return id >= 970600 && id <= 970699; });
+    if (dcuIds.length) {
+      location.replace('https://dcunifieds.com/register.html?activity=' + dcuIds[0]);
+      return;
+    }
     // seat offer (?seat=<token>): the office let this family past a full
     // cast. Peeked once the catalog loads — see applySeatOffer().
     var sm0 = location.search.match(/[?&]seat=([a-f0-9]{16,80})/i);

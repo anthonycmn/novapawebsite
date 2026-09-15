@@ -208,6 +208,15 @@ export default async (req) => {
   }
 
   const items = hold.items;
+  // DC Unifieds tracks (970600–970699) are sold only through dcu-pay.mjs on
+  // dcunifieds.com — different brand, different coupon scoping. This checkout
+  // pricing them produced a client/server mismatch (Kristin Burns, Sep 13
+  // 2026: DCU code showed applied while the intent stayed $699). The register
+  // page redirects these ids away; this is the server half so no hold shape
+  // can slip a DCU seat through NOVAPA rails.
+  if (items.some((it) => it.activity_id >= 970600 && it.activity_id <= 970699)) {
+    return Response.json({ error: "dcu_activity" }, { status: 400 });
+  }
   const summerItems = items.filter((it) => it.show);
   const activityItems = items.filter((it) => it.activity_id);
 
