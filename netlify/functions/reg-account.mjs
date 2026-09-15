@@ -293,6 +293,14 @@ function isPast(text) {
   return max ? max < new Date() : false;
 }
 
+// What a family sees as the name of an imported enrollment. Linked rows take
+// the activity's curated name; only an unlinked row falls back to the staff
+// free-text field. Exported so tests/portal-titles.test.mjs can hold the line.
+export function legacyTitle(le, actName) {
+  const linked = le && le.activity_id != null ? (actName || {})[le.activity_id] : null;
+  return linked || (le && le.activity_text) || "";
+}
+
 export default async (req) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
 
@@ -514,7 +522,22 @@ export default async (req) => {
     const names = campers.map((c) => `"${c.name.replace(/"/g, "")}"`);
     const orClauses = [`email.in.(${emailList})`];
     if (names.length) orClauses.push(`camper_name.in.(${names.join(",")})`);
-    const legacy = await svc(`legacy_enrollments?select=camper_name,activity_text,dates&or=(${orClauses.join(",")})`);
+    const legacy = await svc(`legacy_enrollments?select=camper_name,activity_text,dates,activity_id&or=(${orClauses.join(",")})`);
+
+    // activity_text is a staff field. It has carried "added by CJ 2026-09-14",
+    // a family's credit amount, "CONFIRM Tue vs Thu", and on Sep 15 2026 an
+    // internal billing warning naming the very parent reading it — because
+    // whatever is in it is printed verbatim below as the name of the class.
+    // When the row is linked to an activity, the activity's own name is the
+    // curated one, so prefer it and let the free text be the fallback it was
+    // always meant to be. The one row we cannot do this for is the unlinked
+    // Rockwood cancellation, which the staff portal routes by its text.
+    const legacyActIds = [...new Set(legacy.map((l) => l.activity_id).filter((id) => id && !actName[id]))];
+    if (legacyActIds.length) {
+      for (const a of await svc(`activities?select=id,name&id=in.(${legacyActIds.join(",")})`)) {
+        actName[a.id] = a.name;
+      }
+    }
 
     const byCamper = {};
     const add = (camper, title, dates) => {
@@ -531,7 +554,7 @@ export default async (req) => {
         add(it.camper_name, actName[it.activity_id], "");
       }
     }
-    for (const le of legacy) add(le.camper_name, le.activity_text, le.dates);
+    for (const le of legacy) add(le.camper_name, legacyTitle(le, actName), le.dates);
 
     // Day Camp Pack credits. A family buys the 5-day pack up front and picks
     // their dates later, from here. Credits live on the camper row; the picker
