@@ -44,6 +44,7 @@ const CLASSES = {
   "improv-9-12":       { activityId: 1960959, name: "Improv for Actors",                     ages: [9, 12],  day: 4, time: "6:30 PM" },
   "improv-13-17":      { activityId: 1960961, name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
   "acting-mt-sat":     { activityId: 1962562, name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
+  "film-tv":           { activityId: 992001,  name: "Film & Television",                   ages: [11, 17], day: 1, time: "8:00 PM" },
 };
 // Exported for the tests and the preflight live check, nothing else reads it.
 export { CLASSES };
@@ -153,9 +154,25 @@ function nowEasternMinutes() {
   return (h % 24) * 60 + mm;
 }
 // A session is bookable until CUTOFF_MINUTES before its Eastern start time.
+// The season's closures, published on the classes, Teen Conservatory and
+// Broadway Bound pages and drawn from calendar.html. Until Sep 16 2026 this
+// function knew only the season bounds, so it would happily offer a family a
+// trial visit on Thanksgiving Monday or in the middle of Winter Break, and
+// nobody would have been in the building.
+const CLOSED = [
+  ["2026-11-22", "2026-11-28"],  // Thanksgiving Break
+  ["2026-12-20", "2027-01-03"],  // Winter Break
+  ["2027-03-22", "2027-03-26"],  // Spring Break
+  ["2027-05-31", "2027-05-31"],  // Memorial Day
+];
+export function isClosed(dateIso) {
+  return CLOSED.some(([a, b]) => dateIso >= a && dateIso <= b);
+}
+
 export function bookable(dateIso, timeStr) {
   const today = todayEastern();
   if (dateIso < SEASON_START || dateIso > SEASON_END) return false;
+  if (isClosed(dateIso)) return false;
   if (dateIso > today) return true;
   if (dateIso < today) return false;
   return timeToMinutes(timeStr) - nowEasternMinutes() >= CUTOFF_MINUTES;
