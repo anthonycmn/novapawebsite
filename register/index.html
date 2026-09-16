@@ -262,6 +262,8 @@
     text-transform:uppercase; text-decoration:none; color:var(--gold2);
     border:1px solid rgba(232,184,75,0.5); border-radius:999px; padding:4px 10px; }
   .ctrial:hover { background:rgba(232,184,75,0.12); }
+  .ct .ds { font-size:12px; line-height:1.5; color:rgba(255,255,255,0.62); margin:6px 0 2px;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .ct .tm { font-size:12px; font-weight:700; color:var(--gold3); letter-spacing:.03em; }
   .ct .nm { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:700; color:#fff; line-height:1.15; margin:3px 0 4px; }
   .ct .ag { font-size:12.5px; color:var(--ink-dim); }
@@ -2330,13 +2332,18 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
             return '<label' + (ok ? '' : ' style="opacity:.5"') + '><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '"' + (v && v.on ? ' checked' : '') + (ok ? '' : ' disabled') + '> ' + esc(k.name.split(' ')[0]) + '</label>';
           }).join('') + '</div>';
         }
+        // the portal's own description, clamped to three lines. The full text
+        // is on the title attribute so nothing is lost to the clamp.
+        var ds = a.description
+          ? '<div class="ds" title="' + esc(a.description) + '">' + esc(a.description) + '</div>'
+          : '';
         var trial = (!full && classTrials[a.id])
           ? '<a class="ctrial" href="/free-class/book.html?class=' + encodeURIComponent(classTrials[a.id]) +
             '" target="_blank" rel="noopener">Try it free first</a>'
           : '';
         return '<div class="ct' + (on.length ? ' sel' : '') + (full ? ' full' : '') + '" data-ctile="' + a.id + '">' +
           '<div class="tm">' + esc(classTimeLabel(a)) + '</div><div class="nm">' + esc(a.name) + '</div>' +
-          '<div class="ag">' + classAgeLabel(classAgeKey(a)) + '</div>' + st + who + trial + '</div>';
+          '<div class="ag">' + classAgeLabel(classAgeKey(a)) + '</div>' + ds + st + who + trial + '</div>';
       }).join('') : '<div class="calempty">Nothing on ' + PRO_DAYS[d] + 's for this age.</div>';
       return '<div class="wkcol"><div class="dh">' + PRO_DAYS[d] + '</div>' + tiles + '</div>';
     }).join('') + '</div>' : '<div class="calempty">No classes match \u2014 try another age or day.</div>';
