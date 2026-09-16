@@ -90,22 +90,29 @@ export function trialSeatsLeft(trialsOnDate, roomLeft, cap = FREE_SEATS_PER_DATE
 }
 
 // Whether this child has already had their free visit, and what to tell the
-// family if so. CJ, 10 Sep 2026: "a no show burns the free visit." The offer is
-// a first class free, singular: a visit that was used, or booked and skipped,
-// or that became an enrolment, is the one visit. A visit still booked in the
-// future does not count here; the per-class duplicate check handles that.
+// family if so. CJ, 10 Sep 2026: "a no show burns the free visit." CJ, 16 Sep
+// 2026, revised: a family that misses its free class gets ONE more chance.
+// The no-show follow-up email invites them to pick a new date, so a single
+// no-show leaves the offer open and a second one closes it. A visit that was
+// used, or that became an enrolment, is still the one visit. A visit still
+// booked in the future does not count here; the per-class duplicate check
+// handles that.
 //
 //   prior   the child's earlier bookings, any class: [{ status, class_date }]
 //   returns null when a new booking is allowed, else the sentence to send
+export const NO_SHOW_RESCHEDULES = 1;
 export function freeVisitUsed(prior) {
   const by = (st) => prior.find((p) => p.status === st);
-  const noShow = by("no_show");
-  if (noShow)
-    return `This child's free visit was booked for ${prettyDate(noShow.class_date)} and not used, so there is not another one. Register at novapa.org/register, or email info@novapa.org and we will help.`;
   if (by("converted"))
     return "This child is enrolled already, so the free visit is done. Register for another class at novapa.org/register.";
   if (by("attended"))
     return "This child has had their free class. Register at novapa.org/register, or email info@novapa.org if you want to try a different class first.";
+  const noShows = prior.filter((p) => p.status === "no_show")
+    .sort((a, b) => String(a.class_date).localeCompare(String(b.class_date)));
+  if (noShows.length > NO_SHOW_RESCHEDULES) {
+    const last = noShows[noShows.length - 1];
+    return `This child's free visit was rescheduled once and the ${prettyDate(last.class_date)} class was not used either, so there is not another one. Register at novapa.org/register, or email info@novapa.org and we will help.`;
+  }
   return null;
 }
 const VENUE = "National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176";
@@ -242,6 +249,12 @@ function confirmationHtml(b, cls) {
 </table></div>`;
 }
 
+// CJ, 16 Sep 2026: every booking confirmation comes from info@novapa.org,
+// with cj@ and katieh@ blind-copied so the team sees each new family.
+export const CONFIRM_FROM = "Northern Virginia Performing Arts <info@novapa.org>";
+export const CONFIRM_REPLY_TO = "info@novapa.org";
+export const CONFIRM_BCC = ["cj@novapa.org", "katieh@novapa.org"];
+
 async function sendConfirmation(b, cls) {
   if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY)) return;
   const { default: nodemailer } = await import("nodemailer");
@@ -251,9 +264,10 @@ async function sendConfirmation(b, cls) {
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   await transporter.sendMail({
-    from: `NOVAPA <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
-    replyTo: "info@novapa.org",
+    from: CONFIRM_FROM,
+    replyTo: CONFIRM_REPLY_TO,
     to: b.email,
+    bcc: CONFIRM_BCC.join(", "),
     subject: `${b.child_name}'s free class is booked`,
     html: confirmationHtml(b, cls),
   });
