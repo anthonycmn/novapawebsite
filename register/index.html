@@ -2827,7 +2827,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
 
   function acquireHold(){
-    var errEl = isCatMode() ? $('catErr') : $('assignErr'); errEl.classList.remove('on');
+    // re-holding from the pay step writes its errors where the parent is
+    var errEl = $('st-pay').classList.contains('on') ? $('payErr') : (isCatMode() ? $('catErr') : $('assignErr'));
+    errEl.classList.remove('on');
     var items = buildItems();
     if (!items.length) { errEl.textContent = 'Check at least one student into a show.'; errEl.classList.add('on'); return; }
     var missingB = state.kids.some(function(k, i){
@@ -2926,7 +2928,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   $('reholdBtn').addEventListener('click', function(){
     $('expiredModal').classList.remove('on');
-    state.clientSecret = null;
+    ev('reg_rehold_clicked');
+    // A fresh hold means a fresh intent: drop the old card form and secret so
+    // mountStripe does not stack a second form on top of the first.
+    state.hold = null;
+    resetPayUI();
     acquireHold();
   });
 
