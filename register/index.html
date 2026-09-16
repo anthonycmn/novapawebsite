@@ -557,13 +557,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <div class="card" id="summaryCard"></div>
     <div class="card">
       <div class="plan-toggle">
-        <div class="plan-opt sel" data-plan="deposit">
-          <div class="p1">Pay in installments</div>
-          <div class="p2">Equal monthly payments, first one today (+5%)</div>
-        </div>
-        <div class="plan-opt" data-plan="full">
+        <div class="plan-opt sel" data-plan="full">
           <div class="p1">Pay in full</div>
           <div class="p2">One payment — save 5%</div>
+        </div>
+        <div class="plan-opt" data-plan="deposit">
+          <div class="p1">Pay in installments</div>
+          <div class="p2">Equal monthly payments, first one today (+5%)</div>
         </div>
       </div>
       <div id="payBreakdown"></div>
@@ -721,7 +721,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   var SHOW_DATES = { httyd:'Jul 5–16', charlie:'Jul 19–30', trolls:'Aug 2–13' };
   var state = {
     email:null, family:null, kids:[], shows:[], assign:{}, hold:null,
-    inventory:{}, plan:'deposit', clientSecret:null, pricing:null, stripe:null, elements:null,
+    inventory:{}, plan:'full', clientSecret:null, pricing:null, stripe:null, elements:null,
     catIds:[], catItems:[], allCat:[], addons:{}, insurance:false, feeDue:false, policyOk:false, coupon:null
   };
   (function(){
@@ -1153,7 +1153,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
       setPageIdentity();
       applySeatOffer(results[2]);
-      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = { campers: [] };
       state.kids = [];
       $('whoami').textContent = 'guest checkout';
@@ -1546,7 +1546,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         if (n) state.guest || sb.rpc('set_my_parent_name', { p_name: n });
       });
       var shirts = results[6] && results[6].data ? results[6].data : {};
-      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
         return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], verified:c.verified||[], sel:true,
@@ -3697,6 +3697,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         if (res.j.error === 'pay_full_only') {
           state.plan = 'full';
           document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.toggle('sel', o.dataset.plan === 'full'); });
+          // the server will refuse installments for this cart every time — a
+          // tile that errors on every tap is worse than no tile
+          var depTile = document.querySelector('.plan-opt[data-plan="deposit"]');
+          if (depTile) depTile.style.display = 'none';
           renderPay();
           schedulePay();
         }
