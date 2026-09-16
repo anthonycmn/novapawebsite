@@ -698,8 +698,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <input type="email" id="guestEmailInput" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
     <div class="err" id="guestEmailErr"></div>
     <div id="guestWelcomeBack" style="display:none">
-      <button class="btn" id="gwbSignin">Load my family</button>
-      <button class="btn btn-ghost" id="gwbGuest">Continue as guest</button>
+      <button class="btn" id="gwbGuest">Continue to payment</button>
+      <button class="btn btn-ghost" id="gwbSignin">Load my saved students instead (emailed code)</button>
     </div>
     <button class="btn" id="guestEmailGo">Continue</button>
     <button class="btn btn-ghost" id="guestEmailCancel">Back</button>
@@ -1654,7 +1654,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (res && res.data) {
         // Returning family: say it in the header, not in fine print (Jason, Aug 21)
         $('gemTitle').textContent = 'Welcome back!';
-        $('gemSub').textContent = 'This email already has a NOVAPA family. Load your students with a quick emailed code, or continue as a guest — your picks are kept either way.';
+        $('gemSub').textContent = 'This email already has a NOVAPA family. Keep going with the students you just added, or load your saved students with an emailed code \u2014 your picks are kept either way.';
         $('guestWelcomeBack').style.display = '';
         $('guestEmailGo').style.display = 'none';
         ev('reg_guest_known_email', {});
@@ -1665,6 +1665,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   $('gwbSignin').addEventListener('click', function(){
     var v = $('guestEmailInput').value.trim().toLowerCase();
+    ev('reg_welcome_back_choice', { choice: 'signin' });
     state.email = ''; // startEmail sets it; the sign-in flow takes over
     $('guestEmailModal').classList.remove('on');
     saveCart();       // cart is saved under 'guest' and restores after sign-in
@@ -1680,6 +1681,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   $('gwbGuest').addEventListener('click', function(){
     var v = $('guestEmailInput').value.trim().toLowerCase();
+    ev('reg_welcome_back_choice', { choice: 'guest' });
     gemReset();
     guestEmailProceed(v);
   });
