@@ -19,9 +19,10 @@
 //    last installment no later than 14 days before the item's start date
 //    AND no later than May 1, 2027 (CJ: collect summer money earlier).
 //    Within 14 days of start: pay-in-full only.
-//  - Classes (CJ, Jul 31 bundles): PER REGISTRANT 1 class $90/mo, 2 classes
-//    $159/mo, 3 classes $199/mo (each past three +$40). No sibling stacking
-//    on classes — the bundle IS the discount. First month at checkout, next
+//  - Classes (CJ, Sep 14 2026 — supersedes the Jul 31 $90/$159/$199 ladder):
+//    PER REGISTRANT 1 class $90/mo, 2 classes $150/mo, 3 classes $180/mo
+//    (each past three +$30, the 3rd-class step). No sibling stacking on
+//    classes — the bundle IS the discount. First month at checkout, next
 //    pull Oct 1, monthly through Jun 1 2027 (auto-cancels Jul 1 2027).
 //    Cancellation: 30 days notice (policy-enforced, not code).
 //  - Class + show cross-sell (CJ, Jul 31): a family with ANY 2026-27 show or
@@ -139,25 +140,120 @@ export const CLASS_BILL_ANCHOR_UTC = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;  // O
 // Aug 17: "all class subscriptions should end on June 30th").
 export const CLASS_SEASON_END_UTC = Date.UTC(2027, 5, 30, 4, 0, 0) / 1000;
 
+// ── Mid-month proration (CJ, Sep 16 2026) ─────────────────────────────────
+// "If they sign up for a Wednesday class and there are two Wednesdays left
+// and there were four Wednesdays in that month, take 90, divide it by four,
+// and then charge them for those two classes." The checkout charge is the
+// month's tuition × (sessions left ÷ sessions held that month); the monthly
+// subscription still pulls the full amount on the 1st.
+//
+// "Sessions held that month" are the dates of the class's weekday inside
+// [starts_on, ends_on] — so September, where the season opens on the 14th,
+// has three Wednesdays for a Wednesday class, and a family joining on opening
+// night pays the full month (3 of 3), not 3 of 5. A class whose weekday is
+// unknown is never prorated: the full month, exactly as before.
+const DOW_INDEX = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+export const DOW_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+// The class's weekday (JS 0 = Sunday … 6 = Saturday). The portal writes
+// meets_days as 1 = Mon … 7 = Sun (portal_dow_name); every Sawyer-era row
+// only says it in class_times[0].title_text ("Wed"); last resort is the
+// weekday of starts_on, which is the first session by construction.
+export function classWeekday(act) {
+  if (!act) return null;
+  const md = Array.isArray(act.meets_days) && act.meets_days.length ? Number(act.meets_days[0]) : NaN;
+  if (md >= 1 && md <= 7) return md % 7;
+  const ct = Array.isArray(act.class_times) ? act.class_times[0] : null;
+  const key = String((ct && ct.title_text) || "").trim().slice(0, 3).toLowerCase();
+  if (key in DOW_INDEX) return DOW_INDEX[key];
+  if (act.starts_on) return new Date(act.starts_on + "T12:00:00Z").getUTCDay();
+  return null;
+}
+// "Today" is the studio's day, not the server's: a parent paying at 11pm on
+// the 21st in Virginia is still on the 21st (America/New_York), whatever
+// UTC says. Returns "YYYY-MM-DD".
+export function etToday(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+const isoDate = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+const daysInMonth = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+// The break a date falls in, or null. `breaks` is season_breaks(): rows of
+// { title, starts_on, ends_on } from staff_portal.season_events — the same
+// rows the portal's class_calendar() skips (CJ, Sep 16 2026: "honor the
+// holiday breaks too").
+export function breakOn(iso, breaks) {
+  for (const b of breaks || []) {
+    if (b && b.starts_on && b.ends_on && iso >= b.starts_on && iso <= b.ends_on) return b;
+  }
+  return null;
+}
+// The class's sessions in one calendar month (m is 0-based), and how many of
+// them are on or after fromISO. A session inside a break is not held and
+// counts on neither side; its break title lands in `off`. { day, total,
+// left, dates, off } — day is null and total 0 when the weekday is unknown.
+export function classSessionsInMonth(act, y, m, fromISO, breaks = []) {
+  const wd = classWeekday(act);
+  if (wd == null) return { day: null, total: 0, left: 0, dates: [], off: [] };
+  const dates = [], off = [];
+  for (let d = 1; d <= daysInMonth(y, m); d++) {
+    const s = isoDate(y, m, d);
+    if (new Date(s + "T12:00:00Z").getUTCDay() !== wd) continue;
+    if (act.starts_on && s < act.starts_on) continue;
+    if (act.ends_on && s > act.ends_on) continue;
+    const b = breakOn(s, breaks);
+    if (b) { if (!off.includes(b.title)) off.push(b.title); continue; }
+    dates.push(s);
+  }
+  return { day: DOW_NAMES[wd], total: dates.length, left: dates.filter((s) => s >= fromISO).length, dates, off };
+}
+// The month the checkout charge covers: the month of today or of the earliest
+// class start, whichever is later — and if NO class in the cart has a session
+// left in it (a Wednesday class bought on the month's last Thursday), the next
+// month instead, so nobody pays $0 for a month they never attend and then a
+// full month on the 1st for the one they join. { y, m, from, today } where
+// `from` is the first day the family can attend.
+export function classCoveredMonth(acts, now = new Date(), breaks = []) {
+  const list = (acts || []).filter(Boolean);
+  const today = etToday(now);
+  const starts = list.map((a) => a.starts_on).filter(Boolean).sort();
+  const ends = list.map((a) => a.ends_on).filter(Boolean).sort();
+  const lastEnd = ends.length ? ends[ends.length - 1] : null;
+  let from = starts[0] && starts[0] > today ? starts[0] : today;
+  let y = Number(from.slice(0, 4)), m = Number(from.slice(5, 7)) - 1;
+  for (let i = 0; i < 12; i++) {
+    const attends = list.some((a) => classWeekday(a) == null || classSessionsInMonth(a, y, m, from, breaks).left > 0);
+    if (attends || !list.length) break;
+    const ny = m === 11 ? y + 1 : y, nm = (m + 1) % 12;
+    if (lastEnd && isoDate(ny, nm, 1) > lastEnd) break; // the class is over; stay in its last month
+    y = ny; m = nm; from = isoDate(y, m, 1);
+  }
+  return { y, m, from, today };
+}
+// A month's tuition, charged only for the sessions left: $90 × 2 ÷ 4 = $45.
+// Rounded to the cent; an unknown schedule is the full month.
+export function prorateCents(monthlyCents, pr) {
+  if (!pr || pr.day == null || !pr.total) return monthlyCents;
+  return Math.round(monthlyCents * pr.left / pr.total);
+}
+export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 // When a class subscription pulls next, and when it stops (CJ, Sep 13 2026).
 // The month covered at checkout is the class's first month — or the current
-// month for a mid-season signup — so the first recurring invoice lands on the
-// 1st of the FOLLOWING month, never before the Oct 1 season anchor. The
+// month for a mid-season signup, prorated to the sessions left in it (see
+// classCoveredMonth) — so the first recurring invoice lands on the 1st of
+// the FOLLOWING month, never before the Oct 1 season anchor. The
 // subscription cancels the day after the class's last session (the last pull
 // is the 1st of that final month), capped at the season end. A class with no
 // dates on file falls back to the old behaviour on both ends.
-export function classBillingWindow(acts, now = new Date()) {
-  const firstOfMonthAfter = (d) => Math.floor(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1, 4, 0, 0) / 1000);
-  const starts = (acts || []).map((a) => a && a.starts_on).filter(Boolean).sort();
+export function classBillingWindow(acts, now = new Date(), breaks = []) {
+  const covered = classCoveredMonth(acts, now, breaks);
+  const firstOfMonthAfter = Math.floor(Date.UTC(covered.y, covered.m + 1, 1, 4, 0, 0) / 1000);
   const ends = (acts || []).map((a) => a && a.ends_on).filter(Boolean).sort();
-  const startsAt = starts[0] ? new Date(starts[0] + "T12:00:00-04:00") : null;
-  const coveredMonth = startsAt && startsAt > now ? startsAt : now;
-  const nextBillUTC = Math.max(CLASS_BILL_ANCHOR_UTC, firstOfMonthAfter(coveredMonth));
+  const nextBillUTC = Math.max(CLASS_BILL_ANCHOR_UTC, firstOfMonthAfter);
   const lastEnd = ends.length ? ends[ends.length - 1] : null;
   const cancelAtUTC = lastEnd
     ? Math.min(CLASS_SEASON_END_UTC, Math.floor(new Date(lastEnd + "T04:00:00Z").getTime() / 1000) + 86400)
     : CLASS_SEASON_END_UTC;
-  return { nextBillUTC, cancelAtUTC };
+  return { nextBillUTC, cancelAtUTC, covered };
 }
 export const SIBLING_PCT = 5;
 export const INSURANCE_PCT = 10;
@@ -373,13 +469,34 @@ export function perKidRate(nCampsForKid, now = new Date()) {
   return 0;
 }
 
-// Class bundles (CJ, Jul 31): per registrant per month. The bundle replaces
-// the old per-class $90 + sibling math — no further stacking on classes.
+// Class bundles: per registrant per month. The bundle replaces the old
+// per-class $90 + sibling math — no further stacking on classes.
+// CJ, Sep 14 2026: "two classes is $150 and 3 classes is $180" (was
+// $159 / $199 from Jul 31). The second class is therefore $60 more than
+// one, the third $30 more than two — those two deltas are what the
+// checkout dangles when a camper is in one class.
+export const CLASS_BUNDLE_CENTS = [0, 9000, 15000, 18000];
 export function classMonthlyCents(nClassesForKid) {
   if (nClassesForKid <= 0) return 0;
-  if (nClassesForKid === 1) return 9000;
-  if (nClassesForKid === 2) return 15900;
-  return 19900 + (nClassesForKid - 3) * 4000; // past three: 3rd-class step
+  if (nClassesForKid < CLASS_BUNDLE_CENTS.length) return CLASS_BUNDLE_CENTS[nClassesForKid];
+  const top = CLASS_BUNDLE_CENTS.length - 1;
+  const step = CLASS_BUNDLE_CENTS[top] - CLASS_BUNDLE_CENTS[top - 1];
+  return CLASS_BUNDLE_CENTS[top] + (nClassesForKid - top) * step; // past three: 3rd-class step
+}
+// What one more class costs a camper already in n — the number the
+// "add a second class" nudge shows. Never negative.
+export function classNextDeltaCents(nClassesForKid) {
+  const n = Math.max(0, nClassesForKid || 0);
+  return Math.max(0, classMonthlyCents(n + 1) - classMonthlyCents(n));
+}
+// A camper already paying for nPrior classes adds nNew more: the new lines
+// are worth what they add to the bundle, never the bundle over again.
+// CJ, Sep 14 2026 ("price it separately"): the added classes become their
+// own subscription at this amount — $60/mo for a second, $30/mo for a
+// third — and the running subscription is left exactly as it is.
+export function classAddedMonthlyCents(nPrior, nNew) {
+  const p = Math.max(0, nPrior || 0), n = Math.max(0, nNew || 0);
+  return Math.max(0, classMonthlyCents(p + n) - classMonthlyCents(p));
 }
 
 export function siblingActive(isBB, now = new Date()) {

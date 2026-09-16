@@ -105,14 +105,38 @@ export function confirmationHtml(m, pi, details) {
       `starting ${months[d.getUTCMonth()]} 1, ${d.getUTCFullYear()} — fully paid before your program begins.`;
   } else if (m.plan === "subscription") {
     // CJ asked for this to be spelled out: families kept expecting a second
-    // charge in September. The checkout payment IS the first month; the next
-    // pull is Oct 1 and the plan ends itself after June 1, 2027.
+    // charge in September. The checkout payment IS the first month — prorated
+    // to the classes left in it when a family joins mid-month (CJ, Sep 16
+    // 2026) — the next pull is the 1st of the following month, and the plan
+    // ends itself after the class's last month. Every date comes from the
+    // intent's metadata; an intent minted before those keys existed reads
+    // exactly as it did (Oct 1 / June 1, 2027).
+    const longDate = (utcSec) => { const d = new Date(utcSec * 1000); return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`; };
+    const nextBill = parseInt(m.class_next_bill_utc || "0", 10) || 0;
+    const cancelAt = parseInt(m.class_cancel_at_utc || "0", 10) || 0;
+    const nextBillText = nextBill ? longDate(nextBill) : "October 1";
+    // the last pull is the 1st of the month cancel_at falls in
+    const finalText = cancelAt ? (() => { const d = new Date(cancelAt * 1000); return `${months[d.getUTCMonth()]} 1, ${d.getUTCFullYear()}`; })() : "June 1, 2027";
+    const noMoreBills = nextBill && cancelAt && cancelAt <= nextBill; // the class ends before another 1st
+    let monthlyCents = 0;
+    try { monthlyCents = JSON.parse(m.monthly_items || "[]").reduce((s, v) => s + (parseInt(v, 10) || 0), 0); } catch {}
+    let prorations = [];
+    try { prorations = JSON.parse(m.class_proration || "[]"); } catch {}
+    const covered = m.class_month || "";
+    const coveredMonthWord = covered ? covered.split(" ")[0] : "this month";
+    const partial = prorations.filter((p) => Array.isArray(p) && p[0] && p[2] > 0 && p[1] < p[2]);
+    const prorationText = partial.length
+      ? ` — ${partial.map((p) => `${p[1]} of ${covered ? coveredMonthWord + "'s " : ""}${p[2]} ${p[0]}s`).join(", ")} — `
+      : ", ";
+    const monthlyText = monthlyCents ? `Monthly tuition of ${money(monthlyCents)}` : "Monthly tuition";
     planLine = m.first_month_free === "1"
-      ? "Your first month is on us. Your card is saved, and monthly tuition starts October 1, then the 1st of each month through June 1, 2027. " +
-        "Nothing is charged in September, and nothing is charged after June — the plan ends itself. Cancel any time with 30 days' notice."
-      : "Today's payment covers your first month, so there is no further charge in September. " +
-        "Monthly tuition then runs October 1 and the 1st of each month through June 1, 2027, and the plan ends itself after that. " +
-        "Cancel any time with 30 days' notice.";
+      ? `Your first month is on us. Your card is saved, and monthly tuition starts ${nextBillText}, then the 1st of each month through ${finalText}. ` +
+        `Nothing is charged in ${coveredMonthWord}, and nothing is charged after that — the plan ends itself. Cancel any time with 30 days' notice.`
+      : noMoreBills
+        ? `Today's payment covers ${covered || "the rest of the class"}${prorationText}and the class ends before the next 1st, so there are no further charges.`
+        : `Today's payment covers the rest of ${covered || "this month"}${prorationText}so there is no further charge this month. ` +
+          `${monthlyText} then runs ${nextBillText} and the 1st of each month through ${finalText}, and the plan ends itself after that. ` +
+          `Cancel any time with 30 days' notice.`;
   }
   const esc = (x) => String(x == null ? "" : x).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   const rows = (details && details.length)

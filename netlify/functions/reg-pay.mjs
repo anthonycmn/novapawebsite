@@ -8,13 +8,16 @@
 //    {activity_id, camper} may MIX in one cart (per-kid tiers, bundle 10%,
 //    deposit plans w/ installments ending 2 weeks before earliest start)
 //  - classes {activity_id, camper}: must be alone, plan=subscription
-//    ($90/mo, 5% sibling for 2nd+ child, insurance = monthly x1.10)
+//    ($90/$150/$180 a month per child for 1/2/3 classes — no sibling
+//    discount on classes since the Sep 14 2026 ladder; the first payment
+//    is prorated to the sessions left in the month)
 import Stripe from "stripe";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
-  CLASS_PRICE_CENTS, classMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  classCoveredMonth, classSessionsInMonth, prorateCents, MONTH_NAMES,
   SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
   creditEventsFor,
 } from "./reg-config.mjs";
@@ -38,6 +41,72 @@ async function familyIdByEmail(email, hdrs) {
   if (!Array.isArray(rows) || !rows.length) return null;
   const exact = rows.find((f) => String(f.email || "").toLowerCase() === String(email || "").toLowerCase());
   return (exact || rows[0]).id;
+}
+
+// Classes a household's campers are ALREADY paying for, by camper name
+// (lowercased): { "emma smith": { n: 1, names: ["Acting"] } }. A prior class
+// counts only while its Stripe subscription is still running (active,
+// trialing, or past_due — a family behind on a card is still enrolled); one
+// the office cancelled is gone. Every address on the family row counts, so a
+// second class bought under the cc_email still lands on the bundle. Any
+// failure here returns {} and the cart prices as if nothing came before —
+// a returning family must never be blocked from buying, only overcharged
+// until the office hears about it, which is the pre-Sep-14 behaviour.
+const SUB_RUNNING = new Set(["active", "trialing", "past_due"]);
+async function priorClassesByCamper(email, hdrs, stripe) {
+  try {
+    const e = encodeURIComponent(email);
+    const fams = await (await fetch(`${SUPABASE_URL}/rest/v1/families?or=(email.ilike.${e},cc_email.ilike.${e})&select=email,cc_email`, { headers: hdrs })).json();
+    const emails = [...new Set((Array.isArray(fams) ? fams : []).flatMap((f) => [f.email, f.cc_email]).concat([email]).filter(Boolean).map((x) => x.toLowerCase()))];
+    const list = emails.map(encodeURIComponent).join(",");
+    const orders = await (await fetch(
+      `${SUPABASE_URL}/rest/v1/orders?email=in.(${list})&plan=eq.subscription&status=in.(paid,confirmed,complete,succeeded)&stripe_schedule=not.is.null&select=id,stripe_schedule,order_items(camper_name,activity_id)`,
+      { headers: hdrs })).json();
+    if (!Array.isArray(orders) || !orders.length) return {};
+    const actIds = [...new Set(orders.flatMap((o) => (o.order_items || []).map((i) => i.activity_id)).filter(Boolean))];
+    const acts = actIds.length
+      ? await (await fetch(`${SUPABASE_URL}/rest/v1/activities?id=in.(${actIds.join(",")})&category=eq.class&select=id,name`, { headers: hdrs })).json()
+      : [];
+    const className = Object.fromEntries((Array.isArray(acts) ? acts : []).map((a) => [a.id, a.name]));
+    const out = {};
+    for (const o of orders) {
+      let running = false;
+      try {
+        const sub = await stripe.subscriptions.retrieve(o.stripe_schedule);
+        running = SUB_RUNNING.has(sub.status);
+      } catch (err) { console.error("prior class sub lookup failed:", o.stripe_schedule, err.message); }
+      if (!running) continue;
+      for (const it of o.order_items || []) {
+        if (!className[it.activity_id]) continue;
+        const k = String(it.camper_name || "").trim().toLowerCase();
+        if (!k) continue;
+        (out[k] = out[k] || { n: 0, names: [] });
+        out[k].n += 1; out[k].names.push(className[it.activity_id]);
+      }
+    }
+    return out;
+  } catch (err) {
+    console.error("priorClassesByCamper failed:", err.message);
+    return {};
+  }
+}
+
+// What each class meets on and between which dates, for the mid-month
+// proration (CJ, Sep 16 2026). activity_facts does not carry the weekday, so
+// this reads the listing rows themselves with the service key. Any failure
+// returns {} and every class prices as a full month — a family must never be
+// blocked from buying by a schedule lookup, only charged the pre-Sep-16 way.
+async function classScheduleById(ids, hdrs) {
+  if (!ids.length) return {};
+  try {
+    const rows = await (await fetch(
+      `${SUPABASE_URL}/rest/v1/activities?id=in.(${ids.join(",")})&select=id,class_times,meets_days,starts_on,ends_on`,
+      { headers: hdrs })).json();
+    return Object.fromEntries((Array.isArray(rows) ? rows : []).map((r) => [r.id, r]));
+  } catch (err) {
+    console.error("classScheduleById failed:", err.message);
+    return {};
+  }
 }
 
 async function anonRpc(fn, args, jwt) {
@@ -306,24 +375,58 @@ export default async (req) => {
 
   if (classItems.length) {
     if (plan !== "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
-    // Class bundles (CJ, Jul 31): per registrant 1 = $90, 2 = $159, 3 = $199
-    // a month. The kid's bundle is spread across their class lines so Stripe
+    // Class bundles (CJ, Sep 14 2026): per registrant 1 = $90, 2 = $150,
+    // 3 = $180 a month (classMonthlyCents is the source of truth). The kid's bundle is spread across their class lines so Stripe
     // statements stay per-class (remainder lands on the last line).
     const kk = (it) => (it && it.ci != null ? "i" + it.ci : (it && it.camper) || "");
     const byKidClasses = {};
     classItems.forEach((it, idx) => {
       (byKidClasses[kk(it)] = byKidClasses[kk(it)] || []).push(idx);
     });
+    // A returning family: classes this camper already pays for make these
+    // lines the NEXT steps of the bundle ($60 for a second, $30 for a third),
+    // as their own subscription. Matched by exact lowercased camper name —
+    // the same child under two spellings is two campers, never a guess.
+    const priorSvcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const prior = await priorClassesByCamper(email, { apikey: priorSvcKey, Authorization: `Bearer ${priorSvcKey}` }, new Stripe(process.env.STRIPE_SECRET_KEY));
+    const priorClasses = []; // for the receipt/UI: [{camper, n, names}]
     const unitPrices = new Array(classItems.length).fill(0);
     for (const k of Object.keys(byKidClasses)) {
       const idxs = byKidClasses[k];
-      const bundle = classMonthlyCents(idxs.length);
+      const camper = String(classItems[idxs[0]].camper || "").trim();
+      const had = prior[camper.toLowerCase()] || null;
+      const bundle = had ? classAddedMonthlyCents(had.n, idxs.length) : classMonthlyCents(idxs.length);
+      if (had) priorClasses.push({ camper, n: had.n, names: had.names });
       const per = Math.floor(bundle / idxs.length);
       idxs.forEach((idx, j) => {
         unitPrices[idx] = j === idxs.length - 1 ? bundle - per * (idxs.length - 1) : per;
       });
     }
-    const subtotal = unitPrices.reduce((s, v) => s + v, 0);
+    // Mid-month proration (CJ, Sep 16 2026): today's charge is each line's
+    // monthly share × (that class's sessions left this month ÷ sessions it
+    // holds this month) — "two of four Wednesdays" is $45 of the $90. The
+    // subscription created by the webhook still pulls the full monthly
+    // amount (monthlyItems) on the 1st. The weekday comes from the listing
+    // row (class_times / meets_days); a class without one is a full month.
+    const schedule = await classScheduleById(
+      [...new Set(classItems.map((it) => it.activity_id))],
+      { apikey: priorSvcKey, Authorization: `Bearer ${priorSvcKey}` });
+    const classActs = classItems.map((it) => ({ ...byId[it.activity_id], ...(schedule[it.activity_id] || {}) }));
+    // Holiday breaks (CJ, Sep 16 2026): a session inside a season break is
+    // not held, so it is on neither side of the fraction. season_breaks()
+    // reads the portal's season_events; if it is unreachable, no dates are
+    // skipped and the family is charged as if every week met — the same
+    // never-block rule as the schedule lookup above.
+    const breakRows = await anonRpc("season_breaks", {});
+    const breaks = Array.isArray(breakRows) ? breakRows : [];
+    const covered = classCoveredMonth(classActs, new Date(), breaks);
+    const prorations = classActs.map((a) => {
+      const s = classSessionsInMonth(a, covered.y, covered.m, covered.from, breaks);
+      return { day: s.day, left: s.left, total: s.total, off: s.off };
+    });
+    const todayItems = unitPrices.map((cents, i) => prorateCents(cents, prorations[i]));
+    const classMonth = `${MONTH_NAMES[covered.m]} ${covered.y}`;
+    const subtotal = todayItems.reduce((s, v) => s + v, 0);
     const couponCents = couponPct ? Math.round(subtotal * couponPct / 100) : Math.min(couponFixedCents, subtotal);
 
     // First month free (CJ, Jul 31): any family already holding a 2026-27
@@ -361,15 +464,18 @@ export default async (req) => {
     // Before Sep 13 2026 the anchor was simply "Oct 1 or the 1st of next
     // month", which billed the October adult class twice before its first
     // Tuesday and would have kept billing a December-ending class into June.
-    const classBilling = classBillingWindow(classItems.map((it) => byId[it.activity_id]));
+    const classBilling = classBillingWindow(classActs, new Date(), breaks);
     pricing = {
       todayCents: firstMonthFree ? 0 : subtotal - couponCents,
       totalCents: firstMonthFree ? 0 : subtotal - couponCents,
       subtotalCents: subtotal, couponCents,
       insuranceCents: 0, // built into the monthly price for classes
       installmentCents: 0, nInstallments: 0, firstInstallmentUTC: 0,
-      unitPrices, monthlyItems: unitPrices, discountPct: 0,
-      firstMonthFree,
+      // unitPrices is what each line costs TODAY (prorated); monthlyItems is
+      // what the subscription pulls on the 1st. They differ only mid-month.
+      unitPrices: todayItems, monthlyItems: unitPrices, discountPct: 0,
+      firstMonthFree, priorClasses,
+      prorations, classMonth,
       nextBillUTC: classBilling.nextBillUTC, cancelAtUTC: classBilling.cancelAtUTC,
     };
     description = classItems
@@ -527,6 +633,8 @@ export default async (req) => {
         coupon: "", coupon_cents: "0", plan_fee_cents: "0", fsa_eligible: "0",
         first_month_free: "1",
         class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
+        class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total])).slice(0, 450),
+        class_month: pricing.classMonth || "",
         unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
         monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
         n_items: String(items.length),
@@ -542,9 +650,12 @@ export default async (req) => {
         coupon_cents: 0, coupon: null, plan_fee_cents: 0, insurance_cents: 0,
         total_cents: 0, today_cents: 0, installment_cents: 0,
         n_installments: 0, first_installment_utc: 0,
+        monthly_items: pricing.monthlyItems,
         monthly_cents: pricing.monthlyItems.reduce((s, v) => s + v, 0),
         first_month_free: true,
+        proration: pricing.prorations || [], class_month: pricing.classMonth || "",
         next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
+        prior_classes: pricing.priorClasses || [],
       },
     });
   }
@@ -596,7 +707,7 @@ export default async (req) => {
     // charged off-session for installment schedules / class subscriptions.
     payment_method_types: ["card", "link"],
     description: `NOVAPA — ${plan === "deposit" ? "reservation deposit"
-      : plan === "subscription" ? "class enrollment (first month)" : "paid in full"}`,
+      : plan === "subscription" ? `class enrollment (${pricing.classMonth || "first month"})` : "paid in full"}`,
     statement_descriptor_suffix: "NOVAPA",
     metadata: {
       hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
@@ -636,6 +747,10 @@ export default async (req) => {
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
+      // [["Wednesday", 2, 4]] per class line and "October 2026": what today's
+      // charge covered, for the receipt. Empty for every other cart.
+      class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total])).slice(0, 450),
+      class_month: pricing.classMonth || "",
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
       // pack purchases grant per-camper credits; redeemed credits deduct —
@@ -664,7 +779,10 @@ export default async (req) => {
       n_installments: pricing.nInstallments,
       first_installment_utc: pricing.firstInstallmentUTC,
       monthly_items: pricing.monthlyItems,
+      monthly_cents: (pricing.monthlyItems || []).reduce((s, v) => s + v, 0),
+      proration: pricing.prorations || [], class_month: pricing.classMonth || "",
       next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
+      prior_classes: pricing.priorClasses || [],
     },
   });
 };

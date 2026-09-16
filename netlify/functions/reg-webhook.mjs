@@ -248,23 +248,32 @@ export default async (req) => {
         const metaCancel = parseInt(m.class_cancel_at_utc || "0", 10) || 0;
         const trialEnd = metaNext > Math.floor(Date.now() / 1000)
           ? metaNext : Math.max(CLASS_BILL_ANCHOR_UTC, firstOfNextMonth);
-        const cancelAt = metaCancel > trialEnd ? metaCancel : CLASS_SEASON_END_UTC;
-        const sub = await stripe.subscriptions.create({
-          customer: customerId,
-          default_payment_method: paymentMethodId || undefined,
-          trial_end: trialEnd,
-          cancel_at: cancelAt, // the class's own end, capped at the season end (Jun 30)
-          proration_behavior: "none",
-          items: monthly.map((cents) => ({
-            quantity: 1,
-            price_data: {
-              currency: "usd", product: CLASS_PRODUCT_ID,
-              recurring: { interval: "month" }, unit_amount: cents,
-            },
-          })),
-          metadata: { order_id: String(orderId), payment_intent: pi.id },
-        });
-        await serviceRpc("set_order_schedule", { p_order_id: orderId, p_schedule: sub.id });
+        if (metaCancel && metaCancel <= trialEnd) {
+          // A family joining in the class's LAST month (the adult semester
+          // bought on Dec 10, ending Dec 15): today's prorated payment is the
+          // whole enrollment. There is no 1st left to bill, so no
+          // subscription — before Sep 16 2026 this fell through to the
+          // season-end cancel and would have pulled monthly through June.
+          console.log(`order ${orderId}: class ends before its next pull — no subscription created`);
+        } else {
+          const cancelAt = metaCancel > trialEnd ? metaCancel : CLASS_SEASON_END_UTC;
+          const sub = await stripe.subscriptions.create({
+            customer: customerId,
+            default_payment_method: paymentMethodId || undefined,
+            trial_end: trialEnd,
+            cancel_at: cancelAt, // the class's own end, capped at the season end (Jun 30)
+            proration_behavior: "none",
+            items: monthly.map((cents) => ({
+              quantity: 1,
+              price_data: {
+                currency: "usd", product: CLASS_PRODUCT_ID,
+                recurring: { interval: "month" }, unit_amount: cents,
+              },
+            })),
+            metadata: { order_id: String(orderId), payment_intent: pi.id },
+          });
+          await serviceRpc("set_order_schedule", { p_order_id: orderId, p_schedule: sub.id });
+        }
       }
     }
 

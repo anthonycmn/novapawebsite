@@ -514,9 +514,15 @@ export default async (req) => {
     }
     const actIds = [...new Set(items.map((i) => i.activity_id).filter(Boolean))];
     const acts = actIds.length
-      ? await svc(`activities?select=id,name&id=in.(${actIds.join(",")})`)
+      ? await svc(`activities?select=id,name,category&id=in.(${actIds.join(",")})`)
       : [];
     const actName = Object.fromEntries(acts.map((a) => [a.id, a.name]));
+    const isClassAct = Object.fromEntries(acts.map((a) => [a.id, a.category === "class"]));
+    // School-year classes each camper pays for through our checkout — the
+    // account page uses the count to offer the next one at what it adds to
+    // the bundle (CJ, Sep 14 2026). Counted from paid class orders; the
+    // checkout re-checks against Stripe before pricing anything.
+    const classCount = {};
 
     // Imported enrollments (Sawyer / Regpack history and transfers)
     const names = campers.map((c) => `"${c.name.replace(/"/g, "")}"`);
@@ -552,6 +558,10 @@ export default async (req) => {
         add(it.camper_name, title, CAMP_START[it.show] ? `Starts ${fmtDate(CAMP_START[it.show])}` : "");
       } else if (it.activity_id && actName[it.activity_id]) {
         add(it.camper_name, actName[it.activity_id], "");
+        if (isClassAct[it.activity_id]) {
+          const ck = it.camper_name || "Your family";
+          classCount[ck] = (classCount[ck] || 0) + 1;
+        }
       }
     }
     for (const le of legacy) add(le.camper_name, legacyTitle(le, actName), le.dates);
@@ -602,7 +612,7 @@ export default async (req) => {
 
     return Response.json({
       family: fam ? { parent_name: fam.parent_name, email: fam.email } : { email },
-      campers: Object.entries(byCamper).map(([name, its]) => ({ name, items: its })),
+      campers: Object.entries(byCamper).map(([name, its]) => ({ name, items: its, classes: classCount[name] || 0 })),
       rewards: await rewardsFor(email),
       tickets: await ticketsFor(email),
       credits,

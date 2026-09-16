@@ -25,7 +25,8 @@ description: "Explain a charge, fee, refund, or balance to a NOVAPA parent: 'wha
   excluded, theirs was credited inside negotiated deals).
 - **5% payment plan fee**: real and intentional (plans cost 5% more than paying
   in full). Todd can waive per-family via SPECIAL_PLANS (see custom-deal skill).
-- **Class billing**: $90/month one class, $159/month two classes per kid, season
+- **Class billing**: $90/month one class, $150/month two classes, $180/month three
+  classes per kid (CJ, Sep 14 2026; was $159/$199), season
   Sep-Jun, billing anchored Oct 1. Returning show/camp families get first month
   free; new families pay the first month at signup.
 - **Migration families**: their email quotes are the contract. The $25 fee
