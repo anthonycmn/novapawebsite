@@ -775,12 +775,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var sm = location.search.match(/[?&]season=(fall|spring|year|all|day|classes|class)/);
     var SEASON_TAB = { fall: 'year', spring: 'year', year: 'year', all: 'all',
                        day: 'day', classes: 'class', 'class': 'class' };
-    state.seasonFilter = (sm && SEASON_TAB[sm[1]]) || 'summer';
+    state.seasonFilter = (sm && SEASON_TAB[sm[1]]) || null; // null: defaultSeason() decides once the catalog is in
     state.fallMode = false;
     if (state.catIds.length) {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
       document.getElementById('payBack').dataset.back = 'st-assign';
-    } else if (state.seasonFilter !== 'summer') {
+    } else if (state.seasonFilter && state.seasonFilter !== 'summer') {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
     }
   })();
@@ -1093,12 +1093,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     }
     // an auth hash is still being exchanged — onAuthStateChange will take it
     if (authReturn) return;
-    // Bare landings (playbill QRs, typed URLs) see the summer landing page first.
-    // Anything intentional carries a query (?go, ?activity, ?season) or magic-link hash.
-    // linkError guards the case above, where we just stripped the error hash off
-    // the URL — without it a failed sign-in would bounce to /summer-2027 and the
-    // explanation would never be seen.
-    if (!linkError && !location.search && !location.hash) location.replace('/summer-2027');
+    // Bare landings (playbill QRs, typed URLs) used to bounce to the Summer 2027
+    // page, a July shelf, whatever was on sale. They now open the picker like
+    // everyone else; defaultSeason() picks the shelf. (Sep 16 2026)
     // Registration is public now, so the old "new or returning?" gate is one
     // tap of dead weight. With GUEST_CHECKOUT on, even the email step waits
     // until the cart is built — cold traffic browses first and types an email
@@ -2246,7 +2243,30 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       inp.addEventListener('blur', function(){ commit(true); });
     });
   }
+  // Which shelf to open on. Summer used to be the default whatever the date,
+  // so from September to May the register page opened on three July camps and
+  // hid the shows and classes actually on sale (16 Frozen KIDS families held a
+  // seat and left in three weeks — Sep 16 2026 audit). Open on whichever has
+  // the nearest show still open: a school-year cast whose rehearsals start
+  // (or started within the last six weeks) before the summer camps do wins.
+  function defaultSeason(){
+    try {
+      var grace = new Date(Date.now() - 42 * 86400000);
+      var fallNext = null;
+      FALL_SHOWS.forEach(function(sh){
+        if (!sh.start || !sh.re) return;
+        var d = new Date(sh.start + 'T12:00:00');
+        if (d < grace) return;
+        var open = state.allCat.some(function(a){ return a.bookable && sh.re.test(a.name || ''); });
+        if (open && (!fallNext || d < fallNext)) fallNext = d;
+      });
+      var firstCamp = Object.keys(FSA_DATES).map(function(k){ return FSA_DATES[k][0]; }).sort()[0];
+      var summer = new Date(firstCamp + 'T12:00:00');
+      return fallNext && fallNext < summer ? 'year' : 'summer';
+    } catch(e){ return 'summer'; }
+  }
   function applySeasonFilter(){
+    if (!state.seasonFilter) state.seasonFilter = defaultSeason();
     var fl = state.seasonFilter;
     document.querySelectorAll('#showBlocks .showb').forEach(function(card){
       var cat = card.dataset.cat || (card.dataset.fall ? 'year' : 'summer');
