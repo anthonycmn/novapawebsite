@@ -3627,7 +3627,20 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       ? 'Reserve your spot' + (n > 1 ? 's' : '') + ' for <em>' + money(cents) + '</em> today'
       : 'Pay <em>' + money(cents) + '</em> today';
   }
-  $('payStart').addEventListener('click', startPayment);
+  // "Continue to Payment" was hidden in the markup and only ever hidden
+  // further: when the auto-started payment failed (slow network, a refused
+  // plan, Stripe's script blocked) the parent read "Could not start payment"
+  // and had no button anywhere. It is now the retry button. (Sep 16 2026)
+  function showRetry(){
+    var b = $('payStart');
+    b.textContent = 'Try again'; b.disabled = false; b.style.display = '';
+  }
+  $('payStart').addEventListener('click', function(){
+    $('payStart').style.display = 'none';
+    $('payErr').classList.remove('on');
+    ev('reg_retry_clicked', { had_intent: !!state.clientSecret });
+    if (state.clientSecret && !state.stripe) mountStripe(); else startPayment();
+  });
   function startPayment(){
     if (!state.hold || state.clientSecret) return;
     var mySeq = ++paySeq;
@@ -3667,6 +3680,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           renderPay();
           schedulePay();
         }
+        if (['hold_expired', 'pay_full_only', 'bad_coupon'].indexOf(res.j.error) === -1) showRetry();
         $('payErr').textContent = msg; $('payErr').classList.add('on'); return;
       }
       if (res.j.free) {
@@ -3702,6 +3716,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (mySeq !== paySeq) return;
       $('payStart').disabled = false;
       ev('reg_checkout_refused', { step: 'reg-pay', code: 'network', msg: String(e && e.message || e).slice(0, 120), email: state.email || undefined });
+      showRetry();
       $('payErr').textContent = 'Network error — try again.'; $('payErr').classList.add('on');
     });
   }
@@ -3788,6 +3803,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (window.Stripe) return ready();
     var s = document.createElement('script');
     s.src = 'https://js.stripe.com/v3/'; s.onload = ready;
+    // In-app browsers and ad blockers sometimes refuse js.stripe.com. That used
+    // to leave the pay step with no card form, no button and no message.
+    s.onerror = function(){
+      s.remove();
+      ev('reg_stripe_load_failed', { email: state.email || undefined });
+      $('payErr').textContent = 'The secure card form couldn\'t load \u2014 check your connection (or open this page in Safari or Chrome) and try again.';
+      $('payErr').classList.add('on');
+      showRetry();
+    };
     document.head.appendChild(s);
   }
 
