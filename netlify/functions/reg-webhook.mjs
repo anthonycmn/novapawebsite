@@ -4,6 +4,7 @@
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
+import { mintDcuFamily } from "./dcu-family.mjs";
 import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
@@ -149,6 +150,16 @@ export default async (req) => {
       p_stripe_customer: typeof pi.customer === "string" ? pi.customer : pi.customer?.id,
       p_unit_prices: unitPrices,
     });
+
+    // A DC Unifieds buyer is a guest too, but gets the register entry
+    // dcu-family.mjs describes, not the camp upsert below (which would add
+    // the student a second time under the other parent's address).
+    if (m.brand === "dcu") {
+      const r = await mintDcuFamily({
+        email: m.email, parentName: m.parent_name, studentName: m.student_name, phone: m.phone,
+      });
+      console.log(`dcu family for ${m.email}: family ${r.family}, camper ${r.camper}`);
+    }
 
     // Guest orders are how a brand-new family enters the system: mint the
     // family and camper rows so their portal isn't empty, future checkouts
