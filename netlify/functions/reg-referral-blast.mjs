@@ -63,7 +63,7 @@ export default async (req) => {
   // own code (falls back to the NOVAPA4747 house code); never stamps anyone
   if (body.test_to) {
     const tf = fams.filter((f) => (f.email || "").toLowerCase() === String(body.test_to).toLowerCase())[0];
-    const first = (tf?.parent_name || "").trim().split(" ")[0] || "Jason";
+    const first = (tf?.parent_name || "").trim().split(" ")[0] || "CJ";
     const link = `https://www.northernvirginiaperformingarts.org/register/?ref=${tf?.ref_code || "NOVAPA4747"}`;
     const { default: nodemailer } = await import("nodemailer");
     const t = nodemailer.createTransport({

@@ -20,8 +20,8 @@ async function isAdmin(userToken) {
 }
 
 const SAMPLE = {
-  parentName: "Jason",
-  parentComma: " Jason",
+  parentName: "CJ",
+  parentComma: " CJ",
   camperName: "Ava",
   camperNames: "Ava and John",
   camp: "Charlie and the Chocolate Factory JR.",
