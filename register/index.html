@@ -1690,7 +1690,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('sKidOpen').addEventListener('click', function(){
     addKidTarget = null;
     $('kidErr').classList.remove('on');
-    $('kidModal').classList.add('on');
+    $('kidModal').classList.add('on'); ev('reg_kid_modal_opened');
     $('sKidName').focus();
   });
   $('showBlocks').addEventListener('click', function(e){
@@ -1703,10 +1703,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       b.dataset.addcls  ? { type: 'cls', id: +b.dataset.addcls } : null;
     ev('reg_addkid_from_card', { t: addKidTarget ? addKidTarget.type : '?' });
     $('kidErr').classList.remove('on');
-    $('kidModal').classList.add('on');
+    $('kidModal').classList.add('on'); ev('reg_kid_modal_opened');
     $('sKidName').focus();
   });
-  $('sKidCancel').addEventListener('click', function(){ $('kidModal').classList.remove('on'); });
+  $('sKidCancel').addEventListener('click', function(){ $('kidModal').classList.remove('on'); ev('reg_kid_modal_cancelled'); });
   $('sKidAdd').addEventListener('click', function(){
     var name = $('sKidName').value.trim();
     var bday = $('sKidBday').value;
@@ -2663,7 +2663,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (addBtn) addBtn.addEventListener('click', function(){
       addKidTarget = null;
       $('kidErr').classList.remove('on');
-      $('kidModal').classList.add('on');
+      $('kidModal').classList.add('on'); ev('reg_kid_modal_opened');
       $('sKidName').focus();
     });
     $('catNext').disabled = !catBirthdaysReady();
@@ -3855,6 +3855,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
   $('paySubmit').addEventListener('click', function(){
     $('payErr').classList.remove('on');
+    ev('reg_pay_clicked', { plan: state.plan, free: !!state.freeOrder, email: state.email || undefined });
     // T-shirt sizes and the mobile number are no longer gates here (CJ, Sep 13
     // 2026): both live in the parent portal, and every field between a parent
     // and the pay button is a place to lose them. A number typed here still
