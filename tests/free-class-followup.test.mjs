@@ -70,7 +70,7 @@ const one = composeNote(ham);
 const oneText = renderNote(one).text;
 eq("subject names the child", one.subject, "Hamilton's first class, and what comes next");
 has("opens with the parent's first name", oneText, "Hi Scott,");
-has("names the class", oneText, "Hamilton to Musical Theatre Acting tonight");
+has("names the class", oneText, "Hamilton to Musical Theatre Acting.");
 has("says when it meets", oneText, "every Wednesday from 7:15 to 8:05 PM");
 has("names the next date", oneText, "this coming Wednesday, September 23");
 has("links that class into the cart", oneText, "https://novapa.org/register/?activity=1960945");
@@ -90,10 +90,14 @@ has("Tuesday classes come back on Tuesday", twoText, "back on Tuesday");
 
 const kids = composeNote(tue.find((g) => g.email === "gkki2@yahoo.com"));
 eq("two children: subject names both", kids.subject, "Soliyana and Liya's first classes, and what comes next");
-has("two children: the family is addressed together", renderNote(kids).text, "bringing Soliyana and Liya to Acting tonight");
+has("two children: the family is addressed together", renderNote(kids).text, "bringing Soliyana and Liya to Acting.");
 
+// CJ, 16 Sep 2026: "remove the word 'tonight' altogether." The note never
+// says when the class was, evening or noon; the family was there.
 const sat = composeNote(groupVisits([visit({ cast_key: "acting-mt-sat", activity_id: 1962562, class_date: "2026-09-19" })], listings)[0]);
-has("a noon class was 'today', not 'tonight'", renderNote(sat).text, "Acting and Musical Theatre today");
+for (const [label, note] of [["one class", one], ["two classes", two], ["two children", kids], ["a noon class", sat]]) {
+  eq(`${label}: never says tonight or today`, /(tonight|today)/i.test(renderNote(note).text), false);
+}
 
 // ── The rich part is the plain part ────────────────────────────────────────
 const { html } = renderNote(one);

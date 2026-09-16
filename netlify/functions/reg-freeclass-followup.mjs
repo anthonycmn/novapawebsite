@@ -153,14 +153,13 @@ export function composeNote(g) {
   const child = one ? children[0] : list(children);
   const day = weekdayOf(g.class_date);
   const next = prettyDate(addDays(g.class_date, 7));
-  const evening = classes.some((c) => (parseHours(c.hours)?.end ?? 0) >= 17 * 60);
-  const when = evening ? "tonight" : "today";
   const url = `${REGISTER}?activity=${classes.map((c) => c.activity_id).join(",")}`;
   const classesLabel = classes.length === 1 ? classes[0].name : list(classes.map((c) => c.name));
 
   const p = [];
   p.push(`Hi ${firstName(g.parent_name)},`);
-  p.push(`Thank you for bringing ${child} to ${classesLabel} ${when}. It was great to have ${one ? child : "them"} in the room, and I hope the class ended with a smile.`);
+  // CJ, 16 Sep 2026: no "tonight" or "today" anywhere in the note.
+  p.push(`Thank you for bringing ${child} to ${classesLabel}. It was great to have ${one ? child : "them"} in the room, and I hope the class ended with a smile.`);
 
   if (classes.length === 1) {
     const c = classes[0];
