@@ -292,3 +292,20 @@ Kept as a baseline, not as current truth.
 The lesson worth keeping: **the quiz generates leads, the weekend ad generates
 sales.** They do different jobs and comparing them on one metric is a category
 error. Leads convert by phone — Mel converted on a call, not a click.
+
+## Sep 13-16 2026: the account went fully dark, deliberately
+
+All three campaigns show PAUSED. DCU Back to School Sale and Frozen JR
+Fall Sales were both paused 13 Sep 2026 ~16:48 ET from outside the
+automation (Todd or CJ in Ads Manager; Jason confirmed 16 Sep that the
+call was theirs and it stands). Account spend since 13 Sep: $0.
+
+Frozen stays down permanently: the show started (auditions 15 Sep,
+rehearsals underway), Junior is oversold at 45/40 while its ad copy said
+"final spot", and the last week of ads ($172, 40 clicks) attributed zero
+purchases — this week's sales came via seat offers and organic.
+
+If anyone relights DCU before the Oct 15 event, the pieces still stand:
+Joah v2, carousel-dark, find-top-5, quiz adset min-spend floor $15
+inside the $50 CBO. The two Frozen creatives marked never-re-enable
+(CJ photo, copyright video) remain hard-paused.
