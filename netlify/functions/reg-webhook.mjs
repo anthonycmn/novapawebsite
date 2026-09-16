@@ -404,7 +404,9 @@ export default async (req) => {
         // silently inside this try/catch on every paid order.
         // Sawyer-detail admin receipt (Todd, Aug 3): full line items with
         // prices, every fee/discount, the payment schedule, and a Stripe link.
-        const paid = ((pi.amount_received ?? pi.amount) / 100).toFixed(2);
+        // A SetupIntent (first-month-free class, $0 today) carries neither
+        // amount_received nor amount, and printed "$NaN" here.
+        const paid = ((pi.amount_received ?? pi.amount ?? 0) / 100).toFixed(2);
         const total = ((parseInt(m.total_cents || "0", 10) || 0) / 100).toFixed(2);
         const usd = (c) => "$" + ((parseInt(c || "0", 10) || 0) / 100).toFixed(2);
         let units = [];

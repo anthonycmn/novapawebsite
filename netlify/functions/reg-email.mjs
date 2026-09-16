@@ -93,7 +93,7 @@ export async function itemDetails(m, pi) {
 
 export function confirmationHtml(m, pi, details) {
   const items = (m.order_desc || "").split("; ").filter(Boolean);
-  const today = pi.amount_received ?? pi.amount;
+  const today = pi.amount_received ?? pi.amount ?? 0; // a SetupIntent carries no amount
   const total = parseInt(m.total_cents || "0", 10) || today;
   const nInst = parseInt(m.n_installments || "0", 10) || 0;
   const instCents = parseInt(m.installment_cents || "0", 10) || 0;
