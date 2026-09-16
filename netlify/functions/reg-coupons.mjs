@@ -147,7 +147,7 @@ export default async (req) => {
     if (email) {
       const fam = await db(`families?email=ilike.${encodeURIComponent(email)}&select=email`);
       if (!Array.isArray(fam) || !fam.length) {
-        warn = `${email} isn't in the registration system yet, so they won't get past the returning-family sign-in. Ask Jason to add them before you send this code.`;
+        warn = `${email} isn't in the registration system yet, so they won't get past the returning-family sign-in. Add them (Campers tab) before you send this code.`;
       }
     }
     return Response.json({ coupon: saved, warn });

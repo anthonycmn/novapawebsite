@@ -243,6 +243,45 @@
     white-space:nowrap; }
   @media (max-width:480px) { .schip { padding:7px 13px; font-size:12px; } }
   .schip.sel { background:rgba(232,184,75,0.14); border-color:var(--gold3); color:var(--gold3); }
+  /* ---- class week calendar + day-camp date grid (CJ, Sep 16 2026) ---- */
+  .calhead { text-align:left; margin:22px 0 6px; }
+  .calhead .t { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#fff; line-height:1.1; }
+  .calhead .d { font-size:13px; color:var(--ink-dim); margin-top:4px; }
+  .filt { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:10px 0 0; text-align:left; }
+  .filt .lab { font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-right:4px; min-width:42px; }
+  .fpill { font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:11px; border:1px solid var(--line); color:var(--ink-dim); cursor:pointer; user-select:none; white-space:nowrap; }
+  .fpill.sel { background:rgba(232,184,75,0.14); border-color:var(--gold3); color:var(--gold3); }
+  .wk { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(156px,1fr); gap:10px; overflow-x:auto; padding:14px 0 8px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+  .wkcol { display:flex; flex-direction:column; gap:8px; scroll-snap-align:start; min-width:0; }
+  .wkcol .dh { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold3); padding:0 2px 6px; border-bottom:1px solid var(--line); text-align:left; }
+  .ct { text-align:left; background:var(--card); border:2px solid var(--line); border-radius:14px; padding:12px 12px 10px; cursor:pointer; transition:border-color .15s, transform .15s; }
+  .ct:hover { transform:translateY(-1px); border-color:rgba(255,255,255,0.3); }
+  .ct.sel { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
+  .ct.full { opacity:.55; cursor:default; }
+  .ct .tm { font-size:12px; font-weight:700; color:var(--gold3); letter-spacing:.03em; }
+  .ct .nm { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:700; color:#fff; line-height:1.15; margin:3px 0 4px; }
+  .ct .ag { font-size:12.5px; color:var(--ink-dim); }
+  .ct .st { font-size:11.5px; color:var(--ok); font-weight:700; margin-top:6px; }
+  .ct .st.warn { color:var(--danger); }
+  .ct .who, .dt .who { border-top:1px solid var(--line); margin-top:8px; padding-top:4px; }
+  .ct .who label, .dt .who label { display:flex; align-items:center; gap:7px; font-size:13px; padding:3px 0; cursor:pointer; }
+  .ct .who input, .dt .who input { width:17px; height:17px; accent-color:var(--gold2); }
+  .calempty { text-align:left; font-size:14px; color:var(--ink-dim); padding:18px 4px; }
+  .mon { text-align:left; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold3); margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(124px, 1fr)); gap:8px; }
+  .dt { text-align:left; background:var(--card); border:2px solid var(--line); border-radius:14px; padding:10px 11px 9px; cursor:pointer; transition:border-color .15s, transform .15s; }
+  .dt:hover { transform:translateY(-1px); border-color:rgba(255,255,255,0.3); }
+  .dt.sel { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
+  .dt.full { opacity:.55; cursor:default; }
+  .dt .wd { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold3); }
+  .dt .dn { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#fff; line-height:1; margin:2px 0 4px; }
+  .dt .nm { font-size:12.5px; color:var(--ink); line-height:1.25; }
+  .dt .st { font-size:11px; color:var(--ink-dim); margin-top:5px; }
+  .dt .st.on { color:var(--ok); font-weight:700; }
+  .showb.gateway .poster { aspect-ratio:auto; height:96px; max-height:96px; background-position:center 40%; }
+  .showb.gateway .bd { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; }
+  .showb.gateway .d { margin-bottom:0; }
+  .showb.gateway .go { font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; color:var(--gold3); background:rgba(232,184,75,0.12); border:1px solid var(--gold3); border-radius:11px; padding:10px 16px; cursor:pointer; white-space:nowrap; }
   /* add-camper date field: native date UI only — a pseudo-placeholder overlaid
      the iOS date segments and doubled the calendar icon */
   #sKidBday{ display:flex; align-items:center; }
@@ -339,7 +378,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <!-- STEP: new or returning -->
   <section class="step on" id="st-gate">
     <div class="eyebrow" id="gateEyebrow">Summer 2027 · Broadway Bound</div>
-    <h1>New or returning <em>camper?</em></h1>
+    <h1>New or returning <em>student?</em></h1>
     <div class="choice">
       <div class="choice-card" id="choiceReturning">
         <div class="c1">Returning</div>
@@ -412,12 +451,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <!-- STEP: family -->
   <section class="step" id="st-family">
     <div class="eyebrow" id="famEyebrow">Welcome back</div>
-    <h1 id="famH1">Who's coming to camp?</h1>
+    <h1 id="famH1">Who's registering?</h1>
     <p class="sub" id="famSub">Confirm your students — add or edit anyone.</p>
     <div class="card">
       <div id="kidList"></div>
       <div class="addkid">
-        <input type="text" name="kname" id="newKidName" placeholder="Camper name">
+        <input type="text" name="kname" id="newKidName" placeholder="Student name">
         <input type="number" name="kage" id="newKidAge" placeholder="Age" min="2" max="18">
         <button class="btn btn-ghost" id="addKidBtn">Add</button>
       </div>
@@ -429,8 +468,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
   <!-- STEP: shows + campers -->
   <section class="step" id="st-shows">
-    <h1>Choose your <em>shows.</em></h1>
-    <p class="sub">Check each camper into their shows.</p>
+    <h1 id="shelfH1">Choose your <em>shows.</em></h1>
+    <p class="sub" id="shelfSub">Check each student into their shows.</p>
     <p class="tiny" id="guestReturnRow" style="display:none;margin:-6px 0 14px">Registered with us before? <a href="#" id="guestReturnLink">Sign in</a> to load your students.</p>
     <div class="season-chips" id="seasonChips">
       <span class="schip" data-f="summer">Summer</span>
@@ -509,12 +548,31 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           <div class="kids" data-fallshow="meangirls"></div>
         </div>
       </div>
+      <!-- Classes and day camps have their own shelves; these two cards put a
+           door to each on the show shelves (CJ, Sep 16 2026: "make the classes
+           a visible card"). -->
+      <div class="showb gateway" data-cat="gateway" data-goto="class">
+        <div class="poster" style="background-image:url('/register/img/rehearsal-2026.jpg')"></div>
+        <div class="bd">
+          <div><div class="t">Weekly Classes</div>
+          <div class="d">Acting, musical theatre, dance, improv, film &middot; Sep 2026 &ndash; Jun 2027 &middot; ages 5&ndash;17 and adults &middot; from $90/mo</div></div>
+          <button type="button" class="go" data-goto="class">See the class calendar &rarr;</button>
+        </div>
+      </div>
+      <div class="showb gateway" data-cat="gateway" data-goto="day">
+        <div class="poster" style="background-image:url('/register/img/camp-pack-wide.jpg')"></div>
+        <div class="bd">
+          <div><div class="t">Day Camps</div>
+          <div class="d">One-day camps on school holidays &middot; 8:30 AM &ndash; 4:15 PM &middot; ages 5&ndash;15<span id="gwDayPrice"></span></div></div>
+          <button type="button" class="go" data-goto="day">See the dates &rarr;</button>
+        </div>
+      </div>
       <div id="dayCards"></div>
       <div id="classCards"></div>
     </div>
-    <p class="tiny" id="sameCastNote" style="margin:10px 0 4px">This year, campers in the same age group are in the same cast and show!</p>
-    <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
-    <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
+    <p class="tiny" id="sameCastNote" style="margin:10px 0 4px">This year, students in the same age group are in the same cast and show!</p>
+    <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another student</button>
+    <div class="ticker" id="tierTicker">Check a student into a show to see your price.</div>
     <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; equal monthly payments, the first at checkout and the rest on autopay.</p>
     <div class="err" id="assignErr"></div>
     <div id="seatOfferLine" style="display:none"></div>
@@ -527,7 +585,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <!-- STEP: assign (catalog checkout only) -->
   <section class="step" id="st-assign">
     <h1>Who's <em>enrolling?</em></h1>
-    <p class="sub">Check each camper in, and confirm their birthday.</p>
+    <p class="sub">Check each student in, and confirm their birthday.</p>
     <div id="seatOfferLine2" style="display:none"></div>
     <div id="assignBlocks"></div>
     <div class="err" id="catErr"></div>
@@ -557,13 +615,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <div class="card" id="summaryCard"></div>
     <div class="card">
       <div class="plan-toggle">
-        <div class="plan-opt sel" data-plan="deposit">
-          <div class="p1">Pay in installments</div>
-          <div class="p2">Equal monthly payments, first one today (+5%)</div>
-        </div>
-        <div class="plan-opt" data-plan="full">
+        <div class="plan-opt sel" data-plan="full">
           <div class="p1">Pay in full</div>
           <div class="p2">One payment — save 5%</div>
+        </div>
+        <div class="plan-opt" data-plan="deposit">
+          <div class="p1">Pay in installments</div>
+          <div class="p2">Equal monthly payments, first one today (+5%)</div>
         </div>
       </div>
       <div id="payBreakdown"></div>
@@ -660,12 +718,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <!-- add camper modal -->
 <div class="modal-back" id="kidModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
-    <h3 style="text-align:center">Add a camper</h3>
-    <input type="text" id="sKidName" placeholder="Camper's full name" style="margin-top:12px" autocomplete="off">
+    <h3 style="text-align:center">Add a student</h3>
+    <input type="text" id="sKidName" placeholder="Student's full name" style="margin-top:12px" autocomplete="off">
     <label class="tiny" style="display:block;text-align:left;margin:12px 0 4px">Birthday &mdash; tap to pick a date</label>
-    <input type="date" id="sKidBday" class="pfdate" aria-label="Camper birthday">
+    <input type="date" id="sKidBday" class="pfdate" aria-label="Student birthday">
     <div class="err" id="kidErr"></div>
-    <button class="btn" id="sKidAdd">Add Camper</button>
+    <button class="btn" id="sKidAdd">Add Student</button>
     <button class="btn btn-ghost" id="sKidCancel">Cancel</button>
   </div>
 </div>
@@ -681,7 +739,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       <div id="cwlAlts"></div>
       <p class="tiny" id="cwlOr" style="text-align:left;margin:16px 0 4px"></p>
     </div>
-    <input type="text" id="cwlKid" placeholder="Camper's full name" autocomplete="off" style="margin-top:8px">
+    <input type="text" id="cwlKid" placeholder="Student's full name" autocomplete="off" style="margin-top:8px">
     <input type="text" id="cwlParent" placeholder="Parent name" autocomplete="name" style="margin-top:8px">
     <input type="email" id="cwlEmail" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
     <div class="err" id="cwlErr"></div>
@@ -694,12 +752,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <div class="modal-back" id="guestEmailModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
     <h3 id="gemTitle" style="text-align:center">Where should we send your confirmation?</h3>
-    <p class="tiny" id="gemSub" style="text-align:left;margin-top:8px">Your receipt and camper details go here. No password needed.</p>
+    <p class="tiny" id="gemSub" style="text-align:left;margin-top:8px">Your receipt and student details go here. No password needed.</p>
     <input type="email" id="guestEmailInput" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
     <div class="err" id="guestEmailErr"></div>
     <div id="guestWelcomeBack" style="display:none">
-      <button class="btn" id="gwbSignin">Load my family</button>
-      <button class="btn btn-ghost" id="gwbGuest">Continue as guest</button>
+      <button class="btn" id="gwbGuest">Continue to payment</button>
+      <button class="btn btn-ghost" id="gwbSignin">Load my saved students instead (emailed code)</button>
     </div>
     <button class="btn" id="guestEmailGo">Continue</button>
     <button class="btn btn-ghost" id="guestEmailCancel">Back</button>
@@ -721,12 +779,32 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   var SHOW_DATES = { httyd:'Jul 5–16', charlie:'Jul 19–30', trolls:'Aug 2–13' };
   var state = {
     email:null, family:null, kids:[], shows:[], assign:{}, hold:null,
-    inventory:{}, plan:'deposit', clientSecret:null, pricing:null, stripe:null, elements:null,
+    inventory:{}, plan:'full', clientSecret:null, pricing:null, stripe:null, elements:null,
     catIds:[], catItems:[], allCat:[], addons:{}, insurance:false, feeDue:false, policyOk:false, coupon:null
   };
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
+    // Coming back from a bank's 3-D Secure page. Stripe appends payment_intent
+    // (or setup_intent), its client secret and redirect_status to return_url.
+    // Nothing used to read them: the parent landed as a fresh guest, saw their
+    // unpaid-looking cart restored, and either left convinced it failed or
+    // paid a second time (guest holds have no duplicate guard). The snapshot
+    // taken when payment started (nv_pay_pending) restores the cart and hold
+    // so they land on the confirmation instead. (Found in the Sep 16 2026
+    // audit; the return_url had pointed at ?paid=1 since launch.)
+    var pmr = location.search.match(/[?&]redirect_status=([a-z_]+)/);
+    state.payReturn = null;
+    if (pmr) {
+      try {
+        var pend = JSON.parse(localStorage.getItem('nv_pay_pending') || 'null');
+        if (pend && pend.hold && Date.now() - (pend.t || 0) < 6 * 3600 * 1000) {
+          var pim = location.search.match(/[?&](?:payment_intent|setup_intent)=([A-Za-z0-9_]+)/);
+          state.payReturn = { status: pmr[1], intent: pim ? pim[1] : null, pend: pend };
+          if (Array.isArray(pend.catIds) && pend.catIds.length) state.catIds = pend.catIds;
+        }
+      } catch(e){}
+    }
     // DC Unifieds tracks (970600–970699) are sold ONLY on dcunifieds.com —
     // different brand, different coupon rules, no NOVAPA account. A DCU deep
     // link that lands here shows NOVAPA pricing that disagrees with what DCU
@@ -755,12 +833,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var sm = location.search.match(/[?&]season=(fall|spring|year|all|day|classes|class)/);
     var SEASON_TAB = { fall: 'year', spring: 'year', year: 'year', all: 'all',
                        day: 'day', classes: 'class', 'class': 'class' };
-    state.seasonFilter = (sm && SEASON_TAB[sm[1]]) || 'summer';
+    state.seasonFilter = (sm && SEASON_TAB[sm[1]]) || null; // null: defaultSeason() decides once the catalog is in
     state.fallMode = false;
     if (state.catIds.length) {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
       document.getElementById('payBack').dataset.back = 'st-assign';
-    } else if (state.seasonFilter !== 'summer') {
+    } else if (state.seasonFilter && state.seasonFilter !== 'summer') {
       document.getElementById('gateEyebrow').textContent = 'NOVAPA Registration';
     }
   })();
@@ -1006,7 +1084,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       el.innerHTML = /expired|invalid|access_denied|otp/i.test(code)
         ? "<b>That sign-in link had already been opened.</b> Some workplace email systems open links " +
           "automatically to scan them, which uses them up before you get there. Enter your email below for " +
-          "a fresh link — or email <a href='mailto:jason@novapa.org' style='color:var(--gold3)'>jason@novapa.org</a> " +
+          "a fresh link — or email <a href='mailto:info@novapa.org' style='color:var(--gold3)'>info@novapa.org</a> " +
           "and we'll register you directly."
         : "<b>That sign-in link didn't work.</b> Enter your email below for a new one.";
       el.classList.add('on');
@@ -1073,12 +1151,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     }
     // an auth hash is still being exchanged — onAuthStateChange will take it
     if (authReturn) return;
-    // Bare landings (playbill QRs, typed URLs) see the summer landing page first.
-    // Anything intentional carries a query (?go, ?activity, ?season) or magic-link hash.
-    // linkError guards the case above, where we just stripped the error hash off
-    // the URL — without it a failed sign-in would bounce to /summer-2027 and the
-    // explanation would never be seen.
-    if (!linkError && !location.search && !location.hash) location.replace('/summer-2027');
+    // Bare landings (playbill QRs, typed URLs) used to bounce to the Summer 2027
+    // page, a July shelf, whatever was on sale. They now open the picker like
+    // everyone else; defaultSeason() picks the shelf. (Sep 16 2026)
     // Registration is public now, so the old "new or returning?" gate is one
     // tap of dead weight. With GUEST_CHECKOUT on, even the email step waits
     // until the cart is built — cold traffic browses first and types an email
@@ -1136,7 +1211,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
       setPageIdentity();
       applySeatOffer(results[2]);
-      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = { campers: [] };
       state.kids = [];
       $('whoami').textContent = 'guest checkout';
@@ -1151,17 +1226,21 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('guestReturnRow').style.display = '';
       $('guestReturnLink').addEventListener('click', toSignin);
       ev('reg_guest_entered', {});
+      if (handlePayReturn()) return;
       restoreCart();
       if (isCatMode()) {
         var kidKnown = applyUrlKid();
-        renderCatAssign(); go('st-assign'); startSoftTimer();
+        renderCatAssign(); go('st-assign');
         if (kidKnown && catBirthdaysReady()) acquireHold();
         return;
       }
-      go('st-shows'); renderShowKids(); startSoftTimer();
-    }).catch(function(){
+      go('st-shows'); renderShowKids();
+    }).catch(function(e){
       // network hiccup on the two catalog calls — fall back to the email
-      // front door rather than a dead screen
+      // front door rather than a dead screen. Say why, somewhere: a bug in
+      // the render used to land here and read as a network problem.
+      console.error('guest entry failed:', e);
+      ev('reg_guest_entry_failed', { msg: String(e && e.message || e).slice(0, 160) });
       entered = false; state.guest = false;
       openEmailSignup();
     });
@@ -1214,6 +1293,51 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   function cartOwner(){ return state.email || (state.guest ? 'guest' : ''); }
   function clearCart(){ try { localStorage.removeItem(CART_KEY); } catch(e){} }
+  // Everything finish() needs, written the moment a payment intent exists, so
+  // a bank redirect can bring the parent back to their confirmation.
+  function savePayPending(){
+    try {
+      localStorage.setItem('nv_pay_pending', JSON.stringify({
+        t: Date.now(),
+        hold: { id: state.hold.id, expires: state.hold.expires, items: state.hold.items },
+        pricing: state.pricing, plan: state.plan, email: state.email || '', guest: !!state.guest,
+        setupMode: !!state.setupMode, catIds: state.catIds,
+        kids: state.kids.map(function(k){ return { name: k.name, bday: k.bday || null, sel: !!k.sel, already: k.already || [] }; })
+      }));
+    } catch(e){}
+  }
+  function clearPayPending(){ try { localStorage.removeItem('nv_pay_pending'); } catch(e){} }
+  function handlePayReturn(){
+    var r = state.payReturn;
+    if (!r) return false;
+    state.payReturn = null;
+    var p = r.pend;
+    try { history.replaceState(null, '', location.pathname + (state.catIds.length ? '?activity=' + state.catIds.join(',') : '')); } catch(e){}
+    ev('reg_3ds_return', { status: r.status, intent: r.intent || undefined, email: p.email || undefined });
+    state.hold = { id: p.hold.id, expires: new Date(p.hold.expires), items: p.hold.items };
+    state.pricing = p.pricing;
+    state.plan = p.plan || state.plan;
+    state.setupMode = !!p.setupMode;
+    if (p.email) state.email = p.email;
+    if (!state.kids.length && Array.isArray(p.kids)) {
+      state.kids = p.kids.map(function(k){ return { name: k.name, bday: k.bday, sel: k.sel, already: k.already || [] }; });
+    }
+    if (r.status === 'succeeded') {
+      state.piId = r.intent || null;
+      finish();
+      return true;
+    }
+    // The bank said no. Same hold, same cart, a fresh intent — and say why.
+    clearPayPending();
+    renderPay(); go('st-pay');
+    if (state.hold.expires > new Date()) startTimer();
+    $('payErr').textContent = 'Your bank didn\'t approve that payment. Try another card, or call your bank and try again.';
+    $('payErr').classList.add('on');
+    state.stickyErr = true;
+    ev('reg_payment_failed', { code: '3ds_' + r.status, email: state.email || undefined });
+    schedulePay();
+    return true;
+  }
   function restoreCart(){
     try {
       var raw = localStorage.getItem(CART_KEY);
@@ -1302,7 +1426,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         ev('reg_email_unknown', { email: state.email });
         // bank the lead — dedupes server-side, failure is invisible to the user
         try { sb.rpc('join_waitlist', { p_email: state.email, p_source: 'unknown-email' }); } catch(e){}
-        errEl.innerHTML = "We couldn't find that email — try one you've used with NOVAPA before, or email <a href='mailto:jason@novapa.org' style='color:var(--gold3)'>jason@novapa.org</a> and we'll link your account.";
+        errEl.innerHTML = "We couldn't find that email — try one you've used with NOVAPA before, or email <a href='mailto:info@novapa.org' style='color:var(--gold3)'>info@novapa.org</a> and we'll link your account.";
         errEl.classList.add('on'); return;
       }
       sendLink();
@@ -1484,7 +1608,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         if (n) state.guest || sb.rpc('set_my_parent_name', { p_name: n });
       });
       var shirts = results[6] && results[6].data ? results[6].data : {};
-      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : (catPlanEligible() ? 'deposit' : 'full');
+      if (isCatMode()) state.plan = catAllClasses() ? 'subscription' : 'full';
       state.family = fam || { campers: [] };
       state.kids = (state.family.campers || []).map(function(c){
         return { name:c.name, age:c.age, bday:(bdays[c.name] || null), tshirt:(shirts[c.name] || null), already:c.already_registered||[], verified:c.verified||[], sel:true,
@@ -1494,25 +1618,26 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your students';
       $('famH1').innerHTML = returning
         ? 'Welcome back — registering <em>' + esc(firstNames()) + '</em> again?'
-        : 'Who\'s coming to <em>camp?</em>';
+        : 'Who\'s <em>registering?</em>';
       $('famSub').textContent = returning
         ? (isCatMode() ? 'Confirm who is registering. Add or uncheck anyone.'
                        : 'Confirm who\'s in for Summer 2027 — add or uncheck anyone.')
-        : 'Add each camper\'s name and age — we\'ll match them to the right group.';
+        : 'Add each student\'s name and age — we\'ll match them to the right group.';
       $('whoami').textContent = state.email;
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
+      if (handlePayReturn()) return;
       restoreCart();
       if (isCatMode()) {
         var kidKnown = applyUrlKid();
-        renderCatAssign(); go('st-assign'); startSoftTimer();
+        renderCatAssign(); go('st-assign');
         // The family's campers loaded with their birthdays, the child is
         // checked in everywhere: nothing left to ask on this step.
         if (kidKnown && catBirthdaysReady()) acquireHold();
         return;
       }
-      go('st-shows'); renderShowKids(); startSoftTimer();
+      go('st-shows'); renderShowKids();
     });
   }
   function firstNames(){
@@ -1529,7 +1654,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         (k.verified && k.verified.length ? ' <span class="badge-done">✓ already in '+k.verified.length+' camp'+(k.verified.length>1?'s':'')+'</span>' : '') +
         '</label></div>';
     }).join('');
-    $('kidList').innerHTML = html || '<p class="tiny" style="text-align:left">No campers yet — add your first below.</p>';
+    $('kidList').innerHTML = html || '<p class="tiny" style="text-align:left">No students yet — add your first below.</p>';
     $('kidList').querySelectorAll('input[type=checkbox]').forEach(function(cb){
       cb.addEventListener('change', function(){ state.kids[+cb.dataset.i].sel = cb.checked; });
     });
@@ -1538,7 +1663,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var name = $('newKidName').value.trim();
     var age = parseInt($('newKidAge').value, 10);
     var errEl = $('famErr'); errEl.classList.remove('on');
-    if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
+    if (!name) { errEl.textContent='Student name, please!'; errEl.classList.add('on'); return; }
     if (!(age >= 5 && age <= 15)) { errEl.textContent='Camps are for ages 5–15.'; errEl.classList.add('on'); return; }
     state.kids.push({ name:name, age:age, already:[], sel:true });
     $('newKidName').value=''; $('newKidAge').value='';
@@ -1546,9 +1671,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   $('famNext').addEventListener('click', function(){
     var errEl = $('famErr'); errEl.classList.remove('on');
-    if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one camper.'; errEl.classList.add('on'); return; }
-    if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
-    go('st-shows'); renderShowKids(); startSoftTimer();
+    if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one student.'; errEl.classList.add('on'); return; }
+    if (isCatMode()) { renderCatAssign(); go('st-assign'); return; }
+    go('st-shows'); renderShowKids();
   });
   $('signout').addEventListener('click', function(e){
     e.preventDefault(); clearCart(); sb.auth.signOut().then(function(){ location.href='/register/'; });
@@ -1591,7 +1716,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (res && res.data) {
         // Returning family: say it in the header, not in fine print (Jason, Aug 21)
         $('gemTitle').textContent = 'Welcome back!';
-        $('gemSub').textContent = 'This email already has a NOVAPA family. Load your students with a quick emailed code, or continue as a guest — your picks are kept either way.';
+        $('gemSub').textContent = 'This email already has a NOVAPA family. Keep going with the students you just added, or load your saved students with an emailed code \u2014 your picks are kept either way.';
         $('guestWelcomeBack').style.display = '';
         $('guestEmailGo').style.display = 'none';
         ev('reg_guest_known_email', {});
@@ -1602,6 +1727,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   $('gwbSignin').addEventListener('click', function(){
     var v = $('guestEmailInput').value.trim().toLowerCase();
+    ev('reg_welcome_back_choice', { choice: 'signin' });
     state.email = ''; // startEmail sets it; the sign-in flow takes over
     $('guestEmailModal').classList.remove('on');
     saveCart();       // cart is saved under 'guest' and restores after sign-in
@@ -1611,47 +1737,56 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   function gemReset(){
     $('gemTitle').textContent = 'Where should we send your confirmation?';
-    $('gemSub').textContent = 'Your receipt and camper details go here. No password needed.';
+    $('gemSub').textContent = 'Your receipt and student details go here. No password needed.';
     $('guestWelcomeBack').style.display = 'none';
     $('guestEmailGo').style.display = '';
   }
   $('gwbGuest').addEventListener('click', function(){
     var v = $('guestEmailInput').value.trim().toLowerCase();
+    ev('reg_welcome_back_choice', { choice: 'guest' });
     gemReset();
     guestEmailProceed(v);
   });
   $('guestEmailInput') && $('guestEmailInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('guestEmailGo').click(); });
 
-  $('sKidOpen').addEventListener('click', function(){
-    addKidTarget = null;
+  function openKidModal(target){
+    addKidTarget = target || null;
+    if (target) ev('reg_addkid_from_card', { t: target.type });
     $('kidErr').classList.remove('on');
-    $('kidModal').classList.add('on');
+    $('kidModal').classList.add('on'); ev('reg_kid_modal_opened');
     $('sKidName').focus();
-  });
+  }
+  $('sKidOpen').addEventListener('click', function(){ openKidModal(null); });
   $('showBlocks').addEventListener('click', function(e){
+    var g = e.target && e.target.closest ? e.target.closest('[data-goto]') : null;
+    if (g) {
+      // a door card: switch shelves and land on the calendar
+      state.seasonFilter = g.dataset.goto; saveCart();
+      ev('reg_gateway', { to: g.dataset.goto });
+      renderShowKids();
+      var host = $(g.dataset.goto === 'class' ? 'classCards' : 'dayCards');
+      if (host) host.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     var b = e.target && e.target.closest ? e.target.closest('.kid-add-here') : null;
     if (!b) return;
-    addKidTarget =
+    openKidModal(
       b.dataset.addshow ? { type: 'show', show: b.dataset.addshow } :
       b.dataset.addfall ? { type: 'fall', key: b.dataset.addfall } :
       b.dataset.addday  ? { type: 'day', when: b.dataset.addday } :
-      b.dataset.addcls  ? { type: 'cls', id: +b.dataset.addcls } : null;
-    ev('reg_addkid_from_card', { t: addKidTarget ? addKidTarget.type : '?' });
-    $('kidErr').classList.remove('on');
-    $('kidModal').classList.add('on');
-    $('sKidName').focus();
+      b.dataset.addcls  ? { type: 'cls', id: +b.dataset.addcls } : null);
   });
-  $('sKidCancel').addEventListener('click', function(){ $('kidModal').classList.remove('on'); });
+  $('sKidCancel').addEventListener('click', function(){ $('kidModal').classList.remove('on'); ev('reg_kid_modal_cancelled'); });
   $('sKidAdd').addEventListener('click', function(){
     var name = $('sKidName').value.trim();
     var bday = $('sKidBday').value;
     var errEl = $('kidErr'); errEl.classList.remove('on');
-    if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
+    if (!name) { errEl.textContent='Student name, please!'; errEl.classList.add('on'); return; }
     if (state.kids.some(function(k){ return k.name.toLowerCase() === name.toLowerCase(); })) {
-      errEl.textContent='You already have a camper named ' + name + '.'; errEl.classList.add('on'); return;
+      errEl.textContent='You already have a student named ' + name + '.'; errEl.classList.add('on'); return;
     }
     if (!bday || bday > new Date().toISOString().slice(0,10)) {
-      errEl.textContent='Camper birthday, please!'; errEl.classList.add('on'); return;
+      errEl.textContent='Student birthday, please!'; errEl.classList.add('on'); return;
     }
     var age = ageOn(bday, '2027-07-05'); // age when camp starts
     var fAge = ageOn(bday, '2026-09-15'); // age when the season starts
@@ -1732,8 +1867,19 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // The sticky Continue earns its place: hidden until something is in the
     // cart, so an empty shows list isn't dominated by a dead gold button.
     var an = $('assignNext');
-    if (an) an.style.display = buildItems().length ? '' : 'none';
+    var nCls = (state.classSel || []).length;
+    var nOther = buildItems().length;
+    if (an) {
+      an.style.display = (nOther || nCls) ? '' : 'none';
+      // a classes-only cart continues straight into the class checkout
+      an.innerHTML = (nCls && !nOther) ? 'Check out \u00b7 ' + money(classBundleCents(nCls)) + '/mo \u2192' : 'Continue \u2192';
+    }
     var t = $('tierTicker');
+    if (nCls && !nOther) {
+      t.textContent = nCls + ' class' + (nCls > 1 ? 'es' : '') + ' \u00b7 ' + money(classBundleCents(nCls)) + '/mo per student' +
+        (nCls === 1 ? ' \u00b7 add a second for $150/mo, a third for $180/mo' : '') + ' \u2014 tap Check out.';
+      return;
+    }
     var byKid = [];
     state.kids.forEach(function(k, i){
       if (!k.sel) return;
@@ -1750,6 +1896,16 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (!k.sel) return;
       FALL_SHOWS.forEach(function(s){ if (fallCastOn(i, s.key)) fallN++; });
     });
+    if (!byKid.length && !fallN) {
+      // day camps only: say what the days cost and where the pack kicks in
+      var dayN = 0;
+      dayCampsList().forEach(function(a){ state.kids.forEach(function(k, i){ var v = state.assign['act' + a.id + '|' + i]; if (k.sel && v && v.on) dayN++; }); });
+      if (dayN) {
+        t.textContent = dayN + ' day camp' + (dayN > 1 ? 's' : '') + ' · ' + (dayPriceLabel(dayCampsList()) || '$79') + ' each' +
+          (dayN < 5 ? ' · five days become a $349 pack automatically' : ' · the $349 pack price is applied at checkout') + '.';
+        return;
+      }
+    }
     if (!byKid.length) {
       // This branch runs before the saleOn() gate below, so it kept promising
       // the tier discount after the launch sale ended (CJ, 16 Aug 2026).
@@ -1757,7 +1913,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         ? (saleOn()
             ? '$695 per show \u00b7 add a summer camp and save 15% on everything (both shows + a camp = 20%).'
             : '$695 per show \u00b7 every child after the first saves 5%.')
-        : 'Check a camper into a show to see your price.';
+        : 'Check a student into a show to see your price.';
       return;
     }
     if (!saleOn()) { t.textContent = '$995 per two-week camp \u00b7 every child after the first saves 5%.'; return; }
@@ -1777,7 +1933,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(rateOf(e, e.n) * 100) + '% off)'; }).join(' \u00b7 ');
   }
   function renderShowKids(){
-    $('sKidOpen').textContent = state.kids.length ? '+ Add another camper' : '+ Add a camper';
+    $('sKidOpen').textContent = state.kids.length ? '+ Add another student' : '+ Add a student';
     document.querySelectorAll('#showBlocks .kids').forEach(function(host){
       var show = host.dataset.show;
       host.innerHTML = state.kids.map(function(k, i){
@@ -1815,7 +1971,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
            noBand ? ' <span class="badge-done" style="opacity:.65">camps are for ages 5\u201315</span>' : '') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + showT + '</div>';
       }).join('') +
-      '<button type="button" class="kid-add-here" data-addshow="' + esc(show) + '">+ Add a camper to this camp</button>';
+      '<button type="button" class="kid-add-here" data-addshow="' + esc(show) + '">+ Add a student to this camp</button>';
     });
     var blocks = $('showBlocks');
     blocks.querySelectorAll('input[type=checkbox][data-key]').forEach(function(cb){
@@ -1858,7 +2014,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (m) { for (var k = 0; k < MONTHS.length; k++) { if (MONTHS[k].slice(0, 3) === m[1].slice(0, 3)) { mi = k; break; } } }
       var yr = (m && m[3]) ? +m[3] : (mi >= 8 ? 2026 : 2027);
       var ts = new Date(yr, mi, m ? +m[2] : 1).getTime();
-      return { when: when, acts: acts, title: named.name.trim(), img: named.image_url || '', ts: ts };
+      var title = String(named.name || '').replace(/^ages?\s*\d+\s*[–—-]\s*\d+\s*/i, '').replace(/\s*[·|–-]\s*[A-Z][a-z]{2,8}\.? \d{1,2},? \d{4}\s*$/, '').trim() || 'Day Camp';
+      return { when: when, acts: acts, title: title, img: named.image_url || '', ts: ts };
     }).sort(function(a, b){ return a.ts - b.ts; });
   }
   // Day camp prices come from the catalog, never a literal — a hardcoded price
@@ -1884,61 +2041,107 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     g.acts.forEach(function(a){ delete state.assign['act' + a.id + '|' + i]; });
     if (id) state.assign['act' + id + '|' + i] = { on: true };
   }
+  // ---- Day camps: one tile per date, filtered by age (CJ, Sep 16 2026: the
+  // old three-cards-per-date list with checkboxes and band pills was
+  // "very overwhelming"). A tap checks the student in; the age filter
+  // decides which band. ----
+  var CAL_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function dayAgeKey(a){ var r = castRange(a); return r.min + '-' + r.max; }
+  function dayAgeDefault(groups){
+    var sel = state.kids.filter(function(k){ return k.sel && k.bday; });
+    if (sel.length !== 1) return null;
+    var age = campAge(sel[0]);
+    var keys = [];
+    groups.forEach(function(g){ g.acts.forEach(function(a){ var k = dayAgeKey(a); if (keys.indexOf(k) === -1) keys.push(k); }); });
+    return keys.filter(function(k){ var p = k.split('-'); return age >= +p[0] && age <= +p[1]; })[0] || null;
+  }
   function renderDayCards(){
     var host = $('dayCards');
     if (!host) return;
     var groups = dayGroups();
     if (!groups.length) { host.innerHTML = ''; return; }
     var allLabel = dayPriceLabel(dayCampsList());
+    var gp = $('gwDayPrice'); if (gp) gp.textContent = allLabel ? ' \u00b7 ' + allLabel + ' a day' : '';
+    if (!state.dayFilter) state.dayFilter = { age: dayAgeDefault(groups), auto: true };
+    var f = state.dayFilter;
+    if (f.auto && !f.age) f.age = dayAgeDefault(groups);
+    var ageKeys = [];
+    groups.forEach(function(g){ g.acts.forEach(function(a){ var k = dayAgeKey(a); if (ageKeys.indexOf(k) === -1) ageKeys.push(k); }); });
+    ageKeys.sort(function(x, y){ return +x.split('-')[0] - +y.split('-')[0]; });
+    var selIdx = state.kids.map(function(k, i){ return k.sel ? i : -1; }).filter(function(i){ return i >= 0; });
     var snowOn = new Date() <= PACK_SNOW_END;
-    var packNote = '<div class="tiny" style="text-align:left;margin:10px 0 4px;color:var(--gold3)">Do all 5 day camps for $349 (save $46)' +
-      (snowOn ? ' + 2 free Snow Day camps if booked by September 21' : '') + ' \u2014 applied automatically</div>';
-    host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps' +
-      (allLabel ? ' \u00b7 ' + allLabel : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div>' + packNote +
-      groups.map(function(g, gi){
-        var ages = g.acts.map(function(a){ var r = castRange(a); return r.min + '\u2013' + r.max; }).join(' \u00b7 ');
-        var kidRows = state.kids.map(function(k, i){
-          if (!k.sel) return '';
-          var on = dayOn(i, g);
-          var age = campAge(k);
-          var eligible = g.acts.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); });
-          var pills = '';
-          if (on && eligible.length > 1) {
-            pills = '<div class="pills">' + eligible.map(function(a){
-              var r = castRange(a);
-              var left = a.remaining;
-              var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Waitlist only' : left + ' more spots available') + '</span>' : '';
-              return '<span class="pill' + (on === a.id ? ' sel' : '') + '" data-dayg="' + gi + '" data-i="' + i + '" data-act="' + a.id + '">Ages ' + r.min + '\u2013' + r.max + leftTag + '</span>';
-            }).join('') + '</div>';
-          }
-          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-dayg="' + gi + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' +
-            (eligible.length ? '' : ' <span class="badge-done" style="opacity:.65">for ages ' + ages + '</span>') + '</label>' + pills + '</div>';
-        }).join('');
-        return '<div class="showb" data-cat="day">' +
-          '<div class="poster" style="background-image:url(\'' + g.img + '\')"></div>' +
-          '<div class="bd"><div class="t">' + esc(g.title) + '</div>' +
-          '<div class="d">' + esc(g.when) + ' \u00b7 Ages ' + ages +
-            (dayPriceLabel(g.acts) ? ' \u00b7 ' + dayPriceLabel(g.acts) : '') + '</div>' +
-          '<div class="kids">' + kidRows +
-          '<button type="button" class="kid-add-here" data-addday="' + esc(g.when) + '">+ Add a camper to this day</button>' +
-          '</div></div></div>';
-      }).join('');
-    var groupsRef = groups;
-    host.querySelectorAll('input[data-dayg]').forEach(function(cb){
-      cb.addEventListener('change', function(){
-        var g = groupsRef[+cb.dataset.dayg], i = +cb.dataset.i, k = state.kids[i];
-        if (cb.checked) {
-          var age = campAge(k);
-          var fit = g.acts.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); })[0];
-          setDay(i, g, fit ? fit.id : null);
-        } else setDay(i, g, null);
-        ev('reg_daycamp_toggled', { when: g.when, on: cb.checked });
+    var head = '<div class="calhead"><div class="t">Day camps</div>' +
+      '<div class="d">One-day camps on school holidays' + (allLabel ? ' \u00b7 ' + allLabel + ' a day' : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div></div>' +
+      '<div class="tiny" style="text-align:left;margin:6px 0 0;color:var(--gold3)">Do all 5 day camps for $349 (save $46)' +
+        (snowOn ? ' + 2 free Snow Day camps if booked by September 21' : '') + ' \u2014 applied automatically</div>' +
+      '<div class="filt"><span class="lab">Ages</span>' +
+        '<span class="fpill' + (!f.age ? ' sel' : '') + '" data-dage="">All ages</span>' +
+        ageKeys.map(function(k){ return '<span class="fpill' + (f.age === k ? ' sel' : '') + '" data-dage="' + k + '">Ages ' + k.replace('-', '\u2013') + '</span>'; }).join('') + '</div>';
+    // which activity a tap books for a student: the filtered band if one is
+    // set, else the first band the child's age fits that still has room
+    function fitFor(i, g){
+      var age = campAge(state.kids[i]);
+      var pool = g.acts.filter(function(a){ return !f.age || dayAgeKey(a) === f.age; });
+      return pool.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); })[0] || null;
+    }
+    var byMonth = {}, order = [];
+    groups.forEach(function(g, gi){
+      var acts = g.acts.filter(function(a){ return !f.age || dayAgeKey(a) === f.age; });
+      if (!acts.length) return;
+      var d = new Date(g.ts), mk = d.getFullYear() + '-' + d.getMonth();
+      if (!byMonth[mk]) { byMonth[mk] = { label: PRO_MONTHS[d.getMonth()] + ' ' + d.getFullYear(), items: [] }; order.push(mk); }
+      byMonth[mk].items.push({ g: g, gi: gi, acts: acts, d: d });
+    });
+    var body = order.length ? order.map(function(mk){
+      var m = byMonth[mk];
+      return '<div class="mon">' + m.label + '</div><div class="dgrid">' + m.items.map(function(it){
+        var g = it.g, acts = it.acts;
+        var onKids = selIdx.filter(function(i){ return dayOn(i, g); });
+        var full = acts.every(function(a){ return a.remaining != null && a.remaining <= 0; });
+        var st;
+        if (full) st = 'Full';
+        else if (onKids.length) st = '\u2713 ' + onKids.map(function(i){ return esc(state.kids[i].name.split(' ')[0]); }).join(', ');
+        else st = (f.age ? '' : 'Ages ' + acts.map(function(a){ return dayAgeKey(a).replace('-', '\u2013'); }).join(' \u00b7 ') + ' \u00b7 ') + dayPriceLabel(acts);
+        var who = '';
+        if (selIdx.length > 1) {
+          who = '<div class="who">' + selIdx.map(function(i){
+            var k = state.kids[i], on = dayOn(i, g), fit = fitFor(i, g);
+            return '<label' + (fit || on ? '' : ' style="opacity:.5"') + '><input type="checkbox" data-dayg="' + it.gi + '" data-i="' + i + '"' + (on ? ' checked' : '') + (fit || on ? '' : ' disabled') + '> ' + esc(k.name.split(' ')[0]) + '</label>';
+          }).join('') + '</div>';
+        }
+        return '<div class="dt' + (onKids.length ? ' sel' : '') + (full ? ' full' : '') + '" data-dtile="' + it.gi + '">' +
+          '<div class="wd">' + CAL_DAYS[it.d.getDay()] + '</div><div class="dn">' + it.d.getDate() + '</div>' +
+          '<div class="nm">' + esc(g.title) + '</div><div class="st' + (onKids.length ? ' on' : '') + '">' + st + '</div>' + who + '</div>';
+      }).join('') + '</div>';
+    }).join('') : '<div class="calempty">No day camps for this age yet \u2014 try another age.</div>';
+    host.innerHTML = head + body;
+    host.querySelectorAll('.fpill[data-dage]').forEach(function(p){
+      p.addEventListener('click', function(){
+        f.age = p.dataset.dage || null; f.auto = false;
+        ev('reg_day_filter', { age: f.age || 'all' });
+        renderDayCards();
+      });
+    });
+    host.querySelectorAll('.dt[data-dtile]').forEach(function(tile){
+      tile.addEventListener('click', function(e){
+        if (e.target.closest && e.target.closest('.who')) return; // the per-student boxes handle themselves
+        var g = groups[+tile.dataset.dtile];
+        if (!g || tile.classList.contains('full')) return;
+        if (!selIdx.length) { openKidModal({ type: 'day', when: g.when }); return; }
+        if (selIdx.length > 1) return;
+        var i = selIdx[0];
+        if (dayOn(i, g)) setDay(i, g, null);
+        else { var fit = fitFor(i, g); if (!fit) return; setDay(i, g, fit.id); }
+        ev('reg_daycamp_toggled', { when: g.when, on: !!dayOn(i, g), via: 'calendar' });
         renderShowKids(); saveCart();
       });
     });
-    host.querySelectorAll('.pill[data-dayg]').forEach(function(pl){
-      pl.addEventListener('click', function(){
-        setDay(+pl.dataset.i, groupsRef[+pl.dataset.dayg], +pl.dataset.act);
+    host.querySelectorAll('input[data-dayg]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var g = groups[+cb.dataset.dayg], i = +cb.dataset.i;
+        if (cb.checked) { var fit = fitFor(i, g); setDay(i, g, fit ? fit.id : null); }
+        else setDay(i, g, null);
+        ev('reg_daycamp_toggled', { when: g.when, on: cb.checked });
         renderShowKids(); saveCart();
       });
     });
@@ -2029,6 +2232,45 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var t = ((ct.primary_text || [])[0] || '').replace(/\s*E[DS]T\s*$/, '');
     return [ct.title_text, t, ct.secondary_text].filter(Boolean).join(' \u00b7 ');
   }
+  // ---- Classes: a week calendar, filtered by age and day (CJ, Sep 16 2026:
+  // "I want the classes to look like a week calendar and sort by ages/days,
+  // and then those classes come up and they can click that class and it
+  // purchases"). One tile per class in its weekday column; a tap checks the
+  // student in, and a classes-only cart checks out with the next tap. ----
+  function classAgeKey(a){
+    if (/adult/i.test(String(a.age_range || ''))) return 'adult';
+    var r = castRange(a); return r.min + '-' + r.max;
+  }
+  function classAgeLabel(key){ return key === 'adult' ? 'Adults' : 'Ages ' + key.replace('-', '\u2013'); }
+  function classStartMin(a){
+    var ct = (a.class_times || [])[0];
+    var m = String((ct && (ct.primary_text || [])[0]) || '').match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+    if (!m) return 9999;
+    return ((+m[1] % 12) + (/pm/i.test(m[3]) ? 12 : 0)) * 60 + (+m[2] || 0);
+  }
+  function classTimeLabel(a){
+    var ct = (a.class_times || [])[0];
+    return String((ct && (ct.primary_text || [])[0]) || '').replace(/\s*E[DS]T\s*$/, '').replace(/:00/g, '');
+  }
+  // the band the one selected student falls in, so the calendar opens on it
+  function classAgeDefault(cls){
+    var sel = state.kids.filter(function(k){ return k.sel && k.bday; });
+    if (sel.length !== 1) return null;
+    var age = ageOn(sel[0].bday, CLASS_START);
+    var keys = cls.map(classAgeKey).filter(function(k){ return k !== 'adult'; });
+    return keys.filter(function(k){ var p = k.split('-'); return age >= +p[0] && age <= +p[1]; })[0] || null;
+  }
+  function classOnFor(a){
+    var on = [];
+    state.kids.forEach(function(k, i){ var v = state.assign['cls' + a.id + '|' + i]; if (k.sel && v && v.on) on.push(i); });
+    return on;
+  }
+  function classKidOk(a, k){
+    var age = ageOn(k.bday, CLASS_START);
+    if (age == null) return true;
+    if (/adult/i.test(String(a.age_range || ''))) return age >= 18;
+    var r = castRange(a); return age >= r.min - 1 && age <= r.max;
+  }
   function renderClassCards(){
     var host = $('classCards');
     if (!host) return;
@@ -2036,43 +2278,84 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (!cls.length) { host.innerHTML = ''; return; }
     var selIds = {};
     cls.forEach(function(a){
-      state.kids.forEach(function(k, i){
-        var v = state.assign['cls' + a.id + '|' + i];
-        if (k.sel && v && v.on) selIds[a.id] = 1;
+      classOnFor(a).forEach(function(i){ if (!classKidOk(a, state.kids[i])) state.assign['cls' + a.id + '|' + i] = { on: false }; });
+      if (classOnFor(a).length) selIds[a.id] = 1;
+    });
+    state.classSel = Object.keys(selIds);
+    if (!state.classFilter) state.classFilter = { age: classAgeDefault(cls), day: null, auto: true };
+    var f = state.classFilter;
+    if (f.auto && !f.age) f.age = classAgeDefault(cls); // untouched: follow the student once one is added
+    var ageKeys = [];
+    cls.forEach(function(a){ var k = classAgeKey(a); if (ageKeys.indexOf(k) === -1) ageKeys.push(k); });
+    ageKeys.sort(function(x, y){ return (x === 'adult' ? 99 : +x.split('-')[0]) - (y === 'adult' ? 99 : +y.split('-')[0]); });
+    var dayKeys = [];
+    cls.forEach(function(a){ var d = proWeekday(a); if (d != null && dayKeys.indexOf(d) === -1) dayKeys.push(d); });
+    dayKeys.sort(function(x, y){ return (x || 7) - (y || 7); }); // Monday first, Sunday last
+    var shown = cls.filter(function(a){ return (!f.age || classAgeKey(a) === f.age) && (f.day == null || proWeekday(a) === f.day); });
+    var cols = dayKeys.filter(function(d){ return f.day == null || d === f.day; });
+    var selIdx = state.kids.map(function(k, i){ return k.sel ? i : -1; }).filter(function(i){ return i >= 0; });
+    var head = '<div id="classHead" class="calhead"><div class="t">Weekly classes</div>' +
+      '<div class="d">Sep 2026 \u2013 Jun 2027 \u00b7 $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per student \u00b7 join mid-month and pay only for the classes left in it \u00b7 first month free with any show registration</div></div>' +
+      '<div class="filt"><span class="lab">Ages</span>' +
+        '<span class="fpill' + (!f.age ? ' sel' : '') + '" data-cage="">All ages</span>' +
+        ageKeys.map(function(k){ return '<span class="fpill' + (f.age === k ? ' sel' : '') + '" data-cage="' + k + '">' + classAgeLabel(k) + '</span>'; }).join('') + '</div>' +
+      '<div class="filt"><span class="lab">Day</span>' +
+        '<span class="fpill' + (f.day == null ? ' sel' : '') + '" data-cday="">Any day</span>' +
+        dayKeys.map(function(d){ return '<span class="fpill' + (f.day === d ? ' sel' : '') + '" data-cday="' + d + '">' + CAL_DAYS[d] + '</span>'; }).join('') + '</div>';
+    var grid = shown.length ? '<div class="wk">' + cols.map(function(d){
+      var inCol = shown.filter(function(a){ return proWeekday(a) === d; }).sort(function(x, y){ return classStartMin(x) - classStartMin(y); });
+      if (!inCol.length && f.day == null && f.age) return ''; // an empty weekday for this age takes no room
+      var tiles = inCol.length ? inCol.map(function(a){
+        var on = classOnFor(a), left = a.remaining, full = left != null && left <= 0;
+        var st = full ? '<div class="st warn">Full</div>'
+          : on.length ? '<div class="st">\u2713 ' + on.map(function(i){ return esc(state.kids[i].name.split(' ')[0]); }).join(', ') + '</div>'
+          : (left != null && left <= 5) ? '<div class="st warn">' + left + ' spot' + (left === 1 ? '' : 's') + ' left</div>' : '';
+        var who = '';
+        if (selIdx.length > 1) {
+          who = '<div class="who">' + selIdx.map(function(i){
+            var k = state.kids[i], v = state.assign['cls' + a.id + '|' + i], ok = classKidOk(a, k);
+            return '<label' + (ok ? '' : ' style="opacity:.5"') + '><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '"' + (v && v.on ? ' checked' : '') + (ok ? '' : ' disabled') + '> ' + esc(k.name.split(' ')[0]) + '</label>';
+          }).join('') + '</div>';
+        }
+        return '<div class="ct' + (on.length ? ' sel' : '') + (full ? ' full' : '') + '" data-ctile="' + a.id + '">' +
+          '<div class="tm">' + esc(classTimeLabel(a)) + '</div><div class="nm">' + esc(a.name) + '</div>' +
+          '<div class="ag">' + classAgeLabel(classAgeKey(a)) + '</div>' + st + who + '</div>';
+      }).join('') : '<div class="calempty">Nothing on ' + PRO_DAYS[d] + 's for this age.</div>';
+      return '<div class="wkcol"><div class="dh">' + PRO_DAYS[d] + '</div>' + tiles + '</div>';
+    }).join('') + '</div>' : '<div class="calempty">No classes match \u2014 try another age or day.</div>';
+    host.innerHTML = head + grid;
+    host.querySelectorAll('.fpill[data-cage]').forEach(function(p){
+      p.addEventListener('click', function(){ f.age = p.dataset.cage || null; f.auto = false; ev('reg_class_filter', { age: f.age || 'all', day: f.day == null ? 'any' : f.day }); renderClassCards(); });
+    });
+    host.querySelectorAll('.fpill[data-cday]').forEach(function(p){
+      p.addEventListener('click', function(){ f.day = p.dataset.cday === '' ? null : +p.dataset.cday; ev('reg_class_filter', { age: f.age || 'all', day: f.day == null ? 'any' : f.day }); renderClassCards(); });
+    });
+    host.querySelectorAll('.ct[data-ctile]').forEach(function(tile){
+      tile.addEventListener('click', function(e){
+        if (e.target.closest && e.target.closest('.who')) return; // the per-student boxes handle themselves
+        var id = +tile.dataset.ctile;
+        if (tile.classList.contains('full')) return;
+        if (!selIdx.length) { openKidModal({ type: 'cls', id: id }); return; }
+        if (selIdx.length > 1) return;
+        var key = 'cls' + id + '|' + selIdx[0];
+        var on = !(state.assign[key] && state.assign[key].on);
+        var act = cls.filter(function(x){ return x.id === id; })[0];
+        if (on && act && !classKidOk(act, state.kids[selIdx[0]])) {
+          var stEl = tile.querySelector('.st') || tile.appendChild(document.createElement('div'));
+          stEl.className = 'st warn'; stEl.textContent = 'This one is for ' + classAgeLabel(classAgeKey(act)).toLowerCase() + ' — ' + esc(state.kids[selIdx[0]].name.split(' ')[0]) + ' is outside that range.';
+          ev('reg_class_age_blocked', { id: id });
+          return;
+        }
+        state.assign[key] = { on: on };
+        ev('reg_class_toggled', { id: id, on: on, via: 'calendar' });
+        renderClassCards(); updateTicker(); saveCart(); upsellCheck();
       });
     });
-    var nSel = Object.keys(selIds).length;
-    state.classSel = Object.keys(selIds);
-    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per camper \u00b7 join mid-month and pay only for the classes left in it \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
-      cls.map(function(a){
-        // age gate (Jason, Jul 31): the card advertises an age range, so the
-        // checkboxes honor it — age at the Sep 14 class start, one year of
-        // grace below the floor like everywhere else. "Adults" ranges don't
-        // parse as kid bands, so they gate at 18+.
-        var isAdult = /adult/i.test(String(a.age_range || ''));
-        var cr2 = castRange(a);
-        var kidRows = state.kids.map(function(k, i){
-          if (!k.sel) return '';
-          var key = 'cls' + a.id + '|' + i;
-          var on = state.assign[key] && state.assign[key].on;
-          var age = ageOn(k.bday, '2026-09-14');
-          var ok = age == null || (isAdult ? age >= 18 : (age >= cr2.min - 1 && age <= cr2.max));
-          var badge = ok ? '' : ' <span class="badge-done" style="opacity:.65">for ' + (isAdult ? 'adults 18+' : 'ages ' + cr2.min + '\u2013' + cr2.max) + '</span>';
-          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' + badge + '</label></div>';
-        }).join('');
-        return '<div class="showb" data-cat="class">' +
-          '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
-          '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
-          '<div class="d">' + esc(classWhen(a)) + (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/,'')) : '') + ' \u00b7 $90/mo</div>' +
-          '<div class="kids">' + kidRows +
-          '<button type="button" class="kid-add-here" data-addcls="' + a.id + '">+ Add a camper to this class</button>' +
-          '</div></div></div>';
-      }).join('');
     host.querySelectorAll('input[data-cls]').forEach(function(cb){
       cb.addEventListener('change', function(){
         state.assign['cls' + cb.dataset.cls + '|' + cb.dataset.i] = { on: cb.checked };
         ev('reg_class_toggled', { id: +cb.dataset.cls, on: cb.checked });
-        renderClassCards(); saveCart(); upsellCheck();
+        renderClassCards(); updateTicker(); saveCart(); upsellCheck();
       });
     });
     applySeasonFilter();
@@ -2117,7 +2400,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           (eligible ? soloTag : soloTag + ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
       }).join('') +
-      '<button type="button" class="kid-add-here" data-addfall="' + esc(sKey) + '">+ Add a camper to this show</button>';
+      '<button type="button" class="kid-add-here" data-addfall="' + esc(sKey) + '">+ Add a student to this show</button>';
     });
     var blocks = $('showBlocks');
     blocks.querySelectorAll('input[type=checkbox][data-fall]').forEach(function(cb){
@@ -2180,10 +2463,35 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       inp.addEventListener('blur', function(){ commit(true); });
     });
   }
+  // Which shelf to open on. Summer used to be the default whatever the date,
+  // so from September to May the register page opened on three July camps and
+  // hid the shows and classes actually on sale (16 Frozen KIDS families held a
+  // seat and left in three weeks — Sep 16 2026 audit). Open on whichever has
+  // the nearest show still open: a school-year cast whose rehearsals start
+  // (or started within the last six weeks) before the summer camps do wins.
+  function defaultSeason(){
+    try {
+      var grace = new Date(Date.now() - 42 * 86400000);
+      var fallNext = null;
+      FALL_SHOWS.forEach(function(sh){
+        if (!sh.start || !sh.re) return;
+        var d = new Date(sh.start + 'T12:00:00');
+        if (d < grace) return;
+        var open = state.allCat.some(function(a){ return a.bookable && sh.re.test(a.name || ''); });
+        if (open && (!fallNext || d < fallNext)) fallNext = d;
+      });
+      var firstCamp = Object.keys(FSA_DATES).map(function(k){ return FSA_DATES[k][0]; }).sort()[0];
+      var summer = new Date(firstCamp + 'T12:00:00');
+      return fallNext && fallNext < summer ? 'year' : 'summer';
+    } catch(e){ return 'summer'; }
+  }
   function applySeasonFilter(){
+    if (!state.seasonFilter) state.seasonFilter = defaultSeason();
     var fl = state.seasonFilter;
     document.querySelectorAll('#showBlocks .showb').forEach(function(card){
       var cat = card.dataset.cat || (card.dataset.fall ? 'year' : 'summer');
+      // the door cards to classes and day camps sit on the show shelves only
+      if (cat === 'gateway') { card.style.display = (fl === 'summer' || fl === 'year') ? '' : 'none'; return; }
       var show = fl === 'all' ? true
         : fl === 'summer' ? cat === 'summer'
         : fl === 'year' ? cat === 'year'
@@ -2200,6 +2508,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     document.querySelectorAll('#seasonChips .schip').forEach(function(c){
       c.classList.toggle('sel', c.dataset.f === fl);
     });
+    // the heading names the shelf that is open
+    var h1 = $('shelfH1'), sub = $('shelfSub');
+    if (h1 && sub) {
+      var hc = fl === 'class' ? ['Choose your <em>classes.</em>', 'Filter by age and day, then tap a class to enroll.']
+        : fl === 'day' ? ['Pick your <em>day camps.</em>', 'Tap a date to book it — five days make a pack.']
+        : ['Choose your <em>shows.</em>', 'Check each student into their shows.'];
+      h1.innerHTML = hc[0]; sub.textContent = hc[1];
+    }
   }
 
   // upsell toast \u2014 "In town? bundle another camp"
@@ -2491,16 +2807,16 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // to more than the bundle a camper actually pays — say the bundle too
     var nCls = state.catItems.filter(function(a){ return a.category === 'class'; }).length;
     var bundleNote = nCls >= 2
-      ? ' · ' + money(classBundleCents(nCls)) + '/mo for ' + (nCls === 2 ? 'both' : 'all ' + (nCls === 3 ? 'three' : nCls)) + ' when one camper takes them'
+      ? ' · ' + money(classBundleCents(nCls)) + '/mo for ' + (nCls === 2 ? 'both' : 'all ' + (nCls === 3 ? 'three' : nCls)) + ' when one student takes them'
       : '';
     var html = state.catItems.map(function(a){
       var priceLine = a.category === 'class'
-        ? ((a.pricing||[])[0] || '$90/month') + ' per camper' + bundleNote + ' · first month due today'
+        ? ((a.pricing||[])[0] || '$90/month') + ' per student' + bundleNote + ' · first month due today'
         : a.category === 'coaching'
         // coaching is bought for one student and paid in full — "per camper"
         // reads wrong to a family booking a college audition package
         ? ((a.pricing||[])[0] || money(a.price_cents || 0)) + ' per student · paid in full today'
-        : ((a.pricing||[])[0] || '') + ' per camper';
+        : ((a.pricing||[])[0] || '') + ' per student';
       var rows = state.kids.map(function(k, ki){
         if (!k.sel) return '';
         var key = 'act' + a.id + '|' + ki;
@@ -2535,7 +2851,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       return poster ? '<div class="showb">' + poster + inner + '</div>' : inner;
     }).join('');
     html += renderAddClassPanel();
-    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
+    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' student</button>';
     $('assignBlocks').innerHTML = html;
     $('assignBlocks').querySelectorAll('input[data-addcls]').forEach(function(cb){
       cb.addEventListener('change', function(){ addCatClass(+cb.dataset.addcls, +cb.dataset.i, cb.checked); });
@@ -2575,7 +2891,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (addBtn) addBtn.addEventListener('click', function(){
       addKidTarget = null;
       $('kidErr').classList.remove('on');
-      $('kidModal').classList.add('on');
+      $('kidModal').classList.add('on'); ev('reg_kid_modal_opened');
       $('sKidName').focus();
     });
     $('catNext').disabled = !catBirthdaysReady();
@@ -2614,7 +2930,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       : n === 1
       ? 'Add a <b>second class</b> for ' + first + ' \u2014 just <b>' + money(classNextDelta(1)) + ' more</b> a month.'
       : 'A <b>third class</b> for ' + first + ' is only <b>' + money(classNextDelta(2)) + ' more</b> a month.';
-    var sub = '1 class $90/mo \u00b7 2 classes ' + money(classBundleCents(2)) + '/mo \u00b7 3 classes ' + money(classBundleCents(3)) + '/mo, per camper. Same checkout, one monthly bill.';
+    var sub = '1 class $90/mo \u00b7 2 classes ' + money(classBundleCents(2)) + '/mo \u00b7 3 classes ' + money(classBundleCents(3)) + '/mo, per student. Same checkout, one monthly bill.';
     // classes some camper here can take come first; the rest (other age
     // bands) fold away so the panel stays short on a phone
     var fit = [], rest = [];
@@ -2722,7 +3038,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   $('catNext').addEventListener('click', function(){
     var errEl = $('catErr'); errEl.classList.remove('on');
-    if (!catBirthdaysReady()) { errEl.textContent = 'Add a birthday for each camper you\'re enrolling.'; errEl.classList.add('on'); return; }
+    if (!catBirthdaysReady()) { errEl.textContent = 'Add a birthday for each student you\'re enrolling.'; errEl.classList.add('on'); return; }
     // persist any birthdays we collected/updated
     var seen = {};
     state.catItems.forEach(function(a){
@@ -2739,9 +3055,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
 
   function acquireHold(){
-    var errEl = isCatMode() ? $('catErr') : $('assignErr'); errEl.classList.remove('on');
+    // re-holding from the pay step writes its errors where the parent is
+    var errEl = $('st-pay').classList.contains('on') ? $('payErr') : (isCatMode() ? $('catErr') : $('assignErr'));
+    errEl.classList.remove('on');
     var items = buildItems();
-    if (!items.length) { errEl.textContent = 'Check at least one camper into a show.'; errEl.classList.add('on'); return; }
+    if (!items.length) { errEl.textContent = 'Check at least one student into a show.'; errEl.classList.add('on'); return; }
     var missingB = state.kids.some(function(k, i){
       if (!k.sel || k.bday) return false;
       return FALL_SHOWS.some(function(s){ return fallCastOn(i, s.key); });
@@ -2777,8 +3095,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         }
         if (msg.indexOf('DUPLICATE:') !== -1) {
           var dp = msg.match(/DUPLICATE:([a-z]+):(.*)$/) || [];
-          errEl.textContent = (dp[2] || 'This camper') + ' is already registered for ' +
-            (SHOW_NAMES[dp[1]] || 'that camp') + ' — no need to register twice. Questions? info@novapa.org';
+          errEl.textContent = (dp[2] || 'This student') + ' is already registered for ' +
+            (SHOW_NAMES[dp[1]] || 'that program') + ' — no need to register twice. Questions? info@novapa.org';
           errEl.classList.add('on');
           // uncheck the duplicate so they can continue with the rest
           state.kids.forEach(function(k, i){
@@ -2815,28 +3133,21 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
   }
 
-  // ---------- reservation timer (soft from show selection, hard once held) ----------
+  // ---------- reservation timer (only once a real hold exists) ----------
+  // There used to be a "soft" 30-minute countdown from the moment a show was
+  // picked, silently restarting at zero. It taught parents the timer was fake
+  // before the real hold began. (Sep 16 2026)
   var timerInt = null;
-  function startSoftTimer(){
-    if (state.hold || state.softUntil) return;
-    state.softUntil = new Date(Date.now() + 30 * 60000);
-    startTimer();
-  }
   function startTimer(){
     $('holdChip').classList.add('on');
     clearInterval(timerInt);
     timerInt = setInterval(function(){
-      var end = state.hold ? state.hold.expires : state.softUntil;
-      var ms = end - new Date();
+      var ms = state.hold.expires - new Date();
       if (ms <= 0) {
-        if (state.hold) {
-          clearInterval(timerInt);
-          $('holdChip').classList.remove('on');
-          $('expiredModal').classList.add('on');
-          ev('reg_hold_expired');
-        } else {
-          state.softUntil = new Date(Date.now() + 30 * 60000);
-        }
+        clearInterval(timerInt);
+        $('holdChip').classList.remove('on');
+        $('expiredModal').classList.add('on');
+        ev('reg_hold_expired');
         return;
       }
       var s = Math.floor(ms / 1000);
@@ -2845,7 +3156,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   $('reholdBtn').addEventListener('click', function(){
     $('expiredModal').classList.remove('on');
-    state.clientSecret = null;
+    ev('reg_rehold_clicked');
+    // A fresh hold means a fresh intent: drop the old card form and secret so
+    // mountStripe does not stack a second form on top of the first.
+    state.hold = null;
+    resetPayUI();
     acquireHold();
   });
 
@@ -3014,6 +3329,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     updateInsurance(p.items, p.baseSubtotal);
     renderShirts(p.items);
     setPayH1(p.today);
+    showPendingPay(p.today);
     $('payBreakdown').innerHTML = catAllClasses()
       ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
       : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done. All sales final.</p>';
@@ -3329,6 +3645,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     renderUpsells(p, byKid, byIdAll);
     renderShirts(items);
     setPayH1(p.today);
+    showPendingPay(p.today);
   }
 
   function renderUpsells(p, byKid, byIdAll){
@@ -3540,7 +3857,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var missing = Array.from(document.querySelectorAll('.shirtSel')).some(function(sl){ return !sl.value; });
     if (!missing) return false;
     var errEl = $('payErr');
-    errEl.textContent = 'Pick a t-shirt size for each camper.';
+    errEl.textContent = 'Pick a t-shirt size for each student.';
     errEl.classList.add('on');
     return true;
   }
@@ -3554,6 +3871,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     $('expressCheckout').innerHTML = ''; $('expressWrap').style.display = 'none';
   }
   var payTimer = null;
+  // The amount and the button are on screen from the first frame; the card
+  // form arriving from Stripe enables it. A pay step with nothing to press
+  // for three seconds on a slow phone read as broken. (Sep 16 2026)
+  function showPendingPay(cents){
+    if (state.clientSecret || state.freeOrder) return;
+    var b = $('paySubmit');
+    b.innerHTML = (state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') + money(cents) + (state.plan === 'deposit' ? ' today' : '');
+    b.disabled = true; b.style.display = '';
+  }
   function schedulePay(){ clearTimeout(payTimer); payTimer = setTimeout(startPayment, 350); }
   function setPayH1(cents){
     var n = state.hold ? state.hold.items.length : 1;
@@ -3561,11 +3887,27 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       ? 'Reserve your spot' + (n > 1 ? 's' : '') + ' for <em>' + money(cents) + '</em> today'
       : 'Pay <em>' + money(cents) + '</em> today';
   }
-  $('payStart').addEventListener('click', startPayment);
+  // "Continue to Payment" was hidden in the markup and only ever hidden
+  // further: when the auto-started payment failed (slow network, a refused
+  // plan, Stripe's script blocked) the parent read "Could not start payment"
+  // and had no button anywhere. It is now the retry button. (Sep 16 2026)
+  function showRetry(){
+    var b = $('payStart');
+    b.textContent = 'Try again'; b.disabled = false; b.style.display = '';
+  }
+  $('payStart').addEventListener('click', function(){
+    $('payStart').style.display = 'none';
+    $('payErr').classList.remove('on');
+    ev('reg_retry_clicked', { had_intent: !!state.clientSecret });
+    if (state.clientSecret && !state.stripe) mountStripe(); else startPayment();
+  });
   function startPayment(){
     if (!state.hold || state.clientSecret) return;
     var mySeq = ++paySeq;
-    var errEl = $('payErr'); errEl.classList.remove('on');
+    var errEl = $('payErr');
+    // a message the parent still needs to read (why the bank said no) survives
+    // the automatic restart of payment; everything else clears
+    if (state.stickyErr) state.stickyErr = false; else errEl.classList.remove('on');
     if (!C.STRIPE_PUBLISHABLE_KEY) {
       errEl.textContent = 'Payments aren\'t configured yet (test build) — Stripe keys pending.';
       errEl.classList.add('on'); return;
@@ -3598,9 +3940,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         if (res.j.error === 'pay_full_only') {
           state.plan = 'full';
           document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.toggle('sel', o.dataset.plan === 'full'); });
+          // the server will refuse installments for this cart every time — a
+          // tile that errors on every tap is worse than no tile
+          var depTile = document.querySelector('.plan-opt[data-plan="deposit"]');
+          if (depTile) depTile.style.display = 'none';
           renderPay();
           schedulePay();
         }
+        if (['hold_expired', 'pay_full_only', 'bad_coupon'].indexOf(res.j.error) === -1) showRetry();
         $('payErr').textContent = msg; $('payErr').classList.add('on'); return;
       }
       if (res.j.free) {
@@ -3613,6 +3960,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         $('expressWrap').style.display = 'none';
         $('payStart').style.display = 'none';
         $('paySubmit').innerHTML = 'Complete Registration — $0';
+        $('paySubmit').disabled = false;
         $('paySubmit').style.display = '';
         ev('reg_payment_started', { plan: state.plan, today_cents: 0, free: true });
         return;
@@ -3621,6 +3969,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       state.setupMode = !!res.j.setup;
       state.clientSecret = res.j.client_secret;
       state.pricing = res.j.pricing;
+      savePayPending();
       renderServerBreakdown(res.j.pricing);
       if (state.setupMode) {
         $('payBreakdown').innerHTML =
@@ -3635,6 +3984,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (mySeq !== paySeq) return;
       $('payStart').disabled = false;
       ev('reg_checkout_refused', { step: 'reg-pay', code: 'network', msg: String(e && e.message || e).slice(0, 120), email: state.email || undefined });
+      showRetry();
       $('payErr').textContent = 'Network error — try again.'; $('payErr').classList.add('on');
     });
   }
@@ -3661,7 +4011,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var fn = state.setupMode ? 'confirmSetup' : 'confirmPayment';
     return state.stripe[fn]({
       elements: state.elements,
-      confirmParams: { return_url: location.origin + '/register/?paid=1' },
+      confirmParams: { return_url: location.origin + '/register/' },
       redirect: 'if_required'
     });
   }
@@ -3716,16 +4066,27 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         ? 'Enroll \u2014 $0 today'
         : (state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
           money(state.pricing.today_cents) + (state.plan === 'deposit' ? ' today' : '');
+      $('paySubmit').disabled = false;
       $('paySubmit').style.display = '';
     }
     if (window.Stripe) return ready();
     var s = document.createElement('script');
     s.src = 'https://js.stripe.com/v3/'; s.onload = ready;
+    // In-app browsers and ad blockers sometimes refuse js.stripe.com. That used
+    // to leave the pay step with no card form, no button and no message.
+    s.onerror = function(){
+      s.remove();
+      ev('reg_stripe_load_failed', { email: state.email || undefined });
+      $('payErr').textContent = 'The secure card form couldn\'t load \u2014 check your connection (or open this page in Safari or Chrome) and try again.';
+      $('payErr').classList.add('on');
+      showRetry();
+    };
     document.head.appendChild(s);
   }
 
   $('paySubmit').addEventListener('click', function(){
     $('payErr').classList.remove('on');
+    ev('reg_pay_clicked', { plan: state.plan, free: !!state.freeOrder, email: state.email || undefined });
     // T-shirt sizes and the mobile number are no longer gates here (CJ, Sep 13
     // 2026): both live in the parent portal, and every field between a parent
     // and the pay button is a place to lose them. A number typed here still
@@ -3922,6 +4283,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function finish(){
     clearInterval(timerInt);
     clearCart();
+    clearPayPending();
     $('holdChip').classList.remove('on'); $('topNote').style.display='';
     var p = state.pricing;
     var items = state.hold.items;
@@ -3930,7 +4292,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         money(p.today_cents) + ' paid today' + (catAllClasses() && p.class_month ? ' for the rest of ' + esc(p.class_month.split(' ')[0]) : '') +
         (catAllClasses() ? ', monthly tuition on autopilot from ' + (p.next_bill_utc ? fmtBillDate(p.next_bill_utc) : 'Oct 1') + '.' : '.');
     } else {
-      $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
+      $('doneRecap').innerHTML = items.length + ' registration' + (items.length>1?'s':'') + ' locked in at <b>' +
         Math.round((p.discount_pct||0)) + '% off</b>' +
         (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full.');
     }
@@ -4018,8 +4380,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       return (k.savedBday && k.bday) || null; // only trust birthdays the server confirmed
     }
     var pfSaved = {};
-    host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>Camper details</span><span></span></div>' +
-      '<p class="tiny" style="text-align:left;margin:0 0 10px">Payment\u2019s done — fill this out for each camper and you\u2019re all set. A minute per camper.</p>' +
+    host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>Student details</span><span></span></div>' +
+      '<p class="tiny" style="text-align:left;margin:0 0 10px">Payment\u2019s done — fill this out for each student and you\u2019re all set. A minute per student.</p>' +
       names.map(function(n, i){
         var bday = bdayOf(n);
         var sel = function(id, label, opts){
@@ -4156,7 +4518,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('cwlCancel').addEventListener('click', function(){ $('cwlModal').classList.remove('on'); });
   $('cwlJoin').addEventListener('click', function(){
     var kid = $('cwlKid').value.trim(), pn = $('cwlParent').value.trim(), em = $('cwlEmail').value.trim();
-    if (kid.length < 2) { $('cwlErr').textContent = "Please add the camper's name."; return; }
+    if (kid.length < 2) { $('cwlErr').textContent = "Please add the student's name."; return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { $('cwlErr').textContent = 'Please enter a valid email.'; return; }
     var b = $('cwlJoin'); b.disabled = true; b.textContent = 'Joining…';
     fetch('/api/reg-waitlist', {

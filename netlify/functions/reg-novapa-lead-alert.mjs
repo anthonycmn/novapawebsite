@@ -90,7 +90,7 @@ export default async () => {
     : freshFree.length ? (freshFree.length === 1 ? "free class booking" : "free class bookings")
     : (freshQuiz.length === 1 ? "quiz lead" : "quiz leads");
 
-  const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
+  const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },

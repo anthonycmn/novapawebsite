@@ -479,7 +479,7 @@ export default async (req) => {
       nextBillUTC: classBilling.nextBillUTC, cancelAtUTC: classBilling.cancelAtUTC,
     };
     description = classItems
-      .map((it) => `${it.camper || "Camper"} — ${byId[it.activity_id].name}`)
+      .map((it) => `${it.camper || "Student"} — ${byId[it.activity_id].name}`)
       .join("; ");
   } else {
     if (plan === "subscription") return Response.json({ error: "bad_plan" }, { status: 400 });
@@ -519,8 +519,8 @@ export default async (req) => {
     };
     description = cart
       .map((it) => it.show
-        ? `${it.camper || "Camper"} — ${SHOWS[it.show] || it.show} (${it.band})`
-        : `${it.camper || "Camper"} — ${it.name}`)
+        ? `${it.camper || "Student"} — ${SHOWS[it.show] || it.show} (${it.band})`
+        : `${it.camper || "Student"} — ${it.name}`)
       .join("; ");
   }
 

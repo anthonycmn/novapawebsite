@@ -129,7 +129,6 @@ async function svcAll(path) {
 // Team always rides along on every blast (Jason's call — good to see what
 // families see). Suppressions and per-campaign sent-stamps still apply.
 const TEAM = [
-  { email: "jason@novapa.org", first: "Jason" },
   { email: "cj@novapa.org", first: "CJ" },
   { email: "todd@novapa.org", first: "Todd" },
   { email: "jen@novapa.org", first: "Jen" },

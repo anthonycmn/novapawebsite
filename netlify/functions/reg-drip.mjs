@@ -168,7 +168,7 @@ async function alertSpike(sentToday) {
     const key = "drip-spike-" + new Date().toISOString().slice(0, 10);
     if (await store.get(key)) return;
     await store.set(key, String(sentToday));
-    const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
+    const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },

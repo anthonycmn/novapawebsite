@@ -457,7 +457,7 @@ export default async (req) => {
           const md = (pi && pi.metadata) || {};
           await t.sendMail({
             from: `NOVAPA Alerts <${process.env.SMTP_USER}>`,
-            to: "jason@novapa.org",
+            to: "cj@novapa.org",
             subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
             html: [
               `A Stripe event was received but order creation FAILED. The customer paid (or saved a card) and got nothing.`,

@@ -35,7 +35,7 @@ export default async (req) => {
   const parentName = pick(body.parent_name, 80);
 
   if (!Number.isFinite(activityId)) return Response.json({ error: "bad activity" }, { status: 400 });
-  if (camperName.length < 2) return Response.json({ error: "Please add the camper's name." }, { status: 400 });
+  if (camperName.length < 2) return Response.json({ error: "Please add the student's name." }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
     return Response.json({ error: "That email doesn't look right — mind checking it?" }, { status: 400 });
   }

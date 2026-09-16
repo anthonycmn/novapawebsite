@@ -96,7 +96,7 @@ export default async (req) => {
     // frozen mid-send. A failed email must never fail the lead.
     try {
       const resend = process.env.RESEND_API_KEY;
-      const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
+      const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
       // Retakes refresh the row silently — only a brand new lead emails the
       // team (Jason, Aug 31).
       if (resend && isNew) {
