@@ -15,6 +15,7 @@ import { sendConfirmationEmail } from "./reg-email.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  classCoveredMonth, classSessionsInMonth, prorateCents, MONTH_NAMES,
   SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
   creditEventsFor,
 } from "./reg-config.mjs";
@@ -84,6 +85,24 @@ async function priorClassesByCamper(email, hdrs, stripe) {
     return out;
   } catch (err) {
     console.error("priorClassesByCamper failed:", err.message);
+    return {};
+  }
+}
+
+// What each class meets on and between which dates, for the mid-month
+// proration (CJ, Sep 16 2026). activity_facts does not carry the weekday, so
+// this reads the listing rows themselves with the service key. Any failure
+// returns {} and every class prices as a full month — a family must never be
+// blocked from buying by a schedule lookup, only charged the pre-Sep-16 way.
+async function classScheduleById(ids, hdrs) {
+  if (!ids.length) return {};
+  try {
+    const rows = await (await fetch(
+      `${SUPABASE_URL}/rest/v1/activities?id=in.(${ids.join(",")})&select=id,class_times,meets_days,starts_on,ends_on`,
+      { headers: hdrs })).json();
+    return Object.fromEntries((Array.isArray(rows) ? rows : []).map((r) => [r.id, r]));
+  } catch (err) {
+    console.error("classScheduleById failed:", err.message);
     return {};
   }
 }
@@ -381,7 +400,24 @@ export default async (req) => {
         unitPrices[idx] = j === idxs.length - 1 ? bundle - per * (idxs.length - 1) : per;
       });
     }
-    const subtotal = unitPrices.reduce((s, v) => s + v, 0);
+    // Mid-month proration (CJ, Sep 16 2026): today's charge is each line's
+    // monthly share × (that class's sessions left this month ÷ sessions it
+    // holds this month) — "two of four Wednesdays" is $45 of the $90. The
+    // subscription created by the webhook still pulls the full monthly
+    // amount (monthlyItems) on the 1st. The weekday comes from the listing
+    // row (class_times / meets_days); a class without one is a full month.
+    const schedule = await classScheduleById(
+      [...new Set(classItems.map((it) => it.activity_id))],
+      { apikey: priorSvcKey, Authorization: `Bearer ${priorSvcKey}` });
+    const classActs = classItems.map((it) => ({ ...byId[it.activity_id], ...(schedule[it.activity_id] || {}) }));
+    const covered = classCoveredMonth(classActs);
+    const prorations = classActs.map((a) => {
+      const s = classSessionsInMonth(a, covered.y, covered.m, covered.from);
+      return { day: s.day, left: s.left, total: s.total };
+    });
+    const todayItems = unitPrices.map((cents, i) => prorateCents(cents, prorations[i]));
+    const classMonth = `${MONTH_NAMES[covered.m]} ${covered.y}`;
+    const subtotal = todayItems.reduce((s, v) => s + v, 0);
     const couponCents = couponPct ? Math.round(subtotal * couponPct / 100) : Math.min(couponFixedCents, subtotal);
 
     // First month free (CJ, Jul 31): any family already holding a 2026-27
@@ -419,15 +455,18 @@ export default async (req) => {
     // Before Sep 13 2026 the anchor was simply "Oct 1 or the 1st of next
     // month", which billed the October adult class twice before its first
     // Tuesday and would have kept billing a December-ending class into June.
-    const classBilling = classBillingWindow(classItems.map((it) => byId[it.activity_id]));
+    const classBilling = classBillingWindow(classActs);
     pricing = {
       todayCents: firstMonthFree ? 0 : subtotal - couponCents,
       totalCents: firstMonthFree ? 0 : subtotal - couponCents,
       subtotalCents: subtotal, couponCents,
       insuranceCents: 0, // built into the monthly price for classes
       installmentCents: 0, nInstallments: 0, firstInstallmentUTC: 0,
-      unitPrices, monthlyItems: unitPrices, discountPct: 0,
+      // unitPrices is what each line costs TODAY (prorated); monthlyItems is
+      // what the subscription pulls on the 1st. They differ only mid-month.
+      unitPrices: todayItems, monthlyItems: unitPrices, discountPct: 0,
       firstMonthFree, priorClasses,
+      prorations, classMonth,
       nextBillUTC: classBilling.nextBillUTC, cancelAtUTC: classBilling.cancelAtUTC,
     };
     description = classItems
@@ -585,6 +624,8 @@ export default async (req) => {
         coupon: "", coupon_cents: "0", plan_fee_cents: "0", fsa_eligible: "0",
         first_month_free: "1",
         class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
+        class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total])).slice(0, 450),
+        class_month: pricing.classMonth || "",
         unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
         monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
         n_items: String(items.length),
@@ -600,8 +641,10 @@ export default async (req) => {
         coupon_cents: 0, coupon: null, plan_fee_cents: 0, insurance_cents: 0,
         total_cents: 0, today_cents: 0, installment_cents: 0,
         n_installments: 0, first_installment_utc: 0,
+        monthly_items: pricing.monthlyItems,
         monthly_cents: pricing.monthlyItems.reduce((s, v) => s + v, 0),
         first_month_free: true,
+        proration: pricing.prorations || [], class_month: pricing.classMonth || "",
         next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
         prior_classes: pricing.priorClasses || [],
       },
@@ -655,7 +698,7 @@ export default async (req) => {
     // charged off-session for installment schedules / class subscriptions.
     payment_method_types: ["card", "link"],
     description: `NOVAPA — ${plan === "deposit" ? "reservation deposit"
-      : plan === "subscription" ? "class enrollment (first month)" : "paid in full"}`,
+      : plan === "subscription" ? `class enrollment (${pricing.classMonth || "first month"})` : "paid in full"}`,
     statement_descriptor_suffix: "NOVAPA",
     metadata: {
       hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
@@ -695,6 +738,10 @@ export default async (req) => {
       unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
       monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
       class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
+      // [["Wednesday", 2, 4]] per class line and "October 2026": what today's
+      // charge covered, for the receipt. Empty for every other cart.
+      class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total])).slice(0, 450),
+      class_month: pricing.classMonth || "",
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
       // pack purchases grant per-camper credits; redeemed credits deduct —
@@ -723,6 +770,8 @@ export default async (req) => {
       n_installments: pricing.nInstallments,
       first_installment_utc: pricing.firstInstallmentUTC,
       monthly_items: pricing.monthlyItems,
+      monthly_cents: (pricing.monthlyItems || []).reduce((s, v) => s + v, 0),
+      proration: pricing.prorations || [], class_month: pricing.classMonth || "",
       next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
       prior_classes: pricing.priorClasses || [],
     },

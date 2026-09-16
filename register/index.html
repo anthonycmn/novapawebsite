@@ -1947,6 +1947,65 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     return state.allCat.filter(function(a){ return a.category === 'class' && a.bookable; })
       .sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); });
   }
+  // Mid-month proration (CJ, Sep 16 2026): "if there are two Wednesdays left
+  // and there were four Wednesdays in that month, take 90, divide it by four,
+  // and charge them for those two." Mirrors classWeekday / classCoveredMonth /
+  // classSessionsInMonth / prorateCents in reg-config.mjs — this only draws
+  // the number the family sees before the server answers; reg-pay reprices.
+  var PRO_DOW = { sun:0, mon:1, tue:2, wed:3, thu:4, fri:5, sat:6 };
+  var PRO_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var PRO_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function proWeekday(a){
+    var md = a && a.meets_days && a.meets_days.length ? Number(a.meets_days[0]) : NaN;
+    if (md >= 1 && md <= 7) return md % 7;                       // portal: 1 = Mon … 7 = Sun
+    var ct = ((a && a.class_times) || [])[0];
+    var key = String((ct && ct.title_text) || '').trim().slice(0, 3).toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(PRO_DOW, key)) return PRO_DOW[key];
+    if (a && a.starts_on) return new Date(a.starts_on + 'T12:00:00Z').getUTCDay();
+    return null;
+  }
+  function proPad(n){ return (n < 10 ? '0' : '') + n; }
+  function proIso(y, m, d){ return y + '-' + proPad(m + 1) + '-' + proPad(d); }
+  // today in Virginia, "YYYY-MM-DD"
+  function proToday(){
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+    catch (e) { var d = new Date(); return proIso(d.getFullYear(), d.getMonth(), d.getDate()); }
+  }
+  function proSessions(a, y, m, fromISO){
+    var wd = proWeekday(a);
+    if (wd == null) return { day: null, total: 0, left: 0 };
+    var n = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), total = 0, left = 0;
+    for (var d = 1; d <= n; d++) {
+      var s = proIso(y, m, d);
+      if (new Date(s + 'T12:00:00Z').getUTCDay() !== wd) continue;
+      if (a.starts_on && s < a.starts_on) continue;
+      if (a.ends_on && s > a.ends_on) continue;
+      total++; if (s >= fromISO) left++;
+    }
+    return { day: PRO_DAYS[wd], total: total, left: left };
+  }
+  function proCovered(acts){
+    var today = proToday();
+    var starts = acts.map(function(a){ return a && a.starts_on; }).filter(Boolean).sort();
+    var ends = acts.map(function(a){ return a && a.ends_on; }).filter(Boolean).sort();
+    var lastEnd = ends.length ? ends[ends.length - 1] : null;
+    var from = starts[0] && starts[0] > today ? starts[0] : today;
+    var y = Number(from.slice(0, 4)), m = Number(from.slice(5, 7)) - 1;
+    for (var i = 0; i < 12; i++) {
+      var attends = acts.some(function(a){ return proWeekday(a) == null || proSessions(a, y, m, from).left > 0; });
+      if (attends || !acts.length) break;
+      var ny = m === 11 ? y + 1 : y, nm = (m + 1) % 12;
+      if (lastEnd && proIso(ny, nm, 1) > lastEnd) break;  // the class is over; stay in its last month
+      y = ny; m = nm; from = proIso(y, m, 1);
+    }
+    return { y: y, m: m, from: from, today: today };
+  }
+  function proCents(cents, pr){ if (!pr || pr.day == null || !pr.total) return cents; return Math.round(cents * pr.left / pr.total); }
+  // "3 of September’s 5 Wednesdays" — empty when the whole month is charged
+  function proNote(pr, monthName){
+    if (!pr || pr.day == null || !pr.total || pr.left >= pr.total) return '';
+    return pr.left + ' of ' + monthName + '’s ' + pr.total + ' ' + pr.day + 's';
+  }
   function classWhen(a){
     // day + time + season dates from the Sawyer class_times payload
     var ct = (a.class_times || [])[0];
@@ -1968,7 +2027,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
     var nSel = Object.keys(selIds).length;
     state.classSel = Object.keys(selIds);
-    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per camper \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
+    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per camper \u00b7 join mid-month and pay only for the classes left in it \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
       cls.map(function(a){
         // age gate (Jason, Jul 31): the card advertises an age range, so the
         // checkboxes honor it — age at the Sep 14 class start, one year of
@@ -2848,7 +2907,19 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var dp = applyDayPacks(items, units, isDayTest);
     var credited = applyCredits(items, units, isDayTest,
       function(it){ return (byId[it.activity_id] || {}).name; }, dp.packed);
-    var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
+    // Mid-month proration (CJ, Sep 16 2026): a class line is charged today
+    // for the sessions left in the month it covers; `units` stays the monthly
+    // amount the subscription pulls on the 1st.
+    var todayUnits = units.slice(), prorate = [], covered = null;
+    if (catAllClasses()) {
+      var clsActs = items.map(function(it){ return byId[it.activity_id] || {}; });
+      covered = proCovered(clsActs);
+      items.forEach(function(it, i){
+        var pr = proSessions(clsActs[i], covered.y, covered.m, covered.from);
+        prorate[i] = pr; todayUnits[i] = proCents(units[i], pr);
+      });
+    }
+    var subtotal = todayUnits.reduce(function(x,y){ return x+y; }, 0);
     var coupon = !state.coupon ? 0
       : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
       : Math.min(state.coupon.amount_cents || 0, subtotal);
@@ -2862,7 +2933,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var ins = state.insurance ? Math.round(baseSubtotal * (C.INSURANCE_PCT || 10) / 100 * (1 - insPctOff2 / 100)) : 0;
     return { items: items, units: units, sib: sib, bund: bund, mg: mg, credited: credited, packed: dp.packed, subtotal: subtotal, coupon: coupon, baseSubtotal: baseSubtotal, fee: 0, ins: ins,
              total: subtotal - coupon + ins, today: subtotal - coupon + ins,
-             monthly: catAllClasses() ? units : [] };
+             monthly: catAllClasses() ? units : [],
+             todayUnits: todayUnits, prorate: prorate, covered: covered };
   }
   function renderCatPay(){
     var p = catPricing();
@@ -2878,6 +2950,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         (p.mg && p.mg[i] ? ' <span class="savings">(10% off through Aug 15)</span>' : '') +
         (p.sib[i] ? ' <span class="savings">(5% sibling)</span>' : '') +
         (p.credited && p.credited[i] ? ' <span class="savings">(day-camp credit)</span>' : '') +
+        // the prorated first payment, when it is less than the month —
+        // reg-pay's answer replaces this text (renderServerBreakdown)
+        (a.category === 'class' && p.prorate && proNote(p.prorate[i], PRO_MONTHS[p.covered.m])
+          ? ' <span class="savings" data-pro="1">(' + esc(proNote(p.prorate[i], PRO_MONTHS[p.covered.m])) + ' left — ' + money(p.todayUnits[i]) + ' today)</span>' : '') +
         '</span><span>' + money(p.units[i]) + (a.category === 'class' ? '/mo' : '') + '</span></div>';
     }).join('');
     $('summaryCard').innerHTML =
@@ -3332,10 +3408,22 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       // as the next steps of a bundle the camper is already on — $60/mo for
       // a second class, $30/mo for a third. The card drew $90 from cart-only
       // math; let the server's per-line numbers replace it and say why.
+      // The server's proration replaces the card's own guess line by line —
+      // a returning family's $60 second class prorates from $60, not $90.
+      var mo = p.class_month ? p.class_month.split(' ')[0] : 'this month';
+      var firsts = $('summaryCard').querySelectorAll('.sumrow:not(.head):not(.total) span:first-child');
+      (p.proration || []).forEach(function(x, i){
+        if (!firsts[i]) return;
+        var oldPro = firsts[i].querySelector('[data-pro]'); if (oldPro) oldPro.parentNode.removeChild(oldPro);
+        if (!x || !x.day || !x.total || x.left >= x.total) return;
+        var sp = document.createElement('span'); sp.className = 'savings'; sp.setAttribute('data-pro', '1');
+        sp.textContent = ' (' + x.left + ' of ' + mo + '’s ' + x.total + ' ' + x.day + 's left — ' + money((p.unit_prices || [])[i] || 0) + ' today)';
+        firsts[i].appendChild(sp);
+      });
       var pc = p.prior_classes || [];
-      if (pc.length && p.unit_prices) {
+      if (pc.length && (p.monthly_items || p.unit_prices)) {
         var amts = $('summaryCard').querySelectorAll('.sumrow:not(.head):not(.total) span:last-child');
-        p.unit_prices.forEach(function(u, i){ if (amts[i]) amts[i].textContent = money(u) + '/mo'; });
+        (p.monthly_items || p.unit_prices).forEach(function(u, i){ if (amts[i]) amts[i].textContent = money(u) + '/mo'; });
         var old = $('priorClassNote'); if (old) old.parentNode.removeChild(old);
         var note = document.createElement('div');
         note.id = 'priorClassNote'; note.className = 'sumrow';
@@ -3362,8 +3450,17 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       }
       if (!p.first_month_free) {
         // the class summary card already carries the Due today row
+        var partial = (p.proration || []).filter(function(x){ return x && x.day && x.total && x.left < x.total; });
+        var proTxt = partial.length
+          ? ' — ' + partial.map(function(x){ return x.left + ' of ' + mo + '’s ' + x.total + ' ' + x.day + 's'; }).join(', ') + ' —'
+          : '';
+        var noMore = p.cancel_at_utc && p.next_bill_utc && p.cancel_at_utc <= p.next_bill_utc;
         $('payBreakdown').innerHTML =
-          '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill ' + nb + ', final bill ' + fb + '). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>';
+          '<p class="tiny" style="text-align:left;margin-top:2px">Today covers the rest of ' + esc(mo) + proTxt +
+          (noMore
+            ? '. The class ends before the next 1st, so there are no further charges.'
+            : '. Monthly tuition of ' + money(p.monthly_cents || 0) + ' then continues automatically on the 1st (next bill ' + nb + ', final bill ' + fb + '). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.') +
+          '</p>';
       }
       return;
     }
@@ -3813,7 +3910,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var items = state.hold.items;
     if (isCatMode()) {
       $('doneRecap').innerHTML = items.length + ' enrollment' + (items.length>1?'s':'') + ' locked in — ' +
-        money(p.today_cents) + ' paid today' + (catAllClasses() ? ', monthly tuition on autopilot from ' + (p.next_bill_utc ? fmtBillDate(p.next_bill_utc) : 'Oct 1') + '.' : '.');
+        money(p.today_cents) + ' paid today' + (catAllClasses() && p.class_month ? ' for the rest of ' + esc(p.class_month.split(' ')[0]) : '') +
+        (catAllClasses() ? ', monthly tuition on autopilot from ' + (p.next_bill_utc ? fmtBillDate(p.next_bill_utc) : 'Oct 1') + '.' : '.');
     } else {
       $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
         Math.round((p.discount_pct||0)) + '% off</b>' +

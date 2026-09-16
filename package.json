@@ -6,7 +6,7 @@
     "check": "node tests/preflight.mjs",
     "check:live": "node tests/preflight.mjs --live",
     "check:staging": "node tests/preflight.mjs --live --base https://staging-summer-sprint--northernvirginiaperformingarts.netlify.app",
-    "test": "node tests/pricing.test.mjs && node tests/day-camp-packs.test.mjs && node tests/class-bundle.test.mjs && node tests/free-class-classes.test.mjs && node tests/free-class-seats.test.mjs && node tests/free-class-visit.test.mjs && node tests/booking.test.mjs && node tests/cast-fallback.test.mjs && node tests/portal-titles.test.mjs"
+    "test": "node tests/pricing.test.mjs && node tests/day-camp-packs.test.mjs && node tests/class-bundle.test.mjs && node tests/class-proration.test.mjs && node tests/free-class-classes.test.mjs && node tests/free-class-seats.test.mjs && node tests/free-class-visit.test.mjs && node tests/booking.test.mjs && node tests/cast-fallback.test.mjs && node tests/portal-titles.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",
