@@ -727,6 +727,26 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   (function(){
     var m = location.search.match(/[?&]activity=([0-9,]+)/);
     if (m) state.catIds = m[1].split(',').map(Number).filter(Boolean);
+    // Coming back from a bank's 3-D Secure page. Stripe appends payment_intent
+    // (or setup_intent), its client secret and redirect_status to return_url.
+    // Nothing used to read them: the parent landed as a fresh guest, saw their
+    // unpaid-looking cart restored, and either left convinced it failed or
+    // paid a second time (guest holds have no duplicate guard). The snapshot
+    // taken when payment started (nv_pay_pending) restores the cart and hold
+    // so they land on the confirmation instead. (Found in the Sep 16 2026
+    // audit; the return_url had pointed at ?paid=1 since launch.)
+    var pmr = location.search.match(/[?&]redirect_status=([a-z_]+)/);
+    state.payReturn = null;
+    if (pmr) {
+      try {
+        var pend = JSON.parse(localStorage.getItem('nv_pay_pending') || 'null');
+        if (pend && pend.hold && Date.now() - (pend.t || 0) < 6 * 3600 * 1000) {
+          var pim = location.search.match(/[?&](?:payment_intent|setup_intent)=([A-Za-z0-9_]+)/);
+          state.payReturn = { status: pmr[1], intent: pim ? pim[1] : null, pend: pend };
+          if (Array.isArray(pend.catIds) && pend.catIds.length) state.catIds = pend.catIds;
+        }
+      } catch(e){}
+    }
     // DC Unifieds tracks (970600–970699) are sold ONLY on dcunifieds.com —
     // different brand, different coupon rules, no NOVAPA account. A DCU deep
     // link that lands here shows NOVAPA pricing that disagrees with what DCU
@@ -1151,6 +1171,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('guestReturnRow').style.display = '';
       $('guestReturnLink').addEventListener('click', toSignin);
       ev('reg_guest_entered', {});
+      if (handlePayReturn()) return;
       restoreCart();
       if (isCatMode()) {
         var kidKnown = applyUrlKid();
@@ -1214,6 +1235,50 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   function cartOwner(){ return state.email || (state.guest ? 'guest' : ''); }
   function clearCart(){ try { localStorage.removeItem(CART_KEY); } catch(e){} }
+  // Everything finish() needs, written the moment a payment intent exists, so
+  // a bank redirect can bring the parent back to their confirmation.
+  function savePayPending(){
+    try {
+      localStorage.setItem('nv_pay_pending', JSON.stringify({
+        t: Date.now(),
+        hold: { id: state.hold.id, expires: state.hold.expires, items: state.hold.items },
+        pricing: state.pricing, plan: state.plan, email: state.email || '', guest: !!state.guest,
+        setupMode: !!state.setupMode, catIds: state.catIds,
+        kids: state.kids.map(function(k){ return { name: k.name, bday: k.bday || null, sel: !!k.sel, already: k.already || [] }; })
+      }));
+    } catch(e){}
+  }
+  function clearPayPending(){ try { localStorage.removeItem('nv_pay_pending'); } catch(e){} }
+  function handlePayReturn(){
+    var r = state.payReturn;
+    if (!r) return false;
+    state.payReturn = null;
+    var p = r.pend;
+    try { history.replaceState(null, '', location.pathname + (state.catIds.length ? '?activity=' + state.catIds.join(',') : '')); } catch(e){}
+    ev('reg_3ds_return', { status: r.status, intent: r.intent || undefined, email: p.email || undefined });
+    state.hold = { id: p.hold.id, expires: new Date(p.hold.expires), items: p.hold.items };
+    state.pricing = p.pricing;
+    state.plan = p.plan || state.plan;
+    state.setupMode = !!p.setupMode;
+    if (p.email) state.email = p.email;
+    if (!state.kids.length && Array.isArray(p.kids)) {
+      state.kids = p.kids.map(function(k){ return { name: k.name, bday: k.bday, sel: k.sel, already: k.already || [] }; });
+    }
+    if (r.status === 'succeeded') {
+      state.piId = r.intent || null;
+      finish();
+      return true;
+    }
+    // The bank said no. Same hold, same cart, a fresh intent — and say why.
+    clearPayPending();
+    renderPay(); go('st-pay');
+    if (state.hold.expires > new Date()) startTimer();
+    $('payErr').textContent = 'Your bank didn\'t approve that payment. Try another card, or call your bank and try again.';
+    $('payErr').classList.add('on');
+    ev('reg_payment_failed', { code: '3ds_' + r.status, email: state.email || undefined });
+    schedulePay();
+    return true;
+  }
   function restoreCart(){
     try {
       var raw = localStorage.getItem(CART_KEY);
@@ -1503,6 +1568,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('whoami2').textContent = state.email;
       renderKids();
       ev('reg_family_loaded', { returning: returning, kids: state.kids.length });
+      if (handlePayReturn()) return;
       restoreCart();
       if (isCatMode()) {
         var kidKnown = applyUrlKid();
@@ -3621,6 +3687,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       state.setupMode = !!res.j.setup;
       state.clientSecret = res.j.client_secret;
       state.pricing = res.j.pricing;
+      savePayPending();
       renderServerBreakdown(res.j.pricing);
       if (state.setupMode) {
         $('payBreakdown').innerHTML =
@@ -3661,7 +3728,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var fn = state.setupMode ? 'confirmSetup' : 'confirmPayment';
     return state.stripe[fn]({
       elements: state.elements,
-      confirmParams: { return_url: location.origin + '/register/?paid=1' },
+      confirmParams: { return_url: location.origin + '/register/' },
       redirect: 'if_required'
     });
   }
@@ -3922,6 +3989,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function finish(){
     clearInterval(timerInt);
     clearCart();
+    clearPayPending();
     $('holdChip').classList.remove('on'); $('topNote').style.display='';
     var p = state.pricing;
     var items = state.hold.items;
