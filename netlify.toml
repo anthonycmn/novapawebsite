@@ -201,3 +201,92 @@
   to = "/meet-the-team.html"
   status = 301
   force = true
+
+# Blog posts carry the author name in the slug (CJ, 16 Sep 2026): every
+# post URL ends in -tony-cimino-johnson so the byline is part of the address.
+# The first seven posts were published and shared under the short slugs
+# (Substack canonical pointers, Reddit, Facebook, LinkedIn), so those 301 here.
+[[redirects]]
+  from = "/blog/how-to-prepare-for-a-school-musical-audition.html"
+  to = "/blog/how-to-prepare-for-a-school-musical-audition-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/how-to-prepare-for-a-school-musical-audition"
+  to = "/blog/how-to-prepare-for-a-school-musical-audition-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/how-to-help-a-child-with-stage-fright.html"
+  to = "/blog/how-to-help-a-child-with-stage-fright-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/how-to-help-a-child-with-stage-fright"
+  to = "/blog/how-to-help-a-child-with-stage-fright-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/adult-acting-classes-for-beginners.html"
+  to = "/blog/adult-acting-classes-for-beginners-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/adult-acting-classes-for-beginners"
+  to = "/blog/adult-acting-classes-for-beginners-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/what-age-should-a-child-start-theatre-classes.html"
+  to = "/blog/what-age-should-a-child-start-theatre-classes-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/what-age-should-a-child-start-theatre-classes"
+  to = "/blog/what-age-should-a-child-start-theatre-classes-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/best-audition-songs-for-kids.html"
+  to = "/blog/best-audition-songs-for-kids-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/best-audition-songs-for-kids"
+  to = "/blog/best-audition-songs-for-kids-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/voice-lessons-cost-how-to-choose-a-teacher.html"
+  to = "/blog/voice-lessons-cost-how-to-choose-a-teacher-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/voice-lessons-cost-how-to-choose-a-teacher"
+  to = "/blog/voice-lessons-cost-how-to-choose-a-teacher-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/summer-theatre-camps-northern-virginia.html"
+  to = "/blog/summer-theatre-camps-northern-virginia-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/blog/summer-theatre-camps-northern-virginia"
+  to = "/blog/summer-theatre-camps-northern-virginia-tony-cimino-johnson.html"
+  status = 301
+  force = true
+
