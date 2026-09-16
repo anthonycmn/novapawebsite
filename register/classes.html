@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Classes — NOVAPA</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<script src="/register/config.js"></script>
+<style>
+  :root {
+    --navy0:#08111F; --navy1:#0F1E36; --navy2:#162B52;
+    --gold:#C8892A; --gold2:#E8B84B; --gold3:#E8B84B;
+    --ink:rgba(255,255,255,0.88); --ink-dim:rgba(255,255,255,0.62);
+    --line:rgba(255,255,255,0.14); --card:rgba(22,43,82,0.45);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'DM Sans',sans-serif; color:var(--ink);
+    background:radial-gradient(1200px 700px at 70% -10%, #1b3563 0%, var(--navy1) 45%, var(--navy0) 100%);
+    min-height:100vh; }
+  .top { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:14px;
+    padding:14px 20px; background:rgba(8,17,31,0.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .brand { font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.22em; font-size:15px; color:#fff; text-decoration:none; }
+  .brand em { color:var(--gold2); font-style:normal; }
+  .top-note { font-size:12px; color:var(--ink-dim); margin-left:auto; }
+  .top-note a { color:var(--gold2); }
+  .wrap { max-width:1180px; margin:0 auto; padding:30px 20px 90px; }
+  h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(28px,5vw,40px); color:#fff; margin-bottom:6px; }
+  .sub { color:var(--ink-dim); margin-bottom:22px; font-size:15px; }
+
+  /* ---- filters ---- */
+  .filters { border:1px solid var(--line); background:var(--card); border-radius:14px; padding:16px 18px; margin-bottom:18px; }
+  .frow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .frow + .frow { margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); }
+  .flab { font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--gold2); min-width:96px; }
+  .chip { border:1px solid var(--line); background:transparent; color:var(--ink); font:inherit; font-size:13px;
+    padding:7px 14px; border-radius:999px; cursor:pointer; }
+  .chip:hover { border-color:rgba(232,184,75,0.5); }
+  .chip.on { background:linear-gradient(180deg,var(--gold2),var(--gold)); border-color:transparent; color:#1a1206; font-weight:700; }
+  #age { width:96px; background:rgba(8,17,31,0.6); border:1px solid var(--line); color:var(--ink);
+    font:inherit; font-size:14px; padding:7px 10px; border-radius:9px; }
+  .clear { margin-left:auto; background:none; border:none; color:var(--ink-dim); font:inherit; font-size:12.5px;
+    cursor:pointer; text-decoration:underline; }
+  .count { font-size:13px; color:var(--ink-dim); margin:0 0 14px; }
+  .count b { color:var(--gold2); }
+
+  /* ---- weekly grid ---- */
+  .week { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; align-items:start; }
+  .day { border:1px solid var(--line); background:rgba(8,17,31,0.35); border-radius:14px; padding:12px; min-height:110px; }
+  .day-h { font-family:'Cinzel',serif; font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--gold2); padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .day-h span { color:var(--ink-dim); letter-spacing:0; font-family:'DM Sans',sans-serif; float:right; text-transform:none; font-size:11px; }
+  .slot { width:100%; text-align:left; display:block; border:1px solid var(--line); border-left:3px solid var(--gold);
+    background:var(--card); color:inherit; font:inherit; border-radius:10px; padding:11px 12px; cursor:pointer; }
+  .slot + .slot { margin-top:9px; }
+  .slot:hover { border-color:rgba(232,184,75,0.55); border-left-color:var(--gold2); transform:translateY(-1px); }
+  .slot-t { font-size:12px; color:var(--gold2); font-weight:700; }
+  .slot-n { font-size:14.5px; color:#fff; line-height:1.3; margin:3px 0 4px; }
+  .slot-a { font-size:12px; color:var(--ink-dim); }
+  .slot-tag { display:inline-block; margin-top:7px; font-size:10px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--gold2); border:1px solid rgba(232,184,75,0.4); border-radius:999px; padding:2px 8px; }
+  .slot-full { color:#E5837B; border-color:rgba(229,131,123,0.45); }
+  .empty { font-size:12.5px; color:rgba(255,255,255,0.38); font-style:italic; padding:6px 2px; }
+  .none { border:1px dashed var(--line); border-radius:14px; padding:34px 20px; text-align:center; color:var(--ink-dim); }
+  .none b { color:#fff; display:block; margin-bottom:6px; font-size:16px; }
+
+  /* ---- detail ---- */
+  .back { position:fixed; inset:0; background:rgba(4,9,18,0.72); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:100; }
+  .back.on { display:flex; }
+  .sheet { width:100%; max-width:480px; max-height:88vh; overflow:auto; background:var(--navy1);
+    border:1px solid var(--line); border-radius:16px; padding:24px; }
+  .sheet-k { font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--gold2); }
+  .sheet-n { font-family:'Cormorant Garamond',serif; font-size:28px; color:#fff; line-height:1.15; margin:6px 0 12px; }
+  .facts { border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:12px 0; margin-bottom:14px; }
+  .fact { display:flex; justify-content:space-between; gap:14px; padding:4px 0; font-size:13.5px; }
+  .fact span:first-child { color:var(--ink-dim); }
+  .fact span:last-child { color:#fff; font-weight:500; text-align:right; }
+  .desc { font-size:14px; line-height:1.65; color:var(--ink); margin-bottom:18px; }
+  .btn { display:block; width:100%; text-align:center; text-decoration:none; font:inherit; font-size:14px;
+    font-weight:700; letter-spacing:.06em; padding:14px; border-radius:11px; border:none; cursor:pointer;
+    background:linear-gradient(180deg,var(--gold2),var(--gold)); color:#1a1206; }
+  .btn2 { display:block; width:100%; text-align:center; text-decoration:none; font:inherit; font-size:14px;
+    font-weight:600; padding:13px; border-radius:11px; margin-top:10px; cursor:pointer;
+    background:transparent; border:1px solid rgba(232,184,75,0.55); color:var(--gold2); }
+  .btn-off { opacity:.45; pointer-events:none; }
+  .fine { font-size:12px; color:var(--ink-dim); margin-top:12px; line-height:1.55; text-align:center; }
+  .x { background:none; border:none; color:var(--ink-dim); font-size:22px; line-height:1; cursor:pointer; float:right; }
+
+  @media (max-width:900px) {
+    .week { grid-template-columns:repeat(2,1fr); }
+    .flab { min-width:0; width:100%; }
+  }
+  @media (max-width:560px) { .week { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <a class="brand" href="/register/">NOVA<em>PA</em></a>
+  <span class="top-note"><a href="/register/catalog.html">Everything we offer</a></span>
+</div>
+
+<div class="wrap">
+  <h1>Weekly classes</h1>
+  <p class="sub">One evening a week, September through June. Pick a night that fits and see what runs then.</p>
+
+  <div class="filters">
+    <div class="frow">
+      <span class="flab">Child's age</span>
+      <input id="age" type="number" min="3" max="99" placeholder="Any" inputmode="numeric">
+      <button class="clear" id="clear" type="button">Clear all filters</button>
+    </div>
+    <div class="frow">
+      <span class="flab">Days free</span>
+      <span id="dayChips"></span>
+    </div>
+    <div class="frow">
+      <span class="flab">Time of day</span>
+      <span id="timeChips"></span>
+    </div>
+  </div>
+
+  <p class="count" id="count">Loading the schedule…</p>
+  <div class="week" id="week"></div>
+  <div id="none"></div>
+</div>
+
+<div class="back" id="back">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+(function () {
+  var C = window.NOVAREG;
+  var DAYS = [
+    { n: 1, short: 'Mon', long: 'Monday' },
+    { n: 2, short: 'Tue', long: 'Tuesday' },
+    { n: 3, short: 'Wed', long: 'Wednesday' },
+    { n: 4, short: 'Thu', long: 'Thursday' },
+    { n: 6, short: 'Sat', long: 'Saturday' }
+  ];
+  // "Times you are available" in the words a parent uses, not clock ranges.
+  var BANDS = [
+    { k: 'day',   label: 'Daytime',       lo: 0,    hi: 16 * 60 },
+    { k: 'early', label: 'Early evening', lo: 16 * 60, hi: 19 * 60 },
+    { k: 'late',  label: 'After 7pm',     lo: 19 * 60, hi: 24 * 60 }
+  ];
+
+  var all = [], trials = {}, sel = { age: null, days: {}, bands: {} };
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+  function rpc(fn) {
+    return fetch(C.SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: { apikey: C.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function (r) { return r.json(); });
+  }
+
+  // ---- reading a class row -------------------------------------------------
+  // class_times is the portal's own shape: title_text "Mon", primary_text
+  // ["8:00pm - 8:50pm EDT"]. meets_days/meets_start are usually null on
+  // imported rows, so the text is what we actually have.
+  var DOW = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+  function ct(a) { return ((a && a.class_times) || [])[0] || {}; }
+  function dayOf(a) {
+    var k = String(ct(a).title_text || '').trim().slice(0, 3).toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(DOW, k)) return DOW[k];
+    if (a && a.starts_on) return new Date(a.starts_on + 'T12:00:00Z').getUTCDay();
+    return null;
+  }
+  function minutesOf(a) {
+    var t = String((ct(a).primary_text || [])[0] || '');
+    var m = t.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+    if (!m) return null;
+    var h = +m[1] % 12;
+    if (/pm/i.test(m[3])) h += 12;
+    return h * 60 + (+m[2]);
+  }
+  function clockOf(a) {
+    var m = minutesOf(a);
+    if (m == null) return '';
+    var h = Math.floor(m / 60), mm = m % 60;
+    var ap = h >= 12 ? 'PM' : 'AM';
+    var hh = h % 12; if (hh === 0) hh = 12;
+    return hh + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
+  }
+  function agesOf(a) {
+    var raw = String(a.age_range || '');
+    var m = raw.match(/(\d+)\s*[–—-]\s*(\d+)/);
+    if (m) return { lo: +m[1], hi: +m[2] };
+    // "Adults" carries no digits, so without this the adult class answers an
+    // age filter of 8 by staying on the grid
+    if (/adult/i.test(raw)) return { lo: 18, hi: 99, adult: true };
+    return null;
+  }
+  function priceOf(a) {
+    return (a.pricing && a.pricing[0]) || (a.price_cents ? '$' + Math.round(a.price_cents / 100) + '/month' : '');
+  }
+  function bandOf(a) {
+    var m = minutesOf(a);
+    if (m == null) return null;
+    for (var i = 0; i < BANDS.length; i++) if (m >= BANDS[i].lo && m < BANDS[i].hi) return BANDS[i].k;
+    return null;
+  }
+
+  // ---- filtering -----------------------------------------------------------
+  function anyOn(o) { for (var k in o) if (o[k]) return true; return false; }
+  function matches(a) {
+    if (sel.age != null) {
+      var ag = agesOf(a);
+      // the age bands overlap by design, so a 12 year old sees both 9–12 and
+      // 12–17; one year of grace on each side matches what the register app allows
+      var grace = ag && ag.adult ? 0 : 1;
+      if (ag && !(sel.age >= ag.lo - grace && sel.age <= ag.hi + grace)) return false;
+    }
+    if (anyOn(sel.days) && !sel.days[dayOf(a)]) return false;
+    if (anyOn(sel.bands) && !sel.bands[bandOf(a)]) return false;
+    return true;
+  }
+
+  // ---- rendering -----------------------------------------------------------
+  function render() {
+    var shown = all.filter(matches);
+    $('count').innerHTML = shown.length === all.length
+      ? '<b>' + all.length + '</b> classes on the schedule.'
+      : 'Showing <b>' + shown.length + '</b> of ' + all.length + ' classes.';
+
+    if (!shown.length) {
+      $('week').innerHTML = '';
+      $('none').innerHTML = '<div class="none"><b>Nothing matches yet.</b>' +
+        'Try another night, a wider time, or clear the filters to see the whole week.</div>';
+      return;
+    }
+    $('none').innerHTML = '';
+    $('week').innerHTML = DAYS.map(function (d) {
+      var mine = shown.filter(function (a) { return dayOf(a) === d.n; })
+        .sort(function (x, y) { return (minutesOf(x) || 0) - (minutesOf(y) || 0); });
+      var body = mine.length
+        ? mine.map(function (a) {
+            var ag = agesOf(a);
+            var full = a.remaining != null && a.remaining <= 0;
+            var free = trials[a.id];
+            var tag = full ? '<span class="slot-tag slot-full">Waitlist only</span>'
+              : free ? '<span class="slot-tag">Free trial</span>' : '';
+            return '<button class="slot" type="button" data-id="' + a.id + '">' +
+              '<span class="slot-t">' + esc(clockOf(a)) + '</span>' +
+              '<div class="slot-n">' + esc(a.name) + '</div>' +
+              '<div class="slot-a">' + (ag && ag.adult ? 'Adults' : ag ? 'Ages ' + ag.lo + '–' + ag.hi : esc(a.age_range || '')) + '</div>' +
+              tag + '</button>';
+          }).join('')
+        : '<div class="empty">Nothing on this day.</div>';
+      return '<div class="day"><div class="day-h">' + d.short +
+        '<span>' + (mine.length || '') + '</span></div>' + body + '</div>';
+    }).join('');
+  }
+
+  // ---- the detail sheet ----------------------------------------------------
+  function open(id) {
+    var a = all.filter(function (x) { return x.id === id; })[0];
+    if (!a) return;
+    var ag = agesOf(a);
+    var free = trials[a.id];
+    var full = a.remaining != null && a.remaining <= 0;
+    var dl = DAYS.filter(function (d) { return d.n === dayOf(a); })[0];
+    var when = (dl ? dl.long + 's' : '') + (clockOf(a) ? ' at ' + clockOf(a) : '');
+    var season = a.starts_on && a.ends_on ? pretty(a.starts_on) + ' – ' + pretty(a.ends_on) : '';
+
+    var rows = '';
+    if (when.trim()) rows += fact('When', when.trim());
+    if (season) rows += fact('Season', season);
+    if (ag) rows += fact('Ages', ag.adult ? 'Adults, 18 and over' : ag.lo + ' to ' + ag.hi);
+    if (priceOf(a)) rows += fact('Price', priceOf(a));
+    if (a.remaining != null && a.remaining < 20) {
+      rows += fact('Seats', full ? 'Full, waitlist only' : a.remaining + ' left');
+    }
+
+    var pay = full
+      ? '<a class="btn btn-off">Full</a>'
+      : '<a class="btn" href="/register/?activity=' + a.id + '">Register' +
+        (priceOf(a) ? ' · ' + esc(priceOf(a)) : '') + '</a>';
+    var trial = free
+      ? '<a class="btn2" href="/free-class/book.html?class=' + encodeURIComponent(free.key) + '">Try a free class first</a>'
+      : '';
+    var fine = free
+      ? '<p class="fine">The trial is one real class with the real group. Nothing is charged for it, and you decide afterwards.</p>'
+      : '<p class="fine">This class does not offer a trial visit yet. Call (571) 571-2120 if you would like to watch one first.</p>';
+
+    $('sheet').innerHTML =
+      '<button class="x" id="x" type="button" aria-label="Close">&times;</button>' +
+      '<div class="sheet-k">Weekly class</div>' +
+      '<div class="sheet-n">' + esc(a.name) + '</div>' +
+      '<div class="facts">' + rows + '</div>' +
+      (a.description ? '<p class="desc">' + esc(a.description) + '</p>' : '') +
+      pay + trial + fine;
+    $('back').classList.add('on');
+    $('x').addEventListener('click', close);
+  }
+  function fact(k, v) { return '<div class="fact"><span>' + esc(k) + '</span><span>' + esc(v) + '</span></div>'; }
+  function pretty(iso) {
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    var M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return M[+p[1] - 1] + ' ' + (+p[2]) + ', ' + p[0];
+  }
+  function close() { $('back').classList.remove('on'); }
+
+  // ---- wiring --------------------------------------------------------------
+  $('dayChips').innerHTML = DAYS.map(function (d) {
+    return '<button class="chip" type="button" data-day="' + d.n + '">' + d.short + '</button>';
+  }).join(' ');
+  $('timeChips').innerHTML = BANDS.map(function (b) {
+    return '<button class="chip" type="button" data-band="' + b.k + '">' + b.label + '</button>';
+  }).join(' ');
+
+  $('dayChips').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-day]'); if (!t) return;
+    var n = t.dataset.day;
+    sel.days[n] = !sel.days[n];
+    t.classList.toggle('on', !!sel.days[n]);
+    render();
+  });
+  $('timeChips').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-band]'); if (!t) return;
+    var k = t.dataset.band;
+    sel.bands[k] = !sel.bands[k];
+    t.classList.toggle('on', !!sel.bands[k]);
+    render();
+  });
+  $('age').addEventListener('input', function () {
+    var v = parseInt(this.value, 10);
+    sel.age = isNaN(v) ? null : v;
+    render();
+  });
+  $('clear').addEventListener('click', function () {
+    sel = { age: null, days: {}, bands: {} };
+    $('age').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('.chip'), function (c) { c.classList.remove('on'); });
+    render();
+  });
+  $('week').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-id]'); if (!t) return;
+    open(+t.dataset.id);
+  });
+  $('back').addEventListener('click', function (e) { if (e.target === $('back')) close(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+  // an age in the URL lets a funnel land a parent on their child's night
+  var qAge = parseInt(new URLSearchParams(location.search).get('age'), 10);
+  if (!isNaN(qAge)) { sel.age = qAge; $('age').value = qAge; }
+
+  // ---- data ----------------------------------------------------------------
+  rpc('catalog_list').then(function (rows) {
+    all = (rows || []).filter(function (r) { return r.category === 'class' && r.bookable; });
+    render();
+  }).catch(function () {
+    $('count').textContent = '';
+    $('none').innerHTML = '<div class="none"><b>We could not load the schedule.</b>' +
+      'Refresh the page, or call (571) 571-2120 and we will book you over the phone.</div>';
+  });
+
+  // Which classes offer a trial visit, joined on activity_id.
+  fetch('/api/reg-freeclass').then(function (r) { return r.json(); }).then(function (j) {
+    (j.classes || []).forEach(function (c) {
+      if (c.activity_id) trials[c.activity_id] = c;
+    });
+    render();
+  }).catch(function () { /* the grid still sells without the trial badge */ });
+})();
+</script>
+</body>
+</html>
