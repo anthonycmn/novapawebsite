@@ -44,7 +44,7 @@ const CLASSES = {
   "improv-9-12":       { activityId: 1960959, name: "Improv for Actors",                     ages: [9, 12],  day: 4, time: "6:30 PM" },
   "improv-13-17":      { activityId: 1960961, name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
   "acting-mt-sat":     { activityId: 1962562, name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
-  "film-tv":           { activityId: 992001,  name: "Film & Television",                   ages: [11, 17], day: 1, time: "8:00 PM" },
+  "film-tv":           { activityId: 992001,  name: "Film & Television",                   ages: [13, 17], day: 1, time: "8:00 PM" },
 };
 // Exported for the tests and the preflight live check, nothing else reads it.
 export { CLASSES };

@@ -258,6 +258,10 @@
   .ct:hover { transform:translateY(-1px); border-color:rgba(255,255,255,0.3); }
   .ct.sel { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
   .ct.full { opacity:.55; cursor:default; }
+  .ctrial { display:inline-block; margin-top:8px; font-size:11px; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; text-decoration:none; color:var(--gold2);
+    border:1px solid rgba(232,184,75,0.5); border-radius:999px; padding:4px 10px; }
+  .ctrial:hover { background:rgba(232,184,75,0.12); }
   .ct .tm { font-size:12px; font-weight:700; color:var(--gold3); letter-spacing:.03em; }
   .ct .nm { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:700; color:#fff; line-height:1.15; margin:3px 0 4px; }
   .ct .ag { font-size:12.5px; color:var(--ink-dim); }
@@ -472,11 +476,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <p class="sub" id="shelfSub">Check each student into their shows.</p>
     <p class="tiny" id="guestReturnRow" style="display:none;margin:-6px 0 14px">Registered with us before? <a href="#" id="guestReturnLink">Sign in</a> to load your students.</p>
     <div class="season-chips" id="seasonChips">
-      <span class="schip" data-f="summer">Summer</span>
-      <span class="schip" data-f="year">Year Round</span>
-      <span class="schip" data-f="day">Day Camps</span>
       <span class="schip" data-f="class">Classes</span>
-      <span class="schip" data-f="all">All</span>
+      <span class="schip" data-f="day">Day Camps</span>
+      <span class="schip" data-f="year">Fall &amp; Spring Shows</span>
+      <span class="schip" data-f="summer">Summer Camps</span>
+      <span class="schip" data-f="coaching">Coaching</span>
     </div>
     <div id="showBlocks">
       <div class="showb" data-show="httyd">
@@ -2271,6 +2275,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (/adult/i.test(String(a.age_range || ''))) return age >= 18;
     var r = castRange(a); return age >= r.min - 1 && age <= r.max;
   }
+  // Which classes take a free trial visit, from the same endpoint the booking
+  // page reads, keyed by activity id. Loaded once; the tiles render without it
+  // and pick the button up on the next paint if it is slow.
+  var classTrials = {};
+  fetch('/api/reg-freeclass').then(function(r){ return r.json(); }).then(function(j){
+    (j.classes || []).forEach(function(c){ if (c.activity_id) classTrials[c.activity_id] = c.key; });
+    if ($('classCards') && $('classCards').innerHTML) renderClassCards();
+  }).catch(function(){ /* tiles still enroll without the trial button */ });
+
   function renderClassCards(){
     var host = $('classCards');
     if (!host) return;
@@ -2317,9 +2330,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
             return '<label' + (ok ? '' : ' style="opacity:.5"') + '><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '"' + (v && v.on ? ' checked' : '') + (ok ? '' : ' disabled') + '> ' + esc(k.name.split(' ')[0]) + '</label>';
           }).join('') + '</div>';
         }
+        var trial = (!full && classTrials[a.id])
+          ? '<a class="ctrial" href="/free-class/book.html?class=' + encodeURIComponent(classTrials[a.id]) +
+            '" target="_blank" rel="noopener">Try it free first</a>'
+          : '';
         return '<div class="ct' + (on.length ? ' sel' : '') + (full ? ' full' : '') + '" data-ctile="' + a.id + '">' +
           '<div class="tm">' + esc(classTimeLabel(a)) + '</div><div class="nm">' + esc(a.name) + '</div>' +
-          '<div class="ag">' + classAgeLabel(classAgeKey(a)) + '</div>' + st + who + '</div>';
+          '<div class="ag">' + classAgeLabel(classAgeKey(a)) + '</div>' + st + who + trial + '</div>';
       }).join('') : '<div class="calempty">Nothing on ' + PRO_DAYS[d] + 's for this age.</div>';
       return '<div class="wkcol"><div class="dh">' + PRO_DAYS[d] + '</div>' + tiles + '</div>';
     }).join('') + '</div>' : '<div class="calempty">No classes match \u2014 try another age or day.</div>';
@@ -2333,6 +2350,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     host.querySelectorAll('.ct[data-ctile]').forEach(function(tile){
       tile.addEventListener('click', function(e){
         if (e.target.closest && e.target.closest('.who')) return; // the per-student boxes handle themselves
+        if (e.target.closest && e.target.closest('.ctrial')) return; // the trial link leaves for the booking page
         var id = +tile.dataset.ctile;
         if (tile.classList.contains('full')) return;
         if (!selIdx.length) { openKidModal({ type: 'cls', id: id }); return; }
@@ -2487,6 +2505,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   function applySeasonFilter(){
     if (!state.seasonFilter) state.seasonFilter = defaultSeason();
+    // "All" was a chip until Sep 17 2026. A cart saved with it would otherwise
+    // come back with every chip unlit and no way to tell which shelf is open.
+    if (state.seasonFilter === 'all' && !document.querySelector('#seasonChips .schip[data-f="all"]')) {
+      state.seasonFilter = defaultSeason();
+    }
     var fl = state.seasonFilter;
     document.querySelectorAll('#showBlocks .showb').forEach(function(card){
       var cat = card.dataset.cat || (card.dataset.fall ? 'year' : 'summer');
@@ -2697,6 +2720,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   document.querySelectorAll('#seasonChips .schip').forEach(function(c){
     c.addEventListener('click', function(){
+      // Coaching is its own shelf rather than a filter over the show cards, so
+      // the chip opens it through the link that already knows how
+      if (c.dataset.f === 'coaching') {
+        ev('reg_season_filter', { f: 'coaching' });
+        var cl = $('coachLink'); if (cl) cl.click();
+        return;
+      }
       state.seasonFilter = c.dataset.f; saveCart();
       ev('reg_season_filter', { f: c.dataset.f });
       renderShowKids();
