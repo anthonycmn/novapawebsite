@@ -1127,10 +1127,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     Promise.all([
       sb.rpc('inventory_status'),
       sb.rpc('catalog_list', { p_ids: state.catIds }),
-      seatOfferPeek()
+      seatOfferPeek(),
+      sb.rpc('season_breaks')
     ]).then(function(results){
       (results[0].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[1].data || [];
+      state.breaks = (results[3] && results[3].data) || [];  // holiday breaks: no class, no charge
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
       setPageIdentity();
       applySeatOffer(results[2]);
@@ -1463,11 +1465,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       sb.rpc('my_camper_birthdates'),
       sb.rpc('my_parent_name'),
       sb.rpc('my_camper_shirts'),
-      seatOfferPeek()
+      seatOfferPeek(),
+      sb.rpc('season_breaks')
     ]).then(function(results){
       var fam = results[0].data;
       (results[1].data || []).forEach(function(r){ state.inventory[r.show + '|' + r.band] = r.remaining; });
       state.allCat = results[2].data || [];
+      state.breaks = (results[8] && results[8].data) || [];  // holiday breaks: no class, no charge
       state.catItems = state.allCat.filter(function(a){ return state.catIds.indexOf(a.id) !== -1 && a.bookable; });
       setPageIdentity();
       applySeatOffer(results[7]);
@@ -1971,20 +1975,31 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
     catch (e) { var d = new Date(); return proIso(d.getFullYear(), d.getMonth(), d.getDate()); }
   }
-  function proSessions(a, y, m, fromISO){
+  // the season break a date falls in (season_breaks(), loaded with the
+  // catalog into state.breaks), or null
+  function proBreak(s, breaks){
+    for (var i = 0; i < (breaks || []).length; i++) {
+      var b = breaks[i];
+      if (b && b.starts_on && b.ends_on && s >= b.starts_on && s <= b.ends_on) return b;
+    }
+    return null;
+  }
+  function proSessions(a, y, m, fromISO, breaks){
     var wd = proWeekday(a);
-    if (wd == null) return { day: null, total: 0, left: 0 };
-    var n = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), total = 0, left = 0;
+    if (wd == null) return { day: null, total: 0, left: 0, off: [] };
+    var n = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), total = 0, left = 0, off = [];
     for (var d = 1; d <= n; d++) {
       var s = proIso(y, m, d);
       if (new Date(s + 'T12:00:00Z').getUTCDay() !== wd) continue;
       if (a.starts_on && s < a.starts_on) continue;
       if (a.ends_on && s > a.ends_on) continue;
+      var b = proBreak(s, breaks);
+      if (b) { if (off.indexOf(b.title) === -1) off.push(b.title); continue; }  // a break week is not held
       total++; if (s >= fromISO) left++;
     }
-    return { day: PRO_DAYS[wd], total: total, left: left };
+    return { day: PRO_DAYS[wd], total: total, left: left, off: off };
   }
-  function proCovered(acts){
+  function proCovered(acts, breaks){
     var today = proToday();
     var starts = acts.map(function(a){ return a && a.starts_on; }).filter(Boolean).sort();
     var ends = acts.map(function(a){ return a && a.ends_on; }).filter(Boolean).sort();
@@ -1992,7 +2007,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var from = starts[0] && starts[0] > today ? starts[0] : today;
     var y = Number(from.slice(0, 4)), m = Number(from.slice(5, 7)) - 1;
     for (var i = 0; i < 12; i++) {
-      var attends = acts.some(function(a){ return proWeekday(a) == null || proSessions(a, y, m, from).left > 0; });
+      var attends = acts.some(function(a){ return proWeekday(a) == null || proSessions(a, y, m, from, breaks).left > 0; });
       if (attends || !acts.length) break;
       var ny = m === 11 ? y + 1 : y, nm = (m + 1) % 12;
       if (lastEnd && proIso(ny, nm, 1) > lastEnd) break;  // the class is over; stay in its last month
@@ -2004,7 +2019,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // "3 of September’s 5 Wednesdays" — empty when the whole month is charged
   function proNote(pr, monthName){
     if (!pr || pr.day == null || !pr.total || pr.left >= pr.total) return '';
-    return pr.left + ' of ' + monthName + '’s ' + pr.total + ' ' + pr.day + 's';
+    return pr.left + ' of ' + monthName + '’s ' + pr.total + ' ' + pr.day + 's' +
+      (pr.off && pr.off.length ? ' (' + pr.off.join(', ') + ' off)' : '');
   }
   function classWhen(a){
     // day + time + season dates from the Sawyer class_times payload
@@ -2913,9 +2929,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var todayUnits = units.slice(), prorate = [], covered = null;
     if (catAllClasses()) {
       var clsActs = items.map(function(it){ return byId[it.activity_id] || {}; });
-      covered = proCovered(clsActs);
+      covered = proCovered(clsActs, state.breaks || []);
       items.forEach(function(it, i){
-        var pr = proSessions(clsActs[i], covered.y, covered.m, covered.from);
+        var pr = proSessions(clsActs[i], covered.y, covered.m, covered.from, state.breaks || []);
         prorate[i] = pr; todayUnits[i] = proCents(units[i], pr);
       });
     }
@@ -3417,7 +3433,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         var oldPro = firsts[i].querySelector('[data-pro]'); if (oldPro) oldPro.parentNode.removeChild(oldPro);
         if (!x || !x.day || !x.total || x.left >= x.total) return;
         var sp = document.createElement('span'); sp.className = 'savings'; sp.setAttribute('data-pro', '1');
-        sp.textContent = ' (' + x.left + ' of ' + mo + '’s ' + x.total + ' ' + x.day + 's left — ' + money((p.unit_prices || [])[i] || 0) + ' today)';
+        sp.textContent = ' (' + x.left + ' of ' + mo + '’s ' + x.total + ' ' + x.day + 's left' +
+          (x.off && x.off.length ? ' (' + x.off.join(', ') + ' off)' : '') + ' — ' + money((p.unit_prices || [])[i] || 0) + ' today)';
         firsts[i].appendChild(sp);
       });
       var pc = p.prior_classes || [];

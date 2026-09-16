@@ -176,21 +176,34 @@ export function etToday(now = new Date()) {
 }
 const isoDate = (y, m, d) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 const daysInMonth = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+// The break a date falls in, or null. `breaks` is season_breaks(): rows of
+// { title, starts_on, ends_on } from staff_portal.season_events — the same
+// rows the portal's class_calendar() skips (CJ, Sep 16 2026: "honor the
+// holiday breaks too").
+export function breakOn(iso, breaks) {
+  for (const b of breaks || []) {
+    if (b && b.starts_on && b.ends_on && iso >= b.starts_on && iso <= b.ends_on) return b;
+  }
+  return null;
+}
 // The class's sessions in one calendar month (m is 0-based), and how many of
-// them are on or after fromISO. { day, total, left, dates } — day is null and
-// total 0 when the weekday is unknown.
-export function classSessionsInMonth(act, y, m, fromISO) {
+// them are on or after fromISO. A session inside a break is not held and
+// counts on neither side; its break title lands in `off`. { day, total,
+// left, dates, off } — day is null and total 0 when the weekday is unknown.
+export function classSessionsInMonth(act, y, m, fromISO, breaks = []) {
   const wd = classWeekday(act);
-  if (wd == null) return { day: null, total: 0, left: 0, dates: [] };
-  const dates = [];
+  if (wd == null) return { day: null, total: 0, left: 0, dates: [], off: [] };
+  const dates = [], off = [];
   for (let d = 1; d <= daysInMonth(y, m); d++) {
     const s = isoDate(y, m, d);
     if (new Date(s + "T12:00:00Z").getUTCDay() !== wd) continue;
     if (act.starts_on && s < act.starts_on) continue;
     if (act.ends_on && s > act.ends_on) continue;
+    const b = breakOn(s, breaks);
+    if (b) { if (!off.includes(b.title)) off.push(b.title); continue; }
     dates.push(s);
   }
-  return { day: DOW_NAMES[wd], total: dates.length, left: dates.filter((s) => s >= fromISO).length, dates };
+  return { day: DOW_NAMES[wd], total: dates.length, left: dates.filter((s) => s >= fromISO).length, dates, off };
 }
 // The month the checkout charge covers: the month of today or of the earliest
 // class start, whichever is later — and if NO class in the cart has a session
@@ -198,7 +211,7 @@ export function classSessionsInMonth(act, y, m, fromISO) {
 // month instead, so nobody pays $0 for a month they never attend and then a
 // full month on the 1st for the one they join. { y, m, from, today } where
 // `from` is the first day the family can attend.
-export function classCoveredMonth(acts, now = new Date()) {
+export function classCoveredMonth(acts, now = new Date(), breaks = []) {
   const list = (acts || []).filter(Boolean);
   const today = etToday(now);
   const starts = list.map((a) => a.starts_on).filter(Boolean).sort();
@@ -207,7 +220,7 @@ export function classCoveredMonth(acts, now = new Date()) {
   let from = starts[0] && starts[0] > today ? starts[0] : today;
   let y = Number(from.slice(0, 4)), m = Number(from.slice(5, 7)) - 1;
   for (let i = 0; i < 12; i++) {
-    const attends = list.some((a) => classWeekday(a) == null || classSessionsInMonth(a, y, m, from).left > 0);
+    const attends = list.some((a) => classWeekday(a) == null || classSessionsInMonth(a, y, m, from, breaks).left > 0);
     if (attends || !list.length) break;
     const ny = m === 11 ? y + 1 : y, nm = (m + 1) % 12;
     if (lastEnd && isoDate(ny, nm, 1) > lastEnd) break; // the class is over; stay in its last month
@@ -231,8 +244,8 @@ export const MONTH_NAMES = ["January", "February", "March", "April", "May", "Jun
 // subscription cancels the day after the class's last session (the last pull
 // is the 1st of that final month), capped at the season end. A class with no
 // dates on file falls back to the old behaviour on both ends.
-export function classBillingWindow(acts, now = new Date()) {
-  const covered = classCoveredMonth(acts, now);
+export function classBillingWindow(acts, now = new Date(), breaks = []) {
+  const covered = classCoveredMonth(acts, now, breaks);
   const firstOfMonthAfter = Math.floor(Date.UTC(covered.y, covered.m + 1, 1, 4, 0, 0) / 1000);
   const ends = (acts || []).map((a) => a && a.ends_on).filter(Boolean).sort();
   const nextBillUTC = Math.max(CLASS_BILL_ANCHOR_UTC, firstOfMonthAfter);

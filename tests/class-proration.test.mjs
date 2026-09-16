@@ -3,7 +3,7 @@
 // that month, take 90, divide it by four, and then charge them for those two
 // classes." The monthly subscription still pulls the full amount on the 1st.
 import {
-  classWeekday, etToday, classSessionsInMonth, classCoveredMonth, prorateCents,
+  classWeekday, etToday, classSessionsInMonth, classCoveredMonth, prorateCents, breakOn,
   classBillingWindow, classMonthlyCents, CLASS_BILL_ANCHOR_UTC,
 } from "../netlify/functions/reg-config.mjs";
 
@@ -97,6 +97,32 @@ eq("an unknown schedule never rolls forward", [c.y, c.m], [2026, 9]);
 c = classCoveredMonth([tueAdult], at("2026-12-20"));
 eq("a class that is over does not roll past its end", [c.y, c.m], [2026, 11]);
 
+// ── holiday breaks are not held, so they are on neither side ───────────────
+// season_breaks() as of Sep 16 2026 (staff_portal.season_events, kind break)
+const BREAKS = [
+  { title: "Thanksgiving Break", starts_on: "2026-11-22", ends_on: "2026-11-28" },
+  { title: "Winter Break", starts_on: "2026-12-20", ends_on: "2027-01-03" },
+  { title: "Spring Break", starts_on: "2027-03-22", ends_on: "2027-03-26" },
+];
+eq("Nov 25 is Thanksgiving", (breakOn("2026-11-25", BREAKS) || {}).title, "Thanksgiving Break");
+eq("Nov 18 is a class day", breakOn("2026-11-18", BREAKS), null);
+// November 2026 Wednesdays: 4, 11, 18, 25 — the 25th is off.
+s = classSessionsInMonth(wedActing, 2026, 10, "2026-11-17", BREAKS);
+eq("November holds 3 Wednesdays, not 4, and names the break", [s.total, s.left, s.off], [3, 1, ["Thanksgiving Break"]]);
+eq("Nov 17 signup: 1 of 3 = $30 (would have been 2 of 4 = $45)", [prorateCents(9000, s), prorateCents(9000, classSessionsInMonth(wedActing, 2026, 10, "2026-11-17"))], [3000, 4500]);
+// December 2026 Wednesdays: 2, 9, 16, 23, 30 — the 23rd and 30th are off.
+s = classSessionsInMonth(wedActing, 2026, 11, "2026-12-10", BREAKS);
+eq("December holds 3 Wednesdays; from the 10th, 1 is left", [s.total, s.left], [3, 1]);
+eq("Dec 10 signup: 1 of 3 = $30", prorateCents(9000, s), 3000);
+eq("a full month with no break on that weekday is untouched", classSessionsInMonth(wedActing, 2027, 0, "2027-01-01", BREAKS).total, 4);
+// Thu Dec 17: the only Wednesdays left in December are both Winter Break,
+// so January is the covered month and the first pull is Feb 1.
+c = classCoveredMonth([wedActing], at("2026-12-17"), BREAKS);
+eq("nothing but break weeks left: the next month is covered", [c.y, c.m, c.from], [2027, 0, "2027-01-01"]);
+eq("…January is a full month", prorateCents(9000, classSessionsInMonth(wedActing, c.y, c.m, c.from, BREAKS)), 9000);
+eq("…and the first pull is Feb 1", classBillingWindow([wedActing], at("2026-12-17"), BREAKS).nextBillUTC, utc1st(2027, 1));
+eq("without breaks the same day would have stayed in December", classCoveredMonth([wedActing], at("2026-12-17")).m, 11);
+
 // ── the subscription: the 1st after the covered month, full price ──────────
 let w = classBillingWindow([wedActing], at("2026-10-21"));
 eq("October signup: next pull Nov 1", w.nextBillUTC, utc1st(2026, 10));
@@ -130,17 +156,21 @@ eq("the client reads today in Virginia", html.includes("timeZone: 'America/New_Y
 eq("client proToday is a date", /^\d{4}-\d{2}-\d{2}$/.test(client.proToday()), true);
 const fixtures = [wedActing, tueAdult, thuImprov, { meets_days: [7] }, { starts_on: "2026-09-19" }, { name: "Mystery" }];
 eq("client weekdays match the server", fixtures.map(client.proWeekday), fixtures.map(classWeekday));
-const probes = [[2026, 9, "2026-10-21"], [2026, 11, "2026-12-10"], [2026, 8, "2026-09-24"], [2026, 9, "2026-10-29"], [2027, 5, "2027-06-01"]];
+const probes = [[2026, 9, "2026-10-21"], [2026, 11, "2026-12-10"], [2026, 8, "2026-09-24"], [2026, 9, "2026-10-29"], [2026, 10, "2026-11-17"], [2027, 5, "2027-06-01"]];
 for (const a of [wedActing, tueAdult, thuImprov, { name: "Mystery" }]) {
-  eq(`client sessions match the server for ${a.name || a.id}`,
-    probes.map(([y, m, f]) => { const s = client.proSessions(a, y, m, f); return [s.day, s.total, s.left, client.proCents(9000, s)]; }),
-    probes.map(([y, m, f]) => { const s = classSessionsInMonth(a, y, m, f); return [s.day, s.total, s.left, prorateCents(9000, s)]; }));
+  for (const [label, br] of [["no breaks", []], ["with breaks", BREAKS]]) {
+    eq(`client sessions match the server for ${a.name || a.id} (${label})`,
+      probes.map(([y, m, f]) => { const s = client.proSessions(a, y, m, f, br); return [s.day, s.total, s.left, s.off, client.proCents(9000, s)]; }),
+      probes.map(([y, m, f]) => { const s = classSessionsInMonth(a, y, m, f, br); return [s.day, s.total, s.left, s.off, prorateCents(9000, s)]; }));
+  }
 }
 // proCovered reads the real clock, so only its shape and the today-driven
 // month can be checked here; the roll-forward line is pinned by text.
-const cov = client.proCovered([wedActing]);
+const cov = client.proCovered([wedActing], BREAKS);
 eq("client covered month is today's month (or the class's first)", cov.from >= client.proToday() && cov.m >= 0 && cov.m <= 11, true);
-eq("the client rolls an empty month forward like the server", html.includes("proSessions(a, y, m, from).left > 0") && html.includes("if (lastEnd && proIso(ny, nm, 1) > lastEnd) break;"), true);
+eq("the client rolls an empty month forward like the server", html.includes("proSessions(a, y, m, from, breaks).left > 0") && html.includes("if (lastEnd && proIso(ny, nm, 1) > lastEnd) break;"), true);
+eq("the client loads season_breaks with the catalog, on both doors", (html.match(/sb\.rpc\('season_breaks'\)/g) || []).length, 2);
+eq("the client prices with the breaks it loaded", html.includes("proCovered(clsActs, state.breaks || [])"), true);
 
 if (fails) { console.error(`\n${fails} failing`); process.exit(1); }
 console.log("\nclass proration: all good");

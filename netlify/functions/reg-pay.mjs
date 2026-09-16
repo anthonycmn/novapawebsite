@@ -410,10 +410,17 @@ export default async (req) => {
       [...new Set(classItems.map((it) => it.activity_id))],
       { apikey: priorSvcKey, Authorization: `Bearer ${priorSvcKey}` });
     const classActs = classItems.map((it) => ({ ...byId[it.activity_id], ...(schedule[it.activity_id] || {}) }));
-    const covered = classCoveredMonth(classActs);
+    // Holiday breaks (CJ, Sep 16 2026): a session inside a season break is
+    // not held, so it is on neither side of the fraction. season_breaks()
+    // reads the portal's season_events; if it is unreachable, no dates are
+    // skipped and the family is charged as if every week met — the same
+    // never-block rule as the schedule lookup above.
+    const breakRows = await anonRpc("season_breaks", {});
+    const breaks = Array.isArray(breakRows) ? breakRows : [];
+    const covered = classCoveredMonth(classActs, new Date(), breaks);
     const prorations = classActs.map((a) => {
-      const s = classSessionsInMonth(a, covered.y, covered.m, covered.from);
-      return { day: s.day, left: s.left, total: s.total };
+      const s = classSessionsInMonth(a, covered.y, covered.m, covered.from, breaks);
+      return { day: s.day, left: s.left, total: s.total, off: s.off };
     });
     const todayItems = unitPrices.map((cents, i) => prorateCents(cents, prorations[i]));
     const classMonth = `${MONTH_NAMES[covered.m]} ${covered.y}`;
@@ -455,7 +462,7 @@ export default async (req) => {
     // Before Sep 13 2026 the anchor was simply "Oct 1 or the 1st of next
     // month", which billed the October adult class twice before its first
     // Tuesday and would have kept billing a December-ending class into June.
-    const classBilling = classBillingWindow(classActs);
+    const classBilling = classBillingWindow(classActs, new Date(), breaks);
     pricing = {
       todayCents: firstMonthFree ? 0 : subtotal - couponCents,
       totalCents: firstMonthFree ? 0 : subtotal - couponCents,
