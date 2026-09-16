@@ -2,6 +2,7 @@
 // POST /api/reg-drip-test  { step_id }  (admin JWT required)
 // Ignores the enabled flag and touches no lead state — pure preview.
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
+import { sendMail } from "./reg-mail.mjs";
 
 async function caller(userToken) {
   const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -52,14 +53,9 @@ export default async (req) => {
   const step = rows[0];
 
   const render = (tpl) => tpl.replace(/\{(\w+)\}/g, (m, k) => (SAMPLE[k] != null ? SAMPLE[k] : m));
-  const { default: nodemailer } = await import("nodemailer");
-  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-  });
-  await transporter.sendMail({
-    from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+  // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026)
+  await sendMail({
+    fromName: "CJ from Broadway Bound",
     replyTo: "info@novapa.org",
     to,
     subject: `[TEST] ${render(step.subject)}`,

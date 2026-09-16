@@ -2,6 +2,7 @@
 // tix_hold_id metadata. Writes the order + per-seat tickets (idempotent on the
 // payment intent) and emails the tickets. Kept out of reg-webhook.mjs so the
 // camp confirmation path stays exactly as long as it was.
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 
 async function svcRpc(fn, args) {
@@ -58,18 +59,13 @@ export async function confirmTickets(pi) {
 }
 
 async function sendTicketEmail(m, code) {
-  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY) || !m.email) return;
-  const { default: nodemailer } = await import("nodemailer");
-  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
-  const t = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-  });
+  if (!mailConfigured() || !m.email) return;
+  // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026)
   const GOLD = "#C8892A";
   const seats = (m.seats || "").split(", ").filter(Boolean);
   const usd = (c) => "$" + ((parseInt(c || "0", 10) || 0) / 100).toFixed(2);
-  await t.sendMail({
-    from: `NOVAPA Box Office <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+  await sendMail({
+    fromName: "NOVAPA Box Office",
     replyTo: "info@novapa.org",
     to: m.email,
     subject: `Your tickets — ${m.show_title}, ${m.performance_when}`,

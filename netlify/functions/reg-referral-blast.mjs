@@ -7,6 +7,7 @@
 // { send: true } actually sends. Each family is stamped
 // referral_email_sent_at so re-runs never double-send.
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
+import { sendMail } from "./reg-mail.mjs";
 
 const SUBJECT = "Give 2 tickets, get 2 tickets.";
 const BODY = (first, link) => `Hi ${first},
@@ -65,13 +66,8 @@ export default async (req) => {
     const tf = fams.filter((f) => (f.email || "").toLowerCase() === String(body.test_to).toLowerCase())[0];
     const first = (tf?.parent_name || "").trim().split(" ")[0] || "CJ";
     const link = `https://www.northernvirginiaperformingarts.org/register/?ref=${tf?.ref_code || "NOVAPA4747"}`;
-    const { default: nodemailer } = await import("nodemailer");
-    const t = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-    });
-    await t.sendMail({
-      from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+    await sendMail({
+      fromName: "CJ from Broadway Bound",
       replyTo: "info@novapa.org",
       to: String(body.test_to), subject: SUBJECT, text: BODY(first, link),
     });
@@ -80,12 +76,7 @@ export default async (req) => {
 
   if (!body.send) return Response.json({ dry_run: true, count: list.length, recipients: list });
 
-  const { default: nodemailer } = await import("nodemailer");
-  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-  });
+  // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026)
 
   // batched sends ({limit}, default 15): spreads the blast over several
   // calls minutes apart — reads as personal mail, not a blast, and each
@@ -96,8 +87,8 @@ export default async (req) => {
   const errors = [];
   for (const r of batch) {
     try {
-      await transporter.sendMail({
-        from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+      await sendMail({
+        fromName: "CJ from Broadway Bound",
         replyTo: "info@novapa.org",
         to: r.email,
         subject: SUBJECT,

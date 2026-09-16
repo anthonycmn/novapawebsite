@@ -8,6 +8,7 @@ import { mintDcuFamily } from "./dcu-family.mjs";
 import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
 const CLASS_PRODUCT_ID = "novapa-class-monthly";
@@ -41,7 +42,7 @@ async function ensureProduct(stripe, id, name) {
 
 // ---------------------------------------------------------------------------
 // Registration confirmation email — branded, table-based HTML (email-safe).
-// Sent via Gmail SMTP (same Workspace app password as Supabase auth emails).
+// Sent through reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026).
 // Failure here never fails the webhook: the order is already confirmed.
 
 
@@ -398,15 +399,9 @@ export default async (req) => {
       });
       const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
       if (admins.length) {
-        const { default: nodemailer } = await import("nodemailer");
-        // Same env-driven transport as reg-email.mjs (Sep 2026 Resend cutover):
-        // the site now sets SMTP_HOST=smtp.resend.com, SMTP_USER=resend and no
-        // SMTP_PASS at all, so a hardcoded Gmail host with SMTP_PASS-only auth
-        // failed silently inside this try/catch on every paid order.
-        const t2 = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-        });
+        // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep
+        // 16 2026): a hardcoded Gmail host with a retired app password failed
+        // silently inside this try/catch on every paid order.
         // Sawyer-detail admin receipt (Todd, Aug 3): full line items with
         // prices, every fee/discount, the payment schedule, and a Stripe link.
         const paid = ((pi.amount_received ?? pi.amount) / 100).toFixed(2);
@@ -435,9 +430,9 @@ export default async (req) => {
           [`FSA eligible`, m.fsa_eligible === "1" ? "yes" : "no"],
         ].filter(Boolean).map(([k, v]) =>
           `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");
-        await t2.sendMail({
-          from: `NOVAPA Registrations <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
-          to: admins.join(", "),
+        await sendMail({
+          fromName: "NOVAPA Registrations",
+          to: admins,
           subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
           html: [
             `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt;` +
@@ -460,18 +455,14 @@ export default async (req) => {
     // failures only showed in Stripe's retry log). Alert the admins with
     // enough context to act; alert failure itself must not mask the 500.
     try {
-      if (process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.RESEND_API_KEY)) {
+      if (mailConfigured()) {
         {
-          // Failure alerts go to Jason only (his call, Aug 7) — Todd/CJ get
-          // the happy-path registration emails, not the plumbing pages.
-          const { default: nodemailer } = await import("nodemailer");
-          const t = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-          });
+          // Failure alerts go to CJ alone (since Sep 2026; Jason's call of
+          // Aug 7 was that only one person gets the plumbing pages). Todd gets
+          // the happy-path registration emails.
           const md = (pi && pi.metadata) || {};
-          await t.sendMail({
-            from: `NOVAPA Alerts <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+          await sendMail({
+            fromName: "NOVAPA Alerts",
             to: "cj@novapa.org",
             subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
             html: [
