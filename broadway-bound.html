@@ -974,25 +974,26 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
   </section>
 
   <style>
-  .brk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+  .brk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
   .brk-card{border:1px solid rgba(255,255,255,0.14);border-left:3px solid #E8B84B;border-radius:12px;padding:16px 18px;background:rgba(22,43,82,0.45)}
   .brk-name{font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#E8B84B;margin-bottom:8px}
   .brk-dates{font-size:15px;line-height:1.45;color:#fff;font-weight:500}
   .brk-note{margin-top:16px;font-size:13px;color:rgba(255,255,255,0.6)}
   .brk-note a{color:#E8B84B}
-  @media(max-width:760px){.brk-grid{grid-template-columns:1fr}}
+  @media(max-width:1000px){.brk-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.brk-grid{grid-template-columns:1fr}}
   </style>
   <section class="pgm-sec" id="breaks">
     <div class="pgm-head reveal">
       <div class="seceye"><span class="sectag">Season Breaks</span></div>
       <h2 class="sectitle">When we are closed.</h2>
-      <p class="secdesc">Every company takes the same three breaks. No rehearsals on these dates.</p>
+      <p class="secdesc">Every company takes the same closures. No rehearsals on these dates.</p>
     </div>
     <div class="reveal">
       <div class="brk-grid">
         <div class="brk-card"><div class="brk-name">Thanksgiving Break</div><div class="brk-dates">November 22 &ndash; 28, 2026</div></div>
         <div class="brk-card"><div class="brk-name">Winter Break</div><div class="brk-dates">December 20, 2026 &ndash; January 3, 2027</div></div>
         <div class="brk-card"><div class="brk-name">Spring Break</div><div class="brk-dates">March 22 &ndash; 26, 2027</div></div>
+        <div class="brk-card"><div class="brk-name">Memorial Day</div><div class="brk-dates">May 31, 2027</div></div>
       </div>
       <p class="brk-note">No classes on these dates. Every other date is on the <a href="calendar.html">master calendar</a>.</p>
     </div>

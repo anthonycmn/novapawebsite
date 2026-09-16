@@ -158,17 +158,34 @@ console.log('\nSEASON BREAKS');
     }
   }
   const names = Object.keys(found);
-  A(names.length === 3, 'the calendar defines 3 named breaks — got ' + names.length + ' (' + names.join(', ') + ')');
+  A(names.length === 4, 'the calendar defines 4 closures — got ' + names.length + ' (' + names.join(', ') + ')');
 
   const MONTH = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const span = (ts) => {
     ts.sort((a, b) => a - b);
     const a = new Date(ts[0]), b = new Date(ts[ts.length - 1]);
     const am = MONTH[a.getUTCMonth()], bm = MONTH[b.getUTCMonth()];
+    if (ts[0] === ts[ts.length - 1]) return am + ' ' + a.getUTCDate() + ', ' + a.getUTCFullYear();
     return am === bm && a.getUTCFullYear() === b.getUTCFullYear()
       ? am + ' ' + a.getUTCDate() + ' – ' + b.getUTCDate() + ', ' + b.getUTCFullYear()
       : am + ' ' + a.getUTCDate() + ', ' + a.getUTCFullYear() + ' – ' + bm + ' ' + b.getUTCDate() + ', ' + b.getUTCFullYear();
   };
+
+  // the rendered calendar builds its class days from CLASS_DATES, so no class
+  // day may fall inside a closure — on 16 Sep 2026 that list was missing 70 real
+  // class days and showed parents two unexplained three-week gaps instead.
+  {
+    const cd = (cal.match(/const CLASS_DATES = new Set\(\[([\s\S]*?)\]\);/) || [null, ''])[1];
+    const days = [...cd.matchAll(/'(\d{4})-(\d{1,2})-(\d{1,2})'/g)]
+      .map((m) => Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    A(days.length > 150, 'the calendar lists a full season of class days — got ' + days.length);
+    const shut = Object.values(found).flat();
+    const clash = days.filter((d) => shut.includes(d));
+    A(clash.length === 0, 'no class day falls inside a closure' +
+      (clash.length ? ' — ' + clash.length + ' do, first ' + new Date(clash[0]).toUTCString().slice(0, 16) : ''));
+    const WD = days.map((d) => new Date(d).getUTCDay());
+    A(!WD.includes(5) && !WD.includes(0), 'no class day lands on a Friday or Sunday, which have no classes');
+  }
 
   for (const page of ['classes.html', 'teen-conservatory.html', 'broadway-bound.html']) {
     const txt = read(page).replace(/&ndash;/g, '–').replace(/&mdash;/g, '—').replace(/\s+/g, ' ');
