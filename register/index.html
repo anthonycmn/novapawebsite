@@ -243,6 +243,45 @@
     white-space:nowrap; }
   @media (max-width:480px) { .schip { padding:7px 13px; font-size:12px; } }
   .schip.sel { background:rgba(232,184,75,0.14); border-color:var(--gold3); color:var(--gold3); }
+  /* ---- class week calendar + day-camp date grid (CJ, Sep 16 2026) ---- */
+  .calhead { text-align:left; margin:22px 0 6px; }
+  .calhead .t { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#fff; line-height:1.1; }
+  .calhead .d { font-size:13px; color:var(--ink-dim); margin-top:4px; }
+  .filt { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:10px 0 0; text-align:left; }
+  .filt .lab { font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); margin-right:4px; min-width:42px; }
+  .fpill { font-size:12.5px; font-weight:700; padding:7px 12px; border-radius:11px; border:1px solid var(--line); color:var(--ink-dim); cursor:pointer; user-select:none; white-space:nowrap; }
+  .fpill.sel { background:rgba(232,184,75,0.14); border-color:var(--gold3); color:var(--gold3); }
+  .wk { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(156px,1fr); gap:10px; overflow-x:auto; padding:14px 0 8px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+  .wkcol { display:flex; flex-direction:column; gap:8px; scroll-snap-align:start; min-width:0; }
+  .wkcol .dh { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold3); padding:0 2px 6px; border-bottom:1px solid var(--line); text-align:left; }
+  .ct { text-align:left; background:var(--card); border:2px solid var(--line); border-radius:14px; padding:12px 12px 10px; cursor:pointer; transition:border-color .15s, transform .15s; }
+  .ct:hover { transform:translateY(-1px); border-color:rgba(255,255,255,0.3); }
+  .ct.sel { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
+  .ct.full { opacity:.55; cursor:default; }
+  .ct .tm { font-size:12px; font-weight:700; color:var(--gold3); letter-spacing:.03em; }
+  .ct .nm { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:700; color:#fff; line-height:1.15; margin:3px 0 4px; }
+  .ct .ag { font-size:12.5px; color:var(--ink-dim); }
+  .ct .st { font-size:11.5px; color:var(--ok); font-weight:700; margin-top:6px; }
+  .ct .st.warn { color:var(--danger); }
+  .ct .who, .dt .who { border-top:1px solid var(--line); margin-top:8px; padding-top:4px; }
+  .ct .who label, .dt .who label { display:flex; align-items:center; gap:7px; font-size:13px; padding:3px 0; cursor:pointer; }
+  .ct .who input, .dt .who input { width:17px; height:17px; accent-color:var(--gold2); }
+  .calempty { text-align:left; font-size:14px; color:var(--ink-dim); padding:18px 4px; }
+  .mon { text-align:left; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold3); margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(124px, 1fr)); gap:8px; }
+  .dt { text-align:left; background:var(--card); border:2px solid var(--line); border-radius:14px; padding:10px 11px 9px; cursor:pointer; transition:border-color .15s, transform .15s; }
+  .dt:hover { transform:translateY(-1px); border-color:rgba(255,255,255,0.3); }
+  .dt.sel { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
+  .dt.full { opacity:.55; cursor:default; }
+  .dt .wd { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold3); }
+  .dt .dn { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:700; color:#fff; line-height:1; margin:2px 0 4px; }
+  .dt .nm { font-size:12.5px; color:var(--ink); line-height:1.25; }
+  .dt .st { font-size:11px; color:var(--ink-dim); margin-top:5px; }
+  .dt .st.on { color:var(--ok); font-weight:700; }
+  .showb.gateway .poster { aspect-ratio:auto; height:96px; max-height:96px; background-position:center 40%; }
+  .showb.gateway .bd { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 16px; }
+  .showb.gateway .d { margin-bottom:0; }
+  .showb.gateway .go { font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; color:var(--gold3); background:rgba(232,184,75,0.12); border:1px solid var(--gold3); border-radius:11px; padding:10px 16px; cursor:pointer; white-space:nowrap; }
   /* add-camper date field: native date UI only — a pseudo-placeholder overlaid
      the iOS date segments and doubled the calendar icon */
   #sKidBday{ display:flex; align-items:center; }
@@ -429,8 +468,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
   <!-- STEP: shows + campers -->
   <section class="step" id="st-shows">
-    <h1>Choose your <em>shows.</em></h1>
-    <p class="sub">Check each student into their shows.</p>
+    <h1 id="shelfH1">Choose your <em>shows.</em></h1>
+    <p class="sub" id="shelfSub">Check each student into their shows.</p>
     <p class="tiny" id="guestReturnRow" style="display:none;margin:-6px 0 14px">Registered with us before? <a href="#" id="guestReturnLink">Sign in</a> to load your students.</p>
     <div class="season-chips" id="seasonChips">
       <span class="schip" data-f="summer">Summer</span>
@@ -507,6 +546,25 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           <div class="t">Mean Girls &mdash; Teens</div>
           <div class="d">Ages 13–18 · June 14–24, 2027 · $995<br><span style="color:var(--gold3)">Performances Jun 25 7pm · Jun 26 2pm &amp; 7pm · Jun 27 2pm</span></div>
           <div class="kids" data-fallshow="meangirls"></div>
+        </div>
+      </div>
+      <!-- Classes and day camps have their own shelves; these two cards put a
+           door to each on the show shelves (CJ, Sep 16 2026: "make the classes
+           a visible card"). -->
+      <div class="showb gateway" data-cat="gateway" data-goto="class">
+        <div class="poster" style="background-image:url('/register/img/rehearsal-2026.jpg')"></div>
+        <div class="bd">
+          <div><div class="t">Weekly Classes</div>
+          <div class="d">Acting, musical theatre, dance, improv, film &middot; Sep 2026 &ndash; Jun 2027 &middot; ages 5&ndash;17 and adults &middot; from $90/mo</div></div>
+          <button type="button" class="go" data-goto="class">See the class calendar &rarr;</button>
+        </div>
+      </div>
+      <div class="showb gateway" data-cat="gateway" data-goto="day">
+        <div class="poster" style="background-image:url('/register/img/camp-pack-wide.jpg')"></div>
+        <div class="bd">
+          <div><div class="t">Day Camps</div>
+          <div class="d">One-day camps on school holidays &middot; 8:30 AM &ndash; 4:15 PM &middot; ages 5&ndash;15<span id="gwDayPrice"></span></div></div>
+          <button type="button" class="go" data-goto="day">See the dates &rarr;</button>
         </div>
       </div>
       <div id="dayCards"></div>
@@ -1177,9 +1235,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         return;
       }
       go('st-shows'); renderShowKids();
-    }).catch(function(){
+    }).catch(function(e){
       // network hiccup on the two catalog calls — fall back to the email
-      // front door rather than a dead screen
+      // front door rather than a dead screen. Say why, somewhere: a bug in
+      // the render used to land here and read as a network problem.
+      console.error('guest entry failed:', e);
+      ev('reg_guest_entry_failed', { msg: String(e && e.message || e).slice(0, 160) });
       entered = false; state.guest = false;
       openEmailSignup();
     });
@@ -1688,24 +1749,32 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   $('guestEmailInput') && $('guestEmailInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('guestEmailGo').click(); });
 
-  $('sKidOpen').addEventListener('click', function(){
-    addKidTarget = null;
+  function openKidModal(target){
+    addKidTarget = target || null;
+    if (target) ev('reg_addkid_from_card', { t: target.type });
     $('kidErr').classList.remove('on');
     $('kidModal').classList.add('on'); ev('reg_kid_modal_opened');
     $('sKidName').focus();
-  });
+  }
+  $('sKidOpen').addEventListener('click', function(){ openKidModal(null); });
   $('showBlocks').addEventListener('click', function(e){
+    var g = e.target && e.target.closest ? e.target.closest('[data-goto]') : null;
+    if (g) {
+      // a door card: switch shelves and land on the calendar
+      state.seasonFilter = g.dataset.goto; saveCart();
+      ev('reg_gateway', { to: g.dataset.goto });
+      renderShowKids();
+      var host = $(g.dataset.goto === 'class' ? 'classCards' : 'dayCards');
+      if (host) host.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     var b = e.target && e.target.closest ? e.target.closest('.kid-add-here') : null;
     if (!b) return;
-    addKidTarget =
+    openKidModal(
       b.dataset.addshow ? { type: 'show', show: b.dataset.addshow } :
       b.dataset.addfall ? { type: 'fall', key: b.dataset.addfall } :
       b.dataset.addday  ? { type: 'day', when: b.dataset.addday } :
-      b.dataset.addcls  ? { type: 'cls', id: +b.dataset.addcls } : null;
-    ev('reg_addkid_from_card', { t: addKidTarget ? addKidTarget.type : '?' });
-    $('kidErr').classList.remove('on');
-    $('kidModal').classList.add('on'); ev('reg_kid_modal_opened');
-    $('sKidName').focus();
+      b.dataset.addcls  ? { type: 'cls', id: +b.dataset.addcls } : null);
   });
   $('sKidCancel').addEventListener('click', function(){ $('kidModal').classList.remove('on'); ev('reg_kid_modal_cancelled'); });
   $('sKidAdd').addEventListener('click', function(){
@@ -1798,8 +1867,19 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // The sticky Continue earns its place: hidden until something is in the
     // cart, so an empty shows list isn't dominated by a dead gold button.
     var an = $('assignNext');
-    if (an) an.style.display = buildItems().length ? '' : 'none';
+    var nCls = (state.classSel || []).length;
+    var nOther = buildItems().length;
+    if (an) {
+      an.style.display = (nOther || nCls) ? '' : 'none';
+      // a classes-only cart continues straight into the class checkout
+      an.innerHTML = (nCls && !nOther) ? 'Check out \u00b7 ' + money(classBundleCents(nCls)) + '/mo \u2192' : 'Continue \u2192';
+    }
     var t = $('tierTicker');
+    if (nCls && !nOther) {
+      t.textContent = nCls + ' class' + (nCls > 1 ? 'es' : '') + ' \u00b7 ' + money(classBundleCents(nCls)) + '/mo per student' +
+        (nCls === 1 ? ' \u00b7 add a second for $150/mo, a third for $180/mo' : '') + ' \u2014 tap Check out.';
+      return;
+    }
     var byKid = [];
     state.kids.forEach(function(k, i){
       if (!k.sel) return;
@@ -1816,6 +1896,16 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (!k.sel) return;
       FALL_SHOWS.forEach(function(s){ if (fallCastOn(i, s.key)) fallN++; });
     });
+    if (!byKid.length && !fallN) {
+      // day camps only: say what the days cost and where the pack kicks in
+      var dayN = 0;
+      dayCampsList().forEach(function(a){ state.kids.forEach(function(k, i){ var v = state.assign['act' + a.id + '|' + i]; if (k.sel && v && v.on) dayN++; }); });
+      if (dayN) {
+        t.textContent = dayN + ' day camp' + (dayN > 1 ? 's' : '') + ' · ' + (dayPriceLabel(dayCampsList()) || '$79') + ' each' +
+          (dayN < 5 ? ' · five days become a $349 pack automatically' : ' · the $349 pack price is applied at checkout') + '.';
+        return;
+      }
+    }
     if (!byKid.length) {
       // This branch runs before the saleOn() gate below, so it kept promising
       // the tier discount after the launch sale ended (CJ, 16 Aug 2026).
@@ -1924,7 +2014,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (m) { for (var k = 0; k < MONTHS.length; k++) { if (MONTHS[k].slice(0, 3) === m[1].slice(0, 3)) { mi = k; break; } } }
       var yr = (m && m[3]) ? +m[3] : (mi >= 8 ? 2026 : 2027);
       var ts = new Date(yr, mi, m ? +m[2] : 1).getTime();
-      return { when: when, acts: acts, title: named.name.trim(), img: named.image_url || '', ts: ts };
+      var title = String(named.name || '').replace(/^ages?\s*\d+\s*[–—-]\s*\d+\s*/i, '').replace(/\s*[·|–-]\s*[A-Z][a-z]{2,8}\.? \d{1,2},? \d{4}\s*$/, '').trim() || 'Day Camp';
+      return { when: when, acts: acts, title: title, img: named.image_url || '', ts: ts };
     }).sort(function(a, b){ return a.ts - b.ts; });
   }
   // Day camp prices come from the catalog, never a literal — a hardcoded price
@@ -1950,61 +2041,107 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     g.acts.forEach(function(a){ delete state.assign['act' + a.id + '|' + i]; });
     if (id) state.assign['act' + id + '|' + i] = { on: true };
   }
+  // ---- Day camps: one tile per date, filtered by age (CJ, Sep 16 2026: the
+  // old three-cards-per-date list with checkboxes and band pills was
+  // "very overwhelming"). A tap checks the student in; the age filter
+  // decides which band. ----
+  var CAL_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function dayAgeKey(a){ var r = castRange(a); return r.min + '-' + r.max; }
+  function dayAgeDefault(groups){
+    var sel = state.kids.filter(function(k){ return k.sel && k.bday; });
+    if (sel.length !== 1) return null;
+    var age = campAge(sel[0]);
+    var keys = [];
+    groups.forEach(function(g){ g.acts.forEach(function(a){ var k = dayAgeKey(a); if (keys.indexOf(k) === -1) keys.push(k); }); });
+    return keys.filter(function(k){ var p = k.split('-'); return age >= +p[0] && age <= +p[1]; })[0] || null;
+  }
   function renderDayCards(){
     var host = $('dayCards');
     if (!host) return;
     var groups = dayGroups();
     if (!groups.length) { host.innerHTML = ''; return; }
     var allLabel = dayPriceLabel(dayCampsList());
+    var gp = $('gwDayPrice'); if (gp) gp.textContent = allLabel ? ' \u00b7 ' + allLabel + ' a day' : '';
+    if (!state.dayFilter) state.dayFilter = { age: dayAgeDefault(groups), auto: true };
+    var f = state.dayFilter;
+    if (f.auto && !f.age) f.age = dayAgeDefault(groups);
+    var ageKeys = [];
+    groups.forEach(function(g){ g.acts.forEach(function(a){ var k = dayAgeKey(a); if (ageKeys.indexOf(k) === -1) ageKeys.push(k); }); });
+    ageKeys.sort(function(x, y){ return +x.split('-')[0] - +y.split('-')[0]; });
+    var selIdx = state.kids.map(function(k, i){ return k.sel ? i : -1; }).filter(function(i){ return i >= 0; });
     var snowOn = new Date() <= PACK_SNOW_END;
-    var packNote = '<div class="tiny" style="text-align:left;margin:10px 0 4px;color:var(--gold3)">Do all 5 day camps for $349 (save $46)' +
-      (snowOn ? ' + 2 free Snow Day camps if booked by September 21' : '') + ' \u2014 applied automatically</div>';
-    host.innerHTML = '<div class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">One-day camps' +
-      (allLabel ? ' \u00b7 ' + allLabel : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div>' + packNote +
-      groups.map(function(g, gi){
-        var ages = g.acts.map(function(a){ var r = castRange(a); return r.min + '\u2013' + r.max; }).join(' \u00b7 ');
-        var kidRows = state.kids.map(function(k, i){
-          if (!k.sel) return '';
-          var on = dayOn(i, g);
-          var age = campAge(k);
-          var eligible = g.acts.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); });
-          var pills = '';
-          if (on && eligible.length > 1) {
-            pills = '<div class="pills">' + eligible.map(function(a){
-              var r = castRange(a);
-              var left = a.remaining;
-              var leftTag = (left != null && left < 20) ? ' <span class="left">' + (left <= 0 ? 'Waitlist only' : left + ' more spots available') + '</span>' : '';
-              return '<span class="pill' + (on === a.id ? ' sel' : '') + '" data-dayg="' + gi + '" data-i="' + i + '" data-act="' + a.id + '">Ages ' + r.min + '\u2013' + r.max + leftTag + '</span>';
-            }).join('') + '</div>';
-          }
-          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-dayg="' + gi + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' +
-            (eligible.length ? '' : ' <span class="badge-done" style="opacity:.65">for ages ' + ages + '</span>') + '</label>' + pills + '</div>';
-        }).join('');
-        return '<div class="showb" data-cat="day">' +
-          '<div class="poster" style="background-image:url(\'' + g.img + '\')"></div>' +
-          '<div class="bd"><div class="t">' + esc(g.title) + '</div>' +
-          '<div class="d">' + esc(g.when) + ' \u00b7 Ages ' + ages +
-            (dayPriceLabel(g.acts) ? ' \u00b7 ' + dayPriceLabel(g.acts) : '') + '</div>' +
-          '<div class="kids">' + kidRows +
-          '<button type="button" class="kid-add-here" data-addday="' + esc(g.when) + '">+ Add a student to this day</button>' +
-          '</div></div></div>';
-      }).join('');
-    var groupsRef = groups;
-    host.querySelectorAll('input[data-dayg]').forEach(function(cb){
-      cb.addEventListener('change', function(){
-        var g = groupsRef[+cb.dataset.dayg], i = +cb.dataset.i, k = state.kids[i];
-        if (cb.checked) {
-          var age = campAge(k);
-          var fit = g.acts.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); })[0];
-          setDay(i, g, fit ? fit.id : null);
-        } else setDay(i, g, null);
-        ev('reg_daycamp_toggled', { when: g.when, on: cb.checked });
+    var head = '<div class="calhead"><div class="t">Day camps</div>' +
+      '<div class="d">One-day camps on school holidays' + (allLabel ? ' \u00b7 ' + allLabel + ' a day' : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div></div>' +
+      '<div class="tiny" style="text-align:left;margin:6px 0 0;color:var(--gold3)">Do all 5 day camps for $349 (save $46)' +
+        (snowOn ? ' + 2 free Snow Day camps if booked by September 21' : '') + ' \u2014 applied automatically</div>' +
+      '<div class="filt"><span class="lab">Ages</span>' +
+        '<span class="fpill' + (!f.age ? ' sel' : '') + '" data-dage="">All ages</span>' +
+        ageKeys.map(function(k){ return '<span class="fpill' + (f.age === k ? ' sel' : '') + '" data-dage="' + k + '">Ages ' + k.replace('-', '\u2013') + '</span>'; }).join('') + '</div>';
+    // which activity a tap books for a student: the filtered band if one is
+    // set, else the first band the child's age fits that still has room
+    function fitFor(i, g){
+      var age = campAge(state.kids[i]);
+      var pool = g.acts.filter(function(a){ return !f.age || dayAgeKey(a) === f.age; });
+      return pool.filter(function(a){ var r = castRange(a); return (age == null || (age >= r.min - 1 && age <= r.max)) && !(a.remaining != null && a.remaining <= 0); })[0] || null;
+    }
+    var byMonth = {}, order = [];
+    groups.forEach(function(g, gi){
+      var acts = g.acts.filter(function(a){ return !f.age || dayAgeKey(a) === f.age; });
+      if (!acts.length) return;
+      var d = new Date(g.ts), mk = d.getFullYear() + '-' + d.getMonth();
+      if (!byMonth[mk]) { byMonth[mk] = { label: PRO_MONTHS[d.getMonth()] + ' ' + d.getFullYear(), items: [] }; order.push(mk); }
+      byMonth[mk].items.push({ g: g, gi: gi, acts: acts, d: d });
+    });
+    var body = order.length ? order.map(function(mk){
+      var m = byMonth[mk];
+      return '<div class="mon">' + m.label + '</div><div class="dgrid">' + m.items.map(function(it){
+        var g = it.g, acts = it.acts;
+        var onKids = selIdx.filter(function(i){ return dayOn(i, g); });
+        var full = acts.every(function(a){ return a.remaining != null && a.remaining <= 0; });
+        var st;
+        if (full) st = 'Full';
+        else if (onKids.length) st = '\u2713 ' + onKids.map(function(i){ return esc(state.kids[i].name.split(' ')[0]); }).join(', ');
+        else st = (f.age ? '' : 'Ages ' + acts.map(function(a){ return dayAgeKey(a).replace('-', '\u2013'); }).join(' \u00b7 ') + ' \u00b7 ') + dayPriceLabel(acts);
+        var who = '';
+        if (selIdx.length > 1) {
+          who = '<div class="who">' + selIdx.map(function(i){
+            var k = state.kids[i], on = dayOn(i, g), fit = fitFor(i, g);
+            return '<label' + (fit || on ? '' : ' style="opacity:.5"') + '><input type="checkbox" data-dayg="' + it.gi + '" data-i="' + i + '"' + (on ? ' checked' : '') + (fit || on ? '' : ' disabled') + '> ' + esc(k.name.split(' ')[0]) + '</label>';
+          }).join('') + '</div>';
+        }
+        return '<div class="dt' + (onKids.length ? ' sel' : '') + (full ? ' full' : '') + '" data-dtile="' + it.gi + '">' +
+          '<div class="wd">' + CAL_DAYS[it.d.getDay()] + '</div><div class="dn">' + it.d.getDate() + '</div>' +
+          '<div class="nm">' + esc(g.title) + '</div><div class="st' + (onKids.length ? ' on' : '') + '">' + st + '</div>' + who + '</div>';
+      }).join('') + '</div>';
+    }).join('') : '<div class="calempty">No day camps for this age yet \u2014 try another age.</div>';
+    host.innerHTML = head + body;
+    host.querySelectorAll('.fpill[data-dage]').forEach(function(p){
+      p.addEventListener('click', function(){
+        f.age = p.dataset.dage || null; f.auto = false;
+        ev('reg_day_filter', { age: f.age || 'all' });
+        renderDayCards();
+      });
+    });
+    host.querySelectorAll('.dt[data-dtile]').forEach(function(tile){
+      tile.addEventListener('click', function(e){
+        if (e.target.closest && e.target.closest('.who')) return; // the per-student boxes handle themselves
+        var g = groups[+tile.dataset.dtile];
+        if (!g || tile.classList.contains('full')) return;
+        if (!selIdx.length) { openKidModal({ type: 'day', when: g.when }); return; }
+        if (selIdx.length > 1) return;
+        var i = selIdx[0];
+        if (dayOn(i, g)) setDay(i, g, null);
+        else { var fit = fitFor(i, g); if (!fit) return; setDay(i, g, fit.id); }
+        ev('reg_daycamp_toggled', { when: g.when, on: !!dayOn(i, g), via: 'calendar' });
         renderShowKids(); saveCart();
       });
     });
-    host.querySelectorAll('.pill[data-dayg]').forEach(function(pl){
-      pl.addEventListener('click', function(){
-        setDay(+pl.dataset.i, groupsRef[+pl.dataset.dayg], +pl.dataset.act);
+    host.querySelectorAll('input[data-dayg]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var g = groups[+cb.dataset.dayg], i = +cb.dataset.i;
+        if (cb.checked) { var fit = fitFor(i, g); setDay(i, g, fit ? fit.id : null); }
+        else setDay(i, g, null);
+        ev('reg_daycamp_toggled', { when: g.when, on: cb.checked });
         renderShowKids(); saveCart();
       });
     });
@@ -2095,6 +2232,45 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var t = ((ct.primary_text || [])[0] || '').replace(/\s*E[DS]T\s*$/, '');
     return [ct.title_text, t, ct.secondary_text].filter(Boolean).join(' \u00b7 ');
   }
+  // ---- Classes: a week calendar, filtered by age and day (CJ, Sep 16 2026:
+  // "I want the classes to look like a week calendar and sort by ages/days,
+  // and then those classes come up and they can click that class and it
+  // purchases"). One tile per class in its weekday column; a tap checks the
+  // student in, and a classes-only cart checks out with the next tap. ----
+  function classAgeKey(a){
+    if (/adult/i.test(String(a.age_range || ''))) return 'adult';
+    var r = castRange(a); return r.min + '-' + r.max;
+  }
+  function classAgeLabel(key){ return key === 'adult' ? 'Adults' : 'Ages ' + key.replace('-', '\u2013'); }
+  function classStartMin(a){
+    var ct = (a.class_times || [])[0];
+    var m = String((ct && (ct.primary_text || [])[0]) || '').match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+    if (!m) return 9999;
+    return ((+m[1] % 12) + (/pm/i.test(m[3]) ? 12 : 0)) * 60 + (+m[2] || 0);
+  }
+  function classTimeLabel(a){
+    var ct = (a.class_times || [])[0];
+    return String((ct && (ct.primary_text || [])[0]) || '').replace(/\s*E[DS]T\s*$/, '').replace(/:00/g, '');
+  }
+  // the band the one selected student falls in, so the calendar opens on it
+  function classAgeDefault(cls){
+    var sel = state.kids.filter(function(k){ return k.sel && k.bday; });
+    if (sel.length !== 1) return null;
+    var age = ageOn(sel[0].bday, CLASS_START);
+    var keys = cls.map(classAgeKey).filter(function(k){ return k !== 'adult'; });
+    return keys.filter(function(k){ var p = k.split('-'); return age >= +p[0] && age <= +p[1]; })[0] || null;
+  }
+  function classOnFor(a){
+    var on = [];
+    state.kids.forEach(function(k, i){ var v = state.assign['cls' + a.id + '|' + i]; if (k.sel && v && v.on) on.push(i); });
+    return on;
+  }
+  function classKidOk(a, k){
+    var age = ageOn(k.bday, CLASS_START);
+    if (age == null) return true;
+    if (/adult/i.test(String(a.age_range || ''))) return age >= 18;
+    var r = castRange(a); return age >= r.min - 1 && age <= r.max;
+  }
   function renderClassCards(){
     var host = $('classCards');
     if (!host) return;
@@ -2102,43 +2278,84 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (!cls.length) { host.innerHTML = ''; return; }
     var selIds = {};
     cls.forEach(function(a){
-      state.kids.forEach(function(k, i){
-        var v = state.assign['cls' + a.id + '|' + i];
-        if (k.sel && v && v.on) selIds[a.id] = 1;
+      classOnFor(a).forEach(function(i){ if (!classKidOk(a, state.kids[i])) state.assign['cls' + a.id + '|' + i] = { on: false }; });
+      if (classOnFor(a).length) selIds[a.id] = 1;
+    });
+    state.classSel = Object.keys(selIds);
+    if (!state.classFilter) state.classFilter = { age: classAgeDefault(cls), day: null, auto: true };
+    var f = state.classFilter;
+    if (f.auto && !f.age) f.age = classAgeDefault(cls); // untouched: follow the student once one is added
+    var ageKeys = [];
+    cls.forEach(function(a){ var k = classAgeKey(a); if (ageKeys.indexOf(k) === -1) ageKeys.push(k); });
+    ageKeys.sort(function(x, y){ return (x === 'adult' ? 99 : +x.split('-')[0]) - (y === 'adult' ? 99 : +y.split('-')[0]); });
+    var dayKeys = [];
+    cls.forEach(function(a){ var d = proWeekday(a); if (d != null && dayKeys.indexOf(d) === -1) dayKeys.push(d); });
+    dayKeys.sort(function(x, y){ return (x || 7) - (y || 7); }); // Monday first, Sunday last
+    var shown = cls.filter(function(a){ return (!f.age || classAgeKey(a) === f.age) && (f.day == null || proWeekday(a) === f.day); });
+    var cols = dayKeys.filter(function(d){ return f.day == null || d === f.day; });
+    var selIdx = state.kids.map(function(k, i){ return k.sel ? i : -1; }).filter(function(i){ return i >= 0; });
+    var head = '<div id="classHead" class="calhead"><div class="t">Weekly classes</div>' +
+      '<div class="d">Sep 2026 \u2013 Jun 2027 \u00b7 $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per student \u00b7 join mid-month and pay only for the classes left in it \u00b7 first month free with any show registration</div></div>' +
+      '<div class="filt"><span class="lab">Ages</span>' +
+        '<span class="fpill' + (!f.age ? ' sel' : '') + '" data-cage="">All ages</span>' +
+        ageKeys.map(function(k){ return '<span class="fpill' + (f.age === k ? ' sel' : '') + '" data-cage="' + k + '">' + classAgeLabel(k) + '</span>'; }).join('') + '</div>' +
+      '<div class="filt"><span class="lab">Day</span>' +
+        '<span class="fpill' + (f.day == null ? ' sel' : '') + '" data-cday="">Any day</span>' +
+        dayKeys.map(function(d){ return '<span class="fpill' + (f.day === d ? ' sel' : '') + '" data-cday="' + d + '">' + CAL_DAYS[d] + '</span>'; }).join('') + '</div>';
+    var grid = shown.length ? '<div class="wk">' + cols.map(function(d){
+      var inCol = shown.filter(function(a){ return proWeekday(a) === d; }).sort(function(x, y){ return classStartMin(x) - classStartMin(y); });
+      if (!inCol.length && f.day == null && f.age) return ''; // an empty weekday for this age takes no room
+      var tiles = inCol.length ? inCol.map(function(a){
+        var on = classOnFor(a), left = a.remaining, full = left != null && left <= 0;
+        var st = full ? '<div class="st warn">Full</div>'
+          : on.length ? '<div class="st">\u2713 ' + on.map(function(i){ return esc(state.kids[i].name.split(' ')[0]); }).join(', ') + '</div>'
+          : (left != null && left <= 5) ? '<div class="st warn">' + left + ' spot' + (left === 1 ? '' : 's') + ' left</div>' : '';
+        var who = '';
+        if (selIdx.length > 1) {
+          who = '<div class="who">' + selIdx.map(function(i){
+            var k = state.kids[i], v = state.assign['cls' + a.id + '|' + i], ok = classKidOk(a, k);
+            return '<label' + (ok ? '' : ' style="opacity:.5"') + '><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '"' + (v && v.on ? ' checked' : '') + (ok ? '' : ' disabled') + '> ' + esc(k.name.split(' ')[0]) + '</label>';
+          }).join('') + '</div>';
+        }
+        return '<div class="ct' + (on.length ? ' sel' : '') + (full ? ' full' : '') + '" data-ctile="' + a.id + '">' +
+          '<div class="tm">' + esc(classTimeLabel(a)) + '</div><div class="nm">' + esc(a.name) + '</div>' +
+          '<div class="ag">' + classAgeLabel(classAgeKey(a)) + '</div>' + st + who + '</div>';
+      }).join('') : '<div class="calempty">Nothing on ' + PRO_DAYS[d] + 's for this age.</div>';
+      return '<div class="wkcol"><div class="dh">' + PRO_DAYS[d] + '</div>' + tiles + '</div>';
+    }).join('') + '</div>' : '<div class="calempty">No classes match \u2014 try another age or day.</div>';
+    host.innerHTML = head + grid;
+    host.querySelectorAll('.fpill[data-cage]').forEach(function(p){
+      p.addEventListener('click', function(){ f.age = p.dataset.cage || null; f.auto = false; ev('reg_class_filter', { age: f.age || 'all', day: f.day == null ? 'any' : f.day }); renderClassCards(); });
+    });
+    host.querySelectorAll('.fpill[data-cday]').forEach(function(p){
+      p.addEventListener('click', function(){ f.day = p.dataset.cday === '' ? null : +p.dataset.cday; ev('reg_class_filter', { age: f.age || 'all', day: f.day == null ? 'any' : f.day }); renderClassCards(); });
+    });
+    host.querySelectorAll('.ct[data-ctile]').forEach(function(tile){
+      tile.addEventListener('click', function(e){
+        if (e.target.closest && e.target.closest('.who')) return; // the per-student boxes handle themselves
+        var id = +tile.dataset.ctile;
+        if (tile.classList.contains('full')) return;
+        if (!selIdx.length) { openKidModal({ type: 'cls', id: id }); return; }
+        if (selIdx.length > 1) return;
+        var key = 'cls' + id + '|' + selIdx[0];
+        var on = !(state.assign[key] && state.assign[key].on);
+        var act = cls.filter(function(x){ return x.id === id; })[0];
+        if (on && act && !classKidOk(act, state.kids[selIdx[0]])) {
+          var stEl = tile.querySelector('.st') || tile.appendChild(document.createElement('div'));
+          stEl.className = 'st warn'; stEl.textContent = 'This one is for ' + classAgeLabel(classAgeKey(act)).toLowerCase() + ' — ' + esc(state.kids[selIdx[0]].name.split(' ')[0]) + ' is outside that range.';
+          ev('reg_class_age_blocked', { id: id });
+          return;
+        }
+        state.assign[key] = { on: on };
+        ev('reg_class_toggled', { id: id, on: on, via: 'calendar' });
+        renderClassCards(); updateTicker(); saveCart(); upsellCheck();
       });
     });
-    var nSel = Object.keys(selIds).length;
-    state.classSel = Object.keys(selIds);
-    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per student \u00b7 join mid-month and pay only for the classes left in it \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
-      cls.map(function(a){
-        // age gate (Jason, Jul 31): the card advertises an age range, so the
-        // checkboxes honor it — age at the Sep 14 class start, one year of
-        // grace below the floor like everywhere else. "Adults" ranges don't
-        // parse as kid bands, so they gate at 18+.
-        var isAdult = /adult/i.test(String(a.age_range || ''));
-        var cr2 = castRange(a);
-        var kidRows = state.kids.map(function(k, i){
-          if (!k.sel) return '';
-          var key = 'cls' + a.id + '|' + i;
-          var on = state.assign[key] && state.assign[key].on;
-          var age = ageOn(k.bday, '2026-09-14');
-          var ok = age == null || (isAdult ? age >= 18 : (age >= cr2.min - 1 && age <= cr2.max));
-          var badge = ok ? '' : ' <span class="badge-done" style="opacity:.65">for ' + (isAdult ? 'adults 18+' : 'ages ' + cr2.min + '\u2013' + cr2.max) + '</span>';
-          return '<div class="kid-row"><label class="kid-check"><input type="checkbox" data-cls="' + a.id + '" data-i="' + i + '" ' + (on ? 'checked' : '') + '> <span>' + esc(k.name) + '</span>' + badge + '</label></div>';
-        }).join('');
-        return '<div class="showb" data-cat="class">' +
-          '<div class="poster" style="background-image:url(\'' + (a.image_url || '') + '\')"></div>' +
-          '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
-          '<div class="d">' + esc(classWhen(a)) + (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/,'')) : '') + ' \u00b7 $90/mo</div>' +
-          '<div class="kids">' + kidRows +
-          '<button type="button" class="kid-add-here" data-addcls="' + a.id + '">+ Add a student to this class</button>' +
-          '</div></div></div>';
-      }).join('');
     host.querySelectorAll('input[data-cls]').forEach(function(cb){
       cb.addEventListener('change', function(){
         state.assign['cls' + cb.dataset.cls + '|' + cb.dataset.i] = { on: cb.checked };
         ev('reg_class_toggled', { id: +cb.dataset.cls, on: cb.checked });
-        renderClassCards(); saveCart(); upsellCheck();
+        renderClassCards(); updateTicker(); saveCart(); upsellCheck();
       });
     });
     applySeasonFilter();
@@ -2273,6 +2490,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var fl = state.seasonFilter;
     document.querySelectorAll('#showBlocks .showb').forEach(function(card){
       var cat = card.dataset.cat || (card.dataset.fall ? 'year' : 'summer');
+      // the door cards to classes and day camps sit on the show shelves only
+      if (cat === 'gateway') { card.style.display = (fl === 'summer' || fl === 'year') ? '' : 'none'; return; }
       var show = fl === 'all' ? true
         : fl === 'summer' ? cat === 'summer'
         : fl === 'year' ? cat === 'year'
@@ -2289,6 +2508,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     document.querySelectorAll('#seasonChips .schip').forEach(function(c){
       c.classList.toggle('sel', c.dataset.f === fl);
     });
+    // the heading names the shelf that is open
+    var h1 = $('shelfH1'), sub = $('shelfSub');
+    if (h1 && sub) {
+      var hc = fl === 'class' ? ['Choose your <em>classes.</em>', 'Filter by age and day, then tap a class to enroll.']
+        : fl === 'day' ? ['Pick your <em>day camps.</em>', 'Tap a date to book it — five days make a pack.']
+        : ['Choose your <em>shows.</em>', 'Check each student into their shows.'];
+      h1.innerHTML = hc[0]; sub.textContent = hc[1];
+    }
   }
 
   // upsell toast \u2014 "In town? bundle another camp"
