@@ -1172,11 +1172,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       restoreCart();
       if (isCatMode()) {
         var kidKnown = applyUrlKid();
-        renderCatAssign(); go('st-assign'); startSoftTimer();
+        renderCatAssign(); go('st-assign');
         if (kidKnown && catBirthdaysReady()) acquireHold();
         return;
       }
-      go('st-shows'); renderShowKids(); startSoftTimer();
+      go('st-shows'); renderShowKids();
     }).catch(function(){
       // network hiccup on the two catalog calls — fall back to the email
       // front door rather than a dead screen
@@ -1569,13 +1569,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       restoreCart();
       if (isCatMode()) {
         var kidKnown = applyUrlKid();
-        renderCatAssign(); go('st-assign'); startSoftTimer();
+        renderCatAssign(); go('st-assign');
         // The family's campers loaded with their birthdays, the child is
         // checked in everywhere: nothing left to ask on this step.
         if (kidKnown && catBirthdaysReady()) acquireHold();
         return;
       }
-      go('st-shows'); renderShowKids(); startSoftTimer();
+      go('st-shows'); renderShowKids();
     });
   }
   function firstNames(){
@@ -1610,8 +1610,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('famNext').addEventListener('click', function(){
     var errEl = $('famErr'); errEl.classList.remove('on');
     if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one student.'; errEl.classList.add('on'); return; }
-    if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
-    go('st-shows'); renderShowKids(); startSoftTimer();
+    if (isCatMode()) { renderCatAssign(); go('st-assign'); return; }
+    go('st-shows'); renderShowKids();
   });
   $('signout').addEventListener('click', function(e){
     e.preventDefault(); clearCart(); sb.auth.signOut().then(function(){ location.href='/register/'; });
@@ -2901,28 +2901,21 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
   }
 
-  // ---------- reservation timer (soft from show selection, hard once held) ----------
+  // ---------- reservation timer (only once a real hold exists) ----------
+  // There used to be a "soft" 30-minute countdown from the moment a show was
+  // picked, silently restarting at zero. It taught parents the timer was fake
+  // before the real hold began. (Sep 16 2026)
   var timerInt = null;
-  function startSoftTimer(){
-    if (state.hold || state.softUntil) return;
-    state.softUntil = new Date(Date.now() + 30 * 60000);
-    startTimer();
-  }
   function startTimer(){
     $('holdChip').classList.add('on');
     clearInterval(timerInt);
     timerInt = setInterval(function(){
-      var end = state.hold ? state.hold.expires : state.softUntil;
-      var ms = end - new Date();
+      var ms = state.hold.expires - new Date();
       if (ms <= 0) {
-        if (state.hold) {
-          clearInterval(timerInt);
-          $('holdChip').classList.remove('on');
-          $('expiredModal').classList.add('on');
-          ev('reg_hold_expired');
-        } else {
-          state.softUntil = new Date(Date.now() + 30 * 60000);
-        }
+        clearInterval(timerInt);
+        $('holdChip').classList.remove('on');
+        $('expiredModal').classList.add('on');
+        ev('reg_hold_expired');
         return;
       }
       var s = Math.floor(ms / 1000);
@@ -3100,6 +3093,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     updateInsurance(p.items, p.baseSubtotal);
     renderShirts(p.items);
     setPayH1(p.today);
+    showPendingPay(p.today);
     $('payBreakdown').innerHTML = catAllClasses()
       ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice — you\'re billed for the upcoming month, then done. No refunds.</p>'
       : '<p class="tiny" style="text-align:left;margin-top:2px">One payment — you\'re done. All sales final.</p>';
@@ -3415,6 +3409,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     renderUpsells(p, byKid, byIdAll);
     renderShirts(items);
     setPayH1(p.today);
+    showPendingPay(p.today);
   }
 
   function renderUpsells(p, byKid, byIdAll){
@@ -3640,6 +3635,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     $('expressCheckout').innerHTML = ''; $('expressWrap').style.display = 'none';
   }
   var payTimer = null;
+  // The amount and the button are on screen from the first frame; the card
+  // form arriving from Stripe enables it. A pay step with nothing to press
+  // for three seconds on a slow phone read as broken. (Sep 16 2026)
+  function showPendingPay(cents){
+    if (state.clientSecret || state.freeOrder) return;
+    var b = $('paySubmit');
+    b.innerHTML = (state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') + money(cents) + (state.plan === 'deposit' ? ' today' : '');
+    b.disabled = true; b.style.display = '';
+  }
   function schedulePay(){ clearTimeout(payTimer); payTimer = setTimeout(startPayment, 350); }
   function setPayH1(cents){
     var n = state.hold ? state.hold.items.length : 1;
@@ -3717,6 +3721,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         $('expressWrap').style.display = 'none';
         $('payStart').style.display = 'none';
         $('paySubmit').innerHTML = 'Complete Registration — $0';
+        $('paySubmit').disabled = false;
         $('paySubmit').style.display = '';
         ev('reg_payment_started', { plan: state.plan, today_cents: 0, free: true });
         return;
@@ -3822,6 +3827,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         ? 'Enroll \u2014 $0 today'
         : (state.plan === 'deposit' ? 'Reserve for ' : 'Pay ') +
           money(state.pricing.today_cents) + (state.plan === 'deposit' ? ' today' : '');
+      $('paySubmit').disabled = false;
       $('paySubmit').style.display = '';
     }
     if (window.Stripe) return ready();
