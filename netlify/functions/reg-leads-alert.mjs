@@ -85,7 +85,7 @@ export default async () => {
   }
   const rows = await r.json();
 
-  const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org")
+  const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org")
     .split(",").map((s) => s.trim()).filter(Boolean);
 
   let sent = 0;

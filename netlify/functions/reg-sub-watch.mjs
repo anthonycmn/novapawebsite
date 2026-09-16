@@ -102,7 +102,7 @@ ${r.isClass ? '<b style="color:#9E2B2B"> — looks like a CLASS, should end Jun 
     ? `${classes.length} class subscription${classes.length > 1 ? "s" : ""} billing with no end date`
     : `${report.length} subscription${report.length > 1 ? "s" : ""} billing with no end date`;
 
-  const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
+  const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },

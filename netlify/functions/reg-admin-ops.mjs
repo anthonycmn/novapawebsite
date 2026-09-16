@@ -319,7 +319,7 @@ export default async (req) => {
             has_stripe_pi: !!order?.stripe_payment_intent,
             has_schedule: !!order?.stripe_schedule,
             schedule_warning: order?.stripe_schedule
-              ? "This order has a payment schedule — cancelling one seat does NOT change future installments. Adjust the schedule in Stripe (or ask Jason) after this."
+              ? "This order has a payment schedule — cancelling one seat does NOT change future installments. Adjust the schedule in the Stripe dashboard after this."
               : null,
           },
         });
@@ -348,7 +348,7 @@ export default async (req) => {
       });
       if (out && out.error) {
         // refund already happened — surface loudly rather than silently losing it
-        return Response.json({ error: `refund ${refundId || "none"} succeeded but seat unwind failed: ${out.error} — tell Jason`, refund_id: refundId }, { status: 500 });
+        return Response.json({ error: `refund ${refundId || "none"} succeeded but seat unwind failed: ${out.error} — fix the seat by hand in Orders`, refund_id: refundId }, { status: 500 });
       }
       return Response.json({ ...out, refund_id: refundId, refunded_cents: amount });
     }

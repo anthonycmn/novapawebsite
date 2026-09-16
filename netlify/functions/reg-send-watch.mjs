@@ -70,7 +70,7 @@ export default async () => {
   if (await store.get(key)) return new Response("already alerted today", { status: 200 });
   await store.set(key, String(Date.now()));
 
-  const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
+  const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },

@@ -406,14 +406,14 @@ async function alertByEmail() {
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: "NOVAPA Alerts <alerts@mail.novapa.org>",
-        to: ["jason@novapa.org"],
+        to: ["cj@novapa.org"],
         subject: `Registration preflight FAILED — ${problems.length} problem(s)`,
         text: `Automated check of ${BASE} failed.\n\n${body}\n\n` +
               `This runs unattended and only emails on failure.\n` +
               `Reproduce with:  npm run check:live\n`,
       }),
     });
-    console.error(r.ok ? "  (--alert: emailed jason@novapa.org)" : `  (--alert: send failed ${r.status})`);
+    console.error(r.ok ? "  (--alert: emailed cj@novapa.org)" : `  (--alert: send failed ${r.status})`);
   } catch (e) { console.error(`  (--alert: send failed ${e.message})`); }
 }
 
