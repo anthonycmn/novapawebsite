@@ -158,7 +158,10 @@ console.log('\nSEASON BREAKS');
     }
   }
   const names = Object.keys(found);
-  A(names.length === 4, 'the calendar defines 4 closures — got ' + names.length + ' (' + names.join(', ') + ')');
+  A(names.length === 5, 'the calendar defines 5 closures — got ' + names.length + ' (' + names.join(', ') + ')');
+  // Labor Day 2026 fell on Sep 7, a week before the season opens, so it closes
+  // nothing. It is listed because families look for it; the class-day checks
+  // below still have to hold with it present.
 
   const MONTH = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const span = (ts) => {
