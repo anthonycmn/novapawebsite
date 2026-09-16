@@ -355,7 +355,7 @@ export function dcuConfirmationHtml(m, pi) {
 }
 
 export async function sendConfirmationEmail(m, pi) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !m.email) return;
+  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY) || !m.email) return;
   const { default: nodemailer } = await import("nodemailer");
   // SMTP host/from are env-driven since the Sep 2026 Resend cutover so the
   // transport can move off Jason's Gmail without a code change: set
@@ -364,7 +364,7 @@ export async function sendConfirmationEmail(m, pi) {
   // From = the mailbox itself).
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   const fromAddr = process.env.FROM_ADDR || process.env.SMTP_USER;
   if (m.brand === "dcu") {

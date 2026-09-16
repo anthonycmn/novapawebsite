@@ -78,7 +78,7 @@ async function sendMail({ to, subject, html, refs }) {
   // IMAP_PASS (falling back to SMTP_USER/PASS for unmigrated environments).
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   const headers = {};
   if (refs && refs.length) {

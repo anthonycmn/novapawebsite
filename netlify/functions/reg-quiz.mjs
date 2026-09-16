@@ -92,11 +92,11 @@ function resultHtml(child, personaName, personaCopy, prog) {
 }
 
 async function sendResult(lead, personaName, personaCopy, prog) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY)) return;
   const { default: nodemailer } = await import("nodemailer");
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   await transporter.sendMail({
     from: `NOVAPA <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
