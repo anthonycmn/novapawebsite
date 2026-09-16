@@ -407,7 +407,9 @@ export default async (req) => {
     return Response.json({ ok: false, error: "nothing-to-send" }, { status: 400 });
   }
 
-  const user = process.env.SMTP_USER, pass = process.env.SMTP_PASS;
+  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
+  const user = process.env.SMTP_USER, pass = process.env.SMTP_PASS || process.env.RESEND_API_KEY;
+  const fromAddr = process.env.FROM_ADDR || user;
   if (!user || !pass) {
     return Response.json({ ok: false, error: "mail-not-configured" }, { status: 503 });
   }
@@ -417,13 +419,13 @@ export default async (req) => {
   try {
     const { default: nodemailer } = await import("nodemailer");
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass },
+      host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true, auth: { user, pass },
     });
     await transporter.sendMail({
-      from: isBuy ? `NOVAPA Production <${user}>` : `NOVAPA Rehearsal Report <${user}>`,
+      from: isBuy ? `NOVAPA Production <${fromAddr}>` : `NOVAPA Rehearsal Report <${fromAddr}>`,
       to: who.to,
       ...(who.cc ? { cc: who.cc } : {}),
-      replyTo: user,
+      replyTo: fromAddr,
       subject: isBuy
         ? `DEH — links to buy (${r.items.length} item${r.items.length === 1 ? "" : "s"}, ${money(r.totalCents || 0)})`
         : `DEH rehearsal report — ${r.dayLabel}`,
