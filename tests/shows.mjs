@@ -137,6 +137,67 @@ const gridNames = [...weekly.matchAll(/\[\d,'[^']*','([^']*)','[^']*','(?!Produc
   .map((m) => m[1]);
 A(gridNames.length === 13, 'the grid lists exactly the 13 sold classes — got ' + gridNames.length);
 
+// ── season breaks ───────────────────────────────────────────────────────
+// Parents were asking when we are closed, so the breaks are printed on the
+// classes page, the Teen Conservatory page and the Broadway Bound page. Four
+// copies of a date is four chances to be wrong, so calendar.html stays the
+// source and the pages have to match it.
+console.log('\nSEASON BREAKS');
+{
+  const cal = read('calendar.html');
+  const raw = (cal.match(/const RAW_EVENTS\s*=\s*\[([\s\S]*?)\n\];/) || [null, ''])[1];
+  // every [y, monthIdx, day, title, 'break'] entry, grouped by title
+  const found = {};
+  for (const m of raw.matchAll(/\[(\d{4}),\s*(\d{1,2}),\s*(\d{1,2}),\s*'([^']+)'\s*,\s*'break'/g)) {
+    (found[m[4]] = found[m[4]] || []).push(Date.UTC(+m[1], +m[2], +m[3]));
+  }
+  // the map() form: ...[22,23,...].map(d=>[2026,10,d,'Thanksgiving Break','break',...])
+  for (const m of raw.matchAll(/\.\.\.\[([\d,\s]+)\]\.map\(d=>\[(\d{4}),\s*(\d{1,2}),\s*d,\s*'([^']+)'\s*,\s*'break'/g)) {
+    for (const d of m[1].split(',').map(Number)) {
+      (found[m[4]] = found[m[4]] || []).push(Date.UTC(+m[2], +m[3], d));
+    }
+  }
+  const names = Object.keys(found);
+  A(names.length === 4, 'the calendar defines 4 closures — got ' + names.length + ' (' + names.join(', ') + ')');
+
+  const MONTH = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const span = (ts) => {
+    ts.sort((a, b) => a - b);
+    const a = new Date(ts[0]), b = new Date(ts[ts.length - 1]);
+    const am = MONTH[a.getUTCMonth()], bm = MONTH[b.getUTCMonth()];
+    if (ts[0] === ts[ts.length - 1]) return am + ' ' + a.getUTCDate() + ', ' + a.getUTCFullYear();
+    return am === bm && a.getUTCFullYear() === b.getUTCFullYear()
+      ? am + ' ' + a.getUTCDate() + ' – ' + b.getUTCDate() + ', ' + b.getUTCFullYear()
+      : am + ' ' + a.getUTCDate() + ', ' + a.getUTCFullYear() + ' – ' + bm + ' ' + b.getUTCDate() + ', ' + b.getUTCFullYear();
+  };
+
+  // the rendered calendar builds its class days from CLASS_DATES, so no class
+  // day may fall inside a closure — on 16 Sep 2026 that list was missing 70 real
+  // class days and showed parents two unexplained three-week gaps instead.
+  {
+    const cd = (cal.match(/const CLASS_DATES = new Set\(\[([\s\S]*?)\]\);/) || [null, ''])[1];
+    const days = [...cd.matchAll(/'(\d{4})-(\d{1,2})-(\d{1,2})'/g)]
+      .map((m) => Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    A(days.length > 150, 'the calendar lists a full season of class days — got ' + days.length);
+    const shut = Object.values(found).flat();
+    const clash = days.filter((d) => shut.includes(d));
+    A(clash.length === 0, 'no class day falls inside a closure' +
+      (clash.length ? ' — ' + clash.length + ' do, first ' + new Date(clash[0]).toUTCString().slice(0, 16) : ''));
+    const WD = days.map((d) => new Date(d).getUTCDay());
+    A(!WD.includes(5) && !WD.includes(0), 'no class day lands on a Friday or Sunday, which have no classes');
+  }
+
+  for (const page of ['classes.html', 'teen-conservatory.html', 'broadway-bound.html']) {
+    const txt = read(page).replace(/&ndash;/g, '–').replace(/&mdash;/g, '—').replace(/\s+/g, ' ');
+    A(/id="breaks"/.test(txt), page + ' carries the season breaks');
+    for (const name of names) {
+      const want = span(found[name].slice());
+      A(txt.includes(name), '  …' + page + ' names the ' + name);
+      A(txt.includes(want), '  …and prints ' + want + (txt.includes(want) ? '' : ' — page disagrees with calendar.html'));
+    }
+  }
+}
+
 // ── licensed titles ─────────────────────────────────────────────────────
 // We license Frozen KIDS, Frozen JR., Little Mermaid KIDS and Little Mermaid
 // JR. There is no teen edition of either title. Our teen band performs the JR.

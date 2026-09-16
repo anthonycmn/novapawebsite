@@ -1,6 +1,7 @@
 // Retargeting drip engine — runs every 15 minutes (scheduled).
 // Sequences + per-lead state live in Supabase (email_sequences / retarget_state),
-// editable from the admin Marketing tab. Sends as jason@novapa.org.
+// editable from the admin Marketing tab. Sends as CJ from Broadway Bound
+// via the env-configured SMTP (FROM_ADDR).
 //
 // Rules (Jason):
 // - 'abandoned': enroll on first successful sign-in with no purchase; step 1
@@ -71,9 +72,13 @@ function render(tpl, vars) {
 
 async function sendMail({ to, subject, html, refs }) {
   const { default: nodemailer } = await import("nodemailer");
+  // Env-driven since the Sep 2026 Resend cutover (see reg-email.mjs). The
+  // IMAP reply-check below deliberately does NOT follow SMTP_*: it needs a
+  // real Gmail inbox that receives info@ mail, so it reads IMAP_USER /
+  // IMAP_PASS (falling back to SMTP_USER/PASS for unmigrated environments).
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   const headers = {};
   if (refs && refs.length) {
@@ -81,7 +86,7 @@ async function sendMail({ to, subject, html, refs }) {
     headers["References"] = refs.join(" ");
   }
   const info = await transporter.sendMail({
-    from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+    from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
     replyTo: "info@novapa.org",
     to, subject, headers,
     html: html.replace(/\n/g, "<br>"),
@@ -120,7 +125,8 @@ async function stopRepliers(states) {
     const { ImapFlow } = await import("imapflow");
     const client = new ImapFlow({
       host: "imap.gmail.com", port: 993, secure: true,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      auth: { user: process.env.IMAP_USER || process.env.SMTP_USER,
+              pass: process.env.IMAP_PASS || process.env.SMTP_PASS },
       logger: false,
     });
     await client.connect();
@@ -162,7 +168,7 @@ async function alertSpike(sentToday) {
     const key = "drip-spike-" + new Date().toISOString().slice(0, 10);
     if (await store.get(key)) return;
     await store.set(key, String(sentToday));
-    const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
+    const to = (process.env.LEADS_ALERT_TO || "jason@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
