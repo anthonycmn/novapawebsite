@@ -53,12 +53,13 @@ export default async (req) => {
 
   const render = (tpl) => tpl.replace(/\{(\w+)\}/g, (m, k) => (SAMPLE[k] != null ? SAMPLE[k] : m));
   const { default: nodemailer } = await import("nodemailer");
+  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   await transporter.sendMail({
-    from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+    from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
     replyTo: "info@novapa.org",
     to,
     subject: `[TEST] ${render(step.subject)}`,
