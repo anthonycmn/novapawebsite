@@ -4,6 +4,7 @@
 // applicant table or anyone's résumé. Validation is server-side for the same
 // reason — a hand-rolled POST gets the same checks the form does.
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 
 const MAX_RESUME_BYTES = 3 * 1024 * 1024; // 3MB — résumés are well under this
 const ALLOWED = {
@@ -123,20 +124,15 @@ export default async (req) => {
 
   // notify the team — failure here must never lose the application
   try {
-    if (process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.RESEND_API_KEY)) {
+    if (mailConfigured()) {
       const admins = await fetch(`${SUPABASE_URL}/rest/v1/admin_emails?select=email`, { headers: svcHeaders() })
         .then((r) => (r.ok ? r.json() : []))
         .then((rows) => rows.map((r) => r.email).filter(Boolean));
       if (admins.length) {
-        const { default: nodemailer } = await import("nodemailer");
-        // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
-        const t = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-        });
-        await t.sendMail({
-          from: `NOVAPA Careers <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
-          to: admins.join(", "),
+        // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026)
+        await sendMail({
+          fromName: "NOVAPA Careers",
+          to: admins,
           replyTo: email,
           subject: `Employment interest: ${full_name}`,
           html: [

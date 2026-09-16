@@ -1,4 +1,5 @@
 // Shared confirmation-email rendering + sending (webhook + free orders)
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 const GOLD = "#C8892A", NAVY = "#0F1E36";
 export function money(cents) {
   return "$" + (cents / 100).toLocaleString("en-US",
@@ -92,7 +93,7 @@ export async function itemDetails(m, pi) {
 
 export function confirmationHtml(m, pi, details) {
   const items = (m.order_desc || "").split("; ").filter(Boolean);
-  const today = pi.amount_received ?? pi.amount;
+  const today = pi.amount_received ?? pi.amount ?? 0; // a SetupIntent carries no amount
   const total = parseInt(m.total_cents || "0", 10) || today;
   const nInst = parseInt(m.n_installments || "0", 10) || 0;
   const instCents = parseInt(m.installment_cents || "0", 10) || 0;
@@ -355,21 +356,12 @@ export function dcuConfirmationHtml(m, pi) {
 }
 
 export async function sendConfirmationEmail(m, pi) {
-  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY) || !m.email) return;
-  const { default: nodemailer } = await import("nodemailer");
-  // SMTP host/from are env-driven since the Sep 2026 Resend cutover so the
-  // transport can move off Jason's Gmail without a code change: set
-  // SMTP_HOST=smtp.resend.com, SMTP_USER=resend, SMTP_PASS=<Resend key>,
-  // FROM_ADDR=info@novapa.org. Without those, behavior is unchanged (Gmail,
-  // From = the mailbox itself).
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-  });
-  const fromAddr = process.env.FROM_ADDR || process.env.SMTP_USER;
+  if (!mailConfigured() || !m.email) return;
+  // Transport lives in reg-mail.mjs: SMTP when SMTP_PASS is set, otherwise
+  // the Resend HTTP API from hello@mail.novapa.org (Sep 16 2026).
   if (m.brand === "dcu") {
-    await transporter.sendMail({
-      from: `DC Unifieds <${fromAddr}>`,
+    await sendMail({
+      fromName: "DC Unifieds",
       replyTo: "support@dcunifieds.com",
       to: m.email,
       subject: "You're registered — DC Unifieds 2026",
@@ -380,8 +372,8 @@ export async function sendConfirmationEmail(m, pi) {
   const cc = await ccFor(m.email);
   let details = [];
   try { details = await itemDetails(m, pi); } catch (e) { console.error("item details failed:", e.message); }
-  await transporter.sendMail({
-    from: `NOVAPA <${fromAddr}>`,
+  await sendMail({
+    fromName: "NOVAPA",
     replyTo: "info@novapa.org",
     to: m.email,
     ...(cc ? { cc } : {}),
