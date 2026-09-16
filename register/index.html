@@ -1272,6 +1272,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (state.hold.expires > new Date()) startTimer();
     $('payErr').textContent = 'Your bank didn\'t approve that payment. Try another card, or call your bank and try again.';
     $('payErr').classList.add('on');
+    state.stickyErr = true;
     ev('reg_payment_failed', { code: '3ds_' + r.status, email: state.email || undefined });
     schedulePay();
     return true;
@@ -3676,7 +3677,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function startPayment(){
     if (!state.hold || state.clientSecret) return;
     var mySeq = ++paySeq;
-    var errEl = $('payErr'); errEl.classList.remove('on');
+    var errEl = $('payErr');
+    // a message the parent still needs to read (why the bank said no) survives
+    // the automatic restart of payment; everything else clears
+    if (state.stickyErr) state.stickyErr = false; else errEl.classList.remove('on');
     if (!C.STRIPE_PUBLISHABLE_KEY) {
       errEl.textContent = 'Payments aren\'t configured yet (test build) — Stripe keys pending.';
       errEl.classList.add('on'); return;
@@ -4061,7 +4065,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         money(p.today_cents) + ' paid today' + (catAllClasses() && p.class_month ? ' for the rest of ' + esc(p.class_month.split(' ')[0]) : '') +
         (catAllClasses() ? ', monthly tuition on autopilot from ' + (p.next_bill_utc ? fmtBillDate(p.next_bill_utc) : 'Oct 1') + '.' : '.');
     } else {
-      $('doneRecap').innerHTML = items.length + ' camp registration' + (items.length>1?'s':'') + ' locked in at <b>' +
+      $('doneRecap').innerHTML = items.length + ' registration' + (items.length>1?'s':'') + ' locked in at <b>' +
         Math.round((p.discount_pct||0)) + '% off</b>' +
         (state.plan==='deposit' ? ' — ' + money(p.today_cents) + ' paid today, the rest on autopilot.' : ' — paid in full.');
     }
