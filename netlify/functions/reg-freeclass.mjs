@@ -197,6 +197,9 @@ async function availability() {
   for (const r of rows) used[`${r.activity_id}|${r.class_date}`] = r.trials;
   return Object.entries(CLASSES).map(([key, c]) => ({
     key,
+    // the weekly grid in register/classes.html joins trials to catalog_list()
+    // rows on this, because name+day+time is not a stable key
+    activity_id: c.activityId,
     name: c.name,
     ages: `${c.ages[0]}–${c.ages[1]}`,
     day: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][c.day],

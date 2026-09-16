@@ -251,6 +251,10 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 
   fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) {
     classes = j.classes || [];
+    // ?class=<key> arrives from the weekly grid in register/classes.html, so a
+    // parent who picked a class there does not have to find it again here
+    var want = new URLSearchParams(location.search).get("class");
+    if (want && classes.some(function (c) { return c.key === want; })) clsKey = want;
     renderClasses();
   }).catch(function () {
     $("err").style.display = "block";
