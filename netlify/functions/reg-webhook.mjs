@@ -388,9 +388,13 @@ export default async (req) => {
       const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
       if (admins.length) {
         const { default: nodemailer } = await import("nodemailer");
+        // Same env-driven transport as reg-email.mjs (Sep 2026 Resend cutover):
+        // the site now sets SMTP_HOST=smtp.resend.com, SMTP_USER=resend and no
+        // SMTP_PASS at all, so a hardcoded Gmail host with SMTP_PASS-only auth
+        // failed silently inside this try/catch on every paid order.
         const t2 = nodemailer.createTransport({
-          host: "smtp.gmail.com", port: 465, secure: true,
-          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+          host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
         });
         // Sawyer-detail admin receipt (Todd, Aug 3): full line items with
         // prices, every fee/discount, the payment schedule, and a Stripe link.
@@ -421,7 +425,7 @@ export default async (req) => {
         ].filter(Boolean).map(([k, v]) =>
           `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");
         await t2.sendMail({
-          from: `NOVAPA Registrations <${process.env.SMTP_USER}>`,
+          from: `NOVAPA Registrations <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
           to: admins.join(", "),
           subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
           html: [
@@ -445,18 +449,18 @@ export default async (req) => {
     // failures only showed in Stripe's retry log). Alert the admins with
     // enough context to act; alert failure itself must not mask the 500.
     try {
-      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      if (process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.RESEND_API_KEY)) {
         {
           // Failure alerts go to Jason only (his call, Aug 7) — Todd/CJ get
           // the happy-path registration emails, not the plumbing pages.
           const { default: nodemailer } = await import("nodemailer");
           const t = nodemailer.createTransport({
-            host: "smtp.gmail.com", port: 465, secure: true,
-            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+            host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
           });
           const md = (pi && pi.metadata) || {};
           await t.sendMail({
-            from: `NOVAPA Alerts <${process.env.SMTP_USER}>`,
+            from: `NOVAPA Alerts <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
             to: "cj@novapa.org",
             subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
             html: [
