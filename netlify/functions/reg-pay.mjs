@@ -8,7 +8,9 @@
 //    {activity_id, camper} may MIX in one cart (per-kid tiers, bundle 10%,
 //    deposit plans w/ installments ending 2 weeks before earliest start)
 //  - classes {activity_id, camper}: must be alone, plan=subscription
-//    ($90/mo, 5% sibling for 2nd+ child, insurance = monthly x1.10)
+//    ($90/$150/$180 a month per child for 1/2/3 classes — no sibling
+//    discount on classes since the Sep 14 2026 ladder; the first payment
+//    is prorated to the sessions left in the month)
 import Stripe from "stripe";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
