@@ -76,7 +76,7 @@ export async function itemDetails(m, pi) {
     const price = a ? (a.price_cents || 0) : 99500;
     const cat = a ? a.category : "camp";
     return {
-      camper: r.camper_name || "Camper",
+      camper: r.camper_name || "Student",
       name: a ? a.name : (r.show ? `${r.show} (ages ${r.band})` : "Program"),
       ages: a && a.age_range ? a.age_range : "",
       when: w,

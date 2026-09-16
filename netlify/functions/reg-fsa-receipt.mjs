@@ -84,7 +84,7 @@ export default async (req) => {
   });
 
   if (!eligible.length) {
-    return new Response("<html><body style=\"font-family:Georgia,serif;max-width:660px;margin:40px auto\"><h3>No FSA-eligible items on this order</h3><p>Dependent-care receipts cover daytime day camps for campers under age 13. Questions? Email <a href=\"mailto:info@novapa.org\">info@novapa.org</a>.</p></body></html>", { status: 200, headers: { "Content-Type": "text/html" } });
+    return new Response("<html><body style=\"font-family:Georgia,serif;max-width:660px;margin:40px auto\"><h3>No FSA-eligible items on this order</h3><p>Dependent-care receipts cover daytime day camps for students under age 13. Questions? Email <a href=\"mailto:info@novapa.org\">info@novapa.org</a>.</p></body></html>", { status: 200, headers: { "Content-Type": "text/html" } });
   }
 
   const now = new Date();

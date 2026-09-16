@@ -339,7 +339,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <!-- STEP: new or returning -->
   <section class="step on" id="st-gate">
     <div class="eyebrow" id="gateEyebrow">Summer 2027 · Broadway Bound</div>
-    <h1>New or returning <em>camper?</em></h1>
+    <h1>New or returning <em>student?</em></h1>
     <div class="choice">
       <div class="choice-card" id="choiceReturning">
         <div class="c1">Returning</div>
@@ -412,12 +412,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <!-- STEP: family -->
   <section class="step" id="st-family">
     <div class="eyebrow" id="famEyebrow">Welcome back</div>
-    <h1 id="famH1">Who's coming to camp?</h1>
+    <h1 id="famH1">Who's registering?</h1>
     <p class="sub" id="famSub">Confirm your students — add or edit anyone.</p>
     <div class="card">
       <div id="kidList"></div>
       <div class="addkid">
-        <input type="text" name="kname" id="newKidName" placeholder="Camper name">
+        <input type="text" name="kname" id="newKidName" placeholder="Student name">
         <input type="number" name="kage" id="newKidAge" placeholder="Age" min="2" max="18">
         <button class="btn btn-ghost" id="addKidBtn">Add</button>
       </div>
@@ -430,7 +430,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <!-- STEP: shows + campers -->
   <section class="step" id="st-shows">
     <h1>Choose your <em>shows.</em></h1>
-    <p class="sub">Check each camper into their shows.</p>
+    <p class="sub">Check each student into their shows.</p>
     <p class="tiny" id="guestReturnRow" style="display:none;margin:-6px 0 14px">Registered with us before? <a href="#" id="guestReturnLink">Sign in</a> to load your students.</p>
     <div class="season-chips" id="seasonChips">
       <span class="schip" data-f="summer">Summer</span>
@@ -512,9 +512,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       <div id="dayCards"></div>
       <div id="classCards"></div>
     </div>
-    <p class="tiny" id="sameCastNote" style="margin:10px 0 4px">This year, campers in the same age group are in the same cast and show!</p>
-    <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another camper</button>
-    <div class="ticker" id="tierTicker">Check a camper into a show to see your price.</div>
+    <p class="tiny" id="sameCastNote" style="margin:10px 0 4px">This year, students in the same age group are in the same cast and show!</p>
+    <button class="btn btn-ghost" id="sKidOpen" style="margin-top:4px">+ Add another student</button>
+    <div class="ticker" id="tierTicker">Check a student into a show to see your price.</div>
     <p class="tiny" style="margin:8px 0 12px">Payment plan available &mdash; equal monthly payments, the first at checkout and the rest on autopay.</p>
     <div class="err" id="assignErr"></div>
     <div id="seatOfferLine" style="display:none"></div>
@@ -527,7 +527,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <!-- STEP: assign (catalog checkout only) -->
   <section class="step" id="st-assign">
     <h1>Who's <em>enrolling?</em></h1>
-    <p class="sub">Check each camper in, and confirm their birthday.</p>
+    <p class="sub">Check each student in, and confirm their birthday.</p>
     <div id="seatOfferLine2" style="display:none"></div>
     <div id="assignBlocks"></div>
     <div class="err" id="catErr"></div>
@@ -660,12 +660,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <!-- add camper modal -->
 <div class="modal-back" id="kidModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
-    <h3 style="text-align:center">Add a camper</h3>
-    <input type="text" id="sKidName" placeholder="Camper's full name" style="margin-top:12px" autocomplete="off">
+    <h3 style="text-align:center">Add a student</h3>
+    <input type="text" id="sKidName" placeholder="Student's full name" style="margin-top:12px" autocomplete="off">
     <label class="tiny" style="display:block;text-align:left;margin:12px 0 4px">Birthday &mdash; tap to pick a date</label>
-    <input type="date" id="sKidBday" class="pfdate" aria-label="Camper birthday">
+    <input type="date" id="sKidBday" class="pfdate" aria-label="Student birthday">
     <div class="err" id="kidErr"></div>
-    <button class="btn" id="sKidAdd">Add Camper</button>
+    <button class="btn" id="sKidAdd">Add Student</button>
     <button class="btn btn-ghost" id="sKidCancel">Cancel</button>
   </div>
 </div>
@@ -681,7 +681,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       <div id="cwlAlts"></div>
       <p class="tiny" id="cwlOr" style="text-align:left;margin:16px 0 4px"></p>
     </div>
-    <input type="text" id="cwlKid" placeholder="Camper's full name" autocomplete="off" style="margin-top:8px">
+    <input type="text" id="cwlKid" placeholder="Student's full name" autocomplete="off" style="margin-top:8px">
     <input type="text" id="cwlParent" placeholder="Parent name" autocomplete="name" style="margin-top:8px">
     <input type="email" id="cwlEmail" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
     <div class="err" id="cwlErr"></div>
@@ -694,7 +694,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <div class="modal-back" id="guestEmailModal">
   <div class="modal" style="width:100%;max-width:420px;text-align:left">
     <h3 id="gemTitle" style="text-align:center">Where should we send your confirmation?</h3>
-    <p class="tiny" id="gemSub" style="text-align:left;margin-top:8px">Your receipt and camper details go here. No password needed.</p>
+    <p class="tiny" id="gemSub" style="text-align:left;margin-top:8px">Your receipt and student details go here. No password needed.</p>
     <input type="email" id="guestEmailInput" placeholder="parent@email.com" autocomplete="email" style="margin-top:8px">
     <div class="err" id="guestEmailErr"></div>
     <div id="guestWelcomeBack" style="display:none">
@@ -1006,7 +1006,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       el.innerHTML = /expired|invalid|access_denied|otp/i.test(code)
         ? "<b>That sign-in link had already been opened.</b> Some workplace email systems open links " +
           "automatically to scan them, which uses them up before you get there. Enter your email below for " +
-          "a fresh link — or email <a href='mailto:jason@novapa.org' style='color:var(--gold3)'>jason@novapa.org</a> " +
+          "a fresh link — or email <a href='mailto:info@novapa.org' style='color:var(--gold3)'>info@novapa.org</a> " +
           "and we'll register you directly."
         : "<b>That sign-in link didn't work.</b> Enter your email below for a new one.";
       el.classList.add('on');
@@ -1302,7 +1302,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         ev('reg_email_unknown', { email: state.email });
         // bank the lead — dedupes server-side, failure is invisible to the user
         try { sb.rpc('join_waitlist', { p_email: state.email, p_source: 'unknown-email' }); } catch(e){}
-        errEl.innerHTML = "We couldn't find that email — try one you've used with NOVAPA before, or email <a href='mailto:jason@novapa.org' style='color:var(--gold3)'>jason@novapa.org</a> and we'll link your account.";
+        errEl.innerHTML = "We couldn't find that email — try one you've used with NOVAPA before, or email <a href='mailto:info@novapa.org' style='color:var(--gold3)'>info@novapa.org</a> and we'll link your account.";
         errEl.classList.add('on'); return;
       }
       sendLink();
@@ -1494,11 +1494,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('famEyebrow').textContent = returning ? 'Welcome back' : 'Let\'s meet your students';
       $('famH1').innerHTML = returning
         ? 'Welcome back — registering <em>' + esc(firstNames()) + '</em> again?'
-        : 'Who\'s coming to <em>camp?</em>';
+        : 'Who\'s <em>registering?</em>';
       $('famSub').textContent = returning
         ? (isCatMode() ? 'Confirm who is registering. Add or uncheck anyone.'
                        : 'Confirm who\'s in for Summer 2027 — add or uncheck anyone.')
-        : 'Add each camper\'s name and age — we\'ll match them to the right group.';
+        : 'Add each student\'s name and age — we\'ll match them to the right group.';
       $('whoami').textContent = state.email;
       $('whoami2').textContent = state.email;
       renderKids();
@@ -1529,7 +1529,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         (k.verified && k.verified.length ? ' <span class="badge-done">✓ already in '+k.verified.length+' camp'+(k.verified.length>1?'s':'')+'</span>' : '') +
         '</label></div>';
     }).join('');
-    $('kidList').innerHTML = html || '<p class="tiny" style="text-align:left">No campers yet — add your first below.</p>';
+    $('kidList').innerHTML = html || '<p class="tiny" style="text-align:left">No students yet — add your first below.</p>';
     $('kidList').querySelectorAll('input[type=checkbox]').forEach(function(cb){
       cb.addEventListener('change', function(){ state.kids[+cb.dataset.i].sel = cb.checked; });
     });
@@ -1538,7 +1538,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var name = $('newKidName').value.trim();
     var age = parseInt($('newKidAge').value, 10);
     var errEl = $('famErr'); errEl.classList.remove('on');
-    if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
+    if (!name) { errEl.textContent='Student name, please!'; errEl.classList.add('on'); return; }
     if (!(age >= 5 && age <= 15)) { errEl.textContent='Camps are for ages 5–15.'; errEl.classList.add('on'); return; }
     state.kids.push({ name:name, age:age, already:[], sel:true });
     $('newKidName').value=''; $('newKidAge').value='';
@@ -1546,7 +1546,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   $('famNext').addEventListener('click', function(){
     var errEl = $('famErr'); errEl.classList.remove('on');
-    if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one camper.'; errEl.classList.add('on'); return; }
+    if (!state.kids.some(function(k){ return k.sel; })) { errEl.textContent='Select or add at least one student.'; errEl.classList.add('on'); return; }
     if (isCatMode()) { renderCatAssign(); go('st-assign'); startSoftTimer(); return; }
     go('st-shows'); renderShowKids(); startSoftTimer();
   });
@@ -1611,7 +1611,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   function gemReset(){
     $('gemTitle').textContent = 'Where should we send your confirmation?';
-    $('gemSub').textContent = 'Your receipt and camper details go here. No password needed.';
+    $('gemSub').textContent = 'Your receipt and student details go here. No password needed.';
     $('guestWelcomeBack').style.display = 'none';
     $('guestEmailGo').style.display = '';
   }
@@ -1646,12 +1646,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var name = $('sKidName').value.trim();
     var bday = $('sKidBday').value;
     var errEl = $('kidErr'); errEl.classList.remove('on');
-    if (!name) { errEl.textContent='Camper name, please!'; errEl.classList.add('on'); return; }
+    if (!name) { errEl.textContent='Student name, please!'; errEl.classList.add('on'); return; }
     if (state.kids.some(function(k){ return k.name.toLowerCase() === name.toLowerCase(); })) {
-      errEl.textContent='You already have a camper named ' + name + '.'; errEl.classList.add('on'); return;
+      errEl.textContent='You already have a student named ' + name + '.'; errEl.classList.add('on'); return;
     }
     if (!bday || bday > new Date().toISOString().slice(0,10)) {
-      errEl.textContent='Camper birthday, please!'; errEl.classList.add('on'); return;
+      errEl.textContent='Student birthday, please!'; errEl.classList.add('on'); return;
     }
     var age = ageOn(bday, '2027-07-05'); // age when camp starts
     var fAge = ageOn(bday, '2026-09-15'); // age when the season starts
@@ -1757,7 +1757,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         ? (saleOn()
             ? '$695 per show \u00b7 add a summer camp and save 15% on everything (both shows + a camp = 20%).'
             : '$695 per show \u00b7 every child after the first saves 5%.')
-        : 'Check a camper into a show to see your price.';
+        : 'Check a student into a show to see your price.';
       return;
     }
     if (!saleOn()) { t.textContent = '$995 per two-week camp \u00b7 every child after the first saves 5%.'; return; }
@@ -1777,7 +1777,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       : byKid.map(function(e){ return e.name.split(' ')[0] + ': ' + e.n + ' show' + (e.n > 1 ? 's' : '') + ' (' + Math.round(rateOf(e, e.n) * 100) + '% off)'; }).join(' \u00b7 ');
   }
   function renderShowKids(){
-    $('sKidOpen').textContent = state.kids.length ? '+ Add another camper' : '+ Add a camper';
+    $('sKidOpen').textContent = state.kids.length ? '+ Add another student' : '+ Add a student';
     document.querySelectorAll('#showBlocks .kids').forEach(function(host){
       var show = host.dataset.show;
       host.innerHTML = state.kids.map(function(k, i){
@@ -1815,7 +1815,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
            noBand ? ' <span class="badge-done" style="opacity:.65">camps are for ages 5\u201315</span>' : '') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + showT + '</div>';
       }).join('') +
-      '<button type="button" class="kid-add-here" data-addshow="' + esc(show) + '">+ Add a camper to this camp</button>';
+      '<button type="button" class="kid-add-here" data-addshow="' + esc(show) + '">+ Add a student to this camp</button>';
     });
     var blocks = $('showBlocks');
     blocks.querySelectorAll('input[type=checkbox][data-key]').forEach(function(cb){
@@ -1920,7 +1920,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           '<div class="d">' + esc(g.when) + ' \u00b7 Ages ' + ages +
             (dayPriceLabel(g.acts) ? ' \u00b7 ' + dayPriceLabel(g.acts) : '') + '</div>' +
           '<div class="kids">' + kidRows +
-          '<button type="button" class="kid-add-here" data-addday="' + esc(g.when) + '">+ Add a camper to this day</button>' +
+          '<button type="button" class="kid-add-here" data-addday="' + esc(g.when) + '">+ Add a student to this day</button>' +
           '</div></div></div>';
       }).join('');
     var groupsRef = groups;
@@ -2043,7 +2043,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
     var nSel = Object.keys(selIds).length;
     state.classSel = Object.keys(selIds);
-    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per camper \u00b7 join mid-month and pay only for the classes left in it \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
+    host.innerHTML = '<div id="classHead" class="tiny" style="text-align:left;margin:22px 0 4px;color:var(--ink-dim)">School-year classes \u00b7 1 class $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per student \u00b7 join mid-month and pay only for the classes left in it \u00b7 <b>first month FREE with any show registration</b> \u00b7 classes bill monthly, so they check out on their own \u2014 your show selections stay saved</div>' +
       cls.map(function(a){
         // age gate (Jason, Jul 31): the card advertises an age range, so the
         // checkboxes honor it — age at the Sep 14 class start, one year of
@@ -2065,7 +2065,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           '<div class="bd"><div class="t">' + esc(a.name) + '</div>' +
           '<div class="d">' + esc(classWhen(a)) + (a.age_range ? ' \u00b7 Ages ' + esc(String(a.age_range).replace(/\s*yrs?\s*$/,'')) : '') + ' \u00b7 $90/mo</div>' +
           '<div class="kids">' + kidRows +
-          '<button type="button" class="kid-add-here" data-addcls="' + a.id + '">+ Add a camper to this class</button>' +
+          '<button type="button" class="kid-add-here" data-addcls="' + a.id + '">+ Add a student to this class</button>' +
           '</div></div></div>';
       }).join('');
     host.querySelectorAll('input[data-cls]').forEach(function(cb){
@@ -2117,7 +2117,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           (eligible ? soloTag : soloTag + ' <span class="badge-done" style="opacity:.65">this show is for ages ' + (s.ages || '5\u201317') + '</span>') + '</label>' +
           (pills ? '<div class="pills">' + pills + '</div>' : '') + bdayRow + '</div>';
       }).join('') +
-      '<button type="button" class="kid-add-here" data-addfall="' + esc(sKey) + '">+ Add a camper to this show</button>';
+      '<button type="button" class="kid-add-here" data-addfall="' + esc(sKey) + '">+ Add a student to this show</button>';
     });
     var blocks = $('showBlocks');
     blocks.querySelectorAll('input[type=checkbox][data-fall]').forEach(function(cb){
@@ -2491,16 +2491,16 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // to more than the bundle a camper actually pays — say the bundle too
     var nCls = state.catItems.filter(function(a){ return a.category === 'class'; }).length;
     var bundleNote = nCls >= 2
-      ? ' · ' + money(classBundleCents(nCls)) + '/mo for ' + (nCls === 2 ? 'both' : 'all ' + (nCls === 3 ? 'three' : nCls)) + ' when one camper takes them'
+      ? ' · ' + money(classBundleCents(nCls)) + '/mo for ' + (nCls === 2 ? 'both' : 'all ' + (nCls === 3 ? 'three' : nCls)) + ' when one student takes them'
       : '';
     var html = state.catItems.map(function(a){
       var priceLine = a.category === 'class'
-        ? ((a.pricing||[])[0] || '$90/month') + ' per camper' + bundleNote + ' · first month due today'
+        ? ((a.pricing||[])[0] || '$90/month') + ' per student' + bundleNote + ' · first month due today'
         : a.category === 'coaching'
         // coaching is bought for one student and paid in full — "per camper"
         // reads wrong to a family booking a college audition package
         ? ((a.pricing||[])[0] || money(a.price_cents || 0)) + ' per student · paid in full today'
-        : ((a.pricing||[])[0] || '') + ' per camper';
+        : ((a.pricing||[])[0] || '') + ' per student';
       var rows = state.kids.map(function(k, ki){
         if (!k.sel) return '';
         var key = 'act' + a.id + '|' + ki;
@@ -2535,7 +2535,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       return poster ? '<div class="showb">' + poster + inner + '</div>' : inner;
     }).join('');
     html += renderAddClassPanel();
-    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' camper</button>';
+    html += '<button class="btn btn-ghost" id="cKidAdd" style="margin-top:2px">+ Add ' + (state.kids.length ? 'another' : 'a') + ' student</button>';
     $('assignBlocks').innerHTML = html;
     $('assignBlocks').querySelectorAll('input[data-addcls]').forEach(function(cb){
       cb.addEventListener('change', function(){ addCatClass(+cb.dataset.addcls, +cb.dataset.i, cb.checked); });
@@ -2614,7 +2614,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       : n === 1
       ? 'Add a <b>second class</b> for ' + first + ' \u2014 just <b>' + money(classNextDelta(1)) + ' more</b> a month.'
       : 'A <b>third class</b> for ' + first + ' is only <b>' + money(classNextDelta(2)) + ' more</b> a month.';
-    var sub = '1 class $90/mo \u00b7 2 classes ' + money(classBundleCents(2)) + '/mo \u00b7 3 classes ' + money(classBundleCents(3)) + '/mo, per camper. Same checkout, one monthly bill.';
+    var sub = '1 class $90/mo \u00b7 2 classes ' + money(classBundleCents(2)) + '/mo \u00b7 3 classes ' + money(classBundleCents(3)) + '/mo, per student. Same checkout, one monthly bill.';
     // classes some camper here can take come first; the rest (other age
     // bands) fold away so the panel stays short on a phone
     var fit = [], rest = [];
@@ -2722,7 +2722,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   });
   $('catNext').addEventListener('click', function(){
     var errEl = $('catErr'); errEl.classList.remove('on');
-    if (!catBirthdaysReady()) { errEl.textContent = 'Add a birthday for each camper you\'re enrolling.'; errEl.classList.add('on'); return; }
+    if (!catBirthdaysReady()) { errEl.textContent = 'Add a birthday for each student you\'re enrolling.'; errEl.classList.add('on'); return; }
     // persist any birthdays we collected/updated
     var seen = {};
     state.catItems.forEach(function(a){
@@ -2741,7 +2741,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function acquireHold(){
     var errEl = isCatMode() ? $('catErr') : $('assignErr'); errEl.classList.remove('on');
     var items = buildItems();
-    if (!items.length) { errEl.textContent = 'Check at least one camper into a show.'; errEl.classList.add('on'); return; }
+    if (!items.length) { errEl.textContent = 'Check at least one student into a show.'; errEl.classList.add('on'); return; }
     var missingB = state.kids.some(function(k, i){
       if (!k.sel || k.bday) return false;
       return FALL_SHOWS.some(function(s){ return fallCastOn(i, s.key); });
@@ -2777,8 +2777,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         }
         if (msg.indexOf('DUPLICATE:') !== -1) {
           var dp = msg.match(/DUPLICATE:([a-z]+):(.*)$/) || [];
-          errEl.textContent = (dp[2] || 'This camper') + ' is already registered for ' +
-            (SHOW_NAMES[dp[1]] || 'that camp') + ' — no need to register twice. Questions? info@novapa.org';
+          errEl.textContent = (dp[2] || 'This student') + ' is already registered for ' +
+            (SHOW_NAMES[dp[1]] || 'that program') + ' — no need to register twice. Questions? info@novapa.org';
           errEl.classList.add('on');
           // uncheck the duplicate so they can continue with the rest
           state.kids.forEach(function(k, i){
@@ -3540,7 +3540,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var missing = Array.from(document.querySelectorAll('.shirtSel')).some(function(sl){ return !sl.value; });
     if (!missing) return false;
     var errEl = $('payErr');
-    errEl.textContent = 'Pick a t-shirt size for each camper.';
+    errEl.textContent = 'Pick a t-shirt size for each student.';
     errEl.classList.add('on');
     return true;
   }
@@ -4018,8 +4018,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       return (k.savedBday && k.bday) || null; // only trust birthdays the server confirmed
     }
     var pfSaved = {};
-    host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>Camper details</span><span></span></div>' +
-      '<p class="tiny" style="text-align:left;margin:0 0 10px">Payment\u2019s done — fill this out for each camper and you\u2019re all set. A minute per camper.</p>' +
+    host.innerHTML = '<div class="sumrow head" style="margin-bottom:6px"><span>Student details</span><span></span></div>' +
+      '<p class="tiny" style="text-align:left;margin:0 0 10px">Payment\u2019s done — fill this out for each student and you\u2019re all set. A minute per student.</p>' +
       names.map(function(n, i){
         var bday = bdayOf(n);
         var sel = function(id, label, opts){
@@ -4156,7 +4156,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('cwlCancel').addEventListener('click', function(){ $('cwlModal').classList.remove('on'); });
   $('cwlJoin').addEventListener('click', function(){
     var kid = $('cwlKid').value.trim(), pn = $('cwlParent').value.trim(), em = $('cwlEmail').value.trim();
-    if (kid.length < 2) { $('cwlErr').textContent = "Please add the camper's name."; return; }
+    if (kid.length < 2) { $('cwlErr').textContent = "Please add the student's name."; return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { $('cwlErr').textContent = 'Please enter a valid email.'; return; }
     var b = $('cwlJoin'); b.disabled = true; b.textContent = 'Joining…';
     fetch('/api/reg-waitlist', {

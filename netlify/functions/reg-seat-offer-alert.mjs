@@ -59,7 +59,7 @@ export async function alertSeatOffersRedeemed(orderId) {
       ]);
       const booked = (act.sold || 0) + (act.booked_offline || 0);
       const name = act.name || `activity ${o.activity_id}`;
-      const who = o.camper_name || "The camper";
+      const who = o.camper_name || "The student";
 
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
