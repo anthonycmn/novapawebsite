@@ -58,17 +58,18 @@ export async function confirmTickets(pi) {
 }
 
 async function sendTicketEmail(m, code) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS || !m.email) return;
+  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY) || !m.email) return;
   const { default: nodemailer } = await import("nodemailer");
+  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
   const t = nodemailer.createTransport({
-    host: "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   const GOLD = "#C8892A";
   const seats = (m.seats || "").split(", ").filter(Boolean);
   const usd = (c) => "$" + ((parseInt(c || "0", 10) || 0) / 100).toFixed(2);
   await t.sendMail({
-    from: `NOVAPA Box Office <${process.env.SMTP_USER}>`,
+    from: `NOVAPA Box Office <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
     replyTo: "info@novapa.org",
     to: m.email,
     subject: `Your tickets — ${m.show_title}, ${m.performance_when}`,
