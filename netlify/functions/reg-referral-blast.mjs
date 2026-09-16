@@ -67,11 +67,11 @@ export default async (req) => {
     const link = `https://www.northernvirginiaperformingarts.org/register/?ref=${tf?.ref_code || "NOVAPA4747"}`;
     const { default: nodemailer } = await import("nodemailer");
     const t = nodemailer.createTransport({
-      host: "smtp.gmail.com", port: 465, secure: true,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
     });
     await t.sendMail({
-      from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+      from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
       replyTo: "info@novapa.org",
       to: String(body.test_to), subject: SUBJECT, text: BODY(first, link),
     });
@@ -81,9 +81,10 @@ export default async (req) => {
   if (!body.send) return Response.json({ dry_run: true, count: list.length, recipients: list });
 
   const { default: nodemailer } = await import("nodemailer");
+  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
 
   // batched sends ({limit}, default 15): spreads the blast over several
@@ -96,7 +97,7 @@ export default async (req) => {
   for (const r of batch) {
     try {
       await transporter.sendMail({
-        from: `CJ from Broadway Bound <${process.env.SMTP_USER}>`,
+        from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
         replyTo: "info@novapa.org",
         to: r.email,
         subject: SUBJECT,

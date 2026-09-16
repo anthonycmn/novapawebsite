@@ -243,14 +243,15 @@ function confirmationHtml(b, cls) {
 }
 
 async function sendConfirmation(b, cls) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY)) return;
   const { default: nodemailer } = await import("nodemailer");
+  // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   });
   await transporter.sendMail({
-    from: `NOVAPA <${process.env.SMTP_USER}>`,
+    from: `NOVAPA <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
     replyTo: "info@novapa.org",
     to: b.email,
     subject: `${b.child_name}'s free class is booked`,
@@ -267,17 +268,17 @@ async function noteSendFailure(b, err) {
     notes: [b.notes, `[${stamp}] confirmation email FAILED to ${b.email}: ${String(err.message).slice(0, 140)}`]
       .filter(Boolean).join("\n"),
   });
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return;
+  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY)) return;
   const admins = await db("GET", "admin_emails?select=email")
     .then((rows) => (rows || []).map((r) => r.email).filter(Boolean))
     .catch(() => []);
   if (!admins.length) return;
   const { default: nodemailer } = await import("nodemailer");
   await nodemailer.createTransport({
-    host: "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
   }).sendMail({
-    from: `NOVAPA <${process.env.SMTP_USER}>`,
+    from: `NOVAPA <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
     to: admins.join(", "),
     replyTo: "info@novapa.org",
     subject: `Free class confirmation did NOT send: ${b.child_name}`,

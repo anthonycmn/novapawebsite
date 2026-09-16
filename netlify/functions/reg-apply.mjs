@@ -123,18 +123,19 @@ export default async (req) => {
 
   // notify the team — failure here must never lose the application
   try {
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    if (process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.RESEND_API_KEY)) {
       const admins = await fetch(`${SUPABASE_URL}/rest/v1/admin_emails?select=email`, { headers: svcHeaders() })
         .then((r) => (r.ok ? r.json() : []))
         .then((rows) => rows.map((r) => r.email).filter(Boolean));
       if (admins.length) {
         const { default: nodemailer } = await import("nodemailer");
+        // env-driven transport, same as reg-email.mjs (Resend since Sep 2026)
         const t = nodemailer.createTransport({
-          host: "smtp.gmail.com", port: 465, secure: true,
-          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+          host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
         });
         await t.sendMail({
-          from: `NOVAPA Careers <${process.env.SMTP_USER}>`,
+          from: `NOVAPA Careers <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
           to: admins.join(", "),
           replyTo: email,
           subject: `Employment interest: ${full_name}`,
