@@ -7,6 +7,9 @@
 // so a magic link sent from a dcunifieds.com checkout necessarily arrives
 // branded NOVAPA. Dropping sign-in removes both the friction and the brand
 // leak; there is no account to lose because there was never an account.
+// (Since Sep 16 2026 the buyer does get a FAMILY row in the register — see
+// dcu-family.mjs — so the office can find them and the roster can place the
+// seat. That is a register entry, not a login; nothing here sends one.)
 //
 // Everything downstream is deliberately shared: same Stripe account, same
 // `activities` rows, same holds -> confirm_order -> reg-webhook chain, so the
@@ -18,6 +21,7 @@
 import Stripe from "stripe";
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
+import { mintDcuFamily } from "./dcu-family.mjs";
 
 // DC Unifieds occupies 9706xx inside the coaching block (db/dc-unifieds-activities.sql).
 const DCU_MIN = 970600, DCU_MAX = 970699;
@@ -289,6 +293,9 @@ export default async (req) => {
       console.error("dcu free order confirm failed:", e.message);
       return Response.json({ error: "order_failed" }, { status: 500 });
     }
+    // A $0 order never reaches reg-webhook, so the family row the webhook
+    // would mint for a paid DCU order has to be minted here.
+    await mintDcuFamily({ email, parentName, studentName, phone });
     if (couponApplied) {
       try {
         await serviceRpc("redeem_coupon", { p_code: couponApplied, p_applied_cents: couponCents });
