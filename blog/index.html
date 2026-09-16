@@ -220,7 +220,23 @@
     <!-- POSTS:BEGIN — newest first. Each post needs a .panel here AND a .row in the call board below; the data-id must match. -->
     <div class="panels">
 
-      <article class="panel on" id="panel-college-apps" role="tabpanel" aria-labelledby="tab-college-apps">
+      <article class="panel on" id="panel-shy-child" role="tabpanel" aria-labelledby="tab-shy-child">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <!-- LEAD PHOTO pending Tony: swap src/alt when the shot arrives -->
+          <img class="shot" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="Young children in a theatre class for ages 5 to 8, sitting in a circle on the floor" width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">Parents</p>
+          <h2 class="name"><a href="/blog/is-my-child-too-shy-for-drama-class-tony-cimino-johnson.html">Is My Child Too Shy for Drama Class? What Twenty Years of First Days Taught Me</a></h2>
+          <p class="role">September 16, 2026</p>
+          <p class="bio">A shy child is rarely afraid of pretending. They're afraid of being watched as themselves, and drama is the one activity that hands them a character, a group, and a game to stand behind.</p>
+          <p class="bio">Shy, anxious, or quiet: three kids who look the same in the doorway. What a good first month looks like, what to say in the car, what to walk away from, and when to wait.</p>
+          <a class="link" href="/blog/is-my-child-too-shy-for-drama-class-tony-cimino-johnson.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-college-apps" role="tabpanel" aria-labelledby="tab-college-apps">
         <div class="stage">
           <div class="beam" aria-hidden="true"></div>
           <img class="shot" src="/img/blog/students-onstage-come-from-away-college-applications.jpg" alt="Four high school students in a scene onstage in a school production of Come From Away" width="1800" height="1200" loading="lazy">
@@ -343,9 +359,15 @@
     </div>
 
     <aside class="board" role="tablist" aria-label="All posts">
-      <div class="boardhead"><span>The Call Board</span><b>8 posts</b></div>
+      <div class="boardhead"><span>The Call Board</span><b>9 posts</b></div>
 
-      <button class="row on" type="button" role="tab" id="tab-college-apps" data-id="college-apps" aria-selected="true" aria-controls="panel-college-apps">
+      <button class="row on" type="button" role="tab" id="tab-shy-child" data-id="shy-child" aria-selected="true" aria-controls="panel-shy-child">
+        <img class="thumb" src="/img/blog/young-children-theatre-class-ages-5-to-8.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>Is My Child Too Shy for Drama Class?</b><i>Parents &middot; Sep 16, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-college-apps" data-id="college-apps" aria-selected="false" tabindex="-1" aria-controls="panel-college-apps">
         <img class="thumb" src="/img/blog/students-onstage-come-from-away-college-applications.jpg" alt="" width="1800" height="1200" loading="lazy">
         <span class="rowtext"><b>Does Theatre Look Good on College Applications?</b><i>College &middot; Sep 16, 2026</i></span>
         <span class="cue" aria-hidden="true"></span>
