@@ -23,29 +23,30 @@ const on = (status, class_date = "2026-09-15") => ({ status, class_date });
 eq("a child with no history may book",                   freeVisitUsed([]), null);
 eq("a visit still booked ahead does not close the offer", freeVisitUsed([on("booked", "2026-09-22")]), null);
 eq("a cancelled visit does not close the offer",         freeVisitUsed([on("cancelled")]), null);
+// CJ, 16 Sep 2026: one missed free class may be rescheduled once.
+eq("a single no-show may reschedule once",               freeVisitUsed([on("no_show")]), null);
 
 // ── States that close it ───────────────────────────────────────────────────
-has("a no-show closes it",           freeVisitUsed([on("no_show")]),   "not used");
-has("the no-show message names the date", freeVisitUsed([on("no_show")]), "September 15, 2026");
+const twice = [on("no_show", "2026-09-15"), on("no_show", "2026-09-22")];
+has("a second no-show closes it",         freeVisitUsed(twice), "not used");
+has("the message names the latest date",  freeVisitUsed(twice), "September 22, 2026");
 has("an attended visit closes it",   freeVisitUsed([on("attended")]),  "has had their free class");
 has("a conversion closes it",        freeVisitUsed([on("converted")]), "enrolled already");
 
-// Every refusal sends the family somewhere they can still act.
-for (const st of ["no_show", "attended", "converted"]) {
-  has(`${st}: the refusal points at registration`, freeVisitUsed([on(st)]), "novapa.org/register");
+const cases = { no_show: twice, attended: [on("attended")], converted: [on("converted")] };
+for (const [st, prior] of Object.entries(cases)) {
+  has(`${st}: the refusal points at registration`, freeVisitUsed(prior), "novapa.org/register");
 }
 
 // ── Precedence, when a child has more than one prior ───────────────────────
-// A no-show is the reason to state, since it is the one the family can fix
-// by turning up; attended and converted are simply done.
-has("no-show is stated over an earlier attended visit",
-  freeVisitUsed([on("attended", "2026-09-08"), on("no_show", "2026-09-15")]), "not used");
+has("attended is stated over a missed visit",
+  freeVisitUsed([on("attended", "2026-09-08"), on("no_show", "2026-09-15")]), "has had their free class");
 has("converted is stated over attended",
   freeVisitUsed([on("attended", "2026-09-08"), on("converted", "2026-09-15")]), "enrolled already");
 
 // ── No sentence carries an em dash or shouts ────────────────────────────────
-for (const st of ["no_show", "attended", "converted"]) {
-  const msg = freeVisitUsed([on(st)]);
+for (const [st, prior] of Object.entries(cases)) {
+  const msg = freeVisitUsed(prior);
   eq(`${st}: no em dash`, /—/.test(msg), false);
   eq(`${st}: no exclamation mark`, /!/.test(msg), false);
 }
