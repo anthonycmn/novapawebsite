@@ -130,7 +130,6 @@ async function svcAll(path) {
 // families see). Suppressions and per-campaign sent-stamps still apply.
 const TEAM = [
   { email: "cj@novapa.org", first: "CJ" },
-  { email: "cj@novapa.org", first: "CJ" },
   { email: "todd@novapa.org", first: "Todd" },
   { email: "jen@novapa.org", first: "Jen" },
 ];
