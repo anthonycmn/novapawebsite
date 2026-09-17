@@ -269,6 +269,19 @@
   .ct:hover { transform:translateY(-1px); border-color:rgba(255,255,255,0.3); }
   .ct.sel { border-color:var(--gold2); background:rgba(232,184,75,0.10); }
   .ct.full { opacity:.55; cursor:default; }
+  .packs { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:12px 0 4px; }
+  .packc { display:block; text-align:left; text-decoration:none; color:inherit; cursor:pointer;
+    background:rgba(232,184,75,0.07); border:1px solid rgba(232,184,75,0.42); border-radius:14px; padding:13px 15px;
+    transition:border-color .15s, transform .15s; }
+  .packc:hover { border-color:var(--gold2); transform:translateY(-1px); }
+  .packc .pk { font-size:10.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--gold2); }
+  .packc .pn { font-family:'Cormorant Garamond',serif; font-size:21px; font-weight:700; color:#fff; line-height:1.15; margin:4px 0 2px; }
+  .packc .pp { font-size:13px; color:var(--ink); }
+  .packc .pp b { color:var(--gold3); }
+  .packc .pd { font-size:12px; color:var(--ink-dim); line-height:1.5; margin-top:5px; }
+  .packc .pgo { display:inline-block; margin-top:9px; font-size:11px; font-weight:700; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--gold2); }
+  @media (max-width:620px) { .packs { grid-template-columns:1fr; } }
   .ctrial { display:inline-block; margin-top:8px; font-size:11px; font-weight:700; letter-spacing:.1em;
     text-transform:uppercase; text-decoration:none; color:var(--gold2);
     border:1px solid rgba(232,184,75,0.5); border-radius:999px; padding:4px 10px; }
@@ -1029,13 +1042,22 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // what one more class costs a camper already in n — the nudge's number
   function classNextDelta(n){ n = Math.max(0, n || 0); return Math.max(0, classBundleCents(n + 1) - classBundleCents(n)); }
   var PACK_ID = 990010, PACK_CENTS = 34900;
+  // Every credit pack, mirroring DAY_CAMP_PACKS in reg-config.mjs. The 10-pack
+  // has existed server-side since Sep 9 2026 and grants its credits correctly,
+  // but the client only knew the 5-pack, so a 10-pack in the cart would have
+  // been treated as an ordinary camp: offered insurance and a payment plan, and
+  // priced off the raw listing. reg-pay reprices either way; this is what the
+  // family sees before it answers.
+  var PACKS = { 990010: { credits: 5, cents: 34900 }, 990011: { credits: 10, cents: 67500 } };
+  function packOf(id){ return PACKS[id] || null; }
+  function isPack(id){ return !!PACKS[id]; }
   var PACK_SNOW_END = new Date('2026-09-22T03:59:59Z'); // end of Mon Sep 21 2026 ET, extended from Labor Day
   // Day Camp 5-Pack, cart form: a camper booked into 5 day camps in one order
   // pays $349 flat for those 5 (per camper, packs stack) — mirrors priceCart:
   // priciest lines scaled so the pack sums exactly.
   function applyDayPacks(items, units, isDay){
     var byKid = {};
-    items.forEach(function(it, i){ if (it.activity_id !== PACK_ID && isDay(it, i)) (byKid[kidKey(it)] = byKid[kidKey(it)] || []).push(i); });
+    items.forEach(function(it, i){ if (!isPack(it.activity_id) && isDay(it, i)) (byKid[kidKey(it)] = byKid[kidKey(it)] || []).push(i); });
     var packed = {}, packsByKid = {};
     Object.keys(byKid).forEach(function(k){
       var idxs = byKid[k];
@@ -1059,7 +1081,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function applyCredits(items, units, isDay, nameOf, packed){
     var byKid = {};
     items.forEach(function(it, i){
-      if (it.activity_id === PACK_ID || !isDay(it, i) || (packed && packed[i])) return;
+      if (isPack(it.activity_id) || !isDay(it, i) || (packed && packed[i])) return;
       (byKid[kidKey(it)] = byKid[kidKey(it)] || []).push(i);
     });
     var credited = {};
@@ -2072,6 +2094,27 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     groups.forEach(function(g){ g.acts.forEach(function(a){ var k = dayAgeKey(a); if (keys.indexOf(k) === -1) keys.push(k); }); });
     return keys.filter(function(k){ var p = k.split('-'); return age >= +p[0] && age <= +p[1]; })[0] || null;
   }
+  // The punch cards, above the dates. A family scrolling a list of single days
+  // has no way to discover that the season pack is cheaper, and the 10-pack was
+  // not offered anywhere in the app at all.
+  function packCards(snowOn){
+    var rows = [
+      { id: 990010, name: 'Day Camp Pack', days: 5,  cents: 34900, worth: 39500 },
+      { id: 990011, name: 'Day Camp 10-Pack', days: 10, cents: 67500, worth: 79000 }
+    ];
+    return '<div class="packs">' + rows.map(function(r){
+      var per = Math.round(r.cents / r.days / 100 * 100) / 100;
+      var save = Math.round((r.worth - r.cents) / 100);
+      return '<a class="packc" href="/register/?activity=' + r.id + '">' +
+        '<div class="pk">Punch card</div>' +
+        '<div class="pn">' + r.days + ' day camps' + (snowOn ? ' + 2 free Snow Days' : '') + '</div>' +
+        '<div class="pp"><b>$' + Math.round(r.cents / 100) + '</b> \u00b7 $' + per.toFixed(2) + ' a day \u00b7 save $' + save + '</div>' +
+        '<div class="pd">Credits work on any day camp this school year, good through June 30, 2027.' +
+        (snowOn ? ' Packs bought by Monday, September 21 also get 2 free Snow Day credits.' : '') + '</div>' +
+        '<div class="pgo">Add the ' + r.days + '-pack \u2192</div></a>';
+    }).join('') + '</div>';
+  }
+
   function renderDayCards(){
     var host = $('dayCards');
     if (!host) return;
@@ -2089,8 +2132,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var snowOn = new Date() <= PACK_SNOW_END;
     var head = '<div class="calhead"><div class="t">Day camps</div>' +
       '<div class="d">One-day camps on school holidays' + (allLabel ? ' \u00b7 ' + allLabel + ' a day' : '') + ' \u00b7 8:30 AM \u2013 4:15 PM \u00b7 paid in full at checkout</div></div>' +
-      '<div class="tiny" style="text-align:left;margin:6px 0 0;color:var(--gold3)">Do all 5 day camps for $349 (save $46)' +
-        (snowOn ? ' + 2 free Snow Day camps if booked by September 21' : '') + ' \u2014 applied automatically</div>' +
+      packCards(snowOn) +
+      '<div class="tiny" style="text-align:left;margin:8px 0 0;color:var(--ink-dim)">Buying five single days adds up to $349 on its own, so the 5-pack is applied automatically if you book them one at a time.</div>' +
       '<div class="filt"><span class="lab">Ages</span>' +
         '<span class="fpill' + (!f.age ? ' sel' : '') + '" data-dage="">All ages</span>' +
         ageKeys.map(function(k){ return '<span class="fpill' + (f.age === k ? ' sel' : '') + '" data-dage="' + k + '">Ages ' + k.replace('-', '\u2013') + '</span>'; }).join('') + '</div>';
@@ -3251,7 +3294,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       var a = byId[it.activity_id] || {};
       // teen intensives and teen mainstage shows count toward the tier now
       // (CJ, Jul 31); coaching never does
-      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isCoach(it.activity_id) && it.activity_id !== PACK_ID) {
+      if (a.category !== 'class' && (a.price_cents || 0) > 20000 && !isCoach(it.activity_id) && !isPack(it.activity_id)) {
         var k = kidKey(it);
         bbCount[k] = (bbCount[k] || 0) + 1;
       }
@@ -3287,7 +3330,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       idxs.forEach(function(idx, j){ units[idx] = j === n2 - 1 ? bundle - per * (n2 - 1) : per; });
     });
     // Day Camp 5-Pack + credits (mirrors priceCart)
-    items.forEach(function(it, i){ if (it.activity_id === PACK_ID) units[i] = PACK_CENTS; });
+    items.forEach(function(it, i){ var pk = packOf(it.activity_id); if (pk) units[i] = pk.cents; });
     var isDayTest = function(it){
       var a3 = byId[it.activity_id] || {};
       return a3.category !== 'class' && !isCoach(it.activity_id) && (a3.price_cents || 0) <= 20000 && !!a3.price_cents;
@@ -3314,7 +3357,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var baseSubtotal = items.reduce(function(sum, it){
       var a = byId[it.activity_id] || {};
       if (a.category === 'class' || (a.price_cents || 0) <= 20000) return sum; // not insurable
-      if (isCoach(it.activity_id) || it.activity_id === PACK_ID) return sum;   // coaching + credit pack not insurable
+      if (isCoach(it.activity_id) || isPack(it.activity_id)) return sum;   // coaching + credit pack not insurable
       return sum + (a.price_cents || 0);
     }, 0);
     var insPctOff2 = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
@@ -3406,7 +3449,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       var cartN = items.filter(function(x){
         if (kidKey(x) !== k) return false;
         if (x.show) return true;
-        return !!x.activity_id && !isDayId(x.activity_id) && !isCoach(x.activity_id) && x.activity_id !== PACK_ID;
+        return !!x.activity_id && !isDayId(x.activity_id) && !isCoach(x.activity_id) && !isPack(x.activity_id);
       }).length;
       var prior = ko ? (ko.already || []).filter(function(t){ return COUNT_SLUGS.indexOf(t) !== -1; }).length : 0;
       return cartN + prior;
@@ -3448,7 +3491,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       return Math.round(list * (1 - sp.pct / 100));
     });
     // Day Camp 5-Pack + credits (mirrors priceCart)
-    items.forEach(function(it, i){ if (it.activity_id === PACK_ID) units[i] = PACK_CENTS; });
+    items.forEach(function(it, i){ var pk = packOf(it.activity_id); if (pk) units[i] = pk.cents; });
     var isDayTest2 = function(it){ return !it.show && isDayId(it.activity_id); };
     var dp = applyDayPacks(items, units, isDayTest2);
     var credited = applyCredits(items, units, isDayTest2,
@@ -3463,7 +3506,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       var a2 = byIdAll[it.activity_id] || {};
       var pc = a2.price_cents || 0;
       if (a2.category === 'class' || pc <= 20000) return s;
-      if (isCoach(it.activity_id) || it.activity_id === PACK_ID) return s;   // coaching + credit pack not insurable
+      if (isCoach(it.activity_id) || isPack(it.activity_id)) return s;   // coaching + credit pack not insurable
       return s + pc;
     }, 0);
     var insPctOff = state.coupon && state.coupon.pct ? state.coupon.pct : 0;
@@ -3471,7 +3514,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var n = items.length;
     if (state.plan === 'full') return { n:n, items:items, units:units, credited:credited, packed:dp.packed, packsByKid:dp.packsByKid, bund:bund, mg:mg, trio:trio, pcts:pcts, comboKids:comboKids, subtotal:net, coupon:coupon, ins:ins, listIns:listIns, planFee:0, total:net + ins, today:net + ins, inst:0 };
     var dayCents = 0, dayN = 0;
-    items.forEach(function(it, i){ if (!it.show && (isDayId(it.activity_id) || it.activity_id === PACK_ID)) { dayCents += units[i]; dayN++; } });
+    items.forEach(function(it, i){ if (!it.show && (isDayId(it.activity_id) || isPack(it.activity_id))) { dayCents += units[i]; dayN++; } });
     var planFee = (sp && sp.nofee) ? 0 : Math.round(net * 5 / 100);
     if (sp) {
       // special-plan carts keep their quoted legacy $180-deposit shape
