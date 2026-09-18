@@ -1,6 +1,10 @@
 // POST /api/reg-webhook — Stripe webhook.
 // payment_intent.succeeded -> confirm the order in Supabase (service role),
 // and for deposit plans create the 8-installment subscription schedule.
+// invoice.paid -> write a recurring pull back onto its order: a deposit
+// plan's installment pays the balance down, a class membership's monthly
+// tuition is recorded as revenue.
+// (The endpoint in Stripe must be subscribed to invoice.paid as well.)
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
@@ -40,6 +44,34 @@ async function ensureProduct(stripe, id, name) {
   }
 }
 
+// The subscription an invoice bills for. Older API versions put it at
+// `invoice.subscription`; newer ones under `invoice.parent.subscription_details`.
+function subscriptionIdOf(inv) {
+  const s = inv.subscription ?? inv.parent?.subscription_details?.subscription;
+  return typeof s === "string" ? s : s?.id || null;
+}
+
+// Which order an installment invoice belongs to. The schedule created below
+// stamps `order_id` on its phase, which Stripe copies onto the subscription
+// and from there onto every invoice, so the usual answer costs no API call.
+// Schedules made before Sep 11 2026 carried the id only on the schedule
+// itself, so walk invoice -> subscription -> schedule for those. Null for
+// anything that is not ours (a hand-made subscription, a class membership
+// without metadata).
+async function orderIdForInvoice(stripe, inv) {
+  const fromInvoice = inv.subscription_details?.metadata?.order_id
+    ?? inv.parent?.subscription_details?.metadata?.order_id;
+  if (fromInvoice) return fromInvoice;
+  const subId = subscriptionIdOf(inv);
+  if (!subId) return null;
+  const sub = await stripe.subscriptions.retrieve(subId);
+  if (sub.metadata?.order_id) return sub.metadata.order_id;
+  if (!sub.schedule) return null;
+  const schedId = typeof sub.schedule === "string" ? sub.schedule : sub.schedule.id;
+  const sched = await stripe.subscriptionSchedules.retrieve(schedId);
+  return sched.metadata?.order_id || null;
+}
+
 // ---------------------------------------------------------------------------
 // Registration confirmation email — branded, table-based HTML (email-safe).
 // Sent through reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026).
@@ -62,6 +94,48 @@ export default async (req) => {
   } catch (err) {
     console.error("webhook signature verification failed:", err.message);
     return new Response("bad signature", { status: 400 });
+  }
+
+  // invoice.paid = a recurring pull landed: a deposit plan's installment, or a
+  // class membership's monthly tuition. The order row only ever knew the
+  // checkout charge, so every "still owed" figure downstream (the parent
+  // portal above all) stayed frozen at purchase day: Alida Perez paid her
+  // second half on Sep 4 and was chased for it a week later. Class tuition had
+  // the opposite problem, recorded nowhere at all, so seventeen memberships
+  // worth $1,600 a month could not be counted (money report, Sep 18).
+  //
+  // record_installment_paid is keyed by the invoice id, so a Stripe redelivery
+  // is a no-op. It decides what a row means: a deposit invoice pays the
+  // balance down, a class invoice is recorded as revenue and leaves the
+  // balance alone, because monthly tuition is not an installment of anything.
+  if (event.type === "invoice.paid") {
+    try {
+      const inv = event.data.object;
+      const orderId = await orderIdForInvoice(stripe, inv);
+      if (orderId) {
+        const paidAt = inv.status_transitions?.paid_at || inv.created;
+        const recorded = await serviceRpc("record_installment_paid", {
+          p_order_id: orderId,
+          p_invoice: inv.id,
+          p_amount_cents: inv.amount_paid ?? 0,
+          p_paid_at: new Date(paidAt * 1000).toISOString(),
+          p_schedule: subscriptionIdOf(inv),
+        });
+        // false means the row already existed (a redelivery) OR the database
+        // declined the order's plan. Both are fine to drop, but the second one
+        // is how class tuition went missing for six weeks in silence, so say
+        // so in the log rather than return a bare ok.
+        if (recorded !== true) {
+          console.log(`invoice ${inv.id} not recorded against order ${orderId}: already present, or the plan is one record_installment_paid declines`);
+        }
+      } else {
+        console.log(`invoice ${inv.id} belongs to no NOVAPA order, ignored`);
+      }
+      return new Response("ok", { status: 200 });
+    } catch (e) {
+      console.error("installment record failed:", e.message);
+      return new Response("error", { status: 500 }); // Stripe retries; the RPC is idempotent
+    }
   }
 
   // setup_intent.succeeded = a class enrollment with nothing to charge today:
@@ -315,6 +389,9 @@ export default async (req) => {
         phases: [{
           iterations: nInst,
           proration_behavior: "none",
+          // Copied onto the subscription and its invoices, so invoice.paid can
+          // find the order without walking back to the schedule.
+          metadata: { order_id: String(orderId) },
           items: [{
             quantity: 1,
             price_data: {
