@@ -43,6 +43,9 @@ export const FOLLOWUP_SINCE = "2026-09-16";  // class_date on or after this
 export const FROM = "CJ Cimino-Johnson, NOVAPA <cj@mail.novapa.org>";
 export const REPLY_TO = "cj@novapa.org";
 const REGISTER = "https://novapa.org/register/";
+// Where a family that missed its free class picks a new date. The utm tags
+// keep the rebooking attributable, like every other link into the funnel.
+export const REBOOK = "https://novapa.org/free-class/book?utm_source=novapa&utm_medium=email&utm_campaign=freeclass_missed";
 const TZ = "America/New_York";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -112,9 +115,10 @@ function prettyDate(iso) {
 export function groupVisits(visits, listings) {
   const groups = new Map();
   for (const v of visits) {
-    const key = `${v.email.toLowerCase()}|${v.class_date}`;
+    const status = v.status === "no_show" ? "no_show" : "attended";
+    const key = `${v.email.toLowerCase()}|${v.class_date}|${status}`;
     if (!groups.has(key)) {
-      groups.set(key, { email: v.email.toLowerCase(), parent_name: v.parent_name, class_date: v.class_date, ids: [], visits: [], ends_at: null });
+      groups.set(key, { email: v.email.toLowerCase(), parent_name: v.parent_name, class_date: v.class_date, status, ids: [], visits: [], ends_at: null });
     }
     const g = groups.get(key);
     const l = listings[v.activity_id] || {};
@@ -190,6 +194,25 @@ export function composeNote(g) {
   return { subject, paragraphs: p, url };
 }
 
+// CJ, 16 Sep 2026: a family whose child was marked absent hears from him
+// too, with one more free date to pick. reg-freeclass allows exactly one
+// reschedule after a missed visit, so the link in this note works once.
+export function composeMissedNote(g) {
+  const children = uniq(g.visits.map((v) => v.child));
+  const one = children.length === 1;
+  const child = one ? children[0] : list(children);
+  const classes = uniq(g.visits.map((v) => v.name));
+  const p = [];
+  p.push(`Hi ${firstName(g.parent_name)},`);
+  p.push(`We saved a seat for ${child} in ${list(classes)} on ${prettyDate(g.class_date)} and missed ${one ? child : "them"} in the room. Life with kids is busy, and it happens.`);
+  p.push(`The free class is still yours. Pick a new date that works better here, it takes about a minute:`);
+  p.push({ link: REBOOK });
+  p.push(`If a different day or class would be a better fit, or you have any questions at all, just reply to this email and it comes straight to me. We would love to meet ${one ? child : "them"}.`);
+  p.push("Warmly,\nMr. Cimino-Johnson\nCo-Founder & CEO, Northern Virginia Performing Arts\ncj@novapa.org · 571-571-2120\n18945 Conference Center Drive, Plaza C, Leesburg, VA 20176");
+  const subject = `We missed ${child}. Pick a new free class date`;
+  return { subject, paragraphs: p, url: REBOOK };
+}
+
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export function renderNote({ paragraphs }) {
   const text = paragraphs.map((p) => (typeof p === "string" ? p : p.link)).join("\n\n");
@@ -233,8 +256,8 @@ export default async () => {
   // `attended` only until the family pays (then it is `converted`), so this is
   // exactly the set still to be asked.
   const visits = await svc(
-    `free_class_bookings?status=eq.attended&followup_sent_at=is.null&class_date=gte.${FOLLOWUP_SINCE}` +
-    `&select=id,parent_name,email,child_name,cast_key,activity_id,class_date,attended_at&order=class_date,email`);
+    `free_class_bookings?status=in.(attended,no_show)&followup_sent_at=is.null&class_date=gte.${FOLLOWUP_SINCE}` +
+    `&select=id,status,parent_name,email,child_name,cast_key,activity_id,class_date,attended_at&order=class_date,email`);
   if (!visits?.length) return new Response("free-class follow-up: nothing to send", { status: 200 });
 
   const ids = [...new Set(visits.map((v) => v.activity_id))];
@@ -257,7 +280,7 @@ export default async () => {
           body: JSON.stringify({ followup_sent_at: now.toISOString() }) });
       if (!Array.isArray(claimed) || !claimed.length) { skipped++; continue; }
       if (suppressed.has(g.email)) { skipped++; continue; }   // stamped, so never retried
-      const note = composeNote(g);
+      const note = g.status === "no_show" ? composeMissedNote(g) : composeNote(g);
       const { text, html } = renderNote(note);
       const res = await sendResend({ to: g.email, subject: note.subject, text, html });
       await svc(`free_class_bookings?id=in.(${g.ids.join(",")})`, {

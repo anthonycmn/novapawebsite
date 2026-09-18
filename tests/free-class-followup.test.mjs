@@ -7,7 +7,7 @@
 // go to the same family twice on one night. These pin each of those.
 import {
   parseHours, prettyHours, easternToUtc, classEndsAt, groupVisits, isDue,
-  composeNote, renderNote, firstName, FOLLOWUP_SINCE,
+  composeNote, composeMissedNote, renderNote, firstName, FOLLOWUP_SINCE, REBOOK,
 } from "../netlify/functions/reg-freeclass-followup.mjs";
 
 let fails = 0;
@@ -96,7 +96,7 @@ has("two children: the family is addressed together", renderNote(kids).text, "br
 // says when the class was, evening or noon; the family was there.
 const sat = composeNote(groupVisits([visit({ cast_key: "acting-mt-sat", activity_id: 1962562, class_date: "2026-09-19" })], listings)[0]);
 for (const [label, note] of [["one class", one], ["two classes", two], ["two children", kids], ["a noon class", sat]]) {
-  eq(`${label}: never says tonight or today`, /(tonight|today)/i.test(renderNote(note).text), false);
+  eq(`${label}: never says tonight or today`, /(tonight|today)/i.test(renderNote(note).text), false);
 }
 
 // ── The rich part is the plain part ────────────────────────────────────────
@@ -111,6 +111,26 @@ eq("an empty name is 'there'", firstName(""), "there");
 
 // ── The hand-written week stays hand-written ───────────────────────────────
 eq("automation starts with the Wednesday classes", FOLLOWUP_SINCE, "2026-09-16");
+
+// ── Missed visits (CJ, 16 Sep 2026) ────────────────────────────────────────
+// A child marked absent gets a separate note, never folded into an attended
+// family's "what comes next", and it offers one more free date.
+const mixed = groupVisits([
+  visit({ id: 7, status: "no_show" }),
+  visit({ id: 8, status: "attended", child_name: "Ada" }),
+], listings);
+eq("a missed and an attended visit on one night are two notes", mixed.length, 2);
+const missed = mixed.find((g) => g.status === "no_show");
+eq("the missed group holds only the missed visit", missed.ids, [7]);
+const mn = renderNote(composeMissedNote(missed));
+eq("missed: subject", composeMissedNote(missed).subject, "We missed Hamilton. Pick a new free class date");
+has("missed: offers a new date", mn.text, "The free class is still yours");
+has("missed: links to the booking page", mn.text, REBOOK);
+has("missed: names the class and date", mn.text, "Musical Theatre Acting on Wednesday, September 16");
+lacks("missed: no price in a we-missed-you note", mn.text, "$");
+eq("missed: no em dash", /—/.test(mn.text), false);
+eq("missed: never says tonight or today", /(tonight|today)/i.test(mn.text), false);
+eq("rows without a status are treated as attended", groupVisits([visit({})], listings)[0].status, "attended");
 
 if (fails) { console.log(`\n${fails} failing`); process.exit(1); }
 console.log("\nall free-class follow-up checks pass");
