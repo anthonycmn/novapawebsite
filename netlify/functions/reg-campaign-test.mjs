@@ -2,7 +2,7 @@
 // one fully rendered copy through the real Resend transport. Lives outside
 // the scheduled runner because Netlify blocks HTTP calls to scheduled fns.
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
-import { FROM, REPLY_TO, mailer, unsubUrl, renderEmail } from "./reg-campaign.mjs";
+import { FROM, REPLY_TO, mailer, unsubUrl, renderEmail, refLink } from "./reg-campaign.mjs";
 
 async function isAdmin(userToken) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_role`, {
@@ -31,11 +31,12 @@ export default async (req) => {
   const unsub = unsubUrl(String(body.test_to));
   const vars = { first_name: "CJ", unsub_url: unsub, email: encodeURIComponent(String(body.test_to)) };
   if (c.body.includes("{ref_link}")) {
-    // show the tester their own real link, house code if they have none
+    // show the tester their own real link; a tester who is not a family
+    // sees the plain registration link, exactly as a real send would render
     const fams = await (await fetch(
       `${SUPABASE_URL}/rest/v1/families?email=ilike.${encodeURIComponent(String(body.test_to))}&select=ref_code&limit=1`,
       { headers: { apikey: key, Authorization: `Bearer ${key}` } })).json();
-    vars.ref_link = `https://www.northernvirginiaperformingarts.org/register/?ref=${fams[0]?.ref_code || "NOVAPA4747"}`;
+    vars.ref_link = refLink(fams[0]?.ref_code);
   }
   const { text, html } = renderEmail(c.body, vars);
   await t.sendMail({

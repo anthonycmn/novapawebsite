@@ -41,6 +41,22 @@ export function unsubUrl(email) {
 // spam filters, not a photo alongside real words. The text part is the same body with link syntax flattened to
 // "TEXT: url", so plain-text clients get a clean copy and Gmail never sees
 // a display-text/href mismatch (its phishing wrapper).
+// {ref_link}: the family's own share link for the referral program
+// (give 2 tickets, get 2 tickets). A recipient with no code — a Constant
+// Contact prospect, a segment row that is not a family — gets the plain
+// registration page. A link that credits nobody beats one that credits the
+// wrong family: until Sep 18 2026 the fallback here was the "house code"
+// NOVAPA4747, which is jason@novapa.org's "Jason (Test Account)" row, so a
+// referral through any code-less send paid two free tickets to a test
+// account. Every family has had a code since the families_ref_code trigger
+// (db/registration/families_ref_code.sql), so the fallback is for non-family
+// recipients only.
+export const REGISTER_URL = "https://www.northernvirginiaperformingarts.org/register/";
+export function refLink(code) {
+  const c = String(code || "").trim();
+  return c ? `${REGISTER_URL}?ref=${encodeURIComponent(c)}` : REGISTER_URL;
+}
+
 export function renderEmail(rawBody, vars) {
   let body = rawBody;
   // '[plain]' as the first line = personal mode: no logo, no background,
@@ -273,8 +289,7 @@ export default async () => {
   const transporter = await mailer();
 
   // {ref_link} — the family's own referral link (give-2-get-2 campaigns).
-  // Looked up once per invocation, only when the body actually uses it; a
-  // family without a code gets the house code so the link still credits.
+  // Looked up once per invocation, only when the body actually uses it.
   let refCodes = null;
   if (c.body.includes("{ref_link}")) {
     const fams = await svcAll("families?select=email,ref_code&order=email");
@@ -286,7 +301,7 @@ export default async () => {
   for (const r of batch) {
     const unsub = unsubUrl(r.email);
     const vars = { first_name: r.first, unsub_url: unsub, email: encodeURIComponent(r.email) };
-    if (refCodes) vars.ref_link = `https://www.northernvirginiaperformingarts.org/register/?ref=${refCodes.get(r.email) || "NOVAPA4747"}`;
+    if (refCodes) vars.ref_link = refLink(refCodes.get(r.email));
     const { text, html } = renderEmail(c.body, vars);
     try {
       // CLAIM before send (Aug 10 duplicate-test incident): Netlify scheduled
