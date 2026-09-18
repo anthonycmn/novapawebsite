@@ -69,6 +69,16 @@ s = classSessionsInMonth(tueAdult, 2026, 11, "2026-12-10");
 eq("adult class in December: 3 held, 1 left from the 10th", [s.total, s.left], [3, 1]);
 eq("$90 × 1 ÷ 3 = $30", prorateCents(9000, s), 3000);
 
+// ── a show family's first class is free, not its first month (CJ, Sep 18) ──
+// pr.free takes one session off the count charged. October, 2 of 4 left:
+s = { ...classSessionsInMonth(wedActing, 2026, 9, "2026-10-21"), free: 1 };
+eq("show family, 2 of 4 left: pays 1 of 4 = $22.50", prorateCents(9000, s), 2250);
+eq("show family on opening night: 2 of 3 = $60, never $0", prorateCents(9000, { ...classSessionsInMonth(wedActing, 2026, 8, "2026-09-16"), free: 1 }), 6000);
+eq("show family, a $60 second class: 1 of 4 = $15", prorateCents(6000, s), 1500);
+eq("the free class is the month's last session: $0 today (card saved)", prorateCents(9000, { day: "Wednesday", total: 4, left: 1, free: 1 }), 0);
+eq("free never goes below zero", prorateCents(9000, { day: "Wednesday", total: 4, left: 0, free: 1 }), 0);
+eq("no weekday on file: full month, perk or not", prorateCents(9000, { day: null, total: 0, left: 0, free: 1 }), 9000);
+
 // ── an unknown schedule is never prorated ──────────────────────────────────
 s = classSessionsInMonth({ name: "Mystery" }, 2026, 9, "2026-10-21");
 eq("no weekday: no sessions counted", [s.day, s.total, s.left], [null, 0, 0]);
@@ -149,6 +159,12 @@ eq("due today is the sum", lines.reduce((x, y) => x + y, 0), 5625);
 // same fixtures — the two must agree to the cent.
 import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../register/index.html", import.meta.url), "utf8");
+const pay = readFileSync(new URL("../netlify/functions/reg-pay.mjs", import.meta.url), "utf8");
+// the show family's free first class, wired end to end (CJ, Sep 18 2026)
+eq("reg-pay marks the free session only when a session can be counted", pay.includes("if (firstClassFree) prorations.forEach((p) => { if (p.day && p.total && p.left > 0) p.free = 1; });"), true);
+eq("reg-pay no longer zeroes a show family's month", pay.includes("firstMonthFree") === false && pay.includes("todayCents: subtotal - couponCents"), true);
+eq("the intent carries the free flag per line", pay.includes("[p.day, p.left, p.total, p.free || 0]"), true);
+eq("the checkout page advertises the first class, not the first month", html.includes("first class free with any show registration") && !html.includes("first month free with any show registration"), true);
 const start = html.indexOf("  var PRO_DOW = "), end = html.indexOf("  function classWhen(a){");
 eq("the client's proration block is where the test expects it", start > 0 && end > start, true);
 const client = new Function(html.slice(start, end) + "\n return { proWeekday, proSessions, proCents, proCovered, proToday };")();

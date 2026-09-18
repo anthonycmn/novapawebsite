@@ -25,10 +25,13 @@
 //    classes — the bundle IS the discount. First month at checkout, next
 //    pull Oct 1, monthly through Jun 1 2027 (auto-cancels Jul 1 2027).
 //    Cancellation: 30 days notice (policy-enforced, not code).
-//  - Class + show cross-sell (CJ, Jul 31): a family with ANY 2026-27 show or
-//    camp registration (web order or Sawyer import) pays $0 today on a class
-//    checkout — first month free; billing simply starts Oct 1. Card is
-//    collected via SetupIntent instead of a charge.
+//  - Class + show cross-sell (CJ, Sep 18 2026, correcting Jul 31): a family
+//    with ANY 2026-27 show or camp registration (web order or Sawyer import)
+//    gets its FIRST CLASS free, not its first month — one session comes off
+//    today's prorated charge on each class line. Between Jul 31 and Sep 18
+//    the whole first month was waived ($0 today, card saved via SetupIntent);
+//    that path survives only for the edge where the free session is the last
+//    one the month holds, so there is genuinely nothing to charge today.
 //  - Tuition insurance (opt-in, camps & shows only — NOT classes): +10% of
 //    the discounted subtotal, collected at checkout. Coverage per
 //    /policies#tuition-insurance: refund 100% at 90-76 days before start,
@@ -229,10 +232,12 @@ export function classCoveredMonth(acts, now = new Date(), breaks = []) {
   return { y, m, from, today };
 }
 // A month's tuition, charged only for the sessions left: $90 × 2 ÷ 4 = $45.
+// pr.free (0 or 1) is the show-family perk — the first class free — and
+// comes off the sessions charged, never below zero: 2 left, 1 free, $22.50.
 // Rounded to the cent; an unknown schedule is the full month.
 export function prorateCents(monthlyCents, pr) {
   if (!pr || pr.day == null || !pr.total) return monthlyCents;
-  return Math.round(monthlyCents * pr.left / pr.total);
+  return Math.round(monthlyCents * Math.max(0, pr.left - (pr.free || 0)) / pr.total);
 }
 export const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
