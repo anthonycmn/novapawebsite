@@ -185,6 +185,18 @@ export default async (req) => {
   }
   const smsConsent = (body || {}).sms_consent === true || (body || {}).sms_consent === "1";
 
+  // Ad attribution (Sep 18 2026). The checkout remembers the utm_* and fbclid
+  // params it landed on and sends them here; they ride the intent metadata and
+  // reg-webhook writes them onto public.orders.utm. Same defensive shape as
+  // reg-freeclass: at most 8 keys, keys capped at 40 chars, values at 120, so
+  // a hand-built URL cannot blow the 500-char Stripe metadata limit. Never
+  // required: an organic checkout sends nothing and the column stays null.
+  const utm = (body || {}).utm && typeof (body || {}).utm === "object"
+    ? Object.fromEntries(Object.entries(body.utm).slice(0, 8)
+        .map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 120)]))
+    : null;
+  const utmMeta = utm && Object.keys(utm).length ? JSON.stringify(utm).slice(0, 450) : "";
+
   // Two identities: a session (returning families), or a typed email plus a
   // hold that was ACQUIRED for that same email (guest checkout — the hold id
   // is unguessable and acquire_hold_guest bound it to the address, so the
@@ -634,6 +646,7 @@ export default async (req) => {
       payment_method_types: ["card", "link"],
       metadata: {
         hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
+        utm: utmMeta,
         parent_name: (parent_name || "").slice(0, 100),
         phone, sms_consent: smsConsent ? "1" : "0",
         total_cents: "0", installment_cents: "0", n_installments: "0",
@@ -719,6 +732,7 @@ export default async (req) => {
     statement_descriptor_suffix: "NOVAPA",
     metadata: {
       hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
+        utm: utmMeta,
       parent_name: (parent_name || "").slice(0, 100),
       phone, sms_consent: smsConsent ? "1" : "0",
       total_cents: String(pricing.totalCents),

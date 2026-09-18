@@ -855,6 +855,30 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // payment so the webhook can credit both families
     var rm = location.search.match(/[?&]ref=([A-Za-z0-9]+)/);
     if (rm) { try { localStorage.setItem('nova_ref', rm[1].toUpperCase()); } catch(e){} }
+    // ad attribution (?utm_*= / ?fbclid=): remembered the same way as the
+    // referral code and sent with payment, so reg-webhook can write it onto
+    // the order. Without this a family who clicks an ad and checks out is
+    // invisible: public.orders had nowhere to record where they came from,
+    // and only the free-class and quiz forms ever stored a UTM (Sep 18 2026).
+    // First touch wins: an existing set is not overwritten by a later visit
+    // from a different ad, because the ad that started the journey is the one
+    // that earned it. Cleared with the cart on a completed order.
+    (function(){
+      try {
+        if (localStorage.getItem('nova_attr')) return;
+        var keep = {}, n = 0;
+        location.search.replace(/^\?/, '').split('&').forEach(function(pair){
+          if (n >= 8 || !pair) return;
+          var eq = pair.indexOf('='); if (eq < 1) return;
+          var k = decodeURIComponent(pair.slice(0, eq)).slice(0, 40);
+          if (!/^(utm_[a-z_]{1,30}|fbclid|gclid)$/i.test(k)) return;
+          var v = decodeURIComponent(pair.slice(eq + 1).replace(/\+/g, ' ')).slice(0, 120);
+          if (!v) return;
+          keep[k.toLowerCase()] = v; n++;
+        });
+        if (n) localStorage.setItem('nova_attr', JSON.stringify(keep));
+      } catch(e){}
+    })();
     // fall/spring/year all land on the same school-year tab — the tab groups by
     // year-round vs summer, not by term. Both words are accepted because the
     // show pages link by the term a family recognises. An unrecognised value
@@ -3967,6 +3991,16 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
 
   function refCode(){ try { return localStorage.getItem('nova_ref') || undefined; } catch(e){ return undefined; } }
+  // The ad params captured on arrival. undefined when there are none, so an
+  // organic checkout sends nothing and the order's utm column stays null.
+  function attrData(){
+    try {
+      var raw = localStorage.getItem('nova_attr');
+      if (!raw) return undefined;
+      var o = JSON.parse(raw);
+      return (o && typeof o === 'object' && Object.keys(o).length) ? o : undefined;
+    } catch(e){ return undefined; }
+  }
   var paySeq = 0; // bumps on every reset/request; stale reg-pay responses are dropped
   function resetPayUI(){ state.freeOrder = false;
     paySeq++;
@@ -4024,7 +4058,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       return fetch('/api/reg-pay', {
         method: 'POST',
         headers: hdrs,
-        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, ref: refCode(), email: token ? undefined : state.email, bdays: token ? undefined : guestBdays() })
+        body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: state.insurance, coupon: state.coupon ? state.coupon.code : undefined, ref: refCode(), utm: attrData(), email: token ? undefined : state.email, bdays: token ? undefined : guestBdays() })
       });
     }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, status: r.status, j: j }; }, function(){ return { ok: false, status: r.status, j: { error: 'http_' + r.status } }; }); })
     .then(function(res){

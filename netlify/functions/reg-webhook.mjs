@@ -229,6 +229,28 @@ export default async (req) => {
       p_unit_prices: unitPrices,
     });
 
+    // Ad attribution (Sep 18 2026). confirm_order's signature is left alone on
+    // purpose: a new parameter there is a migration against a function three
+    // apps call, and this needs neither. The utm set rode the intent metadata
+    // from the checkout; write it onto the order as its own step, after the
+    // order exists. Any failure here is logged and swallowed, because a family
+    // who paid is registered whether or not we can say which ad sent them.
+    // Before this, public.orders had nowhere to record where a buyer came
+    // from, so every ad-driven registration was unattributable.
+    if (orderId && m.utm) {
+      try {
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+          method: "PATCH",
+          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ utm: JSON.parse(m.utm) }),
+        });
+        if (!r.ok) console.error("order utm write failed:", r.status, await r.text());
+      } catch (e) {
+        console.error("order utm write failed:", e.message);
+      }
+    }
+
     // A DC Unifieds buyer is a guest too, but gets the register entry
     // dcu-family.mjs describes, not the camp upsert below (which would add
     // the student a second time under the other parent's address).
