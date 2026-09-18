@@ -69,6 +69,18 @@ s = classSessionsInMonth(tueAdult, 2026, 11, "2026-12-10");
 eq("adult class in December: 3 held, 1 left from the 10th", [s.total, s.left], [3, 1]);
 eq("$90 × 1 ÷ 3 = $30", prorateCents(9000, s), 3000);
 
+// ── a booked free class comes off the first month, nothing else does ──────
+// (CJ, Sep 18 2026.) pr.free takes that one session off the count charged.
+// October, 2 of 4 left, the free class booked for the 21st:
+s = { ...classSessionsInMonth(wedActing, 2026, 9, "2026-10-21"), free: 1 };
+eq("free class still to come, 2 of 4 left: pays 1 of 4 = $22.50", prorateCents(9000, s), 2250);
+eq("free class on opening night: 2 of 3 = $60, never $0", prorateCents(9000, { ...classSessionsInMonth(wedActing, 2026, 8, "2026-09-16"), free: 1 }), 6000);
+eq("a $60 second class with a free class: 1 of 4 = $15", prorateCents(6000, s), 1500);
+eq("no booking: the full prorated month", prorateCents(9000, classSessionsInMonth(wedActing, 2026, 9, "2026-10-21")), 4500);
+eq("the free class is the month's last session: $0 today (card saved)", prorateCents(9000, { day: "Wednesday", total: 4, left: 1, free: 1 }), 0);
+eq("free never goes below zero", prorateCents(9000, { day: "Wednesday", total: 4, left: 0, free: 1 }), 0);
+eq("no weekday on file: full month, booking or not", prorateCents(9000, { day: null, total: 0, left: 0, free: 1 }), 9000);
+
 // ── an unknown schedule is never prorated ──────────────────────────────────
 s = classSessionsInMonth({ name: "Mystery" }, 2026, 9, "2026-10-21");
 eq("no weekday: no sessions counted", [s.day, s.total, s.left], [null, 0, 0]);
@@ -149,6 +161,13 @@ eq("due today is the sum", lines.reduce((x, y) => x + y, 0), 5625);
 // same fixtures — the two must agree to the cent.
 import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../register/index.html", import.meta.url), "utf8");
+const pay = readFileSync(new URL("../netlify/functions/reg-pay.mjs", import.meta.url), "utf8");
+// the booked free class, wired end to end (CJ, Sep 18 2026)
+eq("reg-pay reads free_class_bookings for the cart's classes", pay.includes("free_class_bookings?or=(") && pay.includes("\"email.ilike.\" + encodeURIComponent(e)") && pay.includes("&activity_id=in.(") && pay.includes("status=neq.cancelled"), true);
+eq("the booking must match the student, the class and a charged date", pay.includes("String(b.child_name || \"\").trim().toLowerCase() === camper && charged.includes(b.class_date)"), true);
+eq("no show-family free month survives", !pay.includes("firstMonthFree") && !pay.includes("first-class-free check") && pay.includes("todayCents: subtotal - couponCents"), true);
+eq("the intent carries the free flag per line", pay.includes("[p.day, p.left, p.total, p.free || 0]"), true);
+eq("the checkout page no longer promises a free month or class to show families", !html.includes("free with any show registration") && html.includes("a free class you booked comes off your first month"), true);
 const start = html.indexOf("  var PRO_DOW = "), end = html.indexOf("  function classWhen(a){");
 eq("the client's proration block is where the test expects it", start > 0 && end > start, true);
 const client = new Function(html.slice(start, end) + "\n return { proWeekday, proSessions, proCents, proCovered, proToday };")();

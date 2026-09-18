@@ -2364,7 +2364,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var cols = dayKeys.filter(function(d){ return f.day == null || d === f.day; });
     var selIdx = state.kids.map(function(k, i){ return k.sel ? i : -1; }).filter(function(i){ return i >= 0; });
     var head = '<div id="classHead" class="calhead"><div class="t">Weekly classes</div>' +
-      '<div class="d">Sep 2026 \u2013 Jun 2027 \u00b7 $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per student \u00b7 join mid-month and pay only for the classes left in it \u00b7 first month free with any show registration</div></div>' +
+      '<div class="d">Sep 2026 \u2013 Jun 2027 \u00b7 $90/mo \u00b7 <b>2 classes $150/mo</b> \u00b7 <b>3 classes $180/mo</b> per student \u00b7 join mid-month and pay only for the classes left in it \u00b7 a free class you booked comes off your first month</div></div>' +
       '<div class="filt"><span class="lab">Ages</span>' +
         '<span class="fpill' + (!f.age ? ' sel' : '') + '" data-cage="">All ages</span>' +
         ageKeys.map(function(k){ return '<span class="fpill' + (f.age === k ? ' sel' : '') + '" data-cage="' + k + '">' + classAgeLabel(k) + '</span>'; }).join('') + '</div>' +
@@ -3848,10 +3848,14 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       (p.proration || []).forEach(function(x, i){
         if (!firsts[i]) return;
         var oldPro = firsts[i].querySelector('[data-pro]'); if (oldPro) oldPro.parentNode.removeChild(oldPro);
-        if (!x || !x.day || !x.total || x.left >= x.total) return;
+        // x.free is a session booked through the free-class page (CJ, Sep 18
+        // 2026) — one off the count charged, so it shows even on a full
+        // month.
+        if (!x || !x.day || !x.total || (x.left >= x.total && !x.free)) return;
         var sp = document.createElement('span'); sp.className = 'savings'; sp.setAttribute('data-pro', '1');
         sp.textContent = ' (' + x.left + ' of ' + mo + '’s ' + x.total + ' ' + x.day + 's left' +
-          (x.off && x.off.length ? ' (' + x.off.join(', ') + ' off)' : '') + ' — ' + money((p.unit_prices || [])[i] || 0) + ' today)';
+          (x.off && x.off.length ? ' (' + x.off.join(', ') + ' off)' : '') + (x.free ? ', your free class on us' : '') +
+          ' — ' + money((p.unit_prices || [])[i] || 0) + ' today)';
         firsts[i].appendChild(sp);
       });
       var pc = p.prior_classes || [];
@@ -3884,9 +3888,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       }
       if (!p.first_month_free) {
         // the class summary card already carries the Due today row
-        var partial = (p.proration || []).filter(function(x){ return x && x.day && x.total && x.left < x.total; });
+        var partial = (p.proration || []).filter(function(x){ return x && x.day && x.total && (x.left < x.total || x.free); });
         var proTxt = partial.length
-          ? ' — ' + partial.map(function(x){ return x.left + ' of ' + mo + '’s ' + x.total + ' ' + x.day + 's'; }).join(', ') + ' —'
+          ? ' — ' + partial.map(function(x){ return x.left + ' of ' + mo + '’s ' + x.total + ' ' + x.day + 's' + (x.free ? ', one of them your free class' : ''); }).join(', ') + ' —'
           : '';
         var noMore = p.cancel_at_utc && p.next_bill_utc && p.cancel_at_utc <= p.next_bill_utc;
         $('payBreakdown').innerHTML =
@@ -4074,7 +4078,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (state.setupMode) {
         $('payBreakdown').innerHTML =
           '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>$0.00</span></div>' +
-          '<p class="tiny" style="text-align:left;margin-top:2px"><b>First month free</b> \u2014 your family already has a show registration this season. Monthly tuition of <b>' + money(res.j.pricing.monthly_cents) + '</b> starts ' + (res.j.pricing.next_bill_utc ? fmtBillDate(res.j.pricing.next_bill_utc) : 'Oct 1') + ', automatic on this card. Cancel with 30 days\u2019 notice.</p>';
+          '<p class="tiny" style="text-align:left;margin-top:2px"><b>Free class</b> \u2014 the class you booked on the free-class page is the only one left this month, and it is on us. Monthly tuition of <b>' + money(res.j.pricing.monthly_cents) + '</b> starts ' + (res.j.pricing.next_bill_utc ? fmtBillDate(res.j.pricing.next_bill_utc) : 'Oct 1') + ', automatic on this card. Cancel with 30 days\u2019 notice.</p>';
       }
       setPayH1(res.j.pricing.today_cents);
       mountStripe();
@@ -4107,7 +4111,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
   }
   function confirmNow(){
-    // first-month-free class carts save the card without a charge (SetupIntent)
+    // a class cart with nothing to charge today (the booked free class is the
+    // month's last session) saves the card without a charge (SetupIntent)
     var fn = state.setupMode ? 'confirmSetup' : 'confirmPayment';
     return state.stripe[fn]({
       elements: state.elements,
