@@ -66,8 +66,8 @@ export default async (req) => {
 
   // setup_intent.succeeded = a class enrollment with nothing to charge today:
   // every show family's first month until Sep 18 2026 (CJ, Jul 31), and since
-  // then only a show family whose free first class is the last session the
-  // month holds. No money moved, but the saved card + identical metadata
+  // then only a family whose booked free class is the last session the month
+  // holds. No money moved, but the saved card + identical metadata
   // drive the same order + subscription creation. The subscription's trial
   // already ends at the next anchor, so "skip today's charge" needs no other
   // change.
@@ -432,7 +432,7 @@ export default async (req) => {
           remaining ? [`Remaining balance`, usd(remaining)] : null,
           nInst ? [`Schedule`, `${nInst} × ${usd(instCents)} monthly, first ${new Date(firstInst * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`] : null,
           m.first_month_free === "1" ? [`First month free`, "card saved, billing starts Oct 1"] : null,
-          m.first_class_free === "1" ? [`First class free`, "show family — one session off today's charge"] : null,
+          m.first_class_free === "1" ? [`Free class`, "booked on the free-class page — that session is off today's charge"] : null,
           [`FSA eligible`, m.fsa_eligible === "1" ? "yes" : "no"],
         ].filter(Boolean).map(([k, v]) =>
           `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");

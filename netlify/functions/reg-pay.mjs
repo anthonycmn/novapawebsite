@@ -10,9 +10,8 @@
 //  - classes {activity_id, camper}: must be alone, plan=subscription
 //    ($90/$150/$180 a month per child for 1/2/3 classes — no sibling
 //    discount on classes since the Sep 14 2026 ladder; the first payment
-//    is prorated to the sessions left in the month; a family with a show
-//    or camp registration gets its first class free — one session off,
-//    never the whole month)
+//    is prorated to the sessions left in the month; a session booked
+//    through the free-class page is free, nothing else is)
 import Stripe from "stripe";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
@@ -426,40 +425,40 @@ export default async (req) => {
       const s = classSessionsInMonth(a, covered.y, covered.m, covered.from, breaks);
       return { day: s.day, left: s.left, total: s.total, off: s.off };
     });
-    // First CLASS free (CJ, Sep 18 2026, correcting the Jul 31 rule that
-    // waived the whole first month): any family already holding a 2026-27
-    // show/camp registration — a paid web order with a non-class item, or a
-    // Sawyer-imported registration on one of their campers — gets one
-    // session off today's prorated charge on each class line. Two orders
-    // (d30f916f Sep 16, d6d5f870 Sep 18) went out at $0 under the old rule.
-    // Failure of this check must never block checkout, so it degrades to
-    // "pay the prorated month".
-    let firstClassFree = false;
+    // The free class (CJ, Sep 18 2026): a session is free ONLY when it was
+    // booked for that student, in that class, through the free-class page
+    // (free_class_bookings). A booked date still to come is one of the
+    // sessions being charged, so it comes off today's prorated amount; a
+    // booked date already past was never in the count. Nobody else gets a
+    // session off — not a show family, not a returning one. This replaces
+    // the Jul 31 "first month free with any show registration" rule, which
+    // sent d30f916f (Sep 16) and d6d5f870 (Sep 18) out at $0. A failed
+    // lookup must never block checkout: it degrades to "pay the prorated
+    // month", the same never-block rule as the schedule lookup.
+    let bookings = [];
     try {
       const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       const hdrs = { apikey: svcKey, Authorization: `Bearer ${svcKey}` };
-      const famId = await familyIdByEmail(email, hdrs);
-      if (famId) {
-        const kids = await (await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${famId}&select=already_registered`, { headers: hdrs })).json();
-        firstClassFree = kids.some((c) => Array.isArray(c.already_registered) && c.already_registered.length);
-      }
-      if (!firstClassFree) {
-        const ords = await (await fetch(`${SUPABASE_URL}/rest/v1/orders?email=ilike.${encodeURIComponent(email)}&status=in.(paid,confirmed,complete,succeeded)&select=id`, { headers: hdrs })).json();
-        if (ords.length) {
-          const ids = ords.map((o) => o.id).join(",");
-          const its = await (await fetch(`${SUPABASE_URL}/rest/v1/order_items?order_id=in.(${ids})&select=activity_id`, { headers: hdrs })).json();
-          const actIds = [...new Set(its.map((i) => i.activity_id).filter(Boolean))];
-          if (its.some((i) => !i.activity_id)) firstClassFree = true; // summer camp lines carry no activity_id
-          else if (actIds.length) {
-            const acts = await (await fetch(`${SUPABASE_URL}/rest/v1/activities?id=in.(${actIds.join(",")})&select=id,category`, { headers: hdrs })).json();
-            firstClassFree = acts.some((a) => a.category !== "class");
-          }
-        }
-      }
-    } catch (e) { console.error("first-class-free check failed:", e.message); }
-    // The free session only exists where a session can be counted: a class
-    // with no weekday on file is a full month, perk or not.
-    if (firstClassFree) prorations.forEach((p) => { if (p.day && p.total && p.left > 0) p.free = 1; });
+      // The booking may carry the family's other address (a second guardian
+      // booked the visit), so both sign-in addresses count.
+      const fam = await (await fetch(`${SUPABASE_URL}/rest/v1/families?or=(email.ilike.${encodeURIComponent(email)},cc_email.ilike.${encodeURIComponent(email)})&select=email,cc_email&limit=1`, { headers: hdrs })).json();
+      const emails = [...new Set([email, fam[0] && fam[0].email, fam[0] && fam[0].cc_email].filter(Boolean).map((e) => String(e).toLowerCase()))];
+      const ids = [...new Set(classItems.map((it) => it.activity_id))];
+      const rows = await (await fetch(
+        `${SUPABASE_URL}/rest/v1/free_class_bookings?or=(${emails.map((e) => "email.ilike." + encodeURIComponent(e)).join(",")})&activity_id=in.(${ids.join(",")})&status=neq.cancelled&select=child_name,activity_id,class_date,status`,
+        { headers: hdrs })).json();
+      if (Array.isArray(rows)) bookings = rows;
+    } catch (e) { console.error("free-class booking lookup failed:", e.message); }
+    classItems.forEach((it, i) => {
+      const pr = prorations[i];
+      if (!pr.day || !pr.total || pr.left <= 0) return; // no countable session, no free one
+      const camper = String(it.camper || "").trim().toLowerCase();
+      const charged = classSessionsInMonth(classActs[i], covered.y, covered.m, covered.from, breaks).dates.filter((d) => d >= covered.from);
+      const hit = bookings.find((b) => Number(b.activity_id) === Number(it.activity_id)
+        && String(b.child_name || "").trim().toLowerCase() === camper && charged.includes(b.class_date));
+      if (hit) { pr.free = 1; pr.freeDate = hit.class_date; }
+    });
+    const firstClassFree = prorations.some((p) => p.free);
     const todayItems = unitPrices.map((cents, i) => prorateCents(cents, prorations[i]));
     const classMonth = `${MONTH_NAMES[covered.m]} ${covered.y}`;
     const subtotal = todayItems.reduce((s, v) => s + v, 0);
@@ -621,10 +620,10 @@ export default async (req) => {
     return Response.json({ confirmed: true });
   }
 
-  // A show family whose free first class is the ONLY session left in the
-  // month: nothing to charge today, but the card must still be saved for the
-  // next pull — a SetupIntent instead of a payment. (Until Sep 18 2026 this
-  // was every show family's whole first month.)
+  // A booked free class that is the ONLY session left in the month: nothing
+  // to charge today, but the card must still be saved for the next pull — a
+  // SetupIntent instead of a payment. (Until Sep 18 2026 this was every show
+  // family's whole first month.)
   if (plan === "subscription" && pricing.firstClassFree && pricing.todayCents === 0) {
     const stripeS = new Stripe(process.env.STRIPE_SECRET_KEY);
     const customerS = await stripeS.customers.create({

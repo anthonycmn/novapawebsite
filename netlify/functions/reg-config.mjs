@@ -25,13 +25,13 @@
 //    classes — the bundle IS the discount. First month at checkout, next
 //    pull Oct 1, monthly through Jun 1 2027 (auto-cancels Jul 1 2027).
 //    Cancellation: 30 days notice (policy-enforced, not code).
-//  - Class + show cross-sell (CJ, Sep 18 2026, correcting Jul 31): a family
-//    with ANY 2026-27 show or camp registration (web order or Sawyer import)
-//    gets its FIRST CLASS free, not its first month — one session comes off
-//    today's prorated charge on each class line. Between Jul 31 and Sep 18
-//    the whole first month was waived ($0 today, card saved via SetupIntent);
-//    that path survives only for the edge where the free session is the last
-//    one the month holds, so there is genuinely nothing to charge today.
+//  - The free class (CJ, Sep 18 2026): the ONLY free session is one booked
+//    for that student, in that class, through the free-class page
+//    (free_class_bookings); it comes off today's prorated charge when its
+//    date is still to come. No other discount on the first month — the Jul
+//    31 "first month free with any show registration" rule ($0 today, card
+//    saved via SetupIntent) is retired; that path survives only for the edge
+//    where the booked free class is the last session the month holds.
 //  - Tuition insurance (opt-in, camps & shows only — NOT classes): +10% of
 //    the discounted subtotal, collected at checkout. Coverage per
 //    /policies#tuition-insurance: refund 100% at 90-76 days before start,
@@ -232,7 +232,7 @@ export function classCoveredMonth(acts, now = new Date(), breaks = []) {
   return { y, m, from, today };
 }
 // A month's tuition, charged only for the sessions left: $90 × 2 ÷ 4 = $45.
-// pr.free (0 or 1) is the show-family perk — the first class free — and
+// pr.free (0 or 1) is a session booked through the free-class page and
 // comes off the sessions charged, never below zero: 2 left, 1 free, $22.50.
 // Rounded to the cent; an unknown schedule is the full month.
 export function prorateCents(monthlyCents, pr) {

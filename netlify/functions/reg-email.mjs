@@ -125,21 +125,21 @@ export function confirmationHtml(m, pi, details) {
     try { prorations = JSON.parse(m.class_proration || "[]"); } catch {}
     const covered = m.class_month || "";
     const coveredMonthWord = covered ? covered.split(" ")[0] : "this month";
-    // p[3] is the show-family perk (CJ, Sep 18 2026): the first class free,
-    // one session off the count charged. Intents minted before Sep 18 carry
+    // p[3] is a session booked through the free-class page (CJ, Sep 18
+    // 2026), one off the count charged. Intents minted before Sep 18 carry
     // three-element rows and read exactly as before.
     const partial = prorations.filter((p) => Array.isArray(p) && p[0] && p[2] > 0 && (p[1] < p[2] || p[3]));
     const prorationText = partial.length
-      ? ` — ${partial.map((p) => `${p[1]} of ${covered ? coveredMonthWord + "'s " : ""}${p[2]} ${p[0]}s${p[3] ? ", the first one free" : ""}`).join(", ")} — `
+      ? ` — ${partial.map((p) => `${p[1]} of ${covered ? coveredMonthWord + "'s " : ""}${p[2]} ${p[0]}s${p[3] ? ", one of them your free class" : ""}`).join(", ")} — `
       : ", ";
     const monthlyText = monthlyCents ? `Monthly tuition of ${money(monthlyCents)}` : "Monthly tuition";
-    const freeLine = m.first_class_free === "1" ? " Your first class is on us — thank you for being a show family." : "";
+    const freeLine = m.first_class_free === "1" ? " The free class you booked is on us." : "";
     const paidToday = (pi && (pi.amount_received ?? pi.amount)) || 0;
     planLine = m.first_month_free === "1"
       ? `Your first month is on us. Your card is saved, and monthly tuition starts ${nextBillText}, then the 1st of each month through ${finalText}. ` +
         `Nothing is charged in ${coveredMonthWord}, and nothing is charged after that — the plan ends itself. Cancel any time with 30 days' notice.`
       : m.first_class_free === "1" && !paidToday
-      ? `Your first class is on us, and it is the only one left in ${coveredMonthWord}, so nothing is charged today. Your card is saved, and ` +
+      ? `The free class you booked is on us, and it is the only one left in ${coveredMonthWord}, so nothing is charged today. Your card is saved, and ` +
         `${monthlyText.charAt(0).toLowerCase() + monthlyText.slice(1)} starts ${nextBillText}, then the 1st of each month through ${finalText}, and the plan ends itself after that. ` +
         `Cancel any time with 30 days' notice.`
       : noMoreBills
