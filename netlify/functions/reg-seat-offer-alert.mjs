@@ -15,6 +15,7 @@
 // only rows without it are sent. A failed email is logged and retried on the
 // next delivery, never allowed to fail the order.
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -65,6 +66,7 @@ export async function alertSeatOffersRedeemed(orderId) {
         method: "POST",
         headers: { Authorization: `Bearer ${rk}`, "Content-Type": "application/json" },
         body: JSON.stringify({
+          headers: AUTO_RESPONDER_HEADERS,
           from: "NOVAPA Alerts <leads@mail.novapa.org>", to,
           subject: `Seat taken: ${who} — ${name}`,
           html: `<div style="max-width:600px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif;color:#0B1422">

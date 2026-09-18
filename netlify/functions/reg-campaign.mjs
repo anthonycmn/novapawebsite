@@ -9,6 +9,7 @@
 // Gmail/Yahoo bulk-sender rules).
 import crypto from "node:crypto";
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 const BATCH_SIZE = 25; // ~18s of SMTP at ~0.7s/send, inside the fn limit
 
@@ -306,6 +307,7 @@ export default async () => {
         subject: c.subject,
         text, html,
         headers: {
+          ...AUTO_RESPONDER_HEADERS,
           "List-Unsubscribe": `<${unsub}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },

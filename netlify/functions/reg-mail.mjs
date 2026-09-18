@@ -27,6 +27,28 @@
 
 export const RESEND_REPLY_TO = "info@novapa.org";
 
+// Headers that tell a mailbox's auto-responder to stay quiet (RFC 3834).
+//
+// 18 Sep 2026: every email to cj@novapa.org since the 16th showed in Resend as
+// "Bounced — Transient / General", no diagnostic. Nothing was wrong with the
+// mailbox; each message was sitting in it. CJ's Gmail vacation responder was
+// replying to the envelope sender, which for Resend is a per-message Amazon
+// SES address (…-000000@send.mail.novapa.org). SES reads anything that lands
+// there as a bounce, an out-of-office is not a delivery report it can parse,
+// so "General" — and because the address is new every time, Gmail's
+// once-per-sender throttle never applied. Two days of registration, lead and
+// audit mail wore a bounce they had not earned, and resend-webhook.mjs was
+// one webhook payload away from suppressing whichever family did the same.
+//
+// Gmail honors `Precedence: bulk`; `Auto-Submitted` is the standard the RFC
+// names. Everything a Netlify function sends is machine-generated, so both go
+// on all of it, on both transports. Neither changes how mail is filed.
+// A caller's own headers (List-Unsubscribe, say) are merged on top.
+export const AUTO_RESPONDER_HEADERS = Object.freeze({
+  Precedence: "bulk",
+  "Auto-Submitted": "auto-generated",
+});
+
 // The same mailbox reg-campaign.mjs sends NOVAPA Mail from. RESEND_FROM_ADDR
 // is only for the day another domain is verified in Resend; leave it unset.
 export function resendFromAddr() {
@@ -88,7 +110,7 @@ export async function sendMail(msg) {
       subject: msg.subject,
       ...(msg.text ? { text: msg.text } : {}),
       ...(msg.html ? { html: msg.html } : {}),
-      ...(msg.headers && Object.keys(msg.headers).length ? { headers: msg.headers } : {}),
+      headers: { ...AUTO_RESPONDER_HEADERS, ...(msg.headers || {}) },
     });
     return { transport, id: info.messageId, messageId: info.messageId };
   }
@@ -104,7 +126,7 @@ export async function sendMail(msg) {
     if (bcc.length) body.bcc = bcc;
     if (msg.text) body.text = msg.text;
     if (msg.html) body.html = msg.html;
-    if (msg.headers && Object.keys(msg.headers).length) body.headers = msg.headers;
+    body.headers = { ...AUTO_RESPONDER_HEADERS, ...(msg.headers || {}) };
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },

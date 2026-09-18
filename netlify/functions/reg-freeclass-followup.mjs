@@ -38,6 +38,7 @@
 // parent who hits reply lands with him.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { CLASSES } from "./reg-freeclass.mjs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 export const FOLLOWUP_SINCE = "2026-09-16";  // class_date on or after this
 export const FROM = "CJ Cimino-Johnson, NOVAPA <cj@mail.novapa.org>";
@@ -240,7 +241,7 @@ async function sendResend({ to, subject, text, html }) {
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [to], subject, text, html }),
+    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [to], subject, text, html, headers: AUTO_RESPONDER_HEADERS }),
   });
   if (!r.ok) throw new Error(`resend ${r.status}: ${(await r.text()).slice(0, 200)}`);
   return r.json();

@@ -9,6 +9,8 @@
 // shown here, the visit is free). Writes go to free_class_bookings
 // (RLS closed, service role only).
 
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
+
 const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 
 // Weekly schedule verified against classes.html (Aug 26 2026).
@@ -290,6 +292,7 @@ async function sendConfirmation(b, cls) {
     bcc: CONFIRM_BCC.join(", "),
     subject: `${b.child_name}'s free class is booked`,
     html: confirmationHtml(b, cls),
+    headers: AUTO_RESPONDER_HEADERS,
   });
 }
 
@@ -316,6 +319,7 @@ async function noteSendFailure(b, err) {
     to: admins.join(", "),
     replyTo: "info@novapa.org",
     subject: `Free class confirmation did NOT send: ${b.child_name}`,
+    headers: AUTO_RESPONDER_HEADERS,
     html: `<p><b>${b.child_name}</b> has a free class seat on ${prettyDate(b.class_date)}, `
       + `but the confirmation to <b>${b.email}</b> failed twice.</p>`
       + `<p>The seat is held. Please send the details by hand today.</p>`

@@ -21,6 +21,8 @@ function digitsOnly(phone) {
   return d.length === 11 && d.startsWith("1") ? d.slice(1) : d;
 }
 
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
+
 const pick = (v, max) => String(v == null ? "" : v).trim().slice(0, max);
 
 export default async (req) => {
@@ -106,6 +108,7 @@ export default async (req) => {
           method: "POST",
           headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
           body: JSON.stringify({
+            headers: AUTO_RESPONDER_HEADERS,
             from: "NOVAPA Leads <leads@mail.novapa.org>",
             to,
             subject: `New DCU lead — ${studentName} (one-weekend quiz)`,

@@ -17,6 +17,7 @@
 // its own notifyCoach falls into a void. We poll from the side with email.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { isTestAddress } from "./reg-lead-email.mjs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 const FROM = "NOVAPA Leads <leads@mail.novapa.org>";
 
@@ -109,6 +110,7 @@ export default async () => {
       method: "POST",
       headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
       body: JSON.stringify({
+        headers: AUTO_RESPONDER_HEADERS,
         from: FROM, to,
         subject: info
           ? `DCU weekend-info request: ${x.email}`

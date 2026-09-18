@@ -13,6 +13,7 @@
 // same one-per-submission rule the lead alerts follow.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { isTestAddress } from "./reg-lead-email.mjs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 const pick = (v, max) => String(v == null ? "" : v).trim().slice(0, max);
 
@@ -68,7 +69,7 @@ export default async (req) => {
       const send = (msg) => fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${rk}`, "Content-Type": "application/json" },
-        body: JSON.stringify(msg),
+        body: JSON.stringify({ ...msg, headers: AUTO_RESPONDER_HEADERS }),
       }).catch((e) => console.error("reg-waitlist email:", e.message));
 
       // Waitlist alerts go to whoever decides capacity — WAITLIST_ALERT_TO,

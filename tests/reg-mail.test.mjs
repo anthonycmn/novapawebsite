@@ -3,7 +3,7 @@
 // network (fetch is replaced for the run).
 //   node tests/reg-mail.test.mjs
 import assert from "node:assert/strict";
-import { sendMail, mailTransport, mailConfigured, fromAddr } from "../netlify/functions/reg-mail.mjs";
+import { sendMail, mailTransport, mailConfigured, fromAddr, AUTO_RESPONDER_HEADERS } from "../netlify/functions/reg-mail.mjs";
 
 const saved = { ...process.env };
 function env(vars) {
@@ -46,10 +46,17 @@ try {
     reply_to: "info@novapa.org",
     subject: "Your tickets",
     html: "<p>hi</p>",
+    // Every send tells the recipient's auto-responder to stay quiet (RFC
+    // 3834). 18 Sep 2026: CJ's Gmail vacation reply, sent to the per-message
+    // SES envelope address, was read back by SES as a bounce on every
+    // notification for two days. Gmail honors Precedence: bulk.
+    headers: { Precedence: "bulk", "Auto-Submitted": "auto-generated" },
   });
+  assert.deepEqual(AUTO_RESPONDER_HEADERS, { Precedence: "bulk", "Auto-Submitted": "auto-generated" });
 
   // A caller's reply-to, cc list, comma-joined to, headers and text all ride
-  // along; a legacy "Name <addr>" from keeps its name and loses its address.
+  // along, the caller's headers on top of the standing pair; a legacy
+  // "Name <addr>" from keeps its name and loses its address.
   calls = [];
   await sendMail({
     from: "NOVAPA Careers <old@gmail.com>", to: "cj@novapa.org, todd@novapa.org", cc: ["jen@novapa.org"],
@@ -63,7 +70,7 @@ try {
     reply_to: "applicant@example.com",
     subject: "s",
     text: "t",
-    headers: { "In-Reply-To": "<abc@x>", References: "<abc@x>" },
+    headers: { ...AUTO_RESPONDER_HEADERS, "In-Reply-To": "<abc@x>", References: "<abc@x>" },
   });
 
   // A Resend refusal surfaces as an error the caller's try/catch logs.
