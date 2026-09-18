@@ -1,4 +1,4 @@
-// Emails Jason the moment a NOVAPA lead arrives — free class booking or quiz.
+// Emails the team the moment a NOVAPA lead arrives: a free class booking or a quiz.
 //
 // The DC Unifieds side already had this (reg-leads-alert). The NOVAPA funnels
 // had nothing: a quiz lead landed at 09:01 on Aug 27 and sat unseen all day

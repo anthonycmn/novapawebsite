@@ -36,7 +36,12 @@ export default async (req) => {
   const to = [].concat(ev.data?.to || []);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   for (const addr of to) {
-    const email = String(addr).toLowerCase().trim();
+    // Resend reports the recipient as it was addressed, so a sender that
+    // passed "Name <address>" lands here formatted. Stored that way the row
+    // matches no recipient and suppresses nobody, which is the one job this
+    // endpoint has. Two rows were written like that before this parse existed.
+    const m = /<([^>]+)>/.exec(String(addr));
+    const email = (m ? m[1] : String(addr)).toLowerCase().trim();
     if (!email.includes("@")) continue;
     await fetch(`${SUPABASE_URL}/rest/v1/email_suppressions?on_conflict=email,scope`, {
       method: "POST",

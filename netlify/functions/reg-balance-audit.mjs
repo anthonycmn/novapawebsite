@@ -28,8 +28,7 @@
 //
 // Always sends — an "all clear" is the point on the mornings there is
 // nothing to fix. Read-only against Stripe; a restricted read key is enough.
-import { getStore } from "@netlify/blobs";
-import { SUPABASE_URL, etToday } from "./reg-config.mjs";
+import { SUPABASE_URL } from "./reg-config.mjs";
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -176,18 +175,18 @@ ${s.healed.length ? section("Recorded today", s.healed.map((h) => rowOrder(h, `$
 <div style="font:12.5px/1.7 Helvetica,Arial,sans-serif;color:#9AA1AC;margin-top:22px">
 Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-only here; the only write is recording a payment that already happened.</div></div>`;
 
-  // One email per day, whatever fires the function. Its first ever scheduled
-  // run, Sep 17 2026, sent CJ the same report twice, at 7:00:58 and 7:01:48 AM
-  // ET. A daily audit that cries twice is a daily audit people start filing
-  // unread. The claim is made before the send and given back if Resend refuses,
-  // so a failed send still gets another try; the Stripe heal above is
-  // idempotent and runs either way.
-  const store = getStore("balance-audit");
-  const key = `sent-${etToday()}`;
-  if (await store.get(key)) {
-    return new Response(`already sent today; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });
-  }
-  await store.set(key, new Date().toISOString());
+  // Netlify scheduled ticks are at-least-once, so two invocations can race and
+  // CJ gets the same audit twice, 44 seconds apart, which is what happened on
+  // Sep 17 and Sep 18. Claim the day before sending, the way reg-send-watch
+  // does. The claim goes here rather than at the top of the handler so a run
+  // that fails while building the report does not burn the day: only a run
+  // that is about to send takes the claim. A deliberate re-run needs this blob
+  // key cleared.
+  const { getStore } = await import("@netlify/blobs");
+  const claims = getStore("lead-alerts");
+  const claimKey = "audit-" + new Date().toISOString().slice(0, 10);
+  if (await claims.get(claimKey)) return new Response("already sent today", { status: 200 });
+  await claims.set(claimKey, String(Date.now()));
 
   const to = (process.env.AUDIT_ALERT_TO || "cj@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
   const r = await fetch("https://api.resend.com/emails", {
@@ -196,7 +195,11 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
     body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", to, subject, html }),
   });
   if (!r.ok) {
-    await store.delete(key).catch(() => {});
+    // The claim above was made on the assumption this send would land. It did
+    // not, so give the day back: an at-least-once tick that arrives seconds
+    // later can still deliver the audit. Holding the claim here would cost CJ
+    // the whole morning's audit over one refused API call.
+    await claims.delete(claimKey).catch(() => {});
     return new Response(`resend ${r.status}`, { status: 200 });
   }
   return new Response(`${subject}; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });

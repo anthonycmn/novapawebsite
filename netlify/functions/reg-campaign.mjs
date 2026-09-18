@@ -14,7 +14,7 @@ const BATCH_SIZE = 25; // ~18s of SMTP at ~0.7s/send, inside the fn limit
 
 // Mass sends ride Resend (mail.novapa.org subdomain) so marketing reputation
 // never touches the root domain that receipts and sign-in links depend on.
-// Replies go to Jason's real inbox.
+// Replies go to info@novapa.org, the shared inbox Jen watches.
 export const FROM = "Broadway Bound <hello@mail.novapa.org>";
 export const REPLY_TO = "info@novapa.org";
 export async function mailer() {
@@ -134,6 +134,30 @@ const TEAM = [
   { email: "jen@novapa.org", first: "Jen" },
 ];
 
+// The three audience names that mean "every family in the register", spelled
+// out so that meaning one has to be deliberate. all_families is the way to say
+// it plainly; the other two are the historical names and behave as they always
+// have.
+export const WIDE_AUDIENCES = new Set(["non_buyers_2027", "buyers_2027", "all_families"]);
+
+// Which resolution path an audience name takes. Exported so the rules can be
+// tested without a database, because the cost of getting this one wrong is a
+// blast to the whole family list.
+export function audienceKind(name) {
+  const n = name || "";
+  if (/^cc_batch_\d+$/.test(n)) return "cc_batch";
+  if (/^seg_[a-z0-9_]+$/.test(n)) return "segment";
+  if (WIDE_AUDIENCES.has(n)) return "wide";
+  return "unknown";
+}
+
+// Resend broadcast syntax cannot render here: renderEmail substitutes its own
+// {key} tokens and leaves everything else alone, so these tags would reach a
+// family as literal text.
+export function hasBroadcastSyntax(body) {
+  return String(body || "").includes("{{{");
+}
+
 async function audienceFor(campaign) {
   // cc_batch_N: imported Constant Contact prospects, pre-cleaned and batched
   // at import time (the ramp — Tue/Wed/Thu — is the batch number). Same
@@ -174,6 +198,17 @@ async function audienceFor(campaign) {
       first: (r.first_name || "").trim().split(" ")[0] || "there",
     }));
     return [...TEAM.filter((t) => !out.has(t.email)), ...list];
+  }
+  // Every audience name that reaches this point is answered with the whole
+  // family list. That default is how one missing "seg_" prefix turns 21
+  // recipients into 789, so only names that mean "everyone" on purpose get
+  // through. An unknown name throws: the tick fails, the campaign keeps its
+  // status, and nothing goes out. A campaign stuck this way does block the
+  // ones behind it, since the due query takes one at a time. That is the
+  // intended trade, because a blocked queue is recoverable and a wrong blast
+  // is not.
+  if (audienceKind(campaign.audience) !== "wide") {
+    throw new Error(`campaign ${campaign.name}: unknown audience "${campaign.audience}"`);
   }
   // non_buyers_2027: every known family without a paid 2026-27 web order
   const [fams, orders, supp, sent] = await Promise.all([
@@ -216,6 +251,15 @@ export default async () => {
   const due = await svc(`campaigns?status=in.(scheduled,sending)&scheduled_at=lte.${encodeURIComponent(new Date().toISOString())}&order=scheduled_at&limit=1`);
   if (!due.length) return new Response("no due campaigns", { status: 200 });
   const c = due[0];
+
+  // Resend broadcast syntax ({{{contact.first_name}}}, {{{RESEND_UNSUBSCRIBE_URL}}})
+  // is not rendered here: renderEmail substitutes its own {key} tokens and
+  // leaves everything else alone, so those tags would reach families as
+  // literal text. A body carrying them was written for Resend and belongs
+  // there, not in this sender.
+  if (hasBroadcastSyntax(c.body)) {
+    throw new Error(`campaign ${c.name}: body carries Resend broadcast syntax`);
+  }
 
   const audience = await audienceFor(c);
   if (!audience.length) {
