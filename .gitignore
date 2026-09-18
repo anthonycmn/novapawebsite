@@ -4,5 +4,10 @@
 # this ignores the CONTENTS of .claude rather than the directory itself.
 .claude/*
 !.claude/skills/
+# The Authority Engine's state (content calendar, post template, scoreboard,
+# baseline, run folders) is a project asset for the same reason. The cloud
+# routine cannot read Tony's machine, so anything it is not allowed to commit
+# is lost when the container is reclaimed.
+!.claude/authority-engine/
 node_modules
 .DS_Store
