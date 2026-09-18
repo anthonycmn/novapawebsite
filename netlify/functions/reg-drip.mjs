@@ -210,12 +210,17 @@ export default async () => {
   const stepsBySeq = {};
   for (const s of steps) (stepsBySeq[s.seq] = stepsBySeq[s.seq] || []).push(s);
 
-  // Anomaly brake. Counted from retarget_state, which is the send ledger: a row
-  // is written before each send, so this is what actually went out today.
+  // Anomaly brake. A retarget_state row is written once, when someone is
+  // enrolled, and stamped with last_sent_at on every send after that. So
+  // created_at is the enrollment ledger and last_sent_at is the send ledger,
+  // and this brake needs the second one: counting created_at missed every
+  // step 2 and step 3 send, which is most of a burst. Rows never sent carry a
+  // null last_sent_at and a gte filter drops them, which is correct here
+  // because an enrollment is not a send.
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
   let sentToday = 0;
   try {
-    sentToday = (await svcAll(`retarget_state?select=email&created_at=gte.${midnight.toISOString()}`)).length;
+    sentToday = (await svcAll(`retarget_state?select=email&last_sent_at=gte.${midnight.toISOString()}`)).length;
   } catch (e) { console.error("daily count failed:", e.message); }
   if (sentToday >= MAX_SENDS_PER_DAY) {
     await alertSpike(sentToday);
