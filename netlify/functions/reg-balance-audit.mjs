@@ -194,7 +194,14 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", to, subject, html }),
   });
-  if (!r.ok) return new Response(`resend ${r.status}`, { status: 200 });
+  if (!r.ok) {
+    // The claim above was made on the assumption this send would land. It did
+    // not, so give the day back: an at-least-once tick that arrives seconds
+    // later can still deliver the audit. Holding the claim here would cost CJ
+    // the whole morning's audit over one refused API call.
+    await claims.delete(claimKey).catch(() => {});
+    return new Response(`resend ${r.status}`, { status: 200 });
+  }
   return new Response(`${subject}; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });
 };
 
