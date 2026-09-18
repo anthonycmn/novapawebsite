@@ -48,7 +48,8 @@ const EXPECTED = {
   "improv-9-12":     1960959,   // Thu  6:30 PM   9-12
   "improv-13-17":    1960961,   // Thu  7:30 PM  13-17
   "acting-mt-sat":   1962562,   // Sat 12:00 PM   9-12
-  "film-tv":         992001,    // Mon  8:00 PM  13-17  (added Sep 16 2026, narrowed from 11-17 on the 17th)
+  "film-tv":         992001,    // Mon  8:00 PM  11-17  (added Sep 16 2026, narrowed to 13-17 in #128,
+                              //                        widened back on CJ's word Sep 18)
 };
 
 // ── The catalogue is the catalogue ─────────────────────────────────────────

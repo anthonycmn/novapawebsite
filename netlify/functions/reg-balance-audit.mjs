@@ -29,6 +29,7 @@
 // Always sends — an "all clear" is the point on the mornings there is
 // nothing to fix. Read-only against Stripe; a restricted read key is enough.
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { getStore } from "@netlify/blobs";
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -127,16 +128,62 @@ const section = (title, rows, blurb) => rows.length ? `
 ${blurb ? `<div style="font:13px/1.6 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:4px">${blurb}</div>` : ""}
 <table style="width:100%;border-collapse:collapse;margin-top:8px">${rows.join("")}</table>` : "";
 
-export default async () => {
-  if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
-    return new Response("skipped: non-production", { status: 200 });
-  }
-  const resend = process.env.RESEND_API_KEY;
-  if (!resend || !process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      !(process.env.STRIPE_READ_KEY || process.env.STRIPE_SECRET_KEY)) {
-    return new Response("not configured", { status: 200 });
-  }
+// ---- one send a day ------------------------------------------------------
+//
+// Sep 17 and Sep 18 2026 the audit arrived twice, 50 and 44 seconds apart,
+// identical. The schedule is a single "0 11 * * *", so the platform invoked
+// it twice: scheduled functions are at-least-once, not exactly-once. No money
+// risk, record_installment_paid is idempotent, but CJ reads two of the same
+// email and stops trusting the one that matters.
+//
+// So the day is claimed in a blob before the send, strongly consistent so a
+// second invocation reads the first one's claim. A claim that is still
+// "sending" after STALE_MS belongs to a run that died, and the next
+// invocation takes it: better a duplicate than a morning with no audit.
+// Same reason the whole guard is wrapped: if Blobs is unavailable, send.
+const CLAIM_STORE = "reg-audit";
+const STALE_MS = 10 * 60 * 1000;
 
+const etDay = () =>
+  new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+
+function claimStore() {
+  return getStore({ name: CLAIM_STORE, consistency: "strong" });
+}
+
+// Returns null when this run should send, or a reason string when it must not.
+async function claimToday() {
+  try {
+    const store = claimStore();
+    const key = `sent-${etDay()}`;
+    const prev = JSON.parse((await store.get(key)) || "null");
+    if (prev?.state === "sent") return `already sent today at ${prev.at}`;
+    if (prev?.state === "sending" && Date.now() - Date.parse(prev.at) < STALE_MS) {
+      return `another run started at ${prev.at}`;
+    }
+    await store.set(key, JSON.stringify({ state: "sending", at: new Date().toISOString() }));
+  } catch (e) {
+    console.log(`balance audit: claim unavailable (${e.message}), sending anyway`);
+  }
+  return null;
+}
+
+async function markClaim(state) {
+  try {
+    const store = claimStore();
+    const key = `sent-${etDay()}`;
+    if (state === "sent") {
+      await store.set(key, JSON.stringify({ state: "sent", at: new Date().toISOString() }));
+    } else {
+      // The send failed. Drop the claim so the next invocation retries.
+      await store.delete(key);
+    }
+  } catch (e) {
+    console.log(`balance audit: could not record the claim (${e.message})`);
+  }
+}
+
+async function runAudit(resend) {
   const s = await auditStripe();
   // Half 2 runs AFTER the heal so it judges the orders Stripe agrees with.
   const portal = await db("rpc/registration_portal_audit", { method: "POST", body: "{}" });
@@ -194,8 +241,35 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", to, subject, html }),
   });
-  if (!r.ok) return new Response(`resend ${r.status}`, { status: 200 });
+  if (!r.ok) {
+    await markClaim("failed");
+    return new Response(`resend ${r.status}`, { status: 200 });
+  }
+  await markClaim("sent");
   return new Response(`${subject}; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });
+}
+
+export default async () => {
+  if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
+    return new Response("skipped: non-production", { status: 200 });
+  }
+  const resend = process.env.RESEND_API_KEY;
+  if (!resend || !process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      !(process.env.STRIPE_READ_KEY || process.env.STRIPE_SECRET_KEY)) {
+    return new Response("not configured", { status: 200 });
+  }
+
+  const skip = await claimToday();
+  if (skip) return new Response(`skipped: ${skip}`, { status: 200 });
+
+  try {
+    return await runAudit(resend);
+  } catch (e) {
+    // A run that died holds no claim: a platform retry, or any later
+    // invocation the same morning, still has to be able to send.
+    await markClaim("failed");
+    throw e;
+  }
 };
 
 // 11:00 UTC = 7am EDT / 6am EST, before the office opens.
