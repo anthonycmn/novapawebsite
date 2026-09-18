@@ -1,14 +1,18 @@
 // POST /api/reg-webhook — Stripe webhook.
 // payment_intent.succeeded -> confirm the order in Supabase (service role),
 // and for deposit plans create the 8-installment subscription schedule.
-// invoice.paid -> write a collected installment back onto its order.
+// invoice.paid -> write a recurring pull back onto its order: a deposit
+// plan's installment pays the balance down, a class membership's monthly
+// tuition is recorded as revenue.
 // (The endpoint in Stripe must be subscribed to invoice.paid as well.)
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
+import { mintDcuFamily } from "./dcu-family.mjs";
 import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
 const CLASS_PRODUCT_ID = "novapa-class-monthly";
@@ -70,7 +74,7 @@ async function orderIdForInvoice(stripe, inv) {
 
 // ---------------------------------------------------------------------------
 // Registration confirmation email — branded, table-based HTML (email-safe).
-// Sent via Gmail SMTP (same Workspace app password as Supabase auth emails).
+// Sent through reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026).
 // Failure here never fails the webhook: the order is already confirmed.
 
 
@@ -92,26 +96,40 @@ export default async (req) => {
     return new Response("bad signature", { status: 400 });
   }
 
-  // invoice.paid = a deposit plan's installment landed. The order row only
-  // ever knew the checkout charge, so every "still owed" figure downstream
-  // (the parent portal above all) stayed frozen at purchase day — Alida Perez
-  // paid her second half on Sep 4 and was chased for it a week later. Write
-  // the invoice back to the order; record_installment_paid is keyed by the
-  // invoice id, so a redelivery is a no-op, and it declines anything that is
-  // not a deposit order (class tuition is not an installment of anything).
+  // invoice.paid = a recurring pull landed: a deposit plan's installment, or a
+  // class membership's monthly tuition. The order row only ever knew the
+  // checkout charge, so every "still owed" figure downstream (the parent
+  // portal above all) stayed frozen at purchase day: Alida Perez paid her
+  // second half on Sep 4 and was chased for it a week later. Class tuition had
+  // the opposite problem, recorded nowhere at all, so seventeen memberships
+  // worth $1,600 a month could not be counted (money report, Sep 18).
+  //
+  // record_installment_paid is keyed by the invoice id, so a Stripe redelivery
+  // is a no-op. It decides what a row means: a deposit invoice pays the
+  // balance down, a class invoice is recorded as revenue and leaves the
+  // balance alone, because monthly tuition is not an installment of anything.
   if (event.type === "invoice.paid") {
     try {
       const inv = event.data.object;
       const orderId = await orderIdForInvoice(stripe, inv);
       if (orderId) {
         const paidAt = inv.status_transitions?.paid_at || inv.created;
-        await serviceRpc("record_installment_paid", {
+        const recorded = await serviceRpc("record_installment_paid", {
           p_order_id: orderId,
           p_invoice: inv.id,
           p_amount_cents: inv.amount_paid ?? 0,
           p_paid_at: new Date(paidAt * 1000).toISOString(),
           p_schedule: subscriptionIdOf(inv),
         });
+        // false means the row already existed (a redelivery) OR the database
+        // declined the order's plan. Both are fine to drop, but the second one
+        // is how class tuition went missing for six weeks in silence, so say
+        // so in the log rather than return a bare ok.
+        if (recorded !== true) {
+          console.log(`invoice ${inv.id} not recorded against order ${orderId}: already present, or the plan is one record_installment_paid declines`);
+        }
+      } else {
+        console.log(`invoice ${inv.id} belongs to no NOVAPA order, ignored`);
       }
       return new Response("ok", { status: 200 });
     } catch (e) {
@@ -120,10 +138,13 @@ export default async (req) => {
     }
   }
 
-  // setup_intent.succeeded = a first-month-free class enrollment (CJ, Jul 31):
-  // no money moved today, but the saved card + identical metadata drive the
-  // same order + subscription creation. The subscription's trial already ends
-  // at the Oct 1 anchor, so "skip today's charge" needs no other change.
+  // setup_intent.succeeded = a class enrollment with nothing to charge today:
+  // every show family's first month until Sep 18 2026 (CJ, Jul 31), and since
+  // then only a family whose booked free class is the last session the month
+  // holds. No money moved, but the saved card + identical metadata
+  // drive the same order + subscription creation. The subscription's trial
+  // already ends at the next anchor, so "skip today's charge" needs no other
+  // change.
   if (event.type !== "payment_intent.succeeded" && event.type !== "setup_intent.succeeded") {
     return new Response("ignored", { status: 200 });
   }
@@ -207,6 +228,16 @@ export default async (req) => {
       p_stripe_customer: typeof pi.customer === "string" ? pi.customer : pi.customer?.id,
       p_unit_prices: unitPrices,
     });
+
+    // A DC Unifieds buyer is a guest too, but gets the register entry
+    // dcu-family.mjs describes, not the camp upsert below (which would add
+    // the student a second time under the other parent's address).
+    if (m.brand === "dcu") {
+      const r = await mintDcuFamily({
+        email: m.email, parentName: m.parent_name, studentName: m.student_name, phone: m.phone,
+      });
+      console.log(`dcu family for ${m.email}: family ${r.family}, camper ${r.camper}`);
+    }
 
     // Guest orders are how a brand-new family enters the system: mint the
     // family and camper rows so their portal isn't empty, future checkouts
@@ -448,18 +479,14 @@ export default async (req) => {
       });
       const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
       if (admins.length) {
-        const { default: nodemailer } = await import("nodemailer");
-        // Same env-driven transport as reg-email.mjs (Sep 2026 Resend cutover):
-        // the site now sets SMTP_HOST=smtp.resend.com, SMTP_USER=resend and no
-        // SMTP_PASS at all, so a hardcoded Gmail host with SMTP_PASS-only auth
-        // failed silently inside this try/catch on every paid order.
-        const t2 = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-        });
+        // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep
+        // 16 2026): a hardcoded Gmail host with a retired app password failed
+        // silently inside this try/catch on every paid order.
         // Sawyer-detail admin receipt (Todd, Aug 3): full line items with
         // prices, every fee/discount, the payment schedule, and a Stripe link.
-        const paid = ((pi.amount_received ?? pi.amount) / 100).toFixed(2);
+        // A SetupIntent (first-month-free class, $0 today) carries neither
+        // amount_received nor amount, and printed "$NaN" here.
+        const paid = ((pi.amount_received ?? pi.amount ?? 0) / 100).toFixed(2);
         const total = ((parseInt(m.total_cents || "0", 10) || 0) / 100).toFixed(2);
         const usd = (c) => "$" + ((parseInt(c || "0", 10) || 0) / 100).toFixed(2);
         let units = [];
@@ -482,12 +509,13 @@ export default async (req) => {
           remaining ? [`Remaining balance`, usd(remaining)] : null,
           nInst ? [`Schedule`, `${nInst} × ${usd(instCents)} monthly, first ${new Date(firstInst * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`] : null,
           m.first_month_free === "1" ? [`First month free`, "card saved, billing starts Oct 1"] : null,
+          m.first_class_free === "1" ? [`Free class`, "booked on the free-class page — that session is off today's charge"] : null,
           [`FSA eligible`, m.fsa_eligible === "1" ? "yes" : "no"],
         ].filter(Boolean).map(([k, v]) =>
           `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");
-        await t2.sendMail({
-          from: `NOVAPA Registrations <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
-          to: admins.join(", "),
+        await sendMail({
+          fromName: "NOVAPA Registrations",
+          to: admins,
           subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
           html: [
             `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt;` +
@@ -510,18 +538,14 @@ export default async (req) => {
     // failures only showed in Stripe's retry log). Alert the admins with
     // enough context to act; alert failure itself must not mask the 500.
     try {
-      if (process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.RESEND_API_KEY)) {
+      if (mailConfigured()) {
         {
-          // Failure alerts go to Jason only (his call, Aug 7) — Todd/CJ get
-          // the happy-path registration emails, not the plumbing pages.
-          const { default: nodemailer } = await import("nodemailer");
-          const t = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-          });
+          // Failure alerts go to CJ alone (since Sep 2026; Jason's call of
+          // Aug 7 was that only one person gets the plumbing pages). Todd gets
+          // the happy-path registration emails.
           const md = (pi && pi.metadata) || {};
-          await t.sendMail({
-            from: `NOVAPA Alerts <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+          await sendMail({
+            fromName: "NOVAPA Alerts",
             to: "cj@novapa.org",
             subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
             html: [

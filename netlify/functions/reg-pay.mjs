@@ -10,7 +10,8 @@
 //  - classes {activity_id, camper}: must be alone, plan=subscription
 //    ($90/$150/$180 a month per child for 1/2/3 classes — no sibling
 //    discount on classes since the Sep 14 2026 ladder; the first payment
-//    is prorated to the sessions left in the month)
+//    is prorated to the sessions left in the month; a session booked
+//    through the free-class page is free, nothing else is)
 import Stripe from "stripe";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
@@ -424,39 +425,44 @@ export default async (req) => {
       const s = classSessionsInMonth(a, covered.y, covered.m, covered.from, breaks);
       return { day: s.day, left: s.left, total: s.total, off: s.off };
     });
+    // The free class (CJ, Sep 18 2026): a session is free ONLY when it was
+    // booked for that student, in that class, through the free-class page
+    // (free_class_bookings). A booked date still to come is one of the
+    // sessions being charged, so it comes off today's prorated amount; a
+    // booked date already past was never in the count. Nobody else gets a
+    // session off — not a show family, not a returning one. This replaces
+    // the Jul 31 "first month free with any show registration" rule, which
+    // sent d30f916f (Sep 16) and d6d5f870 (Sep 18) out at $0. A failed
+    // lookup must never block checkout: it degrades to "pay the prorated
+    // month", the same never-block rule as the schedule lookup.
+    let bookings = [];
+    try {
+      const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const hdrs = { apikey: svcKey, Authorization: `Bearer ${svcKey}` };
+      // The booking may carry the family's other address (a second guardian
+      // booked the visit), so both sign-in addresses count.
+      const fam = await (await fetch(`${SUPABASE_URL}/rest/v1/families?or=(email.ilike.${encodeURIComponent(email)},cc_email.ilike.${encodeURIComponent(email)})&select=email,cc_email&limit=1`, { headers: hdrs })).json();
+      const emails = [...new Set([email, fam[0] && fam[0].email, fam[0] && fam[0].cc_email].filter(Boolean).map((e) => String(e).toLowerCase()))];
+      const ids = [...new Set(classItems.map((it) => it.activity_id))];
+      const rows = await (await fetch(
+        `${SUPABASE_URL}/rest/v1/free_class_bookings?or=(${emails.map((e) => "email.ilike." + encodeURIComponent(e)).join(",")})&activity_id=in.(${ids.join(",")})&status=neq.cancelled&select=child_name,activity_id,class_date,status`,
+        { headers: hdrs })).json();
+      if (Array.isArray(rows)) bookings = rows;
+    } catch (e) { console.error("free-class booking lookup failed:", e.message); }
+    classItems.forEach((it, i) => {
+      const pr = prorations[i];
+      if (!pr.day || !pr.total || pr.left <= 0) return; // no countable session, no free one
+      const camper = String(it.camper || "").trim().toLowerCase();
+      const charged = classSessionsInMonth(classActs[i], covered.y, covered.m, covered.from, breaks).dates.filter((d) => d >= covered.from);
+      const hit = bookings.find((b) => Number(b.activity_id) === Number(it.activity_id)
+        && String(b.child_name || "").trim().toLowerCase() === camper && charged.includes(b.class_date));
+      if (hit) { pr.free = 1; pr.freeDate = hit.class_date; }
+    });
+    const firstClassFree = prorations.some((p) => p.free);
     const todayItems = unitPrices.map((cents, i) => prorateCents(cents, prorations[i]));
     const classMonth = `${MONTH_NAMES[covered.m]} ${covered.y}`;
     const subtotal = todayItems.reduce((s, v) => s + v, 0);
     const couponCents = couponPct ? Math.round(subtotal * couponPct / 100) : Math.min(couponFixedCents, subtotal);
-
-    // First month free (CJ, Jul 31): any family already holding a 2026-27
-    // show/camp registration — a paid web order with a non-class item, or a
-    // Sawyer-imported registration on one of their campers — pays $0 today;
-    // billing simply starts with the Oct 1 pull. Failure of this check must
-    // never block checkout, so it degrades to "pay the first month".
-    let firstMonthFree = false;
-    try {
-      const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const hdrs = { apikey: svcKey, Authorization: `Bearer ${svcKey}` };
-      const famId = await familyIdByEmail(email, hdrs);
-      if (famId) {
-        const kids = await (await fetch(`${SUPABASE_URL}/rest/v1/campers?family_id=eq.${famId}&select=already_registered`, { headers: hdrs })).json();
-        firstMonthFree = kids.some((c) => Array.isArray(c.already_registered) && c.already_registered.length);
-      }
-      if (!firstMonthFree) {
-        const ords = await (await fetch(`${SUPABASE_URL}/rest/v1/orders?email=ilike.${encodeURIComponent(email)}&status=in.(paid,confirmed,complete,succeeded)&select=id`, { headers: hdrs })).json();
-        if (ords.length) {
-          const ids = ords.map((o) => o.id).join(",");
-          const its = await (await fetch(`${SUPABASE_URL}/rest/v1/order_items?order_id=in.(${ids})&select=activity_id`, { headers: hdrs })).json();
-          const actIds = [...new Set(its.map((i) => i.activity_id).filter(Boolean))];
-          if (its.some((i) => !i.activity_id)) firstMonthFree = true; // summer camp lines carry no activity_id
-          else if (actIds.length) {
-            const acts = await (await fetch(`${SUPABASE_URL}/rest/v1/activities?id=in.(${actIds.join(",")})&select=id,category`, { headers: hdrs })).json();
-            firstMonthFree = acts.some((a) => a.category !== "class");
-          }
-        }
-      }
-    } catch (e) { console.error("first-month-free check failed:", e.message); }
 
     // The month paid (or waived) at checkout is the class's FIRST month, so the
     // first recurring pull is the 1st of the month after the class starts —
@@ -466,15 +472,15 @@ export default async (req) => {
     // Tuesday and would have kept billing a December-ending class into June.
     const classBilling = classBillingWindow(classActs, new Date(), breaks);
     pricing = {
-      todayCents: firstMonthFree ? 0 : subtotal - couponCents,
-      totalCents: firstMonthFree ? 0 : subtotal - couponCents,
+      todayCents: subtotal - couponCents,
+      totalCents: subtotal - couponCents,
       subtotalCents: subtotal, couponCents,
       insuranceCents: 0, // built into the monthly price for classes
       installmentCents: 0, nInstallments: 0, firstInstallmentUTC: 0,
       // unitPrices is what each line costs TODAY (prorated); monthlyItems is
       // what the subscription pulls on the 1st. They differ only mid-month.
       unitPrices: todayItems, monthlyItems: unitPrices, discountPct: 0,
-      firstMonthFree, priorClasses,
+      firstClassFree, priorClasses,
       prorations, classMonth,
       nextBillUTC: classBilling.nextBillUTC, cancelAtUTC: classBilling.cancelAtUTC,
     };
@@ -614,9 +620,11 @@ export default async (req) => {
     return Response.json({ confirmed: true });
   }
 
-  // First-month-free class carts: nothing to charge today, but the card must
-  // still be saved for the Oct 1 pull — a SetupIntent instead of a payment.
-  if (plan === "subscription" && pricing.firstMonthFree && pricing.todayCents === 0) {
+  // A booked free class that is the ONLY session left in the month: nothing
+  // to charge today, but the card must still be saved for the next pull — a
+  // SetupIntent instead of a payment. (Until Sep 18 2026 this was every show
+  // family's whole first month.)
+  if (plan === "subscription" && pricing.firstClassFree && pricing.todayCents === 0) {
     const stripeS = new Stripe(process.env.STRIPE_SECRET_KEY);
     const customerS = await stripeS.customers.create({
       email, name: parent_name || undefined, phone: phone || undefined, metadata: { source: "novapa-register" },
@@ -631,9 +639,9 @@ export default async (req) => {
         total_cents: "0", installment_cents: "0", n_installments: "0",
         first_installment_utc: "0", insurance_cents: "0", insured: "0",
         coupon: "", coupon_cents: "0", plan_fee_cents: "0", fsa_eligible: "0",
-        first_month_free: "1",
+        first_class_free: "1",
         class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
-        class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total])).slice(0, 450),
+        class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total, p.free || 0])).slice(0, 450),
         class_month: pricing.classMonth || "",
         unit_prices: JSON.stringify(pricing.unitPrices).slice(0, 450),
         monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
@@ -652,7 +660,7 @@ export default async (req) => {
         n_installments: 0, first_installment_utc: 0,
         monthly_items: pricing.monthlyItems,
         monthly_cents: pricing.monthlyItems.reduce((s, v) => s + v, 0),
-        first_month_free: true,
+        first_class_free: true,
         proration: pricing.prorations || [], class_month: pricing.classMonth || "",
         next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
         prior_classes: pricing.priorClasses || [],
@@ -749,7 +757,8 @@ export default async (req) => {
       class_next_bill_utc: String(pricing.nextBillUTC || 0), class_cancel_at_utc: String(pricing.cancelAtUTC || 0),
       // [["Wednesday", 2, 4]] per class line and "October 2026": what today's
       // charge covered, for the receipt. Empty for every other cart.
-      class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total])).slice(0, 450),
+      class_proration: JSON.stringify((pricing.prorations || []).map((p) => [p.day, p.left, p.total, p.free || 0])).slice(0, 450),
+      first_class_free: pricing.firstClassFree ? "1" : "0",
       class_month: pricing.classMonth || "",
       n_items: String(items.length),
       order_desc: description.slice(0, 480),
@@ -781,6 +790,7 @@ export default async (req) => {
       monthly_items: pricing.monthlyItems,
       monthly_cents: (pricing.monthlyItems || []).reduce((s, v) => s + v, 0),
       proration: pricing.prorations || [], class_month: pricing.classMonth || "",
+      first_class_free: !!pricing.firstClassFree,
       next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
       prior_classes: pricing.priorClasses || [],
     },

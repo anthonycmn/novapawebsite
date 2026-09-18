@@ -29,7 +29,7 @@ export default async (req) => {
   const c = rows[0];
   const t = await mailer();
   const unsub = unsubUrl(String(body.test_to));
-  const vars = { first_name: "Jason", unsub_url: unsub, email: encodeURIComponent(String(body.test_to)) };
+  const vars = { first_name: "CJ", unsub_url: unsub, email: encodeURIComponent(String(body.test_to)) };
   if (c.body.includes("{ref_link}")) {
     // show the tester their own real link, house code if they have none
     const fams = await (await fetch(

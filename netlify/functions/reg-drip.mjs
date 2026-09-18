@@ -1,7 +1,7 @@
 // Retargeting drip engine — runs every 15 minutes (scheduled).
 // Sequences + per-lead state live in Supabase (email_sequences / retarget_state),
 // editable from the admin Marketing tab. Sends as CJ from Broadway Bound
-// via the env-configured SMTP (FROM_ADDR).
+// through reg-mail.mjs (SMTP, or the Resend HTTP API).
 //
 // Rules (Jason):
 // - 'abandoned': enroll on first successful sign-in with no purchase; step 1
@@ -13,6 +13,7 @@
 // - 'linkexpired': requested a sign-in link AFTER the epoch below, never
 //   signed in -> one nudge. Historical non-entries are never contacted.
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { sendMail as sendTransactional } from "./reg-mail.mjs";
 
 const SITE = "https://www.northernvirginiaperformingarts.org";
 // Drip is the only bursty sender on the shared Gmail 2k/day budget — cap each
@@ -71,27 +72,25 @@ function render(tpl, vars) {
 }
 
 async function sendMail({ to, subject, html, refs }) {
-  const { default: nodemailer } = await import("nodemailer");
-  // Env-driven since the Sep 2026 Resend cutover (see reg-email.mjs). The
-  // IMAP reply-check below deliberately does NOT follow SMTP_*: it needs a
-  // real Gmail inbox that receives info@ mail, so it reads IMAP_USER /
-  // IMAP_PASS (falling back to SMTP_USER/PASS for unmigrated environments).
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-  });
+  // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16
+  // 2026). The IMAP reply-check below deliberately does NOT follow SMTP_*:
+  // it needs a real Gmail inbox that receives info@ mail, so it reads
+  // IMAP_USER / IMAP_PASS (falling back to SMTP_USER/PASS for unmigrated
+  // environments).
   const headers = {};
   if (refs && refs.length) {
     headers["In-Reply-To"] = refs[refs.length - 1];
     headers["References"] = refs.join(" ");
   }
-  const info = await transporter.sendMail({
-    from: `CJ from Broadway Bound <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+  const info = await sendTransactional({
+    fromName: "CJ from Broadway Bound",
     replyTo: "info@novapa.org",
     to, subject, headers,
     html: html.replace(/\n/g, "<br>"),
   });
-  return info.messageId;
+  // Resend does not hand back the RFC Message-ID, so a later step cannot
+  // thread onto this one there; null is stored, never a made-up id.
+  return info.messageId || null;
 }
 
 // Anyone who has emailed us is in a human conversation — automated steps stop.
@@ -211,12 +210,17 @@ export default async () => {
   const stepsBySeq = {};
   for (const s of steps) (stepsBySeq[s.seq] = stepsBySeq[s.seq] || []).push(s);
 
-  // Anomaly brake. Counted from retarget_state, which is the send ledger: a row
-  // is written before each send, so this is what actually went out today.
+  // Anomaly brake. A retarget_state row is written once, when someone is
+  // enrolled, and stamped with last_sent_at on every send after that. So
+  // created_at is the enrollment ledger and last_sent_at is the send ledger,
+  // and this brake needs the second one: counting created_at missed every
+  // step 2 and step 3 send, which is most of a burst. Rows never sent carry a
+  // null last_sent_at and a gte filter drops them, which is correct here
+  // because an enrollment is not a send.
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
   let sentToday = 0;
   try {
-    sentToday = (await svcAll(`retarget_state?select=email&created_at=gte.${midnight.toISOString()}`)).length;
+    sentToday = (await svcAll(`retarget_state?select=email&last_sent_at=gte.${midnight.toISOString()}`)).length;
   } catch (e) { console.error("daily count failed:", e.message); }
   if (sentToday >= MAX_SENDS_PER_DAY) {
     await alertSpike(sentToday);
@@ -402,7 +406,7 @@ export default async () => {
         html: render(next.body, vars),
         refs: next.step > 2 ? refs : [], // step 3 threads onto step 2
       });
-      refs.push(msgId);
+      if (msgId) refs.push(msgId);
       await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, {
         method: "PATCH",
         body: JSON.stringify({ last_sent_at: new Date().toISOString(), msg_refs: refs, updated_at: new Date().toISOString() }),
@@ -452,7 +456,7 @@ export default async () => {
         const msgId = await sendMail({ to: email, subject: render(lxSteps[0].subject, vars), html: render(lxSteps[0].body, vars) });
         await svc(`retarget_state?email=eq.${encodeURIComponent(email)}`, {
           method: "PATCH",
-          body: JSON.stringify({ last_sent_at: new Date().toISOString(), msg_refs: [msgId], updated_at: new Date().toISOString() }),
+          body: JSON.stringify({ last_sent_at: new Date().toISOString(), msg_refs: msgId ? [msgId] : [], updated_at: new Date().toISOString() }),
         });
         log.sent++;
       } catch (e) { console.error(`linkexpired send failed ${email}:`, e.message); }

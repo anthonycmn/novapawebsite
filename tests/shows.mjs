@@ -126,7 +126,7 @@ const weeklyRows = (weekly.match(/\[\d,'/g) || []).length;
 A(weeklyRows === 18,
   'the weekly grid holds 18 rows: 13 classes plus 5 rehearsal/conservatory — got ' + weeklyRows);
 // Film & TV was on this list until 15 Sep 2026. It is a real, bookable product
-// again (activity 992001, Mondays 8:00pm, ages 11-17), so it belongs on the
+// again (activity 992001, Mondays 8:00pm, ages 13-17), so it belongs on the
 // grid now and is no longer a dead name.
 for (const dead of ['Tiny Tots', 'Bollywood', 'K-Pop', 'Hip-Hop',
   'Ballet', 'Junior Thespian', 'Adult Voice']) {
@@ -158,7 +158,10 @@ console.log('\nSEASON BREAKS');
     }
   }
   const names = Object.keys(found);
-  A(names.length === 4, 'the calendar defines 4 closures — got ' + names.length + ' (' + names.join(', ') + ')');
+  A(names.length === 5, 'the calendar defines 5 closures — got ' + names.length + ' (' + names.join(', ') + ')');
+  // Labor Day 2026 fell on Sep 7, a week before the season opens, so it closes
+  // nothing. It is listed because families look for it; the class-day checks
+  // below still have to hold with it present.
 
   const MONTH = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const span = (ts) => {

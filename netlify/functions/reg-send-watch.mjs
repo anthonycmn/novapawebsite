@@ -6,7 +6,8 @@
 // held, the send loop did exactly what it was told. Nothing was watching the
 // TOTAL. This does.
 //
-// It does not send customer email and cannot stop a send; it only tells Jason.
+// It does not send customer email and cannot stop a send; it only tells
+// whoever LEADS_ALERT_TO names, which is CJ, info@, Jen and Katie.
 // The drip has its own hard ceiling (MAX_SENDS_PER_DAY) that halts the engine.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
@@ -49,8 +50,12 @@ export default async () => {
   let dripHour = 0, dripDay = 0, campHour = 0;
   try {
     [dripHour, dripDay, campHour] = await Promise.all([
-      countSince("retarget_state", "created_at", hourAgo),
-      countSince("retarget_state", "created_at", midnight.toISOString()),
+      // last_sent_at, not created_at: a drip row is created once on enrollment
+      // and stamped on every send, so created_at counted sign-ups and missed
+      // every follow-up step. campaign_sends gets a row per recipient, so its
+      // own column was right all along.
+      countSince("retarget_state", "last_sent_at", hourAgo),
+      countSince("retarget_state", "last_sent_at", midnight.toISOString()),
       countSince("campaign_sends", "sent_at", hourAgo),
     ]);
   } catch (e) {

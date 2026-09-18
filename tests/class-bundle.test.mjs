@@ -42,7 +42,7 @@ const html = readFileSync(new URL("../register/index.html", import.meta.url), "u
 const m = html.match(/var CLASS_BUNDLE = \[([^\]]+)\]/);
 eq("register/index.html mirrors CLASS_BUNDLE_CENTS", m && m[1].split(",").map((s) => Number(s.trim())), CLASS_BUNDLE_CENTS);
 // the page's own script spells the middle dot as the six-character escape ·
-eq("the Classes tab quotes the same ladder", html.includes("<b>2 classes $150/mo</b> \\u00b7 <b>3 classes $180/mo</b> per camper"), true);
+eq("the Classes tab quotes the same ladder", html.includes("<b>2 classes $150/mo</b> \\u00b7 <b>3 classes $180/mo</b> per student"), true);
 
 if (fails) { console.error(`\n${fails} failing`); process.exit(1); }
 console.log("\nclass bundle: all good");

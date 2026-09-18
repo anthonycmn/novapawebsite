@@ -1,4 +1,5 @@
 // Shared confirmation-email rendering + sending (webhook + free orders)
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 const GOLD = "#C8892A", NAVY = "#0F1E36";
 export function money(cents) {
   return "$" + (cents / 100).toLocaleString("en-US",
@@ -92,7 +93,7 @@ export async function itemDetails(m, pi) {
 
 export function confirmationHtml(m, pi, details) {
   const items = (m.order_desc || "").split("; ").filter(Boolean);
-  const today = pi.amount_received ?? pi.amount;
+  const today = pi.amount_received ?? pi.amount ?? 0; // a SetupIntent carries no amount
   const total = parseInt(m.total_cents || "0", 10) || today;
   const nInst = parseInt(m.n_installments || "0", 10) || 0;
   const instCents = parseInt(m.installment_cents || "0", 10) || 0;
@@ -124,17 +125,26 @@ export function confirmationHtml(m, pi, details) {
     try { prorations = JSON.parse(m.class_proration || "[]"); } catch {}
     const covered = m.class_month || "";
     const coveredMonthWord = covered ? covered.split(" ")[0] : "this month";
-    const partial = prorations.filter((p) => Array.isArray(p) && p[0] && p[2] > 0 && p[1] < p[2]);
+    // p[3] is a session booked through the free-class page (CJ, Sep 18
+    // 2026), one off the count charged. Intents minted before Sep 18 carry
+    // three-element rows and read exactly as before.
+    const partial = prorations.filter((p) => Array.isArray(p) && p[0] && p[2] > 0 && (p[1] < p[2] || p[3]));
     const prorationText = partial.length
-      ? ` — ${partial.map((p) => `${p[1]} of ${covered ? coveredMonthWord + "'s " : ""}${p[2]} ${p[0]}s`).join(", ")} — `
+      ? ` — ${partial.map((p) => `${p[1]} of ${covered ? coveredMonthWord + "'s " : ""}${p[2]} ${p[0]}s${p[3] ? ", one of them your free class" : ""}`).join(", ")} — `
       : ", ";
     const monthlyText = monthlyCents ? `Monthly tuition of ${money(monthlyCents)}` : "Monthly tuition";
+    const freeLine = m.first_class_free === "1" ? " The free class you booked is on us." : "";
+    const paidToday = (pi && (pi.amount_received ?? pi.amount)) || 0;
     planLine = m.first_month_free === "1"
       ? `Your first month is on us. Your card is saved, and monthly tuition starts ${nextBillText}, then the 1st of each month through ${finalText}. ` +
         `Nothing is charged in ${coveredMonthWord}, and nothing is charged after that — the plan ends itself. Cancel any time with 30 days' notice.`
+      : m.first_class_free === "1" && !paidToday
+      ? `The free class you booked is on us, and it is the only one left in ${coveredMonthWord}, so nothing is charged today. Your card is saved, and ` +
+        `${monthlyText.charAt(0).toLowerCase() + monthlyText.slice(1)} starts ${nextBillText}, then the 1st of each month through ${finalText}, and the plan ends itself after that. ` +
+        `Cancel any time with 30 days' notice.`
       : noMoreBills
         ? `Today's payment covers ${covered || "the rest of the class"}${prorationText}and the class ends before the next 1st, so there are no further charges.`
-        : `Today's payment covers the rest of ${covered || "this month"}${prorationText}so there is no further charge this month. ` +
+        : `Today's payment covers the rest of ${covered || "this month"}${prorationText}so there is no further charge this month.${freeLine} ` +
           `${monthlyText} then runs ${nextBillText} and the 1st of each month through ${finalText}, and the plan ends itself after that. ` +
           `Cancel any time with 30 days' notice.`;
   }
@@ -355,21 +365,12 @@ export function dcuConfirmationHtml(m, pi) {
 }
 
 export async function sendConfirmationEmail(m, pi) {
-  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY) || !m.email) return;
-  const { default: nodemailer } = await import("nodemailer");
-  // SMTP host/from are env-driven since the Sep 2026 Resend cutover so the
-  // transport can move off Jason's Gmail without a code change: set
-  // SMTP_HOST=smtp.resend.com, SMTP_USER=resend, SMTP_PASS=<Resend key>,
-  // FROM_ADDR=info@novapa.org. Without those, behavior is unchanged (Gmail,
-  // From = the mailbox itself).
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-  });
-  const fromAddr = process.env.FROM_ADDR || process.env.SMTP_USER;
+  if (!mailConfigured() || !m.email) return;
+  // Transport lives in reg-mail.mjs: SMTP when SMTP_PASS is set, otherwise
+  // the Resend HTTP API from hello@mail.novapa.org (Sep 16 2026).
   if (m.brand === "dcu") {
-    await transporter.sendMail({
-      from: `DC Unifieds <${fromAddr}>`,
+    await sendMail({
+      fromName: "DC Unifieds",
       replyTo: "support@dcunifieds.com",
       to: m.email,
       subject: "You're registered — DC Unifieds 2026",
@@ -380,8 +381,8 @@ export async function sendConfirmationEmail(m, pi) {
   const cc = await ccFor(m.email);
   let details = [];
   try { details = await itemDetails(m, pi); } catch (e) { console.error("item details failed:", e.message); }
-  await transporter.sendMail({
-    from: `NOVAPA <${fromAddr}>`,
+  await sendMail({
+    fromName: "NOVAPA",
     replyTo: "info@novapa.org",
     to: m.email,
     ...(cc ? { cc } : {}),

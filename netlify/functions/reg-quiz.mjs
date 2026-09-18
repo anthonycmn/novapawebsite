@@ -8,6 +8,7 @@
 // quiz_leads (RLS closed, service role only). The email keeps to plain
 // sentences: no dashes as connectors, no emojis (Jason's standing rules).
 
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
 const VENUE = "National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176";
 
@@ -92,14 +93,9 @@ function resultHtml(child, personaName, personaCopy, prog) {
 }
 
 async function sendResult(lead, personaName, personaCopy, prog) {
-  if (!process.env.SMTP_USER || !(process.env.SMTP_PASS || process.env.RESEND_API_KEY)) return;
-  const { default: nodemailer } = await import("nodemailer");
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com", port: 465, secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || process.env.RESEND_API_KEY },
-  });
-  await transporter.sendMail({
-    from: `NOVAPA <${process.env.FROM_ADDR || process.env.SMTP_USER}>`,
+  if (!mailConfigured()) return;
+  await sendMail({
+    fromName: "NOVAPA",
     replyTo: "info@novapa.org",
     to: lead.email,
     subject: `${lead.child_name || "Your child"}'s NOVAPA result`,

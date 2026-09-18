@@ -18,6 +18,7 @@
 // The report goes to the people who have to act on it overnight; the buy list
 // goes to whoever is actually placing the orders, with CJ copied because it
 // commits the production's money.
+import { sendMail, mailConfigured } from "./reg-mail.mjs";
 const RECIPIENTS = {
   report: { to: ["katieh@novapa.org", "cj@novapa.org"] },
   buy:    { to: ["todd@novapa.org"], cc: ["cj@novapa.org"] },
@@ -407,23 +408,18 @@ export default async (req) => {
     return Response.json({ ok: false, error: "nothing-to-send" }, { status: 400 });
   }
 
-  const user = process.env.SMTP_USER, pass = process.env.SMTP_PASS;
-  if (!user || !pass) {
+  // Transport in reg-mail.mjs (SMTP, or the Resend HTTP API since Sep 16 2026)
+  if (!mailConfigured()) {
     return Response.json({ ok: false, error: "mail-not-configured" }, { status: 503 });
   }
 
   const who = isBuy ? RECIPIENTS.buy : RECIPIENTS.report;
 
   try {
-    const { default: nodemailer } = await import("nodemailer");
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass },
-    });
-    await transporter.sendMail({
-      from: isBuy ? `NOVAPA Production <${user}>` : `NOVAPA Rehearsal Report <${user}>`,
+    await sendMail({
+      fromName: isBuy ? "NOVAPA Production" : "NOVAPA Rehearsal Report",
       to: who.to,
       ...(who.cc ? { cc: who.cc } : {}),
-      replyTo: user,
       subject: isBuy
         ? `DEH — links to buy (${r.items.length} item${r.items.length === 1 ? "" : "s"}, ${money(r.totalCents || 0)})`
         : `DEH rehearsal report — ${r.dayLabel}`,
