@@ -247,7 +247,65 @@ function checkCodeLength() {
 }
 
 // ---------------------------------------------------------------------------
-// Check 4 — live probes. An auth error is the healthy answer: a 500 is what a
+// Check 4 - analytics tags on every page a family can reach.
+//
+// Why this exists: on Sep 17 2026 the weekly analytics run found that
+// register/catalog.html, where the home page hero and seven pricing links send
+// families, carried no PostHog, no Meta pixel and no Google Ads tag. Neither
+// did any of the nine blog posts. The click was recorded on the page the
+// family left and nothing was recorded where they landed, so a week that paid
+// 16 of 43 carts, down from 17 of 34, could not be explained at all. Pages get
+// added faster than anyone re-audits them, so the gate checks, not a person.
+
+const TAGS = [
+  ["/posthog.js", "PostHog"],
+  ["AW-18370900407", "the Google Ads tag"],
+  ["2191001311729801", "the NOVAPA Meta pixel"],
+  ["902777265812159", "the cross-brand Meta pixel"],
+];
+
+// Untagged on purpose: a page no family browses, or one where a tag would
+// record robots instead of people. Add to this list only with a reason.
+const UNTAGGED_ON_PURPOSE = new Map([
+  ["auth-continue.html", "sign-in interstitial: email scanners prefetch it, so a tag would count them as visitors"],
+  ["brand.html", "internal brand reference, noindex"],
+  ["register/admin/index.html", "staff admin, gated by public.admin_emails"],
+  ["register/lessons-preview.html", "internal preview of a register tab, noindex"],
+  ["sweeney/index.html", "staff rehearsal schedule, noindex nofollow"],
+]);
+
+// deh is the retired Dear Evan Hansen microsite; the rest hold no pages.
+const TAG_SKIP_DIRS = new Set(["node_modules", "deh", "db", "docs", "tests", "tools", "scripts", "img", "netlify"]);
+
+function htmlPages(dir = "", out = []) {
+  for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+    if (e.name.startsWith(".")) continue;
+    const rel = dir ? `${dir}/${e.name}` : e.name;
+    if (e.isDirectory()) { if (!TAG_SKIP_DIRS.has(e.name)) htmlPages(rel, out); }
+    else if (e.name.endsWith(".html")) out.push(rel);
+  }
+  return out;
+}
+
+function checkAnalyticsTags() {
+  let checked = 0;
+  for (const rel of htmlPages()) {
+    if (UNTAGGED_ON_PURPOSE.has(rel)) continue;
+    checked++;
+    const html = readFileSync(join(ROOT, rel), "utf8");
+    const missing = TAGS.filter(([needle]) => !html.includes(needle)).map(([, name]) => name);
+    if (missing.length) {
+      fail("analytics-tags", `${rel} is missing ${missing.join(", ")}. ` +
+        `Copy the block from register/index.html, or add the page to UNTAGGED_ON_PURPOSE with a reason.`);
+    }
+  }
+  if (!problems.some((p) => p.check === "analytics-tags")) {
+    ok(`all ${checked} public pages carry PostHog, both Meta pixels and the Google Ads tag`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Check 5 — live probes. An auth error is the healthy answer: a 500 is what a
 // broken shared import looks like from outside.
 
 async function probe(path, opts = {}) {
@@ -391,6 +449,7 @@ async function checkLive() {
 checkUndeclared();
 checkFunctions();
 checkCodeLength();
+checkAnalyticsTags();
 if (LIVE) await checkLive();
 
 // --alert emails on failure, for unattended runs. Silent when healthy, so a
