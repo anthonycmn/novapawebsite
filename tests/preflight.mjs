@@ -305,7 +305,7 @@ function checkAnalyticsTags() {
 }
 
 // ---------------------------------------------------------------------------
-// Check 5 — live probes. An auth error is the healthy answer: a 500 is what a
+// Check 5 - live probes. An auth error is the healthy answer: a 500 is what a
 // broken shared import looks like from outside.
 
 async function probe(path, opts = {}) {

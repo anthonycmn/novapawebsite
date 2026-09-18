@@ -85,15 +85,22 @@ begin
   end if;
 
   -- One pass, name-matched: the order's camper is "Grace Kontitsis"; the
-  -- booking's child is "Grace". Same email, same listing, same first name.
+  -- booking's child is "Grace". Same email, same first name.
   -- booked OR attended, because a family that pays the same night, before
   -- the teacher marks the register, is still a conversion.
+  --
+  -- The listing match (oi.activity_id = b.activity_id) was here until
+  -- Sep 18 2026 and credited nothing in six weeks: 0 of 25 bookings. It
+  -- assumed a family buys the listing they trialed, and the real path is
+  -- trial a class, then buy a show. Booking 14 sat in activity 1960924 and
+  -- the family paid $729.75 for activity 1959789 the next day, same email,
+  -- same child, uncredited. Email plus child first name is the match; the
+  -- trial did its job whatever they bought afterwards.
   with matched as (
     select distinct on (b.id) b.id
     from   public.free_class_bookings b
     join   public.order_items oi
       on   oi.order_id = p_order_id
-     and   oi.activity_id = b.activity_id
      and   lower(split_part(btrim(oi.camper_name), ' ', 1)) = lower(split_part(btrim(b.child_name), ' ', 1))
     where  lower(b.email) = v_email
     and    b.status in ('booked', 'attended')
@@ -115,7 +122,7 @@ end;
 $$;
 
 comment on function public.convert_free_class_trials(uuid) is
-  'Marks a family''s booked or attended free-class trial converted when they pay for that listing. Called by the payment webhook after confirm_order, failure-isolated. Idempotent. Returns how many bookings it converted.';
+  'Marks a family''s booked or attended free-class trial converted when they pay for anything, matched by email and the child''s first name. Called by the payment webhook after confirm_order, failure-isolated. Idempotent. Returns how many bookings it converted.';
 
 -- The webhook calls this with the service role. Nothing else should.
 revoke execute on function public.convert_free_class_trials(uuid) from public, anon, authenticated;
