@@ -13,6 +13,7 @@
 //
 // Read-only. It cannot cancel anything — it tells a person, who decides.
 import { getStore } from "@netlify/blobs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 const STORE = "lead-alerts";
 const KEY = "openended-subs";
@@ -107,6 +108,7 @@ ${r.isClass ? '<b style="color:#9E2B2B"> — looks like a CLASS, should end Jun 
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({
+      headers: AUTO_RESPONDER_HEADERS,
       from: "NOVAPA Alerts <leads@mail.novapa.org>",
       to,
       subject,

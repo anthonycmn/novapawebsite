@@ -10,6 +10,7 @@
 // the activities table at send time so the email can never quote a stale sale.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { isTestAddress } from "./reg-lead-email.mjs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 const pick = (v, max) => String(v == null ? "" : v).trim().slice(0, max);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -74,6 +75,7 @@ export default async (req) => {
         method: "POST",
         headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
         body: JSON.stringify({
+          headers: AUTO_RESPONDER_HEADERS,
           from: "DC Unifieds <hello@mail.novapa.org>",
           to: [email],
           reply_to: "info@novapa.org",

@@ -15,6 +15,7 @@
 // table.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { isTestAddress, resultsEmail } from "./reg-lead-email.mjs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 // Only mail.novapa.org is verified in Resend; the display name carries the
 // DCU brand. Replies go to the customer inbox Jen works.
@@ -68,7 +69,7 @@ export default async () => {
     const ok = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: [x.email], reply_to: REPLY_TO, subject, html }),
+      body: JSON.stringify({ from: FROM, to: [x.email], reply_to: REPLY_TO, subject, html, headers: AUTO_RESPONDER_HEADERS }),
     });
     if (!ok.ok) {
       // release the claim so the next tick retries this lead

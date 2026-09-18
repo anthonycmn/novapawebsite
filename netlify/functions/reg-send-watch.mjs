@@ -11,6 +11,7 @@
 // The drip has its own hard ceiling (MAX_SENDS_PER_DAY) that halts the engine.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 // Baselines from the 30 days before the incident: drip 1-6/day, campaigns fire
 // only when a human schedules one. Thresholds sit well above normal so this
@@ -80,6 +81,7 @@ export default async () => {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({
+      headers: AUTO_RESPONDER_HEADERS,
       from: "NOVAPA Alerts <leads@mail.novapa.org>",
       to,
       subject: `Email volume spike: ${dripDay} drip sends today`,

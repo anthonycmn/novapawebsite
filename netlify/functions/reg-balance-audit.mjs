@@ -30,6 +30,7 @@
 // nothing to fix. Read-only against Stripe; a restricted read key is enough.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -239,7 +240,7 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", to, subject, html }),
+    body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", to, subject, html, headers: AUTO_RESPONDER_HEADERS }),
   });
   if (!r.ok) {
     await markClaim("failed");

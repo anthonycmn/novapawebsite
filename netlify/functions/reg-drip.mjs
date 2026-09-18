@@ -13,7 +13,7 @@
 // - 'linkexpired': requested a sign-in link AFTER the epoch below, never
 //   signed in -> one nudge. Historical non-entries are never contacted.
 import { SUPABASE_URL } from "./reg-config.mjs";
-import { sendMail as sendTransactional } from "./reg-mail.mjs";
+import { AUTO_RESPONDER_HEADERS, sendMail as sendTransactional } from "./reg-mail.mjs";
 
 const SITE = "https://www.northernvirginiaperformingarts.org";
 // Drip is the only bursty sender on the shared Gmail 2k/day budget — cap each
@@ -172,6 +172,7 @@ async function alertSpike(sentToday) {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
+        headers: AUTO_RESPONDER_HEADERS,
         from: "NOVAPA Alerts <leads@mail.novapa.org>",
         to,
         subject: `Drip halted: ${sentToday} emails sent today`,

@@ -32,6 +32,18 @@ export default async (req) => {
   if (!["email.bounced", "email.complained"].includes(ev.type)) {
     return new Response("ignored", { status: 200 });
   }
+  // Only a Permanent bounce is a hard bounce. SES also reports Transient ones
+  // — a full mailbox, a greylist, and (18 Sep 2026) an out-of-office reply
+  // that Gmail sent to the per-message envelope address, which SES could not
+  // parse and filed as "Transient / General". Two days of every notification
+  // to cj@novapa.org came through here that way; the only reason he was not
+  // suppressed is that staff were already on the Aug 13 exclusion list. A
+  // family with a vacation responder would have been dropped from every
+  // campaign for being away. Not a hard bounce, not a row.
+  const bounceType = ev.data?.bounce?.type;
+  if (ev.type === "email.bounced" && bounceType !== "Permanent") {
+    return new Response(`ignored (${bounceType || "no bounce type"})`, { status: 200 });
+  }
   const reason = ev.type === "email.bounced" ? "hard bounce (resend)" : "spam complaint (resend)";
   const to = [].concat(ev.data?.to || []);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

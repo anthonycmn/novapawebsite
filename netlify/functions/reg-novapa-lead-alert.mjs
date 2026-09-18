@@ -8,6 +8,7 @@
 // who just asked for a free class is worth calling the same hour.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
+import { AUTO_RESPONDER_HEADERS } from "./reg-mail.mjs";
 
 const STORE = "lead-alerts";
 const KEY = "novapa-seen";
@@ -95,6 +96,7 @@ export default async () => {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({
+      headers: AUTO_RESPONDER_HEADERS,
       from: "NOVAPA Leads <leads@mail.novapa.org>",
       to,
       subject: n === 1 ? `New ${what}: ${(freshFree[0] || freshQuiz[0]).parent_name || "no name"}` : `${n} new ${what}`,
