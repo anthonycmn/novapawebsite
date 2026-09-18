@@ -175,6 +175,19 @@ ${s.healed.length ? section("Recorded today", s.healed.map((h) => rowOrder(h, `$
 <div style="font:12.5px/1.7 Helvetica,Arial,sans-serif;color:#9AA1AC;margin-top:22px">
 Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-only here; the only write is recording a payment that already happened.</div></div>`;
 
+  // Netlify scheduled ticks are at-least-once, so two invocations can race and
+  // CJ gets the same audit twice, 44 seconds apart, which is what happened on
+  // Sep 17 and Sep 18. Claim the day before sending, the way reg-send-watch
+  // does. The claim goes here rather than at the top of the handler so a run
+  // that fails while building the report does not burn the day: only a run
+  // that is about to send takes the claim. A deliberate re-run needs this blob
+  // key cleared.
+  const { getStore } = await import("@netlify/blobs");
+  const claims = getStore("lead-alerts");
+  const claimKey = "audit-" + new Date().toISOString().slice(0, 10);
+  if (await claims.get(claimKey)) return new Response("already sent today", { status: 200 });
+  await claims.set(claimKey, String(Date.now()));
+
   const to = (process.env.AUDIT_ALERT_TO || "cj@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
