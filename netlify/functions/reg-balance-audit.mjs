@@ -28,7 +28,8 @@
 //
 // Always sends — an "all clear" is the point on the mornings there is
 // nothing to fix. Read-only against Stripe; a restricted read key is enough.
-import { SUPABASE_URL } from "./reg-config.mjs";
+import { getStore } from "@netlify/blobs";
+import { SUPABASE_URL, etToday } from "./reg-config.mjs";
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -175,13 +176,29 @@ ${s.healed.length ? section("Recorded today", s.healed.map((h) => rowOrder(h, `$
 <div style="font:12.5px/1.7 Helvetica,Arial,sans-serif;color:#9AA1AC;margin-top:22px">
 Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-only here; the only write is recording a payment that already happened.</div></div>`;
 
+  // One email per day, whatever fires the function. Its first ever scheduled
+  // run, Sep 17 2026, sent CJ the same report twice, at 7:00:58 and 7:01:48 AM
+  // ET. A daily audit that cries twice is a daily audit people start filing
+  // unread. The claim is made before the send and given back if Resend refuses,
+  // so a failed send still gets another try; the Stripe heal above is
+  // idempotent and runs either way.
+  const store = getStore("balance-audit");
+  const key = `sent-${etToday()}`;
+  if (await store.get(key)) {
+    return new Response(`already sent today; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });
+  }
+  await store.set(key, new Date().toISOString());
+
   const to = (process.env.AUDIT_ALERT_TO || "cj@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", to, subject, html }),
   });
-  if (!r.ok) return new Response(`resend ${r.status}`, { status: 200 });
+  if (!r.ok) {
+    await store.delete(key).catch(() => {});
+    return new Response(`resend ${r.status}`, { status: 200 });
+  }
   return new Response(`${subject}; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });
 };
 
