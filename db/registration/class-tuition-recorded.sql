@@ -2,7 +2,15 @@
 --
 -- APPLIED Sep 20 2026 on CJ's go, through the Supabase MCP, as migration
 -- record_installment_paid_class_tuition. The function was read back after
--- and matched this file. Kept here as the record of what is live.
+-- and matched this file. Kept here as the record of what is live. Also
+-- recorded in staff_portal.schema_migrations as
+-- 0315_class_tuition_is_recorded.sql (2:34 PM ET).
+--
+-- The same afternoon invoice.paid was added to the live Stripe endpoint
+-- we_1TvOVrGWP2ZbtaszwuhxWPnc, which until then carried
+-- payment_intent.succeeded and setup_intent.succeeded only, so reg-webhook
+-- had never once received the event it was written to handle. The first
+-- class pull is Oct 1 2026; no class subscription billed before it.
 --
 -- Why. record_installment_paid was written for deposit plans and refuses
 -- anything else:

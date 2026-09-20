@@ -10,17 +10,61 @@ hours chasing four different "bugs" in these counts. Three of the four were the
 investigator misreading the model, and acting on any of them would have made
 real data worse. The model is unusual but it is coherent.
 
-## The formula, and it is the only one
+## Two counters, and which one a program uses
+
+There are two seat counters in `public`, not one. Read the function that
+writes a number before calling the number wrong: on Sep 20 2026 the
+registration audit read `activities.sold = 0` on the twelve summer camp rows,
+concluded 162 paid seats were counted nowhere, and offered an UPDATE that
+would have taken real seats off sale. The camps were counted the whole time,
+in the other counter.
+
+### Counter 1: `activities`, for every catalog listing
 
 ```
 taken  = activities.sold + activities.booked_offline
 open   = capacity - taken - held_count_activity(id)
 ```
 
-Every consumer uses exactly this: `catalog_list` (public storefront),
-`acquire_hold_v2` (the seat guard that permits or refuses a booking),
-`admin_overview_groups` (Overview donuts), `admin_inventory` + `countOf`
-(Inventory tab), `reg-admin-ops`, and the Products cards.
+`confirm_order` adds 1 to `activities.sold` for every order line that carries
+an `activity_id`. `held_count_activity(id)` counts active, unexpired holds
+whose items carry that `activity_id`. Consumers: `catalog_list` (public
+storefront, the `remaining` column), the catalog branch of `acquire_hold_v2`
+(refuses with `SOLD_OUT_ACTIVITY:<id>`), `admin_overview_groups` (Overview
+donuts), `admin_inventory` + `countOf` (Inventory tab), `reg-admin-ops`, and
+the Products cards. Classes, fall shows, day camps, DC Unifieds, coaching:
+all of these.
+
+### Counter 2: `inventory`, for the summer camps only
+
+```
+open   = inventory.cap - inventory.booked - held_count(show, band)
+```
+
+Summer camp lines carry `show` and `band` (`charlie`, `trolls`, `httyd` by
+`5-9`, `9-12`, `12-15`, `tech`), never an `activity_id`. `confirm_order` adds
+1 to `inventory.booked` for every line that carries a `show`. `held_count(show,
+band)` counts active, unexpired holds on that pair. Consumers: the summer
+branch of `acquire_hold_v2` (locks the `inventory` row `for update`, refuses
+with `SOLD_OUT:<show>:<band>`) and `inventory_status()`, which is what
+`register/index.html` renders for camp availability. Twelve rows, verified
+Sep 20 2026 with `booked` at or above the paid line count on every one.
+
+The trap: twelve `public.activities` rows exist for the same twelve camps
+(ids 1959675, 1959671, 1959666, 1961640, 1959685, 1959680, 1959678, 1961641,
+1959660, 1959651, 1959493, 1959691) with `capacity` set and `sold` permanently
+0, because no camp order ever carries an `activity_id`. They are a dead second
+listing. `catalog_list` still returns them, so `register/catalog.html`
+(noindex) prints a wrong scarcity line on the three tech rows, and
+`acquire_hold_v2` would permit a booking against any of the twelve ids up to
+full capacity, double booking a camp `inventory` already counts. The fix is
+`bookable = false` on those rows. **Never write `sold` onto them by hand**;
+`inventory.booked` already holds the count and a second copy is the Aug 12
+double count again.
+
+Before you quote a camp number, read `inventory_status()`. Before you quote
+anything else, read `catalog_list(...).remaining`. Both are what the seat
+guard will actually enforce.
 
 **Never add `legacy_enrollments` on top.** `booked_offline` already IS the
 Sawyer + Regpack count, frozen at the cutover (`LAUNCH-CHECKLIST.md`). Adding
@@ -138,7 +182,9 @@ at cutover, so `/nova-performing-arts/schedules` renders empty.
 ## Before you quote a number to a customer
 
 Availability that goes in an email or campaign comes from
-`capacity - sold - booked_offline - held`, the same figure the seat guard uses,
-because that is the only number that can be *acted on* — it is what physically
-permits or refuses a booking. Do not read it off a donut, and do not compute it
-ad hoc with `capacity - sold`, which ignores every Sawyer and Regpack family.
+`capacity - sold - booked_offline - held` for a catalog listing and from
+`cap - booked - held` in `inventory` for a summer camp, the same figures the
+seat guard uses, because those are the only numbers that can be *acted on*:
+they are what physically permits or refuses a booking. Do not read it off a
+donut, and do not compute it ad hoc with `capacity - sold`, which ignores
+every Sawyer and Regpack family and, on a camp, ignores every family.
