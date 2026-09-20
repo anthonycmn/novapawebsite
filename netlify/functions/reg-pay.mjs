@@ -15,6 +15,7 @@
 import Stripe from "stripe";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
+import { sendMail } from "./reg-mail.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
@@ -583,6 +584,49 @@ export default async (req) => {
     // A seat offer spent on a $0 order still gets the Chief told.
     try { await alertSeatOffersRedeemed(freeOrderId); }
     catch (e) { console.error("seat offer alert failed:", e.message); }
+    // The office heads-up (Sep 20 2026). reg-webhook sends "New registration"
+    // to the admin list on every Stripe payment, and this branch never
+    // reaches Stripe, so a camp paid entirely with Day Camp Pack credits was
+    // invisible to the office: order 15263 (the $349 pack) raised an alert,
+    // order 15264 ninety-five seconds later (the camp the credit bought)
+    // raised none. Same sender, list and subject shape as the webhook's so
+    // the two sit together in the inbox. Logged and swallowed like the calls
+    // around it: an alert failure must never fail the family's order.
+    try {
+      const ar = await fetch(`${SUPABASE_URL}/rest/v1/admin_emails?select=email`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+      });
+      const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
+      if (admins.length) {
+        const usd = (c) => "$" + ((parseInt(c || "0", 10) || 0) / 100).toFixed(2);
+        const units = pricing.unitPrices || [];
+        const itemRows = description.split("; ").map((ln, i) =>
+          `<tr><td style="padding:3px 14px 3px 0">${ln}</td><td align="right">${units[i] != null ? usd(units[i]) : ""}</td></tr>`).join("");
+        const creditsUsed = Object.values(pricing.creditsUsed || {})
+          .reduce((n, u) => n + (u.day || 0) + (u.snow || 0), 0);
+        const moneyRows = [
+          [`Subtotal`, usd(pricing.subtotalCents)],
+          creditsUsed ? [`Day camp credits`, `${creditsUsed} redeemed`] : null,
+          couponCode ? [`Coupon ${couponCode.toUpperCase()}`, "−" + usd(pricing.couponCents)] : null,
+          [`<b>Order total</b>`, `<b>$0.00</b>`],
+          [`Paid today`, `$0.00`],
+          [`FSA eligible`, "no"],
+        ].filter(Boolean).map(([k, v]) =>
+          `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");
+        await sendMail({
+          fromName: "NOVAPA Registrations",
+          to: admins,
+          subject: `New registration: ${parent_name || email} — $0.00 (full)`,
+          html: [
+            `<b>${parent_name || "(no name)"}</b> &lt;${email}&gt;` +
+            `${phone ? ` · ${phone}` : ""} · plan: <b>full</b>`,
+            `<table style="border-collapse:collapse;font-size:14px">${itemRows}<tr><td colspan="2" style="border-top:1px solid #ddd;padding:0;height:6px"></td></tr>${moneyRows}</table>`,
+            `No Stripe payment: this order was settled in full by ${creditsUsed ? "day camp credits" : "coupon"} (order ${freeOrderId}). ` +
+            `<a href="https://www.northernvirginiaperformingarts.org/register/admin/">Admin dashboard</a>`,
+          ].join("<br><br>"),
+        });
+      }
+    } catch (e) { console.error("free order: admin notify failed:", e.message); }
     try {
       const held = await svc("hold_items_admin", { p_hold_id: hold_id });
       if (Array.isArray(held) && held.length) await svc("mark_registered", { p_email: email, p_items: held });
