@@ -865,13 +865,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       var items = c.items.filter(function(it){ return !!it.past === past; });
       if (!items.length) return '';
       // One or two classes on the books: offer the next one at what it adds
-      // to the bundle (CJ, Sep 14 2026 — 1 class $90, 2 $150, 3 $180 a month,
+      // to the bundle (CJ, Sep 14 2026 - 1 class $90, 2 $150, 3 $180 a month,
       // so a second is $60 more and a third $30). The checkout prices it that
       // way on its own once it sees the running subscription.
       var n = c.classes || 0, first = esc(c.name.split(' ')[0]);
       var nudge = (!past && n >= 1 && n < 3)
         ? '<a class="item nudgeItem" href="/register/?season=classes"><b>' +
-          (n === 1 ? 'Add a second class for ' + first + ' — just $60 more a month' : 'A third class for ' + first + ' is only $30 more a month') +
+          (n === 1 ? 'Add a second class for ' + first + ': just $60 more a month' : 'A third class for ' + first + ' is only $30 more a month') +
           ' →</b><span>' + (n === 1 ? '2 classes are $150/mo' : '3 classes are $180/mo') + ', same monthly bill</span></a>'
         : '';
       return '<div class="card"><div class="camper">' + esc(c.name) + '</div>' +
@@ -915,7 +915,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
   // Live billing from Stripe: what will be charged and what has been. The
   // server omits the whole block when the read-only Stripe key is not
-  // configured, and this renders nothing — never a broken section.
+  // configured, and this renders nothing - never a broken section.
   function money(c){ return '$' + (c / 100).toFixed(2); }
   function renderPayments(){
     var p = DATA && DATA.payments;
@@ -926,7 +926,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         return '<div class="item"><b>' + money(u.amount_cents) + ' on ' + fmtDay(u.date) + '</b>' +
           '<span>' + esc(u.desc) + (u.renews ? ' · renews monthly' : '') + '</span></div>';
       }).join('');
-      // The last row of a finite plan is the finish line — name it.
+      // The last row of a finite plan is the finish line - name it.
       var last = p.upcoming[p.upcoming.length - 1];
       if (last && last.ends) {
         html += '<div class="empty" style="font-size:12.5px;margin-top:10px">That last one is your final payment. Nothing is charged after it.</div>';
@@ -940,7 +940,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
             (h.last4 ? ' · card ending ' + esc(h.last4) : '') + '</span></div>';
         }).join('');
     }
-    // Self-serve card management — Stripe-hosted, and locked down to
+    // Self-serve card management - Stripe-hosted, and locked down to
     // updating the payment method + viewing invoices (no cancelling).
     html += '<button class="act" id="cardBtn" style="margin-top:14px">UPDATE PAYMENT METHOD</button>' +
       '<div class="empty" style="font-size:12px;margin-top:8px">Opens Stripe\u2019s secure page. The new card is used for all future payments.</div>';
@@ -958,7 +958,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     });
   }
 
-  // Shared authed POST — same header/body split every action on this page uses.
+  // Shared authed POST - same header/body split every action on this page uses.
   function apiPost(payload){
     if (PORTAL_TOKEN) payload.portal_token = PORTAL_TOKEN;
     return fetch('/api/reg-account', {
@@ -971,7 +971,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
 
   // ── referral tickets: earned by sharing your link (or by joining through
-  // one). Redeemed in person — a parent taps REDEEM at the box office with
+  // one). Redeemed in person - a parent taps REDEEM at the box office with
   // staff watching, and the ticket flips to used for everyone.
   function fmtDay(iso){
     var d = new Date(iso);
@@ -1038,7 +1038,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         // One heading per date, its sessions underneath. Every date runs
         // three age bands (5–9, 9–12, 12–15) and the themed ones share
         // names across dates, so the date is the heading and the band is
-        // what tells the rows apart — the name alone never could.
+        // what tells the rows apart - the name alone never could.
         var byDate = [];
         camps.forEach(function(a){
           var key = a.starts_on || a.when || a.name;
@@ -1047,7 +1047,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           g.rows.push(a);
         });
         box.innerHTML = '<div class="pickList">' +
-          '<div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:6px">Choose up to <b>' + kid.day + '</b> day' + (kid.day === 1 ? '' : 's') + ' for ' + esc(kid.name) + '. Each date runs three age groups — pick the one for ' + esc(kid.name.split(' ')[0]) + '.</div>' +
+          '<div style="font-size:12.5px;color:var(--ink-dim);margin-bottom:6px">Choose up to <b>' + kid.day + '</b> day' + (kid.day === 1 ? '' : 's') + ' for ' + esc(kid.name) + '. Each date runs three age groups: pick the one for ' + esc(kid.name.split(' ')[0]) + '.</div>' +
           byDate.map(function(g){
             return '<div style="font-size:12px;font-weight:700;margin:10px 0 2px">' + esc(g.label) + '</div>' +
               g.rows.map(function(a){
@@ -1174,7 +1174,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
   // Email first, then the card decides. The probe (reg-account action:probe)
-  // answers "does this email exist, and does it have a password" — so an
+  // answers "does this email exist, and does it have a password" - so an
   // OTP-era family is routed straight to the code flow they already know,
   // and never has to guess whether they count as "first time".
   var PROBE = null;
@@ -1241,7 +1241,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
   $('codeGo').onclick = function(){
     var token = ($('codeInput').value || '').replace(/\D/g, '');
-    // OTP length is a project setting (8 digits here) — accept a range.
+    // OTP length is a project setting (8 digits here) - accept a range.
     if (token.length < 6 || token.length > 12) { authMsg('Enter the code exactly as it appears in the email.'); return; }
     var b = this; b.disabled = true;
     sb.auth.verifyOtp({ email: theEmail(), token: token, type: 'email' }).then(function(res){
@@ -1260,7 +1260,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('resendCode').onclick = function(){ sendCode(); authMsg('', 'New code sent.'); };
   $('backBtn').onclick = function(){ authStep('aEmail'); $('email').focus(); };
 
-  // Optional password after a code sign-in — offered once, never required.
+  // Optional password after a code sign-in - offered once, never required.
   function offerPassword(){
     if (FORGOT) { $('nudge').style.display = ''; return; }
     try { if (localStorage.getItem('nv_pw_nudge')) return; } catch(e){}
@@ -1271,7 +1271,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var pw = $('nudgePw').value;
     if (!pw || pw.length < 8) { $('nudgeErr').textContent = '8 characters or more.'; return; }
     var b = this; b.disabled = true;
-    // pw_set is what the login card's probe trusts — encrypted_password is a
+    // pw_set is what the login card's probe trusts - encrypted_password is a
     // placeholder for every user and says nothing about a real password.
     sb.auth.updateUser({ password: pw, data: { pw_set: '1' } }).then(function(res){
       b.disabled = false;

@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
-<title>Disney's Frozen Jr. — Fall Season — Enroll Now — NOVAPA</title>
+<title>Disney's Frozen Jr. | Fall Season | Enroll Now | NOVAPA</title>
 <!-- A/B variant checkout (1 Sep 2026): Banjo's one-page design wired to the
      real rails via /api/frozen-pay. Tested against the register app at $50/day
      each. Deliberate departures from the design file, all reality-driven:
      no split-in-two (Todd's rule: installments must clear before rehearsals,
-     which start Sep 15/16 — no plan can exist), no save-5% math ($695 IS the
+     which start Sep 15/16 - no plan can exist), no save-5% math ($695 IS the
      price), an age selector so the cast/night is truthful BEFORE payment,
      real per-cast seat counts (never fake the bar), and the Mermaid order
      bump deferred. Full casts route into /api/reg-waitlist. -->
@@ -155,12 +155,12 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
 
     <div class="price-block">
       <div class="price-row"><span class="now" id="price-now">$695</span></div>
-      <p class="price-note">Pay once. That's the whole season &mdash; every rehearsal and the show.</p>
+      <p class="price-note">Pay once. That's the whole season: every rehearsal and the show.</p>
     </div>
 
     <label class="terms">
       <input type="checkbox" id="f-terms" checked>
-      <span>I agree to NOVAPA's <a href="/terms" target="_blank">terms</a>, <a href="/policies" target="_blank">policies</a>, and <a href="/terms#photo" target="_blank">Photo &amp; Media Release</a> &mdash; all sales are final (no refunds).</span>
+      <span>I agree to NOVAPA's <a href="/terms" target="_blank">terms</a>, <a href="/policies" target="_blank">policies</a>, and <a href="/terms#photo" target="_blank">Photo &amp; Media Release</a>: all sales are final (no refunds).</span>
     </label>
 
     <div id="pay-el" class="hide"></div>
@@ -174,7 +174,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
 
   <p class="mini-quote">
     <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-    "He'd never been in a play before. <b>After the first day he was all smiles.</b>" &mdash; Stefania Whittington, NOVAPA Parent
+    "He'd never been in a play before. <b>After the first day he was all smiles.</b>" - Stefania Whittington, NOVAPA Parent
   </p>
   </div>
 
@@ -185,7 +185,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
       <p><b id="done-kid"></b> has a spot in <b id="done-band"></b>.</p>
       <p id="done-night"></p>
       <p>Your confirmation and receipt are on the way to <b id="done-email"></b>. If it's not in your inbox in a few minutes, check spam or promotions.</p>
-      <p style="margin-top:16px">Questions before the first rehearsal? Reply to the confirmation email &mdash; a real person reads it.</p>
+      <p style="margin-top:16px">Questions before the first rehearsal? Reply to the confirmation email: a real person reads it.</p>
       <div style="margin-top:22px;border-top:1px solid var(--line-light);padding-top:16px">
         <p style="font-size:13.5px;color:var(--muted-light)">Quick one: how did you hear about us?</p>
         <div id="heardChips" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px">
@@ -211,7 +211,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
 <script>
 (function(){
   var $ = function(id){ return document.getElementById(id); };
-  // Stripe PUBLISHABLE key — same account as the register app (register/config.js)
+  // Stripe PUBLISHABLE key - same account as the register app (register/config.js)
   var PK = "pk_live_51TvMGTGWP2ZbtaszSIFv1Ee0L7eyPtRVfvkaaR7xtnLTEMtGvngtbTwJngTlJKq70OkQ9LyGH5xt0y4JfziZVdTx001CwdMSlg";
   var state = { bands: null, band: null, stripe: null, elements: null, clientSecret: null };
 
@@ -302,7 +302,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
     if (!open) {
       if (strict) {
         $('band-line').innerHTML = '<b>' + label(strict).replace(/^the /, 'The ') + ' is full.</b> ' +
-          'Join the waitlist and we’ll email you first if a spot opens — fill in your details above and press the button below.';
+          'Join the waitlist and we’ll email you first if a spot opens: fill in your details above and press the button below.';
         $('band-line').className = 'band-line on';
         $('pay-btn').textContent = 'Join the waitlist';
         state.waitlistBand = strict;
@@ -312,7 +312,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
     state.waitlistBand = null;
     state.band = open;
     $('price-now').textContent = '$' + Math.round(open.price_cents / 100);
-    $('band-line').innerHTML = 'At age ' + age + ', your child is in <b>' + label(open) + '</b> — ' +
+    $('band-line').innerHTML = 'At age ' + age + ', your child is in <b>' + label(open) + '</b>: ' +
       '<b>' + open.day + ' ' + open.time.replace(' EDT','') + '</b>, ' + open.dates + '.';
     $('band-line').className = 'band-line on';
     if (open.taken != null && open.capacity) {
@@ -359,9 +359,9 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ activity_id: state.waitlistBand.activity_id, camper_name: v.kid, parent_name: v.parent, email: v.email })
       }).then(function(r){ return r.json(); }).then(function(d){
-        if (d && (d.ok || d.open)) { btn.textContent = d.open ? 'A spot just opened — reload' : 'You’re on the list ✓'; }
-        else { btn.disabled = false; btn.textContent = 'Join the waitlist'; showErr((d && d.error) || 'Something went wrong — try again.'); }
-      }).catch(function(){ btn.disabled = false; btn.textContent = 'Join the waitlist'; showErr('Something went wrong — try again.'); });
+        if (d && (d.ok || d.open)) { btn.textContent = d.open ? 'A spot just opened: reload' : 'You’re on the list ✓'; }
+        else { btn.disabled = false; btn.textContent = 'Join the waitlist'; showErr((d && d.error) || 'Something went wrong: try again.'); }
+      }).catch(function(){ btn.disabled = false; btn.textContent = 'Join the waitlist'; showErr('Something went wrong: try again.'); });
       return;
     }
 
@@ -374,7 +374,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
         confirmParams: { return_url: location.origin + '/frozen-checkout?paid=1' } })
         .then(function(result){
           if (result.error) {
-            btn.disabled = false; btn.textContent = 'Pay $' + Math.round(state.band.price_cents/100) + ' — lock the spot';
+            btn.disabled = false; btn.textContent = 'Pay $' + Math.round(state.band.price_cents/100) + ': lock the spot';
             return showErr(result.error.message || 'Your payment could not be completed.');
           }
           try {
@@ -387,7 +387,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
           try { window.posthog && posthog.capture('reg_completed', { funnel: 'frozen-checkout', activity_id: state.band.activity_id, value: state.band.price_cents / 100 }); } catch(e){}
           $('done-kid').textContent = v.kid;
           $('done-band').textContent = label(state.band);
-          $('done-night').innerHTML = 'Rehearsals are <b>' + state.band.day + 's, ' + state.band.time.replace(' EDT','') + '</b> — ' + state.band.dates + '.';
+          $('done-night').innerHTML = 'Rehearsals are <b>' + state.band.day + 's, ' + state.band.time.replace(' EDT','') + '</b>, ' + state.band.dates + '.';
           $('done-email').textContent = v.email;
           $('view-checkout').className = 'hide';
           $('view-done').className = '';
@@ -426,17 +426,17 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
         state.elements.create('payment', { layout: 'tabs' }).mount('#pay-el');
         $('pay-el').className = '';
         btn.disabled = false;
-        btn.textContent = 'Pay $' + Math.round(state.band.price_cents/100) + ' — lock the spot';
+        btn.textContent = 'Pay $' + Math.round(state.band.price_cents/100) + ': lock the spot';
         $('pay-el').scrollIntoView({ behavior: 'smooth', block: 'center' });
       })
       .catch(function(){ btn.disabled = false; btn.textContent = 'Continue to payment'; showErr('Network error. Please try again.'); });
   });
 
   function routeBandAfterSoldOut(){
-    // seat vanished between page load and click — refresh counts and re-route
+    // seat vanished between page load and click: refresh counts and re-route
     fetch('/api/frozen-pay').then(function(r){ return r.json(); }).then(function(d){
       state.bands = d.bands || []; state.clientSecret = null; routeBand();
-      showErr('That cast just filled — here’s the updated availability.');
+      showErr('That cast just filled: here’s the updated availability.');
     });
   }
   document.getElementById('heardChips').addEventListener('click', function(e){
@@ -451,7 +451,7 @@ fbq('track', 'ViewContent', { content_name: 'Frozen Fall 2026 checkout', content
     return code === 'bad_phone' ? 'Please add a 10-digit phone number.'
       : code === 'bad_email' ? 'Please enter a valid email.'
       : code === 'missing_name' ? 'Please add your name and your child’s name.'
-      : 'Something went wrong — please try again.';
+      : 'Something went wrong: please try again.';
   }
 })();
 </script>

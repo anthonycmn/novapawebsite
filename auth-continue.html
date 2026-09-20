@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Continue to sign in — NOVAPA</title>
+<title>Continue to sign in | NOVAPA</title>
 <!--
   Why this page exists (Sep 9 2026): sign-in and password-reset emails used
   to link straight to the Supabase verify endpoint. Those links are one-time,
-  and several families' email providers prefetch every link on arrival — the
+  and several families' email providers prefetch every link on arrival - the
   scanner's GET consumed the token, so the family's real click always landed
   on "link expired" (Kelly Watson, Brian Carey). The auth email templates now
   link HERE instead, carrying token_hash/type/redirect_to. Loading this page
   consumes nothing; only the button click (JS navigation, which scanners
   don't execute) hits the verify endpoint. Do not turn the button into a
-  plain <a href> and do not auto-redirect — either one re-opens the bug.
+  plain <a href> and do not auto-redirect - either one re-opens the bug.
 -->
 <style>
   :root{ --navy:#08111F; --navy2:#0F1E36; --gold:#C8892A; --gold2:#E8B84B; --line:rgba(255,255,255,0.14); }

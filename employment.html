@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Employment | Northern Virginia Performing Arts</title>
   <link rel="canonical" href="https://novapa.org/employment.html">
-  <meta name="description" content="Join the NoVAPA team — tell us the roles you're interested in, your availability, and send us your résumé. We keep every submission on file for future openings.">
+  <meta name="description" content="Join the NoVAPA team: tell us the roles you're interested in, your availability, and send us your résumé. We keep every submission on file for future openings.">
   <link rel="stylesheet" href="/nav.css">
   <link rel="stylesheet" href="reg-banner.css">
   <link rel="icon" type="image/png" href="/favicon.png">
@@ -90,7 +90,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <div class="e-hero">
   <div class="e-eyebrow">Join Our Team</div>
   <h1>Work at NOVAPA</h1>
-  <p>We're always looking for teaching artists, production crew, and camp staff who love working with young performers. Tell us what you're interested in — we keep every submission on file and reach out when a matching role opens.</p>
+  <p>We're always looking for teaching artists, production crew, and camp staff who love working with young performers. Tell us what you're interested in: we keep every submission on file and reach out when a matching role opens.</p>
 </div>
 
 <div class="e-wrap">
@@ -157,7 +157,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   </div>
 
   <div class="e-done" id="doneCard">
-    <h2>Thank you &mdash; we've got it.</h2>
+    <h2>Thank you, we've got it.</h2>
     <p>Your information is on file with our team. We'll reach out directly when a role matching your interests and availability opens up.</p>
   </div>
 </div>
@@ -171,7 +171,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         </div>
         <div class="footer-brand-name">Northern Virginia<br/>Performing Arts<span>NoVAPA &middot; Leesburg, VA</span></div>
       </a>
-      <p class="footer-tagline">Premier performing arts education for ages 2&ndash;18+. Classes, summer camps, productions, and college audition coaching &mdash; every stage of the journey.</p>
+      <p class="footer-tagline">Premier performing arts education for ages 2&ndash;18+. Classes, summer camps, productions, and college audition coaching: every stage of the journey.</p>
       <div class="footer-contact-block">
         <a class="footer-contact-link" href="mailto:info@novapa.org"><span class="fc-icon">&#9993;</span>info@novapa.org</a>
         <a class="footer-contact-link" href="tel:5715712120"><span class="fc-icon">&#9742;</span>(571) 571-2120</a>
@@ -223,10 +223,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <script>
 (function(){
   var POSITIONS = [
-    'Teaching Artist — Theatre / Acting',
-    'Teaching Artist — Dance',
-    'Teaching Artist — Voice / Music',
-    'Teaching Artist — Musical Theatre',
+    'Teaching Artist: Theatre / Acting',
+    'Teaching Artist: Dance',
+    'Teaching Artist: Voice / Music',
+    'Teaching Artist: Musical Theatre',
     'Music Director / Accompanist',
     'Choreographer',
     'Director / Assistant Director',
@@ -286,7 +286,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var positions = picked('pos');
     if (!positions.length) return fail('Please choose at least one position you’re interested in.');
     var f = $('resume').files[0];
-    if (f && f.size > MAX_BYTES) return fail('That résumé is larger than 3 MB — please attach a smaller file.');
+    if (f && f.size > MAX_BYTES) return fail('That résumé is larger than 3 MB: please attach a smaller file.');
 
     $('submitBtn').disabled = true; $('submitBtn').textContent = 'Sending…';
 
@@ -309,8 +309,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     }).then(function(out){
       if (!out.ok || out.j.error) {
         var m = {
-          resume_type: 'That file type isn’t supported — please attach a PDF, Word doc, or text file.',
-          resume_too_big: 'That résumé is larger than 3 MB — please attach a smaller file.',
+          resume_type: 'That file type isn’t supported: please attach a PDF, Word doc, or text file.',
+          resume_too_big: 'That résumé is larger than 3 MB: please attach a smaller file.',
           resume_upload_failed: 'We couldn’t save that résumé. Try again, or submit without it and email it to info@novapa.org.',
           email_invalid: 'Please enter a valid email address.',
           position_required: 'Please choose at least one position.'
@@ -323,7 +323,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       $('doneCard').style.display = 'block';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }).catch(function(){
-      fail('Network error — please check your connection and try again.');
+      fail('Network error: please check your connection and try again.');
     });
   });
 })();

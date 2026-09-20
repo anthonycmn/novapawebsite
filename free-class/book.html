@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pick your child's free class — NOVAPA</title>
+<title>Pick your child's free class | NOVAPA</title>
 <meta name="robots" content="noindex">
 <!-- Free class funnel, step 2 of 3, matching the BFA Figma booking frame
      (2271-208). Classes and dates come live from /api/reg-freeclass: the
@@ -80,7 +80,7 @@
     .cols { grid-template-columns:1fr; gap:34px; }
     /* A grid item defaults to min-width:auto, so the calendar column refused
        to shrink below its 5x128px min-content. overflow-x on .cal never got
-       a chance — the card grew past the viewport and the whole PAGE scrolled
+       a chance - the card grew past the viewport and the whole PAGE scrolled
        sideways instead, which is what broke this on phones. */
     .cols > * { min-width:0; }
     .cal { grid-template-columns:repeat(5,minmax(128px,1fr)); overflow-x:auto; padding-bottom:6px; }
@@ -123,7 +123,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 <div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA"></div>
 <div class="head">
   <h1>Pick your child&rsquo;s free class</h1>
-  <p>Takes about a minute. No payment, no card, no commitment &mdash; we just need to know who&rsquo;s coming and when, so we can hold their seat.</p>
+  <p>Takes about a minute. No payment, no card, no commitment: we just need to know who&rsquo;s coming and when, so we can hold their seat.</p>
 </div>
 
 <div class="widget">

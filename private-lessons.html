@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Book Private Lessons | Northern Virginia Performing Arts</title>
-<meta name="description" content="Choose your coach, claim one weekly time slot, and lock it in for the semester. Private lessons at NoVAPA — same day, same time, every week.">
+<meta name="description" content="Choose your coach, claim one weekly time slot, and lock it in for the semester. Private lessons at NoVAPA: same day, same time, every week.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -215,7 +215,7 @@ footer a{ color:var(--gold3); text-decoration:none; }
   .fields{ grid-template-columns:1fr; }
 
   /* On a phone the summary becomes a slim pay bar. The line-item rows are
-     redundant there — every choice is already on screen just above it — and
+     redundant there - every choice is already on screen just above it - and
      leaving them in pushed the pay button off the bottom of the viewport. */
   .summary{ position:fixed; inset:auto 0 0 0; top:auto; border-radius:18px 18px 0 0;
     padding:12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
@@ -273,7 +273,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 <section class="hero">
   <div class="eyebrow">Private Lessons &middot; One-on-One</div>
   <h1>Your coach. Your time.<br><em>Every single week.</em></h1>
-  <p>Pick a coach, claim one weekly slot, and it&rsquo;s yours for the whole run &mdash; same day, same time, no rescheduling scramble. Reserve it in about a minute.</p>
+  <p>Pick a coach, claim one weekly slot, and it&rsquo;s yours for the whole run: same day, same time, no rescheduling scramble. Reserve it in about a minute.</p>
 </section>
 
 <div class="rail" id="book">
@@ -295,7 +295,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
     <section class="step" id="step-slot" data-locked="1">
       <div class="step-head"><span class="step-num">Step 02</span><h2>Claim your weekly time</h2></div>
-      <p class="step-sub">Pick one time. It becomes yours every week for the plan you choose next &mdash; nobody else can book it.</p>
+      <p class="step-sub">Pick one time. It becomes yours every week for the plan you choose next: nobody else can book it.</p>
       <div id="slots"></div>
     </section>
 
@@ -348,7 +348,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
 <div class="trust">
   <div><b>The slot is really yours</b><p>Once you pay, that weekly time is removed from the calendar for everyone else. No double-booking, no weekly re-scheduling.</p></div>
-  <div><b>One payment, whole run</b><p>Pay for the semester or the pack in a single checkout &mdash; the discount is already applied to the price you see.</p></div>
+  <div><b>One payment, whole run</b><p>Pay for the semester or the pack in a single checkout: the discount is already applied to the price you see.</p></div>
   <div><b>Studio or virtual</b><p>Meet at the National Conference Center in Leesburg, or over video. Switch anytime by emailing us.</p></div>
   <div><b>Not sure yet?</b><p>Start with a <a href="https://calendly.com/novapa/free-consultation-15-minutes" target="_blank" rel="noopener" style="color:var(--gold3)">free 15-minute consult</a> or browse <a href="coaching.html" style="color:var(--gold3)">all coaching services</a>.</p></div>
 </div>
@@ -459,7 +459,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       return '<div class="day"><div class="day-name">' + DAYS[d] + "s</div>" +
         times.map(function(s){
           // Say what's actually true. A slot sold for the semester can still
-          // have a short pack free before term starts — calling that "Open"
+          // have a short pack free before term starts - calling that "Open"
           // walks the family into two dead plan cards.
           var all = state.catalog.plans.length;
           var ok = state.catalog.plans.filter(function(p){
@@ -509,7 +509,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (!q || !q.available){
         var why = q && q.reason === "slot_taken"
             ? "This time is already booked from " + prettyDate(q.blocked[0])
-          : q && q.reason === "term_started" ? "Semester is under way — choose a pack below"
+          : q && q.reason === "term_started" ? "Semester is under way: choose a pack below"
           : q && q.reason === "plan_over" ? "Not running right now"
           : "Not available";
         return '<button type="button" class="plan" disabled aria-label="' +
@@ -704,7 +704,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         showError(ERRORS[res.data.error] ||
           "We couldn&rsquo;t start checkout. Please try again, or email " +
           "<a href='mailto:info@novapa.org'>info@novapa.org</a>.");
-        // A taken slot means our picture of the calendar is stale — reload it.
+        // A taken slot means our picture of the calendar is stale: reload it.
         if (res.data.error === "slot_taken" || res.data.error === "contended"){
           return fetch("/api/lessons/catalog").then(function(r){ return r.json(); })
             .then(function(data){
@@ -720,13 +720,13 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       })
       .catch(function(){
         state.busy = false;
-        showError("Network trouble &mdash; please try again.");
+        showError("Network trouble: please try again.");
       })
       .then(refresh);
   });
 
   if (new URLSearchParams(location.search).get("cancelled")){
-    showError("Checkout was cancelled &mdash; nothing was charged and your time is back on the board.");
+    showError("Checkout was cancelled: nothing was charged and your time is back on the board.");
   }
 
   refresh();

@@ -92,7 +92,7 @@
     padding:8px 10px; border-radius:8px; border:1px solid var(--line);
     background:rgba(8,17,31,0.6); color:#fff; font-size:13px; font-family:inherit; }
   .pe input:focus, .pe select:focus, #s-products input:focus, .ch-note:focus { outline:none; border-color:#E8B84B; }
-  /* chase notes run to a paragraph — they need to wrap and breathe, not sit
+  /* chase notes run to a paragraph - they need to wrap and breathe, not sit
      in a one-line box that hides everything past the first few words */
   .ch-note { width:100%; min-height:62px; font-size:12.5px; line-height:1.5; resize:vertical;
     font-family:inherit; overflow:hidden; }
@@ -107,7 +107,7 @@
     gap:16px; padding:8px 0 4px; align-items:start; }
   @media (max-width:1100px) { .camp-panel { grid-template-columns:1fr; } }
   /* min-width:0 or the grid item keeps its default min-width:auto and refuses
-     to shrink below the widest table row — the registrations table then grew
+     to shrink below the widest table row - the registrations table then grew
      past its card and painted its `paid` / `order` columns on top of the
      Family card next to it. Same trap as the free-class booking grid. */
   .cp-block { border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:rgba(8,17,31,0.35); color:var(--ink); min-width:0; overflow:hidden; }
@@ -148,7 +148,7 @@
   .bandrow .bs { color:var(--dim); font-size:11.5px; flex:1; min-width:120px; }
   .bandrow.off .bn, .bandrow.off .bs { opacity:.45; }
   /* the switch is "are we selling this" (bookable). Turning it off asks first
-     when people are already registered — one stray click once pulled a teen
+     when people are already registered - one stray click once pulled a teen
      production with 19 kids in it. */
   .btog { position:relative; width:38px; height:21px; border-radius:999px; border:1px solid var(--line);
     background:rgba(255,255,255,0.06); flex:0 0 auto; transition:background .15s; cursor:pointer; padding:0; }
@@ -340,7 +340,7 @@
       <h2>Revenue (Stripe)</h2>
       <div class="stats" id="stRevenue" style="margin-bottom:14px"></div>
       <h2>Sellout Progress</h2>
-      <p class="sub" style="margin:-6px 0 10px">Click a ring to drill down — program &rsaquo; show &rsaquo; age group &rsaquo; live roster.</p>
+      <p class="sub" style="margin:-6px 0 10px">Click a ring to drill down: program &rsaquo; show &rsaquo; age group &rsaquo; live roster.</p>
       <div id="stFill" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px"></div>
       <div id="ovSub"><div></div></div>
     </section>
@@ -353,7 +353,7 @@
     <section class="sec" id="s-dcu">
       <h2>DC Unifieds</h2>
       <p class="sub" style="margin:-6px 0 12px">College audition weekend, Oct 15&ndash;18. Sold through dcunifieds.com
-      on our own checkout &mdash; same Stripe, same books. Marketing prices on that site are separate from these
+      on our own checkout: same Stripe, same books. Marketing prices on that site are separate from these
       database prices.</p>
       <div id="dcuTiles" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
       <div class="wrap-scroll"><table id="tblDcu"></table></div>
@@ -362,8 +362,8 @@
     <section class="sec" id="s-leads">
       <h2>Leads</h2>
       <p class="sub" style="margin:-6px 0 14px">Everyone who raised a hand on a public form but hasn&rsquo;t bought yet.
-      Drag a card between columns to move the lead down the pipeline &mdash; click one to open everything we know.
-      Nothing here is a registration &mdash; these are people to call.</p>
+      Drag a card between columns to move the lead down the pipeline: click one to open everything we know.
+      Nothing here is a registration: these are people to call.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 12px">
         <div class="ldpills" id="ldBoards"></div>
         <span class="sub" id="ldStatus"></span>
@@ -377,20 +377,20 @@
     <section class="sec" id="s-balances">
       <h2>Regpack chase</h2>
       <p class="sub" style="margin:-6px 0 12px">Families still moving off Regpack billing onto ours. This page is
-      temporary by design &mdash; it retires when the last family converts. Live web money lives in Cash flow
+      temporary by design: it retires when the last family converts. Live web money lives in Cash flow
       and Accounting.</p>
       <div class="stats" id="stChase" style="margin-bottom:14px"></div>
       <div id="chaseList"></div>
     </section>
 
     <section class="sec" id="s-inventory">
-      <h2>Programs — everything we sell</h2>
+      <h2>Programs: everything we sell</h2>
       <p class="sub" style="margin:-6px 0 10px">Click any program row or summer grid cell to open its live roster.</p>
       <div class="stats" id="stInv" style="margin-bottom:6px"></div>
       <p class="sub" id="invNote" style="margin:0 0 16px"></p>
       <h2>Summer Camps</h2>
       <div class="wrap-scroll"><table id="tblSummer"></table></div>
-      <h2>Teen Conservatory &mdash; Mean Girls</h2>
+      <h2>Teen Conservatory: Mean Girls</h2>
       <div class="stats" id="stMG" style="margin-bottom:12px"></div>
       <div class="wrap-scroll"><table id="tblMG"></table></div>
       <div id="invGroups"></div>
@@ -417,9 +417,9 @@
     </section>
 
     <section class="sec" id="s-products">
-      <h2>Products — everything we sell</h2>
+      <h2>Products: everything we sell</h2>
       <p class="sub" style="margin:-6px 0 10px">Grouped the same way as the Overview rings. Click a category to
-      open it, then a product to edit — or use its &#8943; menu to duplicate or remove. This database is the
+      open it, then a product to edit, or use its &#8943; menu to duplicate or remove. This database is the
       source of truth: changes flow to the website checkout and CJ's staff portal. Price changes need a reason
       and are logged, and anything with registrations retires instead of deleting.</p>
       <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
@@ -445,13 +445,13 @@
 
     <section class="sec" id="s-starpages">
       <h2>Star Page Ads</h2>
-      <p class="sub" style="margin:-6px 0 10px">Playbill ad orders from /star-pages (currently Dear Evan Hansen). Photo links are good for an hour — reopen the tab for fresh ones. Only <b>paid</b> ads go in the playbill.</p>
+      <p class="sub" style="margin:-6px 0 10px">Playbill ad orders from /star-pages (currently Dear Evan Hansen). Photo links are good for an hour: reopen the tab for fresh ones. Only <b>paid</b> ads go in the playbill.</p>
       <div id="spStatus" class="sub"></div>
       <div class="wrap-scroll"><table id="tblStars"></table></div>
     </section>
 
     <section class="sec" id="s-hiring">
-      <h2>Hiring — employment interest form</h2>
+      <h2>Hiring: employment interest form</h2>
       <div class="stats" id="hrStats" style="margin-bottom:14px"></div>
       <div class="wrap-scroll"><table id="tblHiring"></table></div>
       <p class="sub" style="margin-top:10px">Submissions from <a href="/employment" target="_blank" style="color:var(--gold)">novapa.org/employment</a>.
@@ -478,7 +478,7 @@
         <h2>By program / show</h2>
         <div class="wrap-scroll"><table id="tblAccProg"></table></div>
         <h2 style="margin-top:22px">Reconciliation</h2>
-        <p class="sub" style="margin:-6px 0 10px">Always the whole selected year &mdash; payouts and fees can't be split by a date window, so the date filter above does not apply here.</p>
+        <p class="sub" style="margin:-6px 0 10px">Always the whole selected year: payouts and fees can't be split by a date window, so the date filter above does not apply here.</p>
         <div class="wrap-scroll"><table id="tblAccRec"></table></div>
         <h2 style="margin-top:22px">Transactions</h2>
         <div class="wrap-scroll"><table id="tblAccTx"></table></div>
@@ -512,7 +512,7 @@
           </label>
         </div>
         <div class="cf-row">
-          <label style="flex:1">Note <span class="opt">(why — shows on the order)</span><input id="crNote" placeholder="Remaining balance from Lincoln's 2026 withdrawal"></label>
+          <label style="flex:1">Note <span class="opt">(why: shows on the order)</span><input id="crNote" placeholder="Remaining balance from Lincoln's 2026 withdrawal"></label>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <button class="tag" id="crMake" style="cursor:pointer;border:0;padding:10px 20px;font-size:14px">Create code</button>
@@ -529,10 +529,10 @@
     </section>
 
     <section class="sec" id="s-referrals">
-      <h2>Referrals — 2 free tickets each side</h2>
+      <h2>Referrals: 2 free tickets each side</h2>
       <p class="sub">A row appears when a brand-new family completes a paid registration through another
       family's share link. Both families are owed <b>2 tickets to any show</b>. Families see and redeem
-      their own tickets from My NOVAPA at the box office — the &#8943; menu here is the manual override
+      their own tickets from My NOVAPA at the box office: the &#8943; menu here is the manual override
       (mark redeemed, or undo a mistake).</p>
       <p style="margin:0 0 12px"><button id="refAdd">+ Add referral manually</button>
       <span class="sub">For when a referral didn't record itself: $0 orders and first-month-free class
@@ -555,9 +555,9 @@
         <div class="wrap-scroll"><table id="tblCfMonth"></table></div>
         <h2 style="margin-top:22px">Every scheduled payment</h2>
         <div class="wrap-scroll"><table id="tblCfDetail"></table></div>
-        <p class="sub" style="margin-top:12px">Every future auto-billing pull Stripe currently has on file &mdash; camp installments, class tuition and Regpack
+        <p class="sub" style="margin-top:12px">Every future auto-billing pull Stripe currently has on file: camp installments, class tuition and Regpack
         migration plans. Everything sold through our own checkout bills on the <b>1st of the month</b>. <b>Migration plans do not</b>: they were set up through
-        Stripe payment links, which bill monthly on whatever day the family first paid, so those pulls land throughout the month (verified Sep 4 &mdash; 22 plans,
+        Stripe payment links, which bill monthly on whatever day the family first paid, so those pulls land throughout the month (verified Sep 4: 22 plans,
         roughly $3.3k/month, billing on the 6th through the 31st). This is <em>scheduled</em> cash, not guaranteed: a failed card keeps appearing until Stripe's
         retries give up, and nothing here includes new registrations that haven't happened yet.</p>
       </div>
@@ -575,7 +575,7 @@
   // For writing into an element that might not be there. The inventory tab
   // spent a while showing only its summer grid because one id in the middle of
   // that renderer had no element behind it: the assignment threw, and every
-  // table after it — classes, camps, shows, coaching — silently never
+  // table after it - classes, camps, shows, coaching - silently never
   // rendered. A missing node should cost you that node, not the rest of the
   // page, and it should say so rather than going quiet.
   function el(id){
@@ -619,14 +619,14 @@
     var em = $('lgEmail').value.trim();
     if (!em) return;
     sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + '/register/admin/', shouldCreateUser: false } })
-      .then(function(r){ $('lgMsg').textContent = r.error ? r.error.message : 'Link sent — check email.'; });
+      .then(function(r){ $('lgMsg').textContent = r.error ? r.error.message : 'Link sent: check email.'; });
   });
   $('signOut').addEventListener('click', function(e){ e.preventDefault(); sb.auth.signOut().then(function(){ location.reload(); }); });
 
   // ---- data loading: every tab refetches on visit, every failure is
   // visible and retryable. The old boot fired six RPCs in one burst and
   // dropped any that errored (the heavy admin_inventory lost that race
-  // routinely) — a blank tab with no message was the result.
+  // routinely) - a blank tab with no message was the result.
   var INV = null;
   var lastLoad = {};   // tab -> ms timestamp of last successful load
 
@@ -665,11 +665,11 @@
 
   function loadInventory(){
     // the whole shop: admin_inventory covers capacity rows, catalog_list covers
-    // what a family can buy (coaching has no capacity row on purpose, #66) —
+    // what a family can buy (coaching has no capacity row on purpose, #66) - 
     // show the union so a missing row reads as missing, not as silence
     Promise.all([
       Promise.resolve(sb.rpc('admin_inventory')),
-      // rpc() returns a thenable builder, not a Promise — .catch does not
+      // rpc() returns a thenable builder, not a Promise - .catch does not
       // exist on it until it is wrapped (this crashed #66's version)
       Promise.resolve(sb.rpc('catalog_list', { p_ids: [] })).catch(function(){ return { data: [] }; })
     ]).then(function(res){
@@ -760,7 +760,7 @@
   });
 
   // The hiring block below is its own IIFE, so the loader it defines is not in
-  // scope here — boot() calling it directly threw a ReferenceError on every
+  // scope here - boot() calling it directly threw a ReferenceError on every
   // page load (#66). The block hands its loader out through this instead.
   var loadHiring = function(){};
 
@@ -773,14 +773,14 @@
   });
 
   function boot(){
-    // preload EVERY tab, staggered so the heavy calls don't race one another —
+    // preload EVERY tab, staggered so the heavy calls don't race one another - 
     // no tab should ever greet you with a Load button or an empty table
     ['overview','orders','balances','inventory','products','campers','hiring','referrals',
      'credits','cashflow','insurance','accounting','starpages','dcu','leads']
       .forEach(function(t, i){ setTimeout(function(){ runLoader(t); }, i * 250); });
   }
   // the tab you're looking at quietly refreshes itself once a minute, so the
-  // numbers stay live without anyone pressing anything — unless you have a
+  // numbers stay live without anyone pressing anything - unless you have a
   // roster open, because a refresh would slam it shut mid-read
   setInterval(function(){
     if (document.visibilityState !== 'visible') return;
@@ -849,7 +849,7 @@
           '<tr class="camp-det" style="display:none"><td colspan="6" style="font-size:12.5px;line-height:1.7;color:var(--dim,#8b93a7)">' +
             '<div class="camp-quick">' + (det || 'no details on file') + '</div>' +
             '<div class="camp-full"></div></td></tr>';
-      }).join('') + (rows.length > 400 ? '<tr><td class="empty">+' + (rows.length - 400) + ' more \u2014 refine search</td></tr>' : '');
+      }).join('') + (rows.length > 400 ? '<tr><td class="empty">+' + (rows.length - 400) + ' more: refine search</td></tr>' : '');
     $('tblCampers').querySelectorAll('.camp-row').forEach(function(tr){
       tr.addEventListener('click', function(e){
         if (e.target.closest('.kbwrap')) return;
@@ -859,7 +859,7 @@
   }
   // Clicking a camper opens the full picture: what they are registered for
   // (with the same move / cancel actions the rosters have), their family, and
-  // their details — editable in place. This is where a "can you switch her
+  // their details - editable in place. This is where a "can you switch her
   // class" or "her birthday is wrong" request gets handled end to end.
   function toggleCamper(tr, forceOpen, startEditing){
     var det = tr.nextElementSibling;
@@ -891,7 +891,7 @@
       '<div class="camp-panel">' +
         '<div class="cp-block"><b>Registered for</b>' +
           // One list, one truth. A Regpack or Sawyer registration IS a
-          // registration — the only difference worth showing is where the
+          // registration - the only difference worth showing is where the
           // money was paid (Jason, Aug 20: "show this as an official sign up
           // same as others, note on the billing side").
           ((regs.length || leg.length) ? '<table style="margin-top:6px">' +
@@ -972,7 +972,7 @@
   })();
   // ^ this IIFE used to run all the way to the campCopy listener 700 lines
   // down, swallowing loadRefs/loadStars/loadCredits/loadCashflow into a
-  // private scope the LOADERS map couldn't see — four dead tabs (#67).
+  // private scope the LOADERS map couldn't see - four dead tabs (#67).
 
   // ---------- accounting ----------
   var ACC = null;
@@ -993,7 +993,7 @@
     return '2026-09-14'; // classes/day camps: season start
   }
   function money0(c){ return usd2(c); }
-  // one fetch, shared by Accounting and Insurance so the two never disagree —
+  // one fetch, shared by Accounting and Insurance so the two never disagree - 
   // and shared literally: both tabs consume the same in-flight request and the
   // result is reused for 2 minutes, so opening the second tab is instant. The
   // server caches the Stripe sweep for 5 minutes on top of this.
@@ -1039,7 +1039,7 @@
   // ⋯ menus are position:fixed so no table's overflow can clip them, which
   // means the coordinates have to be set when the menu opens.
   // One delegated handler for every ⋯ menu on the page, including rows that
-  // get inserted later (rosters, order items, camper panels) — nothing needs
+  // get inserted later (rosters, order items, camper panels) - nothing needs
   // re-wiring after a re-render. Menus are fixed-position, so they are placed
   // at open time and no table's overflow can clip them.
   document.addEventListener('click', function(e){
@@ -1080,7 +1080,7 @@
       renderProducts();
     }).catch(function(){ $('prodStatus').textContent = 'network error'; });
   }
-  // Anything whose run has ended but is still on sale — offered as one click
+  // Anything whose run has ended but is still on sale - offered as one click
   // because these dates were read out of the text, not entered in the editor.
   $('prodArchive').addEventListener('click', function(){
     var stale = (PRODS || []).filter(function(p){
@@ -1129,7 +1129,7 @@
     return !!e && e < new Date().toISOString().slice(0, 10);
   }
   // Age bands are variants of one product, not separate products, so the row
-  // label inside a show or a day-camp date is the band — the messy import name
+  // label inside a show or a day-camp date is the band - the messy import name
   // moves to the subtitle.
   function bandOf(p){
     var n = p.name || '', a = (p.age_range || '').replace(/\s*yrs?\s*/i, '').trim();
@@ -1142,7 +1142,7 @@
   function prodBucket(p){
     var n = p.name || '', cat = p.category || '', id = +p.id || 0;
     if (isPastProd(p)) return ['Past & archived', endsOnOf(p).slice(0, 4)];
-    // already retired by hand (off sale AND hidden) — old imports whose dates
+    // already retired by hand (off sale AND hidden) - old imports whose dates
     // are too vague to parse live here rather than cluttering the live catalog
     if (p.hidden && p.bookable === false) return ['Past & archived', 'Retired'];
     if (cat === 'camp' && /trolls|dragon|chocolate factory/i.test(n))
@@ -1185,14 +1185,14 @@
     return a.localeCompare(b);
   }
 
-  // A product is the SHOW (or the camp day, or the class) — the thing families
+  // A product is the SHOW (or the camp day, or the class) - the thing families
   // buy. Age bands are variants switched on and off inside it, so "Frozen" is
   // one card carrying Kids / Junior / Teens / Technical Theatre, not four
   // unrelated products that happen to share a name.
   function bandLabel(p){ return bandOf(p) || (p.age_range || '').replace(/\s*yrs?\s*/i, '').trim() || 'Standard'; }
   // On sale = bookable. Whether something is listed on the website is a
   // design decision made off the dashboard, so `hidden` is no longer
-  // something this page sets — it only reports it.
+  // something this page sets - it only reports it.
   function isLive(p){ return !!p.active && p.bookable !== false; }
   // youngest first, with the crew bands after every performing band
   var BAND_RANK = { 'Kids': 0, 'Junior': 1, 'Teens': 2, 'Adult': 3, 'Adults': 3,
@@ -1210,7 +1210,7 @@
     var live = isLive(p);
     return '<div class="bandrow' + (live ? '' : ' off') + '" data-id="' + p.id + '">' +
       '<button class="btog' + (live ? ' on' : '') + '" data-id="' + p.id + '" title="' +
-        (live ? 'On sale — click to stop selling' : 'Not on sale — click to sell') + '"><i></i></button>' +
+        (live ? 'On sale: click to stop selling' : 'Not on sale: click to sell') + '"><i></i></button>' +
       '<span class="bn">' + esc(bandLabel(p)) + '</span>' +
       '<span class="bs">' + esc(p.age_range || '') + (p.age_range ? ' · ' : '') + usd(p.price_cents || 0) +
         ' · ' + taken + ' / ' + (p.capacity || 0) + ' filled' +
@@ -1254,7 +1254,7 @@
         '<div class="bandadd"><button class="btn2 ghost pc-addband">+ Add age band</button></div>' +
       '</div></div>';
   }
-  // Editing the PRODUCT: everything its bands share — the title, the schedule,
+  // Editing the PRODUCT: everything its bands share - the title, the schedule,
   // where it happens, and optionally one price or capacity for all of them.
   // Anything left blank stays whatever each band already had.
   function openProductEditor(card){
@@ -1306,7 +1306,7 @@
     host.querySelector('.pc-loc').addEventListener('change', function(){
       host.querySelector('.pc-loc-other').style.display = this.value === '__other' ? 'block' : 'none';
     });
-    // renaming rewrites the title inside each band's name — show exactly what
+    // renaming rewrites the title inside each band's name - show exactly what
     // the result will be before anyone commits to it
     function renamePrev(){
       var to = nameIn.value.trim();
@@ -1422,7 +1422,7 @@
               return cards[a].label.localeCompare(cards[b].label);
             });
             // a heading only earns its place when it says something the card
-            // titles don't (class types, coaching families) — for shows and
+            // titles don't (class types, coaching families) - for shows and
             // camp days the card title already is the heading
             return (SHOWLIKE[g] ? '' :
               '<div class="sub" style="margin:12px 0 2px;text-transform:uppercase;letter-spacing:.1em;font-size:10px">' + esc(s) + '</div>') +
@@ -1445,7 +1445,7 @@
         var have = (tp.sold || 0) + (tp.booked_offline || 0);
         if (!confirm('Stop selling "' + tp.name + '"?\n\nNobody new can register for it.' +
           (have ? '\n\n' + have + ' ' + (have === 1 ? 'person is' : 'people are') +
-            ' already registered — they keep their spots, and this does not refund or cancel anyone.' : '') +
+            ' already registered: they keep their spots, and this does not refund or cancel anyone.' : '') +
           '\n\nNothing is deleted and you can switch it back on any time.')) return;
       }
       tog.classList.toggle('on', turningOn);
@@ -1467,7 +1467,7 @@
       var seats = ids.reduce(function(n, id){ var b = prodById(id); return n + ((b && b.sold) || 0) + ((b && b.booked_offline) || 0); }, 0);
       if (!turnOn && !confirm('Stop selling every band of "' + pname + '"?\n\n' +
         ids.length + ' band' + (ids.length === 1 ? '' : 's') + ' come off sale and nobody new can register.' +
-        (seats ? '\n\n' + seats + ' already registered — they keep their spots, nothing is refunded or cancelled.' : '') +
+        (seats ? '\n\n' + seats + ' already registered: they keep their spots, nothing is refunded or cancelled.' : '') +
         '\n\nNothing is deleted and you can switch it back on any time.')) return;
       opsApi({ action: 'product_bulk_update', ids: ids, fields: { bookable: turnOn } })
         .then(function(d){ if (d.error) { alert(d.error); return; } loadProducts(); })
@@ -1581,14 +1581,14 @@
         if (!on && !confirm('Stop selling "' + p0.name + '"?\n\n' +
           'Nobody new can register for it.' +
           (have ? '\n\n' + have + ' ' + (have === 1 ? 'person is' : 'people are') +
-            ' already registered — they keep their spots, and this does not refund or cancel anyone.' : '') +
+            ' already registered: they keep their spots, and this does not refund or cancel anyone.' : '') +
           '\n\nNothing is deleted. You can put it back on sale any time.')) return;
         opsApi({ action: 'product_update', id: p0.id, fields: { bookable: on } })
           .then(function(d){ if (d.error) { alert(d.error); return; } loadProducts(); })
           .catch(function(){ alert('network error'); });
       }
       if (act.dataset.pact === 'del') {
-        if (!confirm('Delete "' + p0.name + '"?\n\nIf anyone has ever registered for it, it will be retired (off sale + hidden) instead — history is never destroyed.')) return;
+        if (!confirm('Delete "' + p0.name + '"?\n\nIf anyone has ever registered for it, it will be retired (off sale + hidden) instead: history is never destroyed.')) return;
         opsApi({ action: 'product_delete', id: p0.id }).then(function(d){
           if (d.error) { alert(d.error); return; }
           if (d.retired) alert(d.message);
@@ -1612,10 +1612,10 @@
     $('prodEditor').innerHTML = '';
   }
   // The editor expands INLINE under the clicked row (same pattern as the
-  // roster drill-down) — no jumping to the top of the page. Only "+ New
+  // roster drill-down) - no jumping to the top of the page. Only "+ New
   // product" uses the panel above the table, since it has no row to live under.
-  // One venue plus video calls — location is a pick, not prose.
-  var PE_LOCS = ['National Conference Center — Leesburg', 'Google Meet', 'Zoom'];
+  // One venue plus video calls - location is a pick, not prose.
+  var PE_LOCS = ['National Conference Center, Leesburg', 'Google Meet', 'Zoom'];
   function locSelectHtml(cur){
     var known = !cur || PE_LOCS.indexOf(cur) !== -1;
     return '<select id="pe-loc" style="width:100%">' +
@@ -1626,7 +1626,7 @@
       ' value="' + esc(!known ? cur : '') + '" placeholder="Where?">';
   }
   // The bands we actually run. A band is a variant of a product, so this is a
-  // pick list — typing "5-9 yrs" vs "5 – 9 yrs" is how the same camp day ended
+  // pick list - typing "5-9 yrs" vs "5 – 9 yrs" is how the same camp day ended
   // up looking like three unrelated products.
   var PE_BANDS = ['5 – 9 yrs', '9 – 12 yrs', '12 – 15 yrs', '12 – 18 yrs', 'Adult', 'All ages'];
   function ageSelectHtml(cur){
@@ -1792,7 +1792,7 @@
       '<div style="margin-top:12px;display:flex;gap:8px;align-items:center"><button id="pe-save" class="btn2">Save</button> ' +
       '<button id="pe-close" class="btn2 ghost">Cancel</button> ' +
       '<span class="sub" id="pe-status"></span></div></div>';
-    // schedule builder state — starts from whatever is stored, edits live here
+    // schedule builder state - starts from whatever is stored, edits live here
     var sched = mountSchedule(host, p.schedule_meta, function(){ return $('pe-cat').value; },
       function(txt){ $('pe-prev').textContent = txt || p.schedule_name || '—'; });
     $('pe-cat').addEventListener('change', sched.render);
@@ -1837,7 +1837,7 @@
   }
 
   // ---- roster row actions: move a camper, cancel + refund a seat ----
-  // Move opens a small search popover — type a few letters or tap a category
+  // Move opens a small search popover - type a few letters or tap a category
   // chip, pick the session, confirm. Targets come from OVG (the same computed
   // groups the Overview rings use), so every sellable session is findable
   // without ever rendering all 150 of them at once.
@@ -1872,7 +1872,7 @@
         '<span>' + esc(t.label) + '</span>' +
         '<span class="fill' + (full ? ' full' : '') + '">' + (full ? 'FULL · ' : '') + t.taken + '/' + t.cap + '</span></a>';
     });
-    if (list.length > 40) html += '<div class="mv-hint">' + (list.length - 40) + ' more — keep typing to narrow.</div>';
+    if (list.length > 40) html += '<div class="mv-hint">' + (list.length - 40) + ' more: keep typing to narrow.</div>';
     box.innerHTML = html;
   }
   function mvOpen(btn){
@@ -1977,13 +1977,13 @@
 
   // ---- Referrals (2 any-show tickets each side, redeemed at box office) ----
   $('refAdd').addEventListener('click', function(){
-    var who = prompt("Referrer — their email OR their share code (e.g. NEELAF716):");
+    var who = prompt("Referrer: their email OR their share code (e.g. NEELAF716):");
     if (!who) return;
     var red = prompt("New family's email (the family who was referred):");
     if (!red) return;
     opsApi({ action: 'referral_add', referrer: who.trim(), referred_email: red.trim() }).then(function(d){
       if (d.error) { alert(d.error); return; }
-      alert('Done — both sides now show 2 tickets under ' + (d.referrer_name || who) + "'s referral.");
+      alert('Done: both sides now show 2 tickets under ' + (d.referrer_name || who) + "'s referral.");
       loadRefs();
     }).catch(function(){ alert('network error'); });
   });
@@ -1999,7 +1999,7 @@
                 : ' <span class="sub">2 tickets available</span>') +
             '<span class="kbwrap"><button class="kb" type="button">&#8943;</button><div class="kbmenu">' +
             (at ? '<button data-red="' + r.id + '|' + key + '|undo">Undo redeemed (mistake)</button>'
-                : '<button data-red="' + r.id + '|' + key + '|redeem">Mark redeemed — box office</button>') +
+                : '<button data-red="' + r.id + '|' + key + '|redeem">Mark redeemed: box office</button>') +
             '</div></span></div>';
         }
         html += '<tr><td>' + String(r.created_at).slice(0,10) + '</td>' +
@@ -2151,11 +2151,11 @@
   // ---- Leads: three public funnels behind one endpoint, drawn as one
   // drag-and-drop pipeline. The DC Unifieds quiz lives in a SEPARATE Supabase
   // project, so its feed can be missing (env not set) while the other two are
-  // perfectly healthy — never let one dead stream blank the tab. The board
+  // perfectly healthy - never let one dead stream blank the tab. The board
   // toggle, the open card and the in-flight moves all live in module vars so
   // the 60s background refresh redraws without yanking anything away. ----
   var LEADS = null;
-  var LD_BOARD = 'dcu';   // which pipeline is on screen — survives a refresh
+  var LD_BOARD = 'dcu';   // which pipeline is on screen - survives a refresh
   var LD_OPEN = null;     // key of the one expanded card
   var LD_DRAG = null;     // key of the card currently being dragged
   var LD_BUSY = {};       // key -> stage we optimistically moved it to
@@ -2204,7 +2204,7 @@
     for (var i = 0; i < all.length; i++) if (all[i].key === key) return all[i];
     return null;
   }
-  // NOVAPA is two forms in one pipeline — the quiz and the free-class booking
+  // NOVAPA is two forms in one pipeline - the quiz and the free-class booking
   // sit side by side, so every card carries the badge that says which it was.
   function ldRows(){
     if (!LEADS) return [];
@@ -2299,11 +2299,11 @@
       if (x.child_age != null && x.child_age !== '') line.push('age ' + esc(x.child_age));
       if (x.class_date) line.push(esc(x.class_date));
     }
-    // a locked card is one the books already decided — dragging it would only
+    // a locked card is one the books already decided - dragging it would only
     // desync the board from the money, so it is not draggable at all
     return '<div class="ldcard' + (LD_OPEN === x.key ? ' open' : '') + '" data-key="' + ldAttr(x.key) + '"' +
       (locked
-        ? ' title="Locked — payment is confirmed, so this stage is set by the books, not by hand."'
+        ? ' title="Locked: payment is confirmed, so this stage is set by the books, not by hand."'
         : ' draggable="true"') + '>' +
       '<div class="ldc-top"><b>' + (ldName(x) ? esc(ldName(x)) : '—') + '</b>' +
         (x.hot ? '<span class="tag ok">HOT</span>' : '') +
@@ -2336,7 +2336,7 @@
     // to the DC Unifieds pipeline and NOVAPA carries on underneath it
     if (LD_BOARD === 'dcu' && !dcuOk) {
       $('ldWarn').innerHTML = LEADS.dcu_status === 'not_configured'
-        ? 'DC Unifieds lead feed not yet connected — DCU_SUPABASE_URL / DCU_SERVICE_KEY not set on this site.'
+        ? 'DC Unifieds lead feed not yet connected: DCU_SUPABASE_URL / DCU_SERVICE_KEY not set on this site.'
         : esc(LEADS.dcu_status);
       $('ldWarn').style.display = 'block';
     } else {
@@ -2428,7 +2428,7 @@
     renderLeads();
   });
   $('ldBoard').addEventListener('click', function(e){
-    // the mailto:/tel: links are the whole point of the card — never swallow them
+    // the mailto:/tel: links are the whole point of the card - never swallow them
     if (e.target.closest('a')) return;
     // clicks inside the notes editor are edits, not open/close gestures
     if (e.target.closest('.ldd-notes')) return;
@@ -3005,7 +3005,7 @@
       });
     });
 
-  // the goal is 100% on every ring by end of year — one donut per program
+  // the goal is 100% on every ring by end of year - one donut per program
   // group. Click a ring and it expands in place into one small donut per
   // camp/cast/class inside the group; click one of those and its live roster
   // opens right there. Same data as Programs, zero page-hopping.
@@ -3223,7 +3223,7 @@
       stat(s.web_orders_7d, 'orders · 7d');
   }
 
-  // items arrive as [{item_id, camper, what}] — the camper name links to their
+  // items arrive as [{item_id, camper, what}] - the camper name links to their
   // profile (Campers tab pre-filtered) and each seat carries its own
   // move/cancel, so a "can you switch her Tuesday class" email is handled
   // without leaving the order row.
@@ -3273,7 +3273,7 @@
           '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
           '<td class="num">' + usd2(o.total_cents) + '</td>' +
           '<td>' + kebabHtml([{ label: 'Delete whole order&hellip;', cls: 'ord-del',
-            attrs: ' data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' — ' + orderItemsText(o).slice(0,80)) + '"' }]) + '</td></tr>';
+            attrs: ' data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' - ' + orderItemsText(o).slice(0,80)) + '"' }]) + '</td></tr>';
       }).join('');
     $('tblOrders').querySelectorAll('.o-camper').forEach(function(a){
       a.addEventListener('click', function(){
@@ -3343,13 +3343,13 @@
           '<td class="num">' + (planTotal(p) ? usd(planTotal(p)) : '<span class="sub">—</span>') + '</td>' +
           '<td style="min-width:320px"><textarea class="ch-note" data-id="' + esc(p.id) +
             '" placeholder="chase status…">' + esc(p.notes || '') + '</textarea></td>' +
-          '<td>' + kebabHtml([{ label: resolved ? 'Reopen this chase' : 'Mark resolved &mdash; they paid',
+          '<td>' + kebabHtml([{ label: resolved ? 'Reopen this chase' : 'Mark resolved: they paid',
             cls: 'ch-flip', attrs: ' data-id="' + esc(p.id) + '" data-to="' + (resolved ? 'sent' : 'resolved') + '"' }]) +
             '</td></tr>';
       }).join('');
     }
     var head = '<tr><th>family</th><th>terms</th><th class="num">plan total</th><th>notes</th><th></th></tr>';
-    // resolved families are history, not work — they stay folded away
+    // resolved families are history, not work - they stay folded away
     $('chaseList').innerHTML =
       '<div class="wrap-scroll"><table>' + head + rows(open, false) + '</table></div>' +
       '<div class="pgroup" style="margin-top:18px">' +
@@ -3404,7 +3404,7 @@
           bands.map(function(b){
           var r = by[sh+'|'+b];
           // A show/band pair with no inventory row is not "NaN left of
-          // undefined" — it is a combination we do not sell, and it should say
+          // undefined" - it is a combination we do not sell, and it should say
           // so. Every band that has never been opened was printing NaN.
           if (!r || r.cap == null) return '<td><span class="sub">not offered</span></td>';
           var taken = (r.booked||0) + (r.held||0);
@@ -3415,7 +3415,7 @@
       }).join('');
 
     // regpack summer kids live inside inventory.booked since 7/22 (age-assigned
-    // bands) — the grid and stats count them natively now
+    // bands) - the grid and stats count them natively now
 
     function bar(left, cap, taken){
       var pct = cap ? Math.round(taken/cap*100) : 0;
@@ -3452,7 +3452,7 @@
     }
 
     // The union of what has an inventory row and what a family can buy. Keyed
-    // on id, inventory first — it carries the counters — with anything the
+    // on id, inventory first - it carries the counters - with anything the
     // catalog alone knows about appended and tagged, so a program that is on
     // sale but has no inventory row shows up as exactly that.
     var acts = (inv.activities || []).slice();
@@ -3505,7 +3505,7 @@
       : '<tr><td class="empty">no Mean Girls activities found</td></tr>';
     function summerInvRow(a){
       // Summer 2027 listings mirror the live inventory grid (which already
-      // includes sawyer + regpack + web) — the activity rows themselves go
+      // includes sawyer + regpack + web) - the activity rows themselves go
       // stale because web/regpack registrations only update `inventory`.
       var n = (a.name || '').toLowerCase();
       var show = /dragon/.test(n) ? 'httyd' : /charlie|chocolate/.test(n) ? 'charlie' : /trolls/.test(n) ? 'trolls' : null;
@@ -3561,7 +3561,7 @@
     }
     // chronological beats alphabetical: "9/14 - 6/1" sorts on its start date,
     // and anything without a parseable schedule falls back to its name.
-    // Ordered by the school year, so September leads and August trails —
+    // Ordered by the school year, so September leads and August trails - 
     // a plain month sort would put a March show ahead of an October one.
     function startKey(a){
       var m = (a.schedule || '').match(/^(\d{1,2})\/(\d{1,2})/);
@@ -3585,7 +3585,7 @@
       { h: 'Day Camps',       is: function(a){ return a.category === 'camp' && (a.price_cents || 0) <= DAY_CAMP_MAX_CENTS; } },
       { h: 'Spring Programs', is: function(a){ return /mermaid/i.test(a.name || ''); } },
       // Coaching and private lessons have no capacity by design, so they never
-      // matched anything above and landed under "Other Programs" — which read
+      // matched anything above and landed under "Other Programs" - which read
       // as though they were leftovers rather than a line of business.
       { h: 'College Audition Coaching', is: function(a){ return a.category === 'coaching'; } },
       { h: 'Private Lessons', is: function(a){ return a.category === 'private' || /private lesson/i.test(a.name || ''); } },
@@ -3616,17 +3616,17 @@
       (invTally.uncounted ? stat(invTally.uncounted, 'not being counted', 'bad') : '') +
       (invTally.catalogOnly ? stat(invTally.catalogOnly, 'no inventory row', 'bad') : '');
     el('invNote').textContent = invTally.uncounted || invTally.catalogOnly
-      ? 'A dash in the registered column means nothing is counting that program — not that nobody has ' +
+      ? 'A dash in the registered column means nothing is counting that program, not that nobody has ' +
         'signed up. Rows marked "no inventory row" are on sale in the catalog but have no capacity ' +
         'record behind them, so registrations against them are not being tallied here.'
       : 'Every program on sale is listed below with its registrations.';
   }
 
   // ── roster drill-down: click a program row (or summer grid cell) and the
-  // live roster expands underneath it — who, which family, what they paid.
+  // live roster expands underneath it - who, which family, what they paid.
   // Fetched per node on first open (the camper-history pattern), refetched on
   // every open so it never goes stale.
-  // Every row action lives behind a ⋯ menu — nothing destructive sits one
+  // Every row action lives behind a ⋯ menu - nothing destructive sits one
   // stray click away, and rows stay readable instead of ending in a row of
   // buttons. Items are built from {label, cls, attrs} so any row can compose
   // its own menu.
@@ -3739,7 +3739,7 @@
     }).catch(function(err){ ros.innerHTML = '<div class="sub">roster failed: ' + esc(err.message || 'error') + '</div>'; });
   });
 
-  // ── global search: campers, families, programs, orders — from the caches
+  // ── global search: campers, families, programs, orders - from the caches
   // the boot preload already filled, so results are instant.
   (function(){
     var box = $('gSearch'), out = $('gRes'), t = null;
@@ -3778,7 +3778,7 @@
       if (a) {
         var go = a.dataset.go;
         if (go === 'camper') {
-          // land on the kid with their panel already open — registrations,
+          // land on the kid with their panel already open - registrations,
           // family and editable details, no second click needed
           jumpTab('campers');
           $('campQ').value = a.dataset.q;

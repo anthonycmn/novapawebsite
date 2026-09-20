@@ -14,7 +14,7 @@
      doodles are cropped straight from the 2x frame export (free-class/img/).
      Fonts are self-hosted GT Walsheim (licensed by Jason, Aug 26) matching
      the design; DM Sans is the per-glyph fallback because the current
-     files are glyph-stripped trials — replace fonts/*.woff2 with the
+     files are glyph-stripped trials - replace fonts/*.woff2 with the
      licensed full set, same filenames, when Jason drops them in. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,7 +35,7 @@
   .btn-note { font-size:11px; letter-spacing:1.6px; font-weight:700; color:var(--dim); text-transform:uppercase; margin-left:16px; }
   img { display:block; }
 
-  /* Hero — design y 0-920 */
+  /* Hero - design y 0-920 */
   .hero { position:relative; background:var(--navy); color:#fff; overflow:hidden; }
   .hero-media { position:absolute; inset:0; }
   .hero-media img { width:100%; height:100%; object-fit:cover; object-position:center 25%; filter:brightness(0.55) saturate(1.05); }
@@ -48,7 +48,7 @@
   .hero p { max-width:620px; margin:16px auto 0; color:var(--dimlight); font-size:15px; line-height:1.6; }
   .hero .btn { margin-top:26px; }
 
-  /* Testimonial — design y 920-2280 */
+  /* Testimonial - design y 920-2280 */
   .rated { padding-top:60px; padding-bottom:120px; }
   .rated-head { display:flex; align-items:flex-end; justify-content:space-between; gap:30px; }
   .rated h2 { font-size:clamp(26px,2.6vw,40px); max-width:560px; }
@@ -65,7 +65,7 @@
   .quote-who b { display:block; font-size:16px; }
   .quote-who span { color:rgba(255,255,255,0.55); font-size:13px; }
 
-  /* Timeline — design y 2280-3960 */
+  /* Timeline - design y 2280-3960 */
   .tl { position:relative; padding-bottom:120px; }
   .tl-doodle { position:absolute; top:-30px; left:0; width:46.6%; max-width:705px; pointer-events:none; }
   .tl-grid { display:grid; grid-template-columns:41% 1fr; gap:clamp(40px,10vw,150px); }
@@ -78,7 +78,7 @@
   .tl-steps p { color:var(--dim); font-size:14px; line-height:1.65; max-width:330px; }
   .tl-cta { margin-top:60px; display:flex; align-items:center; }
 
-  /* How it works — design y 4100-4800 */
+  /* How it works - design y 4100-4800 */
   .how-outer { padding-bottom:120px; }
   .how-outer .wrap { padding-left:clamp(16px,7vw,105px); padding-right:clamp(16px,7vw,105px); }
   .how { background:#fff; border-radius:24px; padding:64px 72px; }
@@ -93,7 +93,7 @@
   .how-card p { color:var(--dim); font-size:13px; line-height:1.6; margin-top:6px; }
   .how .center { text-align:center; margin-top:44px; }
 
-  /* Zero strings — design y 4960-5760, cards x 368-1143 */
+  /* Zero strings - design y 4960-5760, cards x 368-1143 */
   .zero { background:var(--navy); color:#fff; position:relative; overflow:hidden; padding:120px 0 150px; }
   .zero h2 { font-size:clamp(28px,3vw,46px); text-align:center; }
   .zero-cards { width:51.2%; max-width:775px; min-width:min(92%,560px); margin:44px auto 0; display:flex; flex-direction:column; gap:16px; position:relative; z-index:1; }
@@ -104,16 +104,16 @@
   .zero .cta-note { display:block; margin:14px 0 0; color:rgba(255,255,255,0.55); font-size:11px; letter-spacing:1.6px; font-weight:700; text-transform:uppercase; }
   .zero-doodle { position:absolute; right:5%; bottom:-10px; width:18%; max-width:275px; pointer-events:none; }
 
-  /* Photo strip — single design crop, full width */
+  /* Photo strip - single design crop, full width */
   .strip { background:var(--navy); display:flex; gap:8px; padding:0 0 0 0; }
   .strip img { width:calc((100% - 32px)/5); aspect-ratio:295/340; object-fit:cover; border-radius:12px; }
   @media (max-width:700px) { .strip { flex-wrap:nowrap; overflow-x:auto; } .strip img { width:44vw; flex:none; } }
 
-  /* Season caption — design y 5990-6420 */
+  /* Season caption - design y 5990-6420 */
   .season { text-align:center; padding:110px 22px 60px; }
   .season h2 { font-size:clamp(24px,2.2vw,34px); }
 
-  /* FAQ — design y 6420-7000 */
+  /* FAQ - design y 6420-7000 */
   .faq { padding-bottom:130px; }
   .faq h2 { font-size:clamp(24px,2.2vw,34px); text-align:center; }
   .faq-list { max-width:730px; margin:40px auto 0; display:flex; flex-direction:column; gap:12px; padding:0 22px; }
@@ -123,7 +123,7 @@
   details[open] summary::after { content:"\2013"; }
   details p { margin-top:12px; color:var(--dim); font-size:13.5px; line-height:1.65; }
 
-  /* Final — design y 7000-8628 */
+  /* Final - design y 7000-8628 */
   .final { background:var(--navy); color:#fff; text-align:center; position:relative; overflow:hidden; padding-top:110px; }
   .final-doodle { position:absolute; left:0; top:60px; width:33.4%; max-width:505px; pointer-events:none; }
   .final .inner { position:relative; }
@@ -150,7 +150,7 @@
   }
   /* The badge is pushed down by min(24vh,300px) so the headline clears the
      hero photo's faces on desktop. On a tall narrow phone that same 24vh
-     opens a dead gap under the logo with nothing in it — the pill and the
+     opens a dead gap under the logo with nothing in it - the pill and the
      wordmark end up a third of a screen apart. Tighten it on small screens
      and let the shorter hero copy do the spacing instead. */
   @media (max-width:760px) {
@@ -186,7 +186,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
     <div class="hero-logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px;margin:0 auto"></div>
     <div><span class="hero-badge"><b>Free class pass:</b> Any week of the season &middot; Leesburg, VA</span></div>
     <h1>Give your child a free theatre class.</h1>
-    <p>Try a real class, completely free. If it&rsquo;s their thing, classes run all school year &mdash; and those skills are what put our students on stage in shows like Disney&rsquo;s Frozen Jr.</p>
+    <p>Try a real class, completely free. If it&rsquo;s their thing, classes run all school year, and those skills are what put our students on stage in shows like Disney&rsquo;s Frozen Jr.</p>
     <a class="btn" data-book href="/free-class/book.html">Claim my free class pass</a>
   </div>
 </header>
@@ -202,7 +202,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
       <div class="qph"><img id="revImg" src="/free-class/img/strip-2.jpg" alt="A NOVAPA student"></div>
       <div class="quote-body">
         <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-        <blockquote id="revQuote">&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up &mdash; he&rsquo;d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.&rdquo;</blockquote>
+        <blockquote id="revQuote">&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up: he&rsquo;d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.&rdquo;</blockquote>
         <div class="quote-who"><b id="revName">Stefania Whittington</b><span id="revSub">NOVAPA Parent</span></div>
       </div>
     </div>
@@ -225,7 +225,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
             <div>
               <span class="tl-tag">Day one</span>
               <h3>They walk in brand new</h3>
-              <p>First class, first faces, finding their feet. Every kid on our stage started exactly here &mdash; most with zero experience.</p>
+              <p>First class, first faces, finding their feet. Every kid on our stage started exactly here, most with zero experience.</p>
             </div>
             <div>
               <span class="tl-tag">September &ndash; June</span>
@@ -249,7 +249,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
   <div class="wrap">
     <div class="how">
       <h2>We could tell you how good NOVAPA is. We&rsquo;d rather your child show you.</h2>
-      <p class="sub">One free class. Real instructors. Real kids their age. Not a presentation, not a watered down demo &mdash; the actual environment our enrolled kids get. You don&rsquo;t have to guess whether they&rsquo;ll love it. Let them try it.</p>
+      <p class="sub">One free class. Real instructors. Real kids their age. Not a presentation, not a watered down demo: the actual environment our enrolled kids get. You don&rsquo;t have to guess whether they&rsquo;ll love it. Let them try it.</p>
       <div class="how-grid">
         <div class="how-card">
           <div class="ph"><span class="n">1</span><img src="/register/img/firstday-2026.jpg" alt="Kids at their first NOVAPA class" loading="lazy"></div>
@@ -269,7 +269,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
         <div class="how-card">
           <div class="ph"><span class="n">4</span><img src="/free-class/img/how-4.jpg" alt="Kids building the show together" loading="lazy"></div>
           <h3>Decide what&rsquo;s next</h3>
-          <p>If they love it, we&rsquo;ll show you the season. If they don&rsquo;t &mdash; that&rsquo;s completely okay.</p>
+          <p>If they love it, we&rsquo;ll show you the season. If they don&rsquo;t, that&rsquo;s completely okay.</p>
         </div>
       </div>
       <div class="center"><a class="btn" data-book href="/free-class/book.html">Claim my free class pass</a></div>
@@ -283,7 +283,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
     <div class="zero-cards">
       <div class="zc">
         <h3>What</h3>
-        <p>A 100% free, real NOVAPA class &mdash; instructors with 20 years of teaching experience, kids their age, the full environment. Classes grouped by age: 5&ndash;8, 9&ndash;12, and 13&ndash;17. Built for first-timers.</p>
+        <p>A 100% free, real NOVAPA class: instructors with 20 years of teaching experience, kids their age, the full environment. Classes grouped by age: 5&ndash;8, 9&ndash;12, and 13&ndash;17. Built for first-timers.</p>
       </div>
       <div class="zc">
         <h3>When</h3>
@@ -324,7 +324,7 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
       </details>
       <details>
         <summary>Does my child need any experience?</summary>
-        <p>No. Most kids on our stage started with zero experience. The free day is built for first-timers &mdash; no audition, no preparation, nothing to memorize.</p>
+        <p>No. Most kids on our stage started with zero experience. The free day is built for first-timers: no audition, no preparation, nothing to memorize.</p>
       </details>
       <details>
         <summary>Do I have to enroll afterward?</summary>
@@ -360,13 +360,13 @@ fbq('track', 'ViewContent', { content_name: 'Free Class Funnel', content_type: '
   // testimonial carousel: the four published parent reviews from classes.html
   (function () {
     var REVIEWS = [
-      { q: "\u201cHe wasn\u2019t happy when I told him I\u2019d signed him up \u2014 he\u2019d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.\u201d",
+      { q: "\u201cHe wasn\u2019t happy when I told him I\u2019d signed him up: he\u2019d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.\u201d",
         n: "Stefania Whittington", s: "NOVAPA Parent", img: "/free-class/img/strip-2.jpg" },
-      { q: "\u201cEvery child walks through those doors feeling seen, valued, and like a star \u2014 and that\u2019s something they\u2019ll remember long after the curtain closes.\u201d",
+      { q: "\u201cEvery child walks through those doors feeling seen, valued, and like a star, and that\u2019s something they\u2019ll remember long after the curtain closes.\u201d",
         n: "Holly Tucker", s: "NOVAPA Parent", img: "/free-class/img/final-photo.jpg" },
       { q: "\u201cYour crew very quickly built a passion in her that I hope lasts a lifetime. I\u2019ve been truly impressed!\u201d",
         n: "Megan Rosh", s: "NOVAPA Parent", img: "/register/img/rehearsal-2026.jpg" },
-      { q: "\u201cShe had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence \u2014 it was worth every penny!\u201d",
+      { q: "\u201cShe had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence: it was worth every penny!\u201d",
         n: "Ashley H. Wills", s: "NOVAPA Parent", img: "/register/img/firstday-2026.jpg" },
     ];
     var i = 0, timer;
