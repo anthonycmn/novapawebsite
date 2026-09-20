@@ -42,7 +42,13 @@ const CLASSES = {
   "mt-dance-9-12":     { activityId: 1960939, name: "Musical Theatre Dance",                 ages: [9, 12],  day: 3, time: "6:15 PM" },
   "mt-acting-9-12":    { activityId: 1960945, name: "Musical Theatre Acting",                ages: [9, 12],  day: 3, time: "7:15 PM" },
   "improv-9-12":       { activityId: 1960959, name: "Improv for Actors",                     ages: [9, 12],  day: 4, time: "6:30 PM" },
-  "improv-13-17":      { activityId: 1960961, name: "Improv for Actors",                     ages: [13, 17], day: 4, time: "7:30 PM" },
+  // improv-13-17 (Improv for Actors, Thu 7:30 PM, 13-17, activity 1960961)
+  // removed Sep 20 2026, both sides together per the rule in
+  // tests/free-class-classes.test.mjs. The listing has never sold a seat
+  // on the web (sold = 0) and the key never produced a single trial
+  // booking in its life. One student sits in booked_offline, so confirm
+  // with CJ that the class is not running before this merges.
+  // Restore the key here AND in the test when it rolls out again.
   "acting-mt-sat":     { activityId: 1962562, name: "Acting & Musical Theatre",              ages: [9, 12],  day: 6, time: "12:00 PM" },
   "film-tv":           { activityId: 992001,  name: "Film & Television",                   ages: [11, 17], day: 1, time: "8:00 PM" },
 };
