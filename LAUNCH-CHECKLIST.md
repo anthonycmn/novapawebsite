@@ -31,10 +31,14 @@ Working doc for the staging → production launch. Owner: Jason (site/DB), CJ (S
       NEW (waitlist capture pre-Aug 1).
 
 ## Email (blocking for launch)
-- [ ] Post-launch: migrate SMTP off jason@novapa.org to a role account (info@ or no-reply@,
+- [x] Post-launch: migrate SMTP off jason@novapa.org to a role account (info@ or no-reply@,
       must be a real licensed mailbox with 2FA — not a Group alias). App passwords die with
       the account they're created on; swap = new app password → Supabase SMTP + Netlify
       SMTP_USER/SMTP_PASS.
+      Done Sep 16 2026: SMTP_HOST is smtp.resend.com, SMTP_USER is resend, FROM_ADDR is
+      info@novapa.org, and there is no SMTP_PASS, so senders fall back to RESEND_API_KEY.
+      His Google app password is gone for good. The Supabase Auth sender below is separate
+      and is still open.
 - [ ] **Supabase SMTP**: paste the Google Workspace app password into Supabase Auth → SMTP
       settings. Without it, magic-link sign-in emails are rate-limited to a couple per hour
       on Supabase's built-in mailer — this WILL break under a newsletter push.
