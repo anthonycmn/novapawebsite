@@ -1,8 +1,8 @@
 -- Class tuition is recorded, not just deposit installments (Sep 18 2026).
 --
--- NOT YET APPLIED. CJ runs this. Until he does, reg-webhook's invoice.paid
--- branch still works, it just logs class invoices as declined instead of
--- recording them, exactly as it does today.
+-- APPLIED Sep 20 2026 on CJ's go, through the Supabase MCP, as migration
+-- record_installment_paid_class_tuition. The function was read back after
+-- and matched this file. Kept here as the record of what is live.
 --
 -- Why. record_installment_paid was written for deposit plans and refuses
 -- anything else:
