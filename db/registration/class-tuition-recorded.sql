@@ -11,12 +11,14 @@
 --                    and plan = 'deposit') then return false;
 --
 -- That was right for what it was built for and wrong as the only record of
--- money. Nothing else reads a class membership invoice: the webhook on
--- origin/main ignores invoice.paid entirely, and reg-balance-audit queries
--- plan=eq.deposit. So seventeen class memberships worth $1,600.00 a month
--- have collected since Aug 7 with zero rows to show for it, and ten of them
--- were due to bill on Sep 1 with no record either way (money report,
--- Sep 18 2026).
+-- money. Nothing else reads a class membership invoice: until Sep 18 the
+-- webhook ignored invoice.paid entirely, and reg-balance-audit queried
+-- plan=eq.deposit. Checked against Stripe on Sep 20 2026: every checkout
+-- class subscription (18 orders, $1,690.00 a month) is in a trial that ends
+-- Oct 1 2026, its only invoice so far the $0 trial one, so nothing has been
+-- collected and nothing is missing yet. Without this function the Oct 1
+-- pull would have been the first tuition ever collected and the first to go
+-- unrecorded.
 --
 -- What changes. A class invoice now gets its row in order_installments, so
 -- the money is countable. It does NOT move orders.installments_paid_cents,

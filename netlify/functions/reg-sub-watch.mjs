@@ -1,4 +1,4 @@
-// Watches Stripe for subscriptions that will bill forever. Daily.
+// Watches Stripe for subscriptions that will bill forever. Daily, until none are.
 //
 // Our own checkout has always been correct — reg-webhook.mjs sets
 // cancel_at: CLASS_SEASON_END_UTC on every class subscription it creates. The
@@ -12,6 +12,12 @@
 // charged for a July class that does not exist.
 //
 // Read-only. It cannot cancel anything — it tells a person, who decides.
+//
+// Sep 20 2026: until now this reported a subscription once, the day it first
+// appeared, and never again. The Johansen plan (flagged Sep 17) sat open-ended
+// with the watch silent about it, and silence read as an all clear. Now every
+// day that anything is still open-ended gets the full list, with the ones not
+// seen before marked, and a quiet morning means there are none.
 import { getStore } from "@netlify/blobs";
 
 const STORE = "lead-alerts";
@@ -77,30 +83,30 @@ export default async () => {
   const store = getStore(STORE);
   let seen = [];
   try { seen = JSON.parse((await store.get(KEY)) || "[]"); } catch {}
-  const isFirst = !seen.length;
-  const fresh = rows.filter((r) => !seen.includes(r.id));
+  const fresh = new Set(rows.filter((r) => !seen.includes(r.id)).map((r) => r.id));
 
-  // First run reports everything currently open-ended once, so the standing
-  // backlog is seen rather than silently adopted. After that, only new ones.
-  const report = isFirst ? rows : fresh;
-  if (!report.length) {
-    await store.set(KEY, JSON.stringify(rows.map((r) => r.id)));
-    return new Response(`ok: ${rows.length} open-ended, none new`, { status: 200 });
+  // Nothing open-ended: remember that and say nothing. The email's absence is
+  // the all clear, so it must only be absent when the list is empty.
+  if (!rows.length) {
+    await store.set(KEY, JSON.stringify([]));
+    return new Response("ok: no open-ended subscriptions", { status: 200 });
   }
 
-  const classes = report.filter((r) => r.isClass);
-  const monthly = report.reduce((t, r) => t + r.amount, 0);
-  const body = report
-    .sort((a, b) => (b.isClass ? 1 : 0) - (a.isClass ? 1 : 0) || b.amount - a.amount)
+  const classes = rows.filter((r) => r.isClass);
+  const monthly = rows.reduce((t, r) => t + r.amount, 0);
+  const body = rows
+    .sort((a, b) => (fresh.has(b.id) ? 1 : 0) - (fresh.has(a.id) ? 1 : 0) || (b.isClass ? 1 : 0) - (a.isClass ? 1 : 0) || b.amount - a.amount)
     .map((r) => `<tr>
 <td style="padding:9px 10px 9px 0;font:14px Helvetica,Arial,sans-serif;color:#0B1422;white-space:nowrap">$${(r.amount / 100).toFixed(2)}/mo</td>
-<td style="padding:9px 10px 9px 0;font:14px Helvetica,Arial,sans-serif;color:#0B1422">${esc(r.email || r.id)}</td>
+<td style="padding:9px 10px 9px 0;font:14px Helvetica,Arial,sans-serif;color:#0B1422">${esc(r.email || r.id)}${fresh.has(r.id) ? ' <b style="color:#9E2B2B">NEW</b>' : ""}</td>
 <td style="padding:9px 0;font:13px Helvetica,Arial,sans-serif;color:#5B6472">${esc(r.desc || "(no invoice yet)")}
-${r.isClass ? '<b style="color:#9E2B2B"> — looks like a CLASS, should end Jun 30</b>' : ""}</td></tr>`).join("");
+${r.isClass ? '<b style="color:#9E2B2B"> — looks like a CLASS, should end Jun 30</b>' : ""}
+ · <a href="https://dashboard.stripe.com/subscriptions/${esc(r.id)}">open in Stripe</a></td></tr>`).join("");
 
+  const newNote = fresh.size ? ` (${fresh.size} new)` : "";
   const subject = classes.length
-    ? `${classes.length} class subscription${classes.length > 1 ? "s" : ""} billing with no end date`
-    : `${report.length} subscription${report.length > 1 ? "s" : ""} billing with no end date`;
+    ? `${classes.length} class subscription${classes.length > 1 ? "s" : ""} billing with no end date${newNote}`
+    : `${rows.length} subscription${rows.length > 1 ? "s" : ""} billing with no end date${newNote}`;
 
   const to = (process.env.LEADS_ALERT_TO || "cj@novapa.org").split(",").map((s) => s.trim()).filter(Boolean);
   const r = await fetch("https://api.resend.com/emails", {
@@ -113,20 +119,21 @@ ${r.isClass ? '<b style="color:#9E2B2B"> — looks like a CLASS, should end Jun 
       html: `<div style="max-width:620px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif">
 <div style="font:700 20px/1.3 Helvetica,Arial,sans-serif;color:#0B1422">Subscriptions with no stopping condition</div>
 <div style="font:14px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:9px">
-${isFirst ? "Everything currently open-ended, reported once so nothing is adopted silently."
-          : `${report.length} new since the last check.`}
+Everything currently open-ended, ${fresh.size ? `${fresh.size} of them not seen before.` : "none of them new."}
+This email repeats every morning until the list is empty; no email means it is.
 These have no <code>cancel_at</code> and no schedule, so they bill until someone stops them
 &mdash; <b>$${(monthly / 100).toFixed(2)} per month</b>.</div>
 <table style="width:100%;border-collapse:collapse;margin-top:14px">${body}</table>
 ${classes.length ? `<div style="font:14px/1.7 Helvetica,Arial,sans-serif;color:#0B1422;margin-top:16px;padding:13px 15px;background:#F6E4E4;border-radius:8px">
 <b>${classes.length} of these look like classes.</b> A class subscription must end June 30 or a family pays for a July class that will not run.</div>` : ""}
 <div style="font:12.5px/1.7 Helvetica,Arial,sans-serif;color:#9AA1AC;margin-top:18px">
-Our checkout always sets an end date on class subscriptions. Anything appearing here was created outside it &mdash; a migration, or by hand in Stripe.</div></div>`,
+Our checkout always sets an end date on class subscriptions. Anything appearing here was created outside it &mdash; a migration, or by hand in Stripe.
+To end one, set <code>cancel_at</code> on the subscription in Stripe; it drops off this list the next morning.</div></div>`,
     }),
   });
   if (!r.ok) return new Response(`resend ${r.status}`, { status: 200 });
   await store.set(KEY, JSON.stringify(rows.map((x) => x.id)));
-  return new Response(`alerted ${report.length} (${classes.length} class-like)`, { status: 200 });
+  return new Response(`alerted ${rows.length} open-ended (${fresh.size} new, ${classes.length} class-like)`, { status: 200 });
 };
 
 export const config = { schedule: "0 13 * * *" };
