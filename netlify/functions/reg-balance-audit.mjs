@@ -11,13 +11,20 @@
 //
 // Two halves, in order, one email:
 //
-//   1. STRIPE ↔ ORDERS. For every deposit-plan order, read the paid invoices
-//      on its schedule(s) and hand each to record_installment_paid — the
-//      same idempotent write the webhook does on invoice.paid, so a day where
-//      the webhook missed nothing records nothing. The audit therefore heals
-//      the one thing it is allowed to (a payment that happened) and reports
-//      the rest: an installment invoice Stripe could not collect, a plan that
-//      stopped with money still owed.
+//   1. STRIPE ↔ ORDERS. For every order Stripe bills again (a deposit plan's
+//      schedule, a class membership's subscription), read the paid invoices
+//      and hand each to record_installment_paid, the same idempotent write
+//      the webhook does on invoice.paid, so a day where the webhook missed
+//      nothing records nothing. The audit therefore heals the one thing it is
+//      allowed to (a payment that happened) and reports the rest: an invoice
+//      Stripe could not collect, a plan that stopped with money still owed.
+//
+//      Sep 20 2026: class memberships were left out of this query until now
+//      (plan=eq.deposit), and record_installment_paid declined them anyway,
+//      so the first tuition pull on Oct 1 would have had no record from either
+//      path. The database side is db/registration/class-tuition-recorded.sql;
+//      this side reads both plans. A class row is revenue against no balance,
+//      so the "still owed" arithmetic below stays deposit-only.
 //
 //   2. ORDERS ↔ PARENT PORTAL. registration_portal_audit() in the database
 //      (db/registration/portal_audit.sql): every paid line has a portal
@@ -66,8 +73,10 @@ async function db(path, init = {}) {
 
 async function auditStripe() {
   const orders = await db(
-    "orders?select=id,order_no,email,total_cents,amount_today_cents,installments_paid_cents,stripe_schedule" +
-    "&plan=eq.deposit&status=eq.paid&stripe_schedule=not.is.null");
+    "orders?select=id,order_no,email,plan,total_cents,amount_today_cents,installments_paid_cents,stripe_schedule" +
+    "&plan=in.(deposit,subscription)&status=eq.paid&stripe_schedule=not.is.null");
+  const deposits = orders.filter((o) => o.plan === "deposit").length;
+  const classes = orders.length - deposits;
   const healed = [];   // installments recorded today that the webhook missed
   const failing = [];  // invoices Stripe is trying and failing to collect
   const stopped = [];  // plan cancelled/released with a balance still owed
@@ -75,7 +84,8 @@ async function auditStripe() {
 
   for (const o of orders) {
     // One order can carry several schedules, comma-joined (a plan split by
-    // hand — Amy Ngo, order 15095 — is two schedules on one order).
+    // hand, Amy Ngo, order 15095, is two schedules on one order). A class
+    // order carries its subscription id (sub_...) in the same column.
     const ids = String(o.stripe_schedule).split(",").map((s) => s.trim()).filter(Boolean);
     let paidHere = 0;
     for (const schedId of ids) {
@@ -107,16 +117,21 @@ async function auditStripe() {
               status: i.status });
           }
         }
-        const owed = o.total_cents - o.amount_today_cents - Math.max(o.installments_paid_cents, paidHere);
-        if (schedStatus && ["canceled", "released", "completed"].includes(schedStatus) && owed > 1) {
-          stopped.push({ ...o, schedule: schedId, status: schedStatus, cents: owed });
+        // Only a deposit plan has a balance to be short of. A class
+        // membership's tuition pays nothing down, and its subscription ending
+        // is the season ending, not a plan stopping early.
+        if (o.plan === "deposit") {
+          const owed = o.total_cents - o.amount_today_cents - Math.max(o.installments_paid_cents, paidHere);
+          if (schedStatus && ["canceled", "released", "completed"].includes(schedStatus) && owed > 1) {
+            stopped.push({ ...o, schedule: schedId, status: schedStatus, cents: owed });
+          }
         }
       } catch (e) {
         unreadable.push({ ...o, schedule: schedId, error: e.message });
       }
     }
   }
-  return { orders: orders.length, healed, failing, stopped, unreadable };
+  return { orders: orders.length, deposits, classes, healed, failing, stopped, unreadable };
 }
 
 // ---- the email -----------------------------------------------------------
@@ -208,17 +223,17 @@ async function runAudit(resend) {
 <div style="font:700 20px/1.3 Helvetica,Arial,sans-serif;color:#0B1422">${issues ? "Registration audit" : "Registration audit — all clear"}</div>
 <div style="font:14px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:9px">
 ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" })}.
-Checked ${s.orders} deposit-plan orders against Stripe and every paid order line against the parent portal.
-${s.healed.length ? `<b>Recorded ${s.healed.length} installment${s.healed.length === 1 ? "" : "s"} (${usd(s.healed.reduce((t, h) => t + h.cents, 0))}) the webhook had not</b> — balances are corrected on the next sync; nothing for you to do.` : "Stripe and the orders already agreed."}
+Checked ${s.deposits} deposit plan${s.deposits === 1 ? "" : "s"} and ${s.classes} class membership${s.classes === 1 ? "" : "s"} against Stripe, and every paid order line against the parent portal.
+${s.healed.length ? `<b>Recorded ${s.healed.length} payment${s.healed.length === 1 ? "" : "s"} (${usd(s.healed.reduce((t, h) => t + h.cents, 0))}) the webhook had not</b>: deposit balances are corrected on the next sync; nothing for you to do.` : "Stripe and the orders already agreed."}
 </div>
-${section("Installment Stripe cannot collect", s.failing.map((f) => rowOrder(f, `${usd(f.cents)} ${esc(f.status)}, ${f.attempts || 0} attempt${f.attempts === 1 ? "" : "s"}${f.next ? `, next ${esc(f.next)}` : ", no retry scheduled"} · <a href="https://dashboard.stripe.com/invoices/${f.invoice}">invoice</a>`)),
+${section("Payment Stripe cannot collect", s.failing.map((f) => rowOrder(f, `${usd(f.cents)} ${f.plan === "subscription" ? "tuition" : "installment"} ${esc(f.status)}, ${f.attempts || 0} attempt${f.attempts === 1 ? "" : "s"}${f.next ? `, next ${esc(f.next)}` : ", no retry scheduled"} · <a href="https://dashboard.stripe.com/invoices/${f.invoice}">invoice</a>`)),
   "The card was declined. Stripe retries for a while, then gives up; the family may need a new card.")}
 ${section("Plan stopped with a balance owed", s.stopped.map((x) => rowOrder(x, `${usd(x.cents)} still owed, schedule is ${esc(x.status)} · <a href="https://dashboard.stripe.com/subscription_schedules/${x.schedule}">schedule</a>`)),
   "The schedule will not bill again on its own.")}
 ${section("Could not read from Stripe", s.unreadable.map((x) => rowOrder(x, esc(x.error))), "")}
 ${Object.entries(label).map(([kind, [title, blurb]]) =>
   section(title, (byKind[kind] || []).map((p) => `<tr>${cell(`#${p.order_no}`)}${cell(esc(p.email))}${cell(`${p.camper ? `<b>${esc(p.camper)}</b> — ` : ""}${esc(p.detail)}`)}</tr>`), blurb)).join("")}
-${s.healed.length ? section("Recorded today", s.healed.map((h) => rowOrder(h, `${usd(h.cents)} · <a href="https://dashboard.stripe.com/invoices/${h.invoice}">invoice</a>`)), "") : ""}
+${s.healed.length ? section("Recorded today", s.healed.map((h) => rowOrder(h, `${usd(h.cents)} ${h.plan === "subscription" ? "class tuition" : "installment"} · <a href="https://dashboard.stripe.com/invoices/${h.invoice}">invoice</a>`)), "") : ""}
 <div style="font:12.5px/1.7 Helvetica,Arial,sans-serif;color:#9AA1AC;margin-top:22px">
 Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-only here; the only write is recording a payment that already happened.</div></div>`;
 
