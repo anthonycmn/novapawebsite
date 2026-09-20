@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Which NOVAPA program fits your child? — NOVAPA</title>
+<title>Which NOVAPA program fits your child? | NOVAPA</title>
 <meta name="robots" content="noindex">
 <!-- Quiz funnel, step 2 of 2: the quiz itself as a single-page app,
      matching the BFA Figma Section 2 question frames (2290-1691 through
@@ -82,7 +82,7 @@
   .prog .cta:hover { transform:translateY(-1px); }
   .result-note { color:rgba(255,255,255,0.55); font-size:13px; line-height:1.7; max-width:420px; margin:36px auto 0; }
 
-  /* reviews band on the result page — same carousel as free-class/index.html */
+  /* reviews band on the result page - same carousel as free-class/index.html */
   .rated-band { background:var(--cream); border-radius:24px 24px 0 0; margin-top:-24px; position:relative; }
   .rated { padding:70px clamp(20px,8.5vw,128px) 90px; max-width:1512px; margin:0 auto; }
   .rated-head { display:flex; align-items:flex-end; justify-content:space-between; gap:30px; }
@@ -153,13 +153,13 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
     <div class="gate">
       <span class="chip chip-green">Your result is ready</span>
       <h1>Where should we send their result?</h1>
-      <p class="sub">You&rsquo;ll see it on the next page instantly &mdash; we&rsquo;ll also email you a copy so you can talk it over at home.</p>
+      <p class="sub">You&rsquo;ll see it on the next page instantly: we&rsquo;ll also email you a copy so you can talk it over at home.</p>
       <form class="gate-card" id="gateForm">
         <div class="field"><label for="childName">Child&rsquo;s first name</label><input id="childName" autocomplete="off" placeholder="e.g. Jordan" required></div>
         <div class="field"><label for="parentName">Your name</label><input id="parentName" autocomplete="name" placeholder="e.g. Sam Rivera" required></div>
         <div class="field"><label for="email">Your email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
         <div class="field"><label for="phone">Your mobile</label><input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(571) 555-0123" required>
-          <span class="hint">So we can text you the class times that fit &mdash; a real person, not a robot. We don&rsquo;t sell your details.</span></div>
+          <span class="hint">So we can text you the class times that fit: a real person, not a robot. We don&rsquo;t sell your details.</span></div>
         <button class="submit" id="gateBtn" type="submit">Send me the result</button>
       </form>
       <div class="err" id="gateErr"></div>
@@ -174,7 +174,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
     <img class="result-doodle" src="/free-class/img/doodle-m.svg" alt="">
     <div style="text-align:center;padding-bottom:44px"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA" style="height:26px;margin:0 auto"></div>
     <div class="result-inner">
-      <span class="chip chip-green">Quiz complete &mdash; result ready</span>
+      <span class="chip chip-green">Quiz complete: result ready</span>
       <h1 id="personaName"></h1>
       <p class="psub" id="personaCopy"></p>
       <div class="prog">
@@ -201,7 +201,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
         <div class="qph"><img id="revImg" src="/free-class/img/strip-2.jpg" alt="A NOVAPA student"></div>
         <div class="quote-body">
           <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
-          <blockquote id="revQuote">&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up &mdash; he&rsquo;d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.&rdquo;</blockquote>
+          <blockquote id="revQuote">&ldquo;He wasn&rsquo;t happy when I told him I&rsquo;d signed him up: he&rsquo;d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.&rdquo;</blockquote>
           <div class="quote-who"><b id="revName">Stefania Whittington</b><span id="revSub">NOVAPA Parent</span></div>
         </div>
       </div>
@@ -417,13 +417,13 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
 
   // testimonial carousel: the four published parent reviews from classes.html
   var REVIEWS = [
-    { q: "“He wasn’t happy when I told him I’d signed him up — he’d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.”",
+    { q: "“He wasn’t happy when I told him I’d signed him up: he’d never been in a play before. After the first day he was all smiles and immediately wanted to practice when he got home.”",
       n: "Stefania Whittington", s: "NOVAPA Parent", img: "/free-class/img/strip-2.jpg" },
-    { q: "“Every child walks through those doors feeling seen, valued, and like a star — and that’s something they’ll remember long after the curtain closes.”",
+    { q: "“Every child walks through those doors feeling seen, valued, and like a star, and that’s something they’ll remember long after the curtain closes.”",
       n: "Holly Tucker", s: "NOVAPA Parent", img: "/free-class/img/final-photo.jpg" },
     { q: "“Your crew very quickly built a passion in her that I hope lasts a lifetime. I’ve been truly impressed!”",
       n: "Megan Rosh", s: "NOVAPA Parent", img: "/register/img/rehearsal-2026.jpg" },
-    { q: "“She had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence — it was worth every penny!”",
+    { q: "“She had a wonderful time and is already recruiting her friends to join her next year. She gained so much confidence: it was worth every penny!”",
       n: "Ashley H. Wills", s: "NOVAPA Parent", img: "/register/img/firstday-2026.jpg" },
   ];
   var ri = 0, rtimer;

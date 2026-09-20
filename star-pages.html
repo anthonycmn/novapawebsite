@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Star Page Ads — Dear Evan Hansen | NOVAPA</title>
+<title>Star Page Ads: Dear Evan Hansen | NOVAPA</title>
 <script src="/posthog.js" defer></script>
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -95,7 +95,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   <img src="/star-pages-hero.jpg" alt="NOVAPA Star Pages" style="width:100%; border-radius:14px; border:1px solid var(--line); margin-bottom:26px; display:block;">
   <div class="kicker">Dear Evan Hansen &middot; Playbill</div>
   <h1>Star Page <em>Ads</em></h1>
-  <p class="sub">Show your support and make your performer feel extra special with a Star Page Ad in our playbill! Share a heartfelt message and a photo &mdash; a keepsake your performer will treasure for years to come.</p>
+  <p class="sub">Show your support and make your performer feel extra special with a Star Page Ad in our playbill! Share a heartfelt message and a photo: a keepsake your performer will treasure for years to come.</p>
 
   <!-- The ad -->
   <div class="step on" id="stForm">
@@ -159,8 +159,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     $('doneMsg').textContent = 'Confirming your payment…';
     api({ action:'verify', session_id: q.get('sid') }).then(function(res){
       $('doneMsg').textContent = (res.j && res.j.paid)
-        ? 'Your ' + (res.j.size || '') + ' Star Page Ad for ' + (res.j.performer || 'your performer') + ' is confirmed. A receipt is in your email — your performer is going to love it.'
-        : 'We could not confirm the payment yet. If you completed checkout, your receipt email is the source of truth — or contact info@novapa.org.';
+        ? 'Your ' + (res.j.size || '') + ' Star Page Ad for ' + (res.j.performer || 'your performer') + ' is confirmed. A receipt is in your email: your performer is going to love it.'
+        : 'We could not confirm the payment yet. If you completed checkout, your receipt email is the source of truth, or contact info@novapa.org.';
     });
     history.replaceState({}, '', location.pathname);
   }
@@ -179,11 +179,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   $('photo').addEventListener('change', function(){
     var f = $('photo').files[0];
     if (!f) return;
-    if (f.size > 10 * 1024 * 1024) { alert('That photo is over 10MB — please choose a smaller one.'); return; }
+    if (f.size > 10 * 1024 * 1024) { alert('That photo is over 10MB: please choose a smaller one.'); return; }
     var reader = new FileReader();
     reader.onload = function(e){
       $('photoDrop').classList.add('has');
-      $('photoDrop').innerHTML = '<img src="' + e.target.result + '" alt=""><span>' + f.name + ' — tap to change</span>';
+      $('photoDrop').innerHTML = '<img src="' + e.target.result + '" alt=""><span>' + f.name + ': tap to change</span>';
     };
     reader.readAsDataURL(f);
   });

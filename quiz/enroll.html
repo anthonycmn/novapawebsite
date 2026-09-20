@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Enroll in Disney's Frozen Jr. — NOVAPA</title>
+<title>Enroll in Disney's Frozen Jr. | NOVAPA</title>
 <meta name="robots" content="noindex">
 <!-- Quiz funnel, step 3: native enrollment checkout. The result card on
      /quiz/start.html links here with ?age=5-8|9-12|13-17 plus n/p/e from the
@@ -12,7 +12,7 @@
      acquire_hold_guest RPC, the same /api/reg-pay payload (hold_id, plan,
      parent_name, insurance, ref, email, bdays), the same Stripe Payment
      Element + Express Checkout mount, the same client-side Purchase pixel.
-     The server prices everything — this page displays only catalog_list
+     The server prices everything - this page displays only catalog_list
      prices and reg-pay's pricing response, never its own math.
      Frozen casts resolve from the live catalog by name, exactly like
      fallActsFor()/castLabel() in register/index.html. -->
@@ -82,7 +82,7 @@
   .pay-or:before, .pay-or:after { content:""; height:1px; flex:1; background:rgba(255,255,255,0.14); }
   #payElement { margin-top:18px; }
 
-  /* ticket confirmation — free-class/confirmed.html's ticket */
+  /* ticket confirmation - free-class/confirmed.html's ticket */
   .ticket-outer { max-width:960px; margin:56px auto 90px; padding:0 clamp(20px,5vw,48px); }
   .ticket { position:relative; background:var(--navy); color:#fff; border-radius:18px; display:grid; grid-template-columns:37% 1fr; }
   .ticket-edge { position:absolute; top:10px; bottom:10px; width:48px; pointer-events:none; z-index:1;
@@ -184,7 +184,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
     </div>
     <div class="plan-opt" data-plan="full">
       <div class="p1">Pay in full</div>
-      <div class="p2">One payment &mdash; save 5%</div>
+      <div class="p2">One payment: save 5%</div>
     </div>
   </div>
 
@@ -192,7 +192,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
 
   <label class="policy">
     <input type="checkbox" id="policyOk">
-    <span>I agree to NOVAPA's <a href="/terms" target="_blank" rel="noopener">terms</a>, <a href="/policies" target="_blank" rel="noopener">policies</a>, and <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a> &mdash; <b>all sales are final (no refunds)</b>.</span>
+    <span>I agree to NOVAPA's <a href="/terms" target="_blank" rel="noopener">terms</a>, <a href="/policies" target="_blank" rel="noopener">policies</a>, and <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a>: <b>all sales are final (no refunds)</b>.</span>
   </label>
 
   <button class="submit" id="payStart" type="button">Continue to payment</button>
@@ -349,7 +349,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
       }
       if (chosen !== state.band) {
         state.band = chosen;
-        $('progNote').textContent = 'Based on their birthday, they fit the ' + BANDS[chosen].name + ' cast — updated below.';
+        $('progNote').textContent = 'Based on their birthday, they fit the ' + BANDS[chosen].name + ' cast: updated below.';
         $('progNote').style.display = 'block';
       }
     }
@@ -390,11 +390,11 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
         $('holdLine').style.display = 'none';
         state.hold = null;
         resetPayUI();
-        showErr('Your 30-minute hold expired — continue to payment to grab the spot again.');
+        showErr('Your 30-minute hold expired: continue to payment to grab the spot again.');
         return;
       }
       var s = Math.floor(ms / 1000);
-      $('holdLine').textContent = 'This spot is held for you — ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+      $('holdLine').textContent = 'This spot is held for you: ' + Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
     }, 500);
   }
 
@@ -405,13 +405,13 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
     var email = $('email').value.trim();
     var phone = $('phone').value.trim();
     if (!name) { showErr('Add your child’s first name.'); return null; }
-    if (!bday) { showErr('Add your child’s birthday — it sets their cast.'); return null; }
+    if (!bday) { showErr('Add your child’s birthday: it sets their cast.'); return null; }
     if (!parent) { showErr('Add the parent name for the receipt.'); return null; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('A valid email is required — it’s where the confirmation goes.'); return null; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('A valid email is required: it’s where the confirmation goes.'); return null; }
     if (!phone) { showErr('Add a phone number.'); return null; }
     if (!$('policyOk').checked) { showErr('Please agree to NOVAPA’s terms, policies, and Photo and Media Release to continue.'); return null; }
-    if (catalogErr) { showErr('Could not load the season catalog — refresh and try again.'); return null; }
-    if (!state.cast) { showErr('Could not match a Frozen Jr. cast — check the birthday, or email info@novapa.org.'); return null; }
+    if (catalogErr) { showErr('Could not load the season catalog: refresh and try again.'); return null; }
+    if (!state.cast) { showErr('Could not match a Frozen Jr. cast: check the birthday, or email info@novapa.org.'); return null; }
     return { name: name, bday: bday, parent: parent, email: email, phone: phone };
   }
 
@@ -434,13 +434,13 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
       if (res.error) {
         var msg = res.error.message || '';
         if (msg.indexOf('DUPLICATE:') !== -1) {
-          showErr(f.name + ' is already registered for this show — no need to register twice. Questions? info@novapa.org');
+          showErr(f.name + ' is already registered for this show: no need to register twice. Questions? info@novapa.org');
         } else if (msg.indexOf('SOLD_OUT') !== -1) {
           showErr('This cast is full and is waitlist only. Email info@novapa.org and we’ll add your child to the waitlist.');
         } else if (msg.indexOf('GATED') !== -1) {
           showErr('Registration is limited to returning NOVAPA families right now.');
         } else {
-          showErr('Could not hold the spot — try again.');
+          showErr('Could not hold the spot: try again.');
         }
         return;
       }
@@ -467,7 +467,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
     if (!state.hold || state.clientSecret) return;
     var mySeq = ++paySeq;
     hideErr();
-    if (!C.STRIPE_PUBLISHABLE_KEY) { showErr('Payments aren’t configured yet (test build) — Stripe keys pending.'); return; }
+    if (!C.STRIPE_PUBLISHABLE_KEY) { showErr('Payments aren’t configured yet (test build): Stripe keys pending.'); return; }
     $('payStart').disabled = true;
     fetch('/api/reg-pay', {
       method: 'POST',
@@ -475,18 +475,18 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
       body: JSON.stringify({ hold_id: state.hold.id, plan: state.plan, parent_name: $('parentName').value.trim(), insurance: false, coupon: undefined, ref: refCode(), email: state.email, bdays: guestBdays() })
     }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
     .then(function (res) {
-      if (mySeq !== paySeq) return; // plan changed meanwhile — drop stale response
+      if (mySeq !== paySeq) return; // plan changed meanwhile - drop stale response
       $('payStart').disabled = false;
       if (!res.ok) {
         if (res.j.error === 'hold_expired') {
           state.hold = null;
-          showErr('Your hold expired — continue to payment to grab the spot again.');
+          showErr('Your hold expired: continue to payment to grab the spot again.');
           return;
         }
         if (res.j.error === 'pay_full_only') {
           state.plan = 'full';
           document.querySelectorAll('.plan-opt').forEach(function (o) { o.classList.toggle('sel', o.dataset.plan === 'full'); });
-          showErr('This program starts within 2 weeks — payment in full is required.');
+          showErr('This program starts within 2 weeks: payment in full is required.');
           schedulePay();
           return;
         }
@@ -500,7 +500,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
     }).catch(function () {
       if (mySeq !== paySeq) return;
       $('payStart').disabled = false;
-      showErr('Network error — try again.');
+      showErr('Network error: try again.');
     });
   }
 
@@ -511,7 +511,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
       var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var when = first ? (months[first.getUTCMonth()] + ' ' + first.getUTCFullYear()) : '';
       html += '<p class="tiny">Then <b>' + p.n_installments + ' monthly payments of ' + money(p.installment_cents) +
-        '</b> starting ' + when + ' — automatic on this card.</p>';
+        '</b> starting ' + when + ', automatic on this card.</p>';
     } else if (p.total_cents !== p.today_cents) {
       html += '<p class="tiny">Total ' + money(p.total_cents) + '.</p>';
     }
@@ -539,7 +539,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
         clientSecret: state.clientSecret,
         appearance: { theme: 'night', variables: { colorPrimary: '#E8B84B', fontFamily: 'DM Sans, sans-serif' } }
       });
-      // Apple Pay / Google Pay / Link buttons — handled by Express Checkout,
+      // Apple Pay / Google Pay / Link buttons - handled by Express Checkout,
       // so suppress the duplicate wallet row inside the card element.
       state.elements.create('payment', { wallets: { applePay: 'never', googlePay: 'never' } }).mount('#payElement');
 
@@ -624,10 +624,10 @@ fbq('track', 'InitiateCheckout', { content_name: 'Quiz Enroll', content_type: 'p
   }
 
   // Redirect return (redirect-based methods are off, so this is a rare
-  // fallback): the payment finished on Stripe's side — show the ticket.
+  // fallback): the payment finished on Stripe's side - show the ticket.
   if (params.get('paid') === '1') {
     if (params.get('redirect_status') && params.get('redirect_status') !== 'succeeded') {
-      showErr('That payment didn’t go through — try again.');
+      showErr('That payment didn’t go through: try again.');
     } else {
       showTicket((params.get('n') || '').trim(), state.band, null);
       $('doneNote').textContent = 'Your receipt and confirmation are on the way to your inbox.';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Preview — Private Lessons inside /register</title>
+<title>Preview | Private Lessons inside /register</title>
 <meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -115,7 +115,7 @@ h1 { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; co
 
 <div class="previewbar">
   <b>Preview only.</b> This is how Private Lessons would sit inside the Broadway Bound
-  registration app — same tokens, same card styles as the real Coaching tab. Nothing here charges anything.
+  registration app: same tokens, same card styles as the real Coaching tab. Nothing here charges anything.
 </div>
 
 <div class="wrap">
@@ -130,9 +130,9 @@ h1 { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; co
 
   <!-- The new group. It would sit above "Full Season Support". -->
   <div class="coach-grp">
-    <h2>Private Lessons — Weekly</h2>
+    <h2>Private Lessons: Weekly</h2>
     <p class="cg-blurb">Pick a coach, claim one weekly time, and it is yours for the whole run.
-       Same day, same time, every week — nobody else can book it.</p>
+       Same day, same time, every week: nobody else can book it.</p>
     <div class="coach-cards" id="coaches"></div>
     <div id="panel"></div>
   </div>
@@ -142,7 +142,7 @@ h1 { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; co
 
   <div class="coach-note">
     Everything below the line is today's catalog, rendered from
-    <code>register/coaching.js</code> — shown so you can see the new group in context.
+    <code>register/coaching.js</code>, shown so you can see the new group in context.
   </div>
 </div>
 
@@ -281,7 +281,7 @@ h1 { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; co
     $("panel").innerHTML =
       '<div class="pl-panel">'+
         '<h3>'+esc(c.name)+'</h3>'+
-        '<div class="pl-hint">Claim one weekly time — it becomes yours for every week of the run.</div>'+
+        '<div class="pl-hint">Claim one weekly time: it becomes yours for every week of the run.</div>'+
         '<div class="pl-days">'+grid+'</div>'+
         plansHtml+
         (chosen ? '<div class="pl-cart">'+
@@ -289,7 +289,7 @@ h1 { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; co
               t12(sel.slot.split("|")[2])+'<br>'+chosen.sessions+' lessons · '+
               pretty(chosen.dates[0])+' – '+pretty(chosen.dates[chosen.dates.length-1])+'</div>'+
             '<div class="tot">'+money(chosen.total)+'</div>'+
-            '<button class="cc-btn" type="button" onclick="alert(\'Preview only — in the real app this adds to the cart and goes through the normal Stripe checkout.\')">Add to cart</button>'+
+            '<button class="cc-btn" type="button" onclick="alert(\'Preview only: in the real app this adds to the cart and goes through the normal Stripe checkout.\')">Add to cart</button>'+
           '</div>' : "")+
       '</div>';
 

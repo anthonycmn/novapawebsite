@@ -247,7 +247,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
 .dc-slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));
   gap:14px;padding:16px}
-/* each age group is its own card; the gold age pill is the only wayfinding —
+/* each age group is its own card; the gold age pill is the only wayfinding - 
    the old per-band accent colours were off-palette and are gone (brand law) */
 .dc-slot{background:rgba(8,17,31,0.45);border:1px solid var(--border2);
   border-radius:12px;padding:16px 18px 18px;
@@ -413,7 +413,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         <div class="dc-pack-price"><span class="dc-pack-num">$349</span><span class="dc-pack-was">$395</span></div>
         <div class="dc-pack-each">$69.80 a day, saving $46</div>
         <ul class="dc-pack-list">
-          <li>5 camp day credits — a punch card for the season</li>
+          <li>5 camp day credits: a punch card for the season</li>
           <li>Redeem them for any day camps on the calendar, whenever you decide</li>
           <li>One camper per pack, so each child gets their own five days</li>
           <li>Credits are good through June 30, 2027</li>
@@ -424,7 +424,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           6 AM that school is closed.
         </div>
         <a class="dc-pack-btn" href="/register/?activity=990010">Get the Camp Pack</a>
-        <p class="dc-pack-fine">The pack is per camper — buy it once, then pick their days here or in
+        <p class="dc-pack-fine">The pack is per camper: buy it once, then pick their days here or in
           My NOVAPA and each day prices at $0 at checkout. Booking the same camper into five days in one
           checkout also earns the pack price automatically. Non-refundable. Single days are $79 each, and
           siblings booked together still take 5% off.</p>
@@ -503,7 +503,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <div class="pb-faq">
       <div class="pb-q"><h4>Who are day camps for?</h4><p>Ages 5-9, 9-12, and 12-15, each in its own room with its own program for the day. They run on school holidays and teacher workdays when Loudoun, Fairfax, or Prince William is closed.</p></div>
       <div class="pb-q"><h4>What are the hours?</h4><p>Drop-off at 8:30 AM, pick-up at 4:15 PM. A full working day, so you do not have to take one off.</p></div>
-      <div class="pb-q"><h4>How much is it?</h4><p>$79 per camper per day. Book one camper into all 5 days and the price drops to $349 — $69.80 a day, applied automatically at checkout.</p></div>
+      <div class="pb-q"><h4>How much is it?</h4><p>$79 per camper per day. Book one camper into all 5 days and the price drops to $349: $69.80 a day, applied automatically at checkout.</p></div>
       <div class="pb-q"><h4>Does my child need experience?</h4><p>None at all. Most day campers have never done a show. Every day is built to start and finish in one day, so nobody is behind.</p></div>
       <div class="pb-q"><h4>What do they bring?</h4><p>A packed lunch, a water bottle, and clothes they can move in. See our <a href="policies.html#dress-code">dress code</a> for shoes.</p></div>
       <div class="pb-q"><h4>What happens at the end of the day?</h4><p>A short showing at pick-up for families who can stay. It is informal and takes about fifteen minutes.</p></div>
@@ -545,7 +545,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         </div>
         <div class="footer-brand-name">Northern Virginia<br/>Performing Arts<span>NoVAPA &middot; Leesburg, VA</span></div>
       </a>
-      <p class="footer-tagline">Premier performing arts education for ages 2&ndash;18+. Classes, summer camps, productions, and college audition coaching &mdash; every stage of the journey.</p>
+      <p class="footer-tagline">Premier performing arts education for ages 2&ndash;18+. Classes, summer camps, productions, and college audition coaching: every stage of the journey.</p>
       <div class="footer-contact-block">
         <a class="footer-contact-link" href="mailto:info@novapa.org"><span class="fc-icon">&#9993;</span>info@novapa.org</a>
         <a class="footer-contact-link" href="tel:5715712120"><span class="fc-icon">&#9742;</span>(571) 571-2120</a>
@@ -721,7 +721,7 @@ function checkEmpty() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════
-     NoVAPA CONCIERGE — AI-powered chatbot (Claude via Netlify Function)
+     NoVAPA CONCIERGE - AI-powered chatbot (Claude via Netlify Function)
      Calls /api/chat which routes to /.netlify/functions/chat
      To remove: delete this entire block down to the closing script tag.
      ═══════════════════════════════════════════════════════════════════ -->
@@ -1170,7 +1170,7 @@ function checkEmpty() {
   // ─── Configuration ───────────────────────────────────────────────────
   const API_ENDPOINT = '/api/chat'; // routes to /.netlify/functions/chat (optional - falls back to local KB)
   const USE_LOCAL_KB = true; // Set to false to use only the API endpoint
-  const WELCOME_MESSAGE = "Hi! I'm SPOT, your guide to NoVAPA. Ask me anything about our classes, camps, registration, coaching, or auditions — or pick a quick topic below.";
+  const WELCOME_MESSAGE = "Hi! I'm SPOT, your guide to NoVAPA. Ask me anything about our classes, camps, registration, coaching, or auditions, or pick a quick topic below.";
   const QUICK_STARTERS = [
     "When does registration open?",
     "Tell me about summer camps",
@@ -1192,19 +1192,19 @@ function checkEmpty() {
     // === Summer Camps ===
     summerCamps: {
       keywords: ['summer camp', 'summer camps', 'broadway bound', 'camp', 'summer 2026', 'summer program', 'camps'],
-      response: `<strong>Our Summer 2026 lineup is exciting! </strong><br><br>Featured productions:<br>• <strong>Dear Evan Hansen</strong> (High School Version) — August 2026 (Teen Conservatory)<br><br>Our flagship <strong>Broadway Bound Summer Camp</strong> is consistently rated as families' favorite summer experience — many students return year after year!<br><br>Camps are held at the National Conference Center in Leesburg, VA.<br><br><a href="summer-2027.html">View all summer camps →</a><br><a href="https://novapa.org/camp-info">2026 Camp Info →</a><br><br>Want camp details for a specific age group?`
+      response: `<strong>Our Summer 2026 lineup is exciting! </strong><br><br>Featured productions:<br>• <strong>Dear Evan Hansen</strong> (High School Version): August 2026 (Teen Conservatory)<br><br>Our flagship <strong>Broadway Bound Summer Camp</strong> is consistently rated as families' favorite summer experience: many students return year after year!<br><br>Camps are held at the National Conference Center in Leesburg, VA.<br><br><a href="summer-2027.html">View all summer camps →</a><br><a href="https://novapa.org/camp-info">2026 Camp Info →</a><br><br>Want camp details for a specific age group?`
     },
 
     // === Teen Conservatory ===
     teenConservatory: {
       keywords: ['teen conservatory', 'conservatory', 'teen', 'audition', 'auditions', 'teen audition', 'tryout', 'try out', 'audition based'],
-      response: `<strong>Teen Conservatory </strong><br><br>Our audition-based teen track for ages 13\u201318 \u2014 the next step for Broadway Bound graduates. This season's casts are already set \u2014 cast members register through their NoVAPA account.<br><br>Teens who want to perform this season: check out the <strong>Broadway Bound Teen</strong> casts of Frozen JR. and The Little Mermaid JR.!<br><br><a href="/register/?season=fall">Register for teen shows \u2192</a>`
+      response: `<strong>Teen Conservatory </strong><br><br>Our audition-based teen track for ages 13\u201318: the next step for Broadway Bound graduates. This season's casts are already set: cast members register through their NoVAPA account.<br><br>Teens who want to perform this season: check out the <strong>Broadway Bound Teen</strong> casts of Frozen JR. and The Little Mermaid JR.!<br><br><a href="/register/?season=fall">Register for teen shows \u2192</a>`
     },
 
     // === College Audition Coaching ===
     coaching: {
       keywords: ['college audition', 'college coaching', 'coaching', 'private coaching', 'audition coaching', 'one on one', 'one-on-one', 'tutor', 'mentor', 'bfa', 'conservatory audition', 'unifieds'],
-      response: `<strong>College Audition Coaching </strong><br><br>We offer one-on-one and small-group coaching for:<br>• Audition prep<br>• Acting technique<br>• Vocal performance<br>• On-camera work<br>• Pre-screen filming<br>• Essay & artistic statements<br><br>Whether you're applying to BFA programs, conservatories, or just exploring, we'll meet you where you are.<br><br><strong>NEW: Press Submit Weekend — College Audition Intensive</strong><br>Limited to 12 students · August 28–30 (3 days)<br><br><a href="https://novapa.org/coaching">View coaching packages →</a><br><a href="https://novapa.org/press-submit">Press Submit details →</a><br><a href="https://calendly.com/novapa/free-consultation-15-minutes">Book a free 15-min consultation →</a>`
+      response: `<strong>College Audition Coaching </strong><br><br>We offer one-on-one and small-group coaching for:<br>• Audition prep<br>• Acting technique<br>• Vocal performance<br>• On-camera work<br>• Pre-screen filming<br>• Essay & artistic statements<br><br>Whether you're applying to BFA programs, conservatories, or just exploring, we'll meet you where you are.<br><br><strong>NEW: Press Submit Weekend, College Audition Intensive</strong><br>Limited to 12 students · August 28–30 (3 days)<br><br><a href="https://novapa.org/coaching">View coaching packages →</a><br><a href="https://novapa.org/press-submit">Press Submit details →</a><br><a href="https://calendly.com/novapa/free-consultation-15-minutes">Book a free 15-min consultation →</a>`
     },
 
     // === Pricing / Cost ===
@@ -1222,19 +1222,19 @@ function checkEmpty() {
     // === Classes / Disciplines ===
     classes: {
       keywords: ['classes', 'class', 'what do you teach', 'disciplines', 'discipline', 'lessons', 'training', 'schedule', 'weekly', 'curriculum'],
-      response: `<strong>Weekly classes Monday through Saturday, September–June — $90/month per class</strong><br><br><strong>What we teach:</strong><br>• <strong>Theatre &amp; Acting</strong> — Acting, Improv for Actors<br>• <strong>Musical Theatre</strong> — Musical Theatre, Musical Theatre Dance, Musical Theatre Acting, Acting &amp; Musical Theatre<br>• <strong>Triple Threat</strong> — Triple Threat Musical Theatre Training<br><br><strong>By age:</strong><br>• <strong>Ages 5–8</strong> — Acting (Mondays), Musical Theatre (Tuesdays)<br>• <strong>Ages 9–12</strong> — Acting, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors, Acting &amp; Musical Theatre<br>• <strong>Ages 13–17</strong> — Triple Threat Musical Theatre Training, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors<br>• <strong>Adults 18+</strong> — Adult Acting Class (Tuesdays)<br><br><a href="https://novapa.org/classes">View full schedule →</a>`
+      response: `<strong>Weekly classes Monday through Saturday, September–June: $90/month per class</strong><br><br><strong>What we teach:</strong><br>• <strong>Theatre &amp; Acting</strong>: Acting, Improv for Actors<br>• <strong>Musical Theatre</strong>: Musical Theatre, Musical Theatre Dance, Musical Theatre Acting, Acting &amp; Musical Theatre<br>• <strong>Triple Threat</strong>: Triple Threat Musical Theatre Training<br><br><strong>By age:</strong><br>• <strong>Ages 5–8</strong>: Acting (Mondays), Musical Theatre (Tuesdays)<br>• <strong>Ages 9–12</strong>: Acting, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors, Acting &amp; Musical Theatre<br>• <strong>Ages 13–17</strong>: Triple Threat Musical Theatre Training, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors<br>• <strong>Adults 18+</strong>: Adult Acting Class (Tuesdays)<br><br><a href="https://novapa.org/classes">View full schedule →</a>`
     },
 
     // === Shows / Productions ===
     shows: {
       keywords: ['shows', 'show', 'productions', 'production', 'season', 'performances', 'plays', 'musicals', 'shrek', 'sweeney', 'frozen', 'mermaid', 'christmas carol', 'dear evan', 'dragon', 'charlie chocolate', 'trolls'],
-      response: `<strong>2026–2027 Productions · Eight shows across the season!</strong><br><br>• <strong>Dear Evan Hansen</strong> (HS Version) — August 2026 (Teen Conservatory)<br>• <strong>Sweeney Todd</strong> (School Ed.) — October 2026 (Teen Conservatory)<br>• <strong>A Christmas Carol</strong> — December 2026 (Kids & Teens)<br>• <strong>Disney’s Frozen KIDS &amp; Frozen JR.</strong> — Jan–Feb 2027 (a KIDS cast, a 9–12 JR. cast and a Broadway Bound Teen JR. cast — our biggest multi-cast event!)<br>• <strong>Disney’s The Little Mermaid KIDS &amp; JR.</strong> — May–June 2027 (KIDS, 9–12 JR. and Broadway Bound Teen JR. casts)<br>• <strong>How to Train Your Dragon Jr.</strong> — July 2027<br>• <strong>Charlie and the Chocolate Factory Jr.</strong> — July 2027<br>• <strong>Trolls Jr.</strong> — August 2027<br><br><a href="https://novapa.booktix.com">Box Office & Tickets →</a>`
+      response: `<strong>2026–2027 Productions · Eight shows across the season!</strong><br><br>• <strong>Dear Evan Hansen</strong> (HS Version): August 2026 (Teen Conservatory)<br>• <strong>Sweeney Todd</strong> (School Ed.): October 2026 (Teen Conservatory)<br>• <strong>A Christmas Carol</strong>: December 2026 (Kids & Teens)<br>• <strong>Disney’s Frozen KIDS &amp; Frozen JR.</strong>: Jan–Feb 2027 (a KIDS cast, a 9–12 JR. cast and a Broadway Bound Teen JR. cast, our biggest multi-cast event!)<br>• <strong>Disney’s The Little Mermaid KIDS &amp; JR.</strong>: May–June 2027 (KIDS, 9–12 JR. and Broadway Bound Teen JR. casts)<br>• <strong>How to Train Your Dragon Jr.</strong>: July 2027<br>• <strong>Charlie and the Chocolate Factory Jr.</strong>: July 2027<br>• <strong>Trolls Jr.</strong>: August 2027<br><br><a href="https://novapa.booktix.com">Box Office & Tickets →</a>`
     },
 
     // === Ages / Who can join ===
     ages: {
       keywords: ['age', 'ages', 'how old', 'tiny tots', 'toddler', 'preschool', 'kids', 'children', 'teens', 'adult', 'adults', 'too old', 'too young'],
-      response: `<strong>Programs for every age</strong><br><br>• <strong>Ages 5–8</strong> — Acting (Mondays), Musical Theatre (Tuesdays)<br>• <strong>Ages 9–12</strong> — Acting, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors, Acting &amp; Musical Theatre<br>• <strong>Ages 13–17</strong> — Triple Threat Musical Theatre Training, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors<br>• <strong>Adults 18+</strong> — Adult Acting Class (Tuesdays)<br><br>Classes start at age 5. Younger performers are welcome at our summer day camps.<br><br>What age group can I tell you more about?`
+      response: `<strong>Programs for every age</strong><br><br>• <strong>Ages 5–8</strong>: Acting (Mondays), Musical Theatre (Tuesdays)<br>• <strong>Ages 9–12</strong>: Acting, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors, Acting &amp; Musical Theatre<br>• <strong>Ages 13–17</strong>: Triple Threat Musical Theatre Training, Musical Theatre Dance, Musical Theatre Acting, Improv for Actors<br>• <strong>Adults 18+</strong>: Adult Acting Class (Tuesdays)<br><br>Classes start at age 5. Younger performers are welcome at our summer day camps.<br><br>What age group can I tell you more about?`
     },
 
     // === Adult programs ===
@@ -1258,7 +1258,7 @@ function checkEmpty() {
     // === Policies ===
     policies: {
       keywords: ['policy', 'policies', 'rules', 'refund', 'cancellation', 'attendance', 'dress code', 'makeup class'],
-      response: `<strong>NoVAPA Policies</strong><br><br>For our full policy overview — including registration, attendance, refunds, makeup classes, and conduct guidelines:<br><br><a href="https://novapa.org/policies">Read our policies →</a><br><br>Or email <a href="mailto:info@novapa.org">info@novapa.org</a> with any specific questions.`
+      response: `<strong>NoVAPA Policies</strong><br><br>For our full policy overview, including registration, attendance, refunds, makeup classes, and conduct guidelines:<br><br><a href="https://novapa.org/policies">Read our policies →</a><br><br>Or email <a href="mailto:info@novapa.org">info@novapa.org</a> with any specific questions.`
     },
 
     // === Calendar ===
@@ -1270,7 +1270,7 @@ function checkEmpty() {
     // === Press Submit ===
     pressSubmit: {
       keywords: ['press submit', 'pre-screen', 'prescreen', 'pre screen', 'submission', 'intensive', 'august 28'],
-      response: `<strong>Press Submit Weekend — Limited to 12!</strong><br><br>A 3-day College Audition Intensive: <strong>August 28–30, 2026</strong><br><br>This is a focused, small-group intensive for students preparing pre-screen submissions and college auditions.<br><br><a href="https://novapa.org/press-submit">Learn More & Reserve Your Spot →</a>`
+      response: `<strong>Press Submit Weekend: Limited to 12!</strong><br><br>A 3-day College Audition Intensive: <strong>August 28–30, 2026</strong><br><br>This is a focused, small-group intensive for students preparing pre-screen submissions and college auditions.<br><br><a href="https://novapa.org/press-submit">Learn More & Reserve Your Spot →</a>`
     },
 
     // === Greetings ===
@@ -1288,7 +1288,7 @@ function checkEmpty() {
     // === About NoVAPA ===
     about: {
       keywords: ['about', 'who are you', 'what is novapa', 'what is nvpa', 'northern virginia performing arts', 'tell me about', 'history', 'mission'],
-      response: `<strong>About Northern Virginia Performing Arts (NoVAPA) </strong><br><br>We're Northern Virginia's most passionate performing arts conservatory — offering acting, musical theatre, and performance training for ages 5 to adult.<br><br><strong>Our Mission:</strong> <em>Create. Belong. Inspire.</em><br><br>Changing lives & building futures. It's more than a show.<br><br>From first steps on stage to professional-level conservatory training — every program is built to ignite a lifelong love of performing arts.<br><br>Want to explore a specific program?`
+      response: `<strong>About Northern Virginia Performing Arts (NoVAPA) </strong><br><br>We're Northern Virginia's most passionate performing arts conservatory, offering acting, musical theatre, and performance training for ages 5 to adult.<br><br><strong>Our Mission:</strong> <em>Create. Belong. Inspire.</em><br><br>Changing lives & building futures. It's more than a show.<br><br>From first steps on stage to professional-level conservatory training: every program is built to ignite a lifelong love of performing arts.<br><br>Want to explore a specific program?`
     }
   };
 
@@ -1313,7 +1313,7 @@ function checkEmpty() {
   }
 
   function fallbackResponse(userText) {
-    return `Hmm, I'm not sure I caught that one — but I'd love to help! <br><br>I can answer questions about:<br>• Registration & key dates<br>• Classes & weekly schedules<br>• Summer camps<br>• Teen Conservatory auditions<br>• College audition coaching<br>• This season's shows<br>• Our location<br><br>Or contact us directly:<br><a href="mailto:info@novapa.org">info@novapa.org</a> · <a href="tel:5715712120">(571) 571-2120</a>`;
+    return `Hmm, I'm not sure I caught that one, but I'd love to help! <br><br>I can answer questions about:<br>• Registration & key dates<br>• Classes & weekly schedules<br>• Summer camps<br>• Teen Conservatory auditions<br>• College audition coaching<br>• This season's shows<br>• Our location<br><br>Or contact us directly:<br><a href="mailto:info@novapa.org">info@novapa.org</a> · <a href="tel:5715712120">(571) 571-2120</a>`;
   }
 
   // ─── DOM refs ────────────────────────────────────────────────────────
@@ -1542,7 +1542,7 @@ function checkEmpty() {
 (function(){
   "use strict";
 
-  /* ══ SCHOOL CALENDAR — THE ONE THING ON THIS PAGE THAT IS EDITED BY HAND ══
+  /* ══ SCHOOL CALENDAR - THE ONE THING ON THIS PAGE THAT IS EDITED BY HAND ══
      Every date a division is closed to students. Keys are ISO dates. Values
      list the divisions that are OUT that day; any division not listed is
      treated as in session. A date that is not in this table at all shows
@@ -1553,7 +1553,7 @@ function checkEmpty() {
 
      Taken from Todd's 2026-27 student-day schedule (Suggested Student Days,
      Jul 27 2026), which is what our camp dates are built around. CONFIRM
-     AGAINST THE DIVISION CALENDAR BEFORE ADDING A DATE — families plan
+     AGAINST THE DIVISION CALENDAR BEFORE ADDING A DATE - families plan
      childcare off this.
        LCPS: lcps.org/calendars   FCPS: fcps.edu/calendars   PWCS: pwcs.edu/calendars
 
@@ -1573,7 +1573,7 @@ function checkEmpty() {
 
     "2026-10-12": { out:"lfp", why:"Indigenous Peoples' Day / teacher workday", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Triple Threat Training Day",
         d:"Sing it, act it, dance it, all in one day. Campers rotate through all three and put the pieces together on one number by pickup." },
       "12-15": { t:"Musical Theatre Auditions 101",
@@ -1581,31 +1581,31 @@ function checkEmpty() {
 
     "2026-10-29": { out:"l", why:"End-of-quarter workday", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Monsters & Musicals",
         d:"The spooky corner of musical theatre, from Addams Family to Beetlejuice. Big characters, bigger choreography, and a costume piece they make themselves." },
       "12-15": { t:"Fall Theatre Intensive",
-        d:"A full day of scene work and stage technique for serious young actors. One and done — everything is learned, rehearsed, and performed the same day." } }},
+        d:"A full day of scene work and stage technique for serious young actors. One and done: everything is learned, rehearsed, and performed the same day." } }},
 
     "2026-10-30": { out:"l", why:"Student holiday", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Haunted Broadway",
         d:"Ghost stories told the theatre way, with the songs and staging tricks that make an audience jump. Halloween costumes encouraged." },
       "12-15": { t:"Fall Theatre Intensive",
-        d:"Character day: build a character from the page up and put them in a scene by the afternoon. Complete in one day — no other days needed." } }},
+        d:"Character day: build a character from the page up and put them in a scene by the afternoon. Complete in one day: no other days needed." } }},
 
     "2026-11-02": { out:"lp", why:"Student holiday / conferences", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Improv Olympics",
         d:"A whole day of theatre games with nothing scripted. Campers learn to say yes to an idea, build a scene on the spot, and make each other look good." },
       "12-15": { t:"Fall Theatre Intensive",
-        d:"Rehearsal-craft day: stage a short piece, clean it, and take notes the way a real cast does — all inside one day." } }},
+        d:"Rehearsal-craft day: stage a short piece, clean it, and take notes the way a real cast does, all inside one day." } }},
 
     "2026-11-03": { out:"lfp", why:"Election Day / student holiday", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Campaign Trail: The Musical",
         d:"Everybody runs for something ridiculous and has to win the room over with a speech and a song. Persuasion, projection, and comic timing, disguised as an election." },
       "12-15": { t:"Fall Theatre Intensive Finale & Mock Auditions",
@@ -1613,7 +1613,7 @@ function checkEmpty() {
 
     "2026-11-09": { out:"l", why:"Diwali", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Solo Spotlight",
         d:"One song, one camper, one room paying attention. A day on picking material that suits your voice and performing it alone without shrinking." },
       "12-15": { t:"Solo Performance Lab",
@@ -1623,7 +1623,7 @@ function checkEmpty() {
     // both close for it, so it belongs here.
     "2026-11-11": { out:"fp", why:"Veterans Day", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Ensemble Bootcamp",
         d:"Nobody is the lead today. A day on moving as a group, holding a harmony, and the unglamorous skills that make a chorus sound like one voice." },
       "12-15": { t:"Cold Read Clinic",
@@ -1632,7 +1632,7 @@ function checkEmpty() {
     // ── Winter / spring 2027 ──
     "2027-01-18": { out:"lfp", why:"Martin Luther King Jr. Day", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Stories That Change the World",
         d:"Theatre that was written to move people. Campers work on monologues and songs from shows about courage and fairness, and talk about why they still land." },
       "12-15": { t:"Audition 101",
@@ -1640,7 +1640,7 @@ function checkEmpty() {
 
     "2027-01-25": { out:"l", why:"Student holiday", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Disney Day",
         d:"Songs and scenes from the Disney canon, staged for real. Campers work the big numbers and find the character underneath the famous voice." },
       "12-15": { t:"Disney Audition Workshop",
@@ -1648,7 +1648,7 @@ function checkEmpty() {
 
     "2027-02-05": { out:"lf", why:"Lunar New Year", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Build a Character",
         d:"Start from nothing and end with somebody. Voice, walk, wants, and history, then a scene that proves the character holds up under pressure." },
       "12-15": { t:"Acting Intensive",
@@ -1656,7 +1656,7 @@ function checkEmpty() {
 
     "2027-02-15": { out:"lfp", why:"Presidents' Day", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"History Set to Music",
         d:"From Hamilton to Newsies, the shows that turned real events into something you can sing. Campers stage a number and learn the story behind it." },
       "12-15": { t:"Vocal Audition Lab",
@@ -1664,7 +1664,7 @@ function checkEmpty() {
 
     "2027-03-08": { out:"l", why:"Student holiday", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Lights, Camera, Act!",
         d:"Acting for a camera instead of a back row. Campers learn how small a performance can go on screen, and watch their own takes back." },
       "12-15": { t:"Camera & Self-Tape Boot Camp",
@@ -1672,7 +1672,7 @@ function checkEmpty() {
 
     "2027-03-09": { out:"l", why:"Eid al-Fitr", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Broadway Dance Party",
         d:"Choreography from shows they know, taught fast and danced hard. Campers pick up a full number and perform it full-out before pickup." },
       "12-15": { t:"Dance Call Survival",
@@ -1682,13 +1682,13 @@ function checkEmpty() {
     // for PWCS families while the other divisions are in school.
     "2027-03-10": { out:"p", why:"Eid al-Fitr observed in Prince William", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Scene Study Sampler",
         d:"Four short scenes in four different styles, from farce to fairy tale. Campers find out which one suits them and why." },
       "12-15": { t:"Monologue Workshop",
         d:"One speech, taken apart and rebuilt. Campers leave with a piece that is genuinely theirs and the habit of working text on their own." } }},
 
-    // ── Spring break (weekdays only — camp does not run Sat/Sun) ──
+    // ── Spring break (weekdays only - camp does not run Sat/Sun) ──
     "2027-03-22": { out:"lfp", why:"Spring break", springBreak:true },
     "2027-03-23": { out:"lfp", why:"Spring break", springBreak:true },
     "2027-03-24": { out:"lfp", why:"Spring break", springBreak:true },
@@ -1697,7 +1697,7 @@ function checkEmpty() {
 
     "2027-04-12": { out:"l", why:"Student holiday", programs:{
       "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
       "9-12": { t:"Broadway Bound Prep",
         d:"A head start on summer. Campers work the kind of material our two-week camps build on, and get a feel for how a full rehearsal day runs." },
       "12-15": { t:"Summer Audition Prep",
@@ -1708,7 +1708,7 @@ function checkEmpty() {
      so every date in it carries the same entry. */
   var SPRING_BREAK = {
     "5-9":  { t:"Ages 5–9 Day Camp",
-        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon — same hours, same faculty, same stage at pickup." },
+        d:"A full day of singing, acting, and dancing built for our youngest campers. Theme announced soon: same hours, same faculty, same stage at pickup." },
     "9-12": { t:"Spring Break Musical Theatre Camp",
       d:"A full week building one show, from first read to performance. Campers sing, act, dance, and help make the thing they end up in." },
     "12-15": { t:"Spring Break Musical Theatre Camp",
@@ -1935,7 +1935,7 @@ function checkEmpty() {
     }
 
     listEl.innerHTML = html || '<div class="dc-empty">No upcoming day camps are on the schedule ' +
-      'right now. New dates go up as each school year’s calendar is released — email ' +
+      'right now. New dates go up as each school year’s calendar is released: email ' +
       '<a href="mailto:info@novapa.org">info@novapa.org</a> to hear first.</div>';
   }
 

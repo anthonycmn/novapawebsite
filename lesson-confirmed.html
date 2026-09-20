@@ -138,7 +138,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       })
       .catch(function(){
         if (tries < 4){ tries++; setTimeout(load, 1200); return; }
-        fail("We couldn&rsquo;t load your booking. If you were charged, it went through &mdash; " +
+        fail("We couldn&rsquo;t load your booking. If you were charged, it went through: " +
           "email <a href='mailto:info@novapa.org'>info@novapa.org</a> and we&rsquo;ll confirm the details.");
       });
   })();
@@ -169,7 +169,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           return '<span class="chip">' + esc(d) + "</span>"; }).join("") + "</div></div>" +
 
       (flagged ? '<div class="warn">Your payment went through. One detail on our end needs a ' +
-        'quick human check &mdash; we&rsquo;ll email you within one business day to confirm. ' +
+        'quick human check: we&rsquo;ll email you within one business day to confirm. ' +
         'Nothing more is needed from you.</div>' : "") +
 
       '<div class="next">' +

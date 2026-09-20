@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in — NOVAPA Registration</title>
+<title>Sign in | NOVAPA Registration</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,7 +101,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
   <div id="working">
     <h1>Signing you <em>in…</em></h1>
-    <p>One moment — taking you to your registration.</p>
+    <p>One moment: taking you to your registration.</p>
   </div>
 
   <div id="ask" style="display:none">
@@ -137,7 +137,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   var type = q.get('type') || 'magiclink';
 
   // The old template handed Supabase a redirect_to carrying the parent's
-  // original query — their chosen show, their utm tags. Keep that working by
+  // original query - their chosen show, their utm tags. Keep that working by
   // letting the template pass it as `next`. Taken as a raw substring because
   // the value has its own &-separated params, and only honoured when it points
   // back at us, so this can never become an open redirect.
@@ -155,7 +155,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       } catch(e){}
     }
     // Supabase falls back to the project Site URL when the caller passes no
-    // redirect, which is the bare origin — following that would drop a parent
+    // redirect, which is the bare origin - following that would drop a parent
     // on the homepage after they clicked a *registration* sign-in link. Treat a
     // pathless destination as no destination.
     if (!path || path === '/' || path.indexOf('/?') === 0 || path.indexOf('/#') === 0) return null;
@@ -193,8 +193,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
 
   // Verifying on page load is NOT safe. Joyce Koons' mail scanner renders the
-  // page and runs its JavaScript — on 2026-07-28 it produced four sessions in
-  // fifteen minutes, one from a Microsoft Azure address on Windows 7 — so an
+  // page and runs its JavaScript - on 2026-07-28 it produced four sessions in
+  // fifteen minutes, one from a Microsoft Azure address on Windows 7 - so an
   // automatic verify handed the token straight to the scanner and the parent
   // got "expired" seconds later.
   //
@@ -264,7 +264,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   function submitCode(){
     var token = (otp.value || '').replace(/\D/g, '');
     otpErr.classList.remove('on');
-    // Supabase's OTP length is a project setting — this one issues 8 digits,
+    // Supabase's OTP length is a project setting - this one issues 8 digits,
     // not the 6 the docs default to. Accept the range rather than a magic number.
     if (token.length < 6 || token.length > 12) return codeFail('Enter the code exactly as it appears in the email.');
     var email = emailHint || (prompt('What email address did we send it to?') || '').trim();
@@ -273,7 +273,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     sb.auth.verifyOtp({ email: email.toLowerCase(), token: token, type: 'email' }).then(function(res){
       document.getElementById('otpGo').disabled = false;
       if (res.error) {
-        emailHint = '';   // the address may have been the wrong guess — ask again
+        emailHint = '';   // the address may have been the wrong guess - ask again
         return codeFail(/expired|invalid/i.test(res.error.message || '')
           ? 'That code has expired or does not match. Request a new one and try again.'
           : (res.error.message || 'That did not work.'));
@@ -282,7 +282,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       location.replace(destination());
     }).catch(function(){
       document.getElementById('otpGo').disabled = false;
-      codeFail('Something went wrong — try again, or reply to our email and we will register you directly.');
+      codeFail('Something went wrong: try again, or reply to our email and we will register you directly.');
     });
   }
   document.getElementById('otpGo').addEventListener('click', submitCode);
