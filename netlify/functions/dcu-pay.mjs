@@ -21,6 +21,7 @@
 import Stripe from "stripe";
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
+import { sendMail } from "./reg-mail.mjs";
 import { mintDcuFamily } from "./dcu-family.mjs";
 
 // DC Unifieds occupies 9706xx inside the coaching block (db/dc-unifieds-activities.sql).
@@ -303,6 +304,48 @@ export default async (req) => {
     }
     try { await sendConfirmationEmail(meta, { id: "free_" + hold.id }); }
     catch (e) { console.error("dcu free order email failed:", e.message); }
+    // The office heads-up (Sep 21 2026). reg-webhook sends the
+    // "DC Unifieds registration" alert to the admin list on every Stripe
+    // payment, and this branch never reaches Stripe, so a fully comped seat
+    // was invisible to the office: order 15269 (Sep 20, a $699 In Person
+    // seat comped to $0.00) went out with the family told and nobody else.
+    // This is the same block reg-pay.mjs runs on its own free path, with the
+    // brand's subject shape. Logged and swallowed like the calls around it:
+    // an alert failure must never fail the family's order.
+    try {
+      const ar = await fetch(`${SUPABASE_URL}/rest/v1/admin_emails?select=email`, {
+        headers: svcHeaders(),
+      });
+      const admins = (await ar.json()).map((r) => r.email).filter(Boolean);
+      if (admins.length) {
+        const usd = (c) => "$" + ((parseInt(c || "0", 10) || 0) / 100).toFixed(2);
+        const moneyRows = [
+          [`Subtotal`, usd(listCents)],
+          couponApplied ? [`Coupon ${couponApplied}`, "-" + usd(couponCents)] : null,
+          [`<b>Order total</b>`, `<b>$0.00</b>`],
+          [`Paid today`, `$0.00`],
+          [`FSA eligible`, "no"],
+        ].filter(Boolean).map(([k, v]) =>
+          `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");
+        await sendMail({
+          fromName: "NOVAPA Registrations",
+          to: admins,
+          subject: `DC Unifieds registration: ${parentName || email} - $0.00 (full)`,
+          html: [
+            `<b>${parentName || "(no name)"}</b> &lt;${email}&gt;` +
+            `${phone ? ` · ${phone}` : ""} · plan: <b>full</b>`,
+            `<table style="border-collapse:collapse;font-size:14px">` +
+            `<tr><td style="padding:3px 14px 3px 0">${studentName} · ${act.name}</td>` +
+            `<td align="right">${usd(listCents)}</td></tr>` +
+            `<tr><td colspan="2" style="border-top:1px solid #ddd;padding:0;height:6px"></td></tr>` +
+            `${moneyRows}</table>`,
+            `No Stripe payment: this seat was comped in full by ` +
+            `${couponApplied ? `coupon ${couponApplied}` : "a $0 price"}. ` +
+            `<a href="https://www.northernvirginiaperformingarts.org/register/admin/">Admin dashboard</a>`,
+          ].join("<br><br>"),
+        });
+      }
+    } catch (e) { console.error("dcu free order: admin notify failed:", e.message); }
     return Response.json({
       free: true,
       hold_id: hold.id,

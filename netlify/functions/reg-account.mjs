@@ -19,6 +19,28 @@ async function svc(path) {
   return r.json();
 }
 
+async function svcRpc(fn, args) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error(`rpc ${fn} failed ${r.status}`);
+  const t = await r.text();
+  try { return JSON.parse(t); } catch { return t; }
+}
+
+// Seats sitting in somebody else's cart are gone for this family too. The
+// house rule counts active unexpired holds against capacity, and
+// reg-frozen-pay.mjs:60 already does; this picker did not, so "N left" could
+// offer a date whose last seats were held. A stale hold count must never
+// block the page, so a failed count reads zero rather than throwing.
+async function heldCount(activityId) {
+  try { return (await svcRpc("held_count_activity", { p_activity_id: activityId })) || 0; }
+  catch { return 0; }
+}
+
 async function svcPatch(path, body) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -590,12 +612,14 @@ export default async (req) => {
       const rows = await svc(
         `activities?select=id,name,price_cents,capacity,sold,booked_offline,starts_on,age_range` +
         `&active=is.true&bookable=is.true&hidden=is.false&offering_kind=eq.day_camp&order=starts_on,age_range`);
+      const held = new Map(await Promise.all(rows.map(async (a) =>
+        [a.id, a.capacity == null ? 0 : await heldCount(a.id)])));
       dayCamps = rows
         .map((a) => ({
           id: a.id,
           name: a.name,
           remaining: a.capacity == null ? null
-            : Math.max(0, a.capacity - (a.sold || 0) - (a.booked_offline || 0)),
+            : Math.max(0, a.capacity - (a.sold || 0) - (a.booked_offline || 0) - (held.get(a.id) || 0)),
           starts_on: a.starts_on || null,
           age_range: a.age_range || null,
           // Kept for the cached account.html that still reads it: the date
