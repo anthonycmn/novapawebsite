@@ -33,6 +33,15 @@
 //      The portal sync runs every 15 minutes, so what this finds is what a
 //      family has been looking at all night.
 //
+//   3. CREDITS ↔ THE PARENT PORTAL. credit_audit() in the database
+//      (db/registration/credit_audit.sql). Halves 1 and 2 follow orders, and
+//      a Day Camp Pack is not an enrollment: $349 buys a balance on a camper
+//      row that the portal reaches only through family_hub.students.camper_id.
+//      So both halves could report all clear while a family held credits it
+//      could not spend, and on Sep 10 2026 that is exactly what happened to
+//      the Skeltons for eleven days. Every check in this half is read-only;
+//      a credit is never moved from here.
+//
 // Always sends — an "all clear" is the point on the mornings there is
 // nothing to fix. Read-only against Stripe; a restricted read key is enough.
 import { SUPABASE_URL } from "./reg-config.mjs";
@@ -134,6 +143,21 @@ async function auditStripe() {
   return { orders: orders.length, deposits, classes, healed, failing, stopped, unreadable };
 }
 
+// ---- half 3: credits ↔ the parent portal ---------------------------------
+//
+// credit_audit() may not be applied yet on the morning this ships. A missing
+// function must not cost CJ the whole audit, so it degrades to "not deployed"
+// and says so in the email rather than throwing. Same shape preflight uses for
+// activity_facts.
+async function auditCredits() {
+  try {
+    return { rows: (await db("rpc/credit_audit", { method: "POST", body: "{}" })) || [], applied: true };
+  } catch (e) {
+    if (/PGRST202|\b404\b/.test(e.message)) return { rows: [], applied: false };
+    throw e;
+  }
+}
+
 // ---- the email -----------------------------------------------------------
 
 const cell = (s, extra = "") =>
@@ -202,6 +226,7 @@ async function runAudit(resend) {
   const s = await auditStripe();
   // Half 2 runs AFTER the heal so it judges the orders Stripe agrees with.
   const portal = await db("rpc/registration_portal_audit", { method: "POST", body: "{}" });
+  const credits = await auditCredits();
 
   const byKind = {};
   for (const p of portal || []) (byKind[p.kind] ||= []).push(p);
@@ -213,7 +238,19 @@ async function runAudit(resend) {
     balance_mismatch: ["Portal balance differs from the order", "What the family sees as owed is not what the order (checkout + recorded installments) says. The sync runs every 15 minutes; if this persists, something is wrong in the hub."],
   };
 
-  const issues = s.failing.length + s.stopped.length + s.unreadable.length + (portal || []).length;
+  const creditLabel = {
+    credits_not_in_portal: ["Day camp credits the parent portal cannot reach",
+      "The family paid for these and cannot see or spend them. The child needs a parent portal student row carrying that camper id."],
+    grant_landed_nowhere: ["Day camp credits granted to nobody",
+      "The ledger recorded the grant and no camper took it, so the family has paid and holds nothing."],
+    grant_household_holds_none: ["Day camp credits in a duplicate household",
+      "The child is in the register twice, once per parent address, and the credits are on the half this order did not name. Merging the two campers clears it."],
+  };
+  const creditsByKind = {};
+  for (const c of credits.rows) (creditsByKind[c.kind] ||= []).push(c);
+
+  const issues = s.failing.length + s.stopped.length + s.unreadable.length +
+    (portal || []).length + credits.rows.length;
   const subject = issues
     ? `Registration audit: ${issues} thing${issues === 1 ? "" : "s"} to look at`
     : `Registration audit: all clear`;
@@ -223,7 +260,7 @@ async function runAudit(resend) {
 <div style="font:700 20px/1.3 Helvetica,Arial,sans-serif;color:#0B1422">${issues ? "Registration audit" : "Registration audit — all clear"}</div>
 <div style="font:14px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:9px">
 ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" })}.
-Checked ${s.deposits} deposit plan${s.deposits === 1 ? "" : "s"} and ${s.classes} class membership${s.classes === 1 ? "" : "s"} against Stripe, and every paid order line against the parent portal.
+Checked ${s.deposits} deposit plan${s.deposits === 1 ? "" : "s"} and ${s.classes} class membership${s.classes === 1 ? "" : "s"} against Stripe, every paid order line against the parent portal, and ${credits.applied ? "every day camp credit against the camper the portal reads" : "nothing against day camp credits: <b>credit_audit() is not applied yet</b> (db/registration/credit_audit.sql)"}.
 ${s.healed.length ? `<b>Recorded ${s.healed.length} payment${s.healed.length === 1 ? "" : "s"} (${usd(s.healed.reduce((t, h) => t + h.cents, 0))}) the webhook had not</b>: deposit balances are corrected on the next sync; nothing for you to do.` : "Stripe and the orders already agreed."}
 </div>
 ${section("Payment Stripe cannot collect", s.failing.map((f) => rowOrder(f, `${usd(f.cents)} ${f.plan === "subscription" ? "tuition" : "installment"} ${esc(f.status)}, ${f.attempts || 0} attempt${f.attempts === 1 ? "" : "s"}${f.next ? `, next ${esc(f.next)}` : ", no retry scheduled"} · <a href="https://dashboard.stripe.com/invoices/${f.invoice}">invoice</a>`)),
@@ -233,6 +270,8 @@ ${section("Plan stopped with a balance owed", s.stopped.map((x) => rowOrder(x, `
 ${section("Could not read from Stripe", s.unreadable.map((x) => rowOrder(x, esc(x.error))), "")}
 ${Object.entries(label).map(([kind, [title, blurb]]) =>
   section(title, (byKind[kind] || []).map((p) => `<tr>${cell(`#${p.order_no}`)}${cell(esc(p.email))}${cell(`${p.camper ? `<b>${esc(p.camper)}</b> — ` : ""}${esc(p.detail)}`)}</tr>`), blurb)).join("")}
+${Object.entries(creditLabel).map(([kind, [title, blurb]]) =>
+  section(title, (creditsByKind[kind] || []).map((c) => `<tr>${cell(esc(c.email))}${cell(`<b>${esc(c.camper)}</b>`)}${cell(esc(c.detail))}</tr>`), blurb)).join("")}
 ${s.healed.length ? section("Recorded today", s.healed.map((h) => rowOrder(h, `${usd(h.cents)} ${h.plan === "subscription" ? "class tuition" : "installment"} · <a href="https://dashboard.stripe.com/invoices/${h.invoice}">invoice</a>`)), "") : ""}
 <div style="font:12.5px/1.7 Helvetica,Arial,sans-serif;color:#9AA1AC;margin-top:22px">
 Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-only here; the only write is recording a payment that already happened.</div></div>`;
@@ -254,7 +293,9 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
     return new Response(`resend ${r.status}`, { status: 200 });
   }
   await markClaim("sent");
-  return new Response(`${subject}; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });
+  return new Response(
+    `${subject}; healed ${s.healed.length}, portal ${(portal || []).length}, ` +
+    `credits ${credits.applied ? credits.rows.length : "not deployed"}`, { status: 200 });
 }
 
 export default async () => {
