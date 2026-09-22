@@ -260,6 +260,7 @@ function checkCodeLength() {
 const TAGS = [
   ["/posthog.js", "PostHog"],
   ["AW-18370900407", "the Google Ads tag"],
+  ["G-90GQK8HYNV", "the Google Analytics 4 tag"],
   ["2191001311729801", "the NOVAPA Meta pixel"],
   ["902777265812159", "the cross-brand Meta pixel"],
 ];
@@ -300,7 +301,7 @@ function checkAnalyticsTags() {
     }
   }
   if (!problems.some((p) => p.check === "analytics-tags")) {
-    ok(`all ${checked} public pages carry PostHog, both Meta pixels and the Google Ads tag`);
+    ok(`all ${checked} public pages carry PostHog, both Meta pixels, the Google Ads tag and GA4`);
   }
 }
 
