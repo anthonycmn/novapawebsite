@@ -16,6 +16,32 @@ file to change how the engine behaves; the routine itself never needs touching.
 5. Only push to the `authority-engine` branch. Branch pushes cost 0 deploy
    credits; a push to `main` costs 15 and is Tony's call, never yours.
 
+## 0. Read the thread first — Tony can talk to you here
+
+This routine runs as one continuous session, so Tony can reply to you between
+runs. **Before you do anything else, read back through the conversation for
+anything he has said since your last run.** What he says in the thread outranks
+this file for that day. Answer him directly in your report — it is a
+conversation, not a log.
+
+Handle it in this order:
+
+- **He gave feedback on a draft** (tone, angle, a headline he dislikes, a fact
+  to fix) — revise that draft first and push the fix. Do not move on to a new
+  topic in the same run. Getting the last piece right beats starting the next.
+- **He asked a question** — answer it plainly in your report. If answering it is
+  the whole job that day, that is a fine day's work; say so and draft nothing.
+- **He redirected you** ("skip that one", "do X next", "stop doing Y") — follow
+  it, and if it is a lasting change rather than a one-off, edit this file so it
+  sticks, and tell him you did.
+- **He said to publish something** — you still cannot publish, and that has not
+  changed. Confirm what is ready, tell him it is waiting on him, and be specific
+  about where (branch, file paths, which channels are drafted).
+- **He sent or described a photo** — you cannot receive image files usefully in
+  the cloud. Note what he intends, and leave the placeholder for him to fill in
+  locally when he publishes.
+- **He said nothing since the last run** — carry on with the normal cycle below.
+
 ## Setup
 
     TZ=America/New_York date
