@@ -27,11 +27,11 @@ Status: `todo` → `drafted` → `awaiting-approval` → `published` (+ date).
    Primary: how to prepare for a school musical audition · question-shaped, seasonal now.
 8. Does theatre look good on college applications? — `published` 2026-09-16 (site + Facebook; Substack + LinkedIn drafted, waiting on Tony's logins; no Reddit per Tony) — novapa.org — MED
    Primary: does theatre look good on college applications · verbatim on CollegeVine/CC/Quora.
-9. Is my child too shy for drama class? — `awaiting-approval` 2026-09-16 (approved by Tony; PR #124 open, Deploy Preview pending; photo still needed) — novapa.org — MED
+9. Is my child too shy for drama class? — `published` 2026-09-18 (PR #124 merged to main, live on site; lead photo still a borrowed placeholder) — novapa.org — MED
    Primary: will drama classes help a shy child · known parent PAA; US answer is thin (SERP is UK franchises).
-10. Theatre for kids with anxiety or ADHD: what research and the rehearsal room agree on — `drafted` 2026-09-18 (branch topic-10-ship, stacked on topic-9-ship; photo needed) — novapa.org — MED
+10. Theatre for kids with anxiety or ADHD: what research and the rehearsal room agree on — `drafted` 2026-09-18 (branch topic-10-ship NOT on origin — article HTML exists only on Tony's machine; channel drafts are safe in runs/2026-09-18-topic-10-anxiety-adhd/; photo needed) — novapa.org — MED
     Primary: benefits of drama for children with anxiety · steady parent research query; careful, never clinical.
-11. Winter and spring break theatre camps: what they are and how to choose [local] — `todo` — novapa.org — MED
+11. Winter and spring break theatre camps: what they are and how to choose [local] — `drafted` 2026-09-22 (branch authority-engine, pushed; photo needed) — novapa.org — MED
     Primary: spring break theatre camps for kids (+ Loudoun/NoVA secondary) · transactional seasonal; informational supply gap.
 12. What are Unified auditions? A plain-English guide for families — `todo` — novapa.org — MED
     Primary: what are unified college auditions · pure definitional query; DC Unifieds (Oct 15-18, Leesburg) as inside credential.

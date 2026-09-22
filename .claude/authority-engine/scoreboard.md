@@ -631,3 +631,84 @@ inside a national answer.
 - **Primary keyword:** no NOVAPA presence (expected; post not live).
 
 Next: topic 11, "Winter and spring break theatre camps" [local].
+
+---
+
+## Run 12 — September 22, 2026 (topic 11: winter and spring break theatre camps) — DRAFTED, awaiting approval
+
+First run since the engine state landed in the repo. `.claude/authority-engine/` is
+readable from the cloud for the first time, so this is the first cycle that started
+with the real calendar instead of a STATUS-BLOCKED file.
+
+- **Canonical:** blog/spring-break-theatre-camps-for-kids-tony-cimino-johnson.html
+  (~2,040 words, 9 h2 sections, valid Article + FAQPage JSON-LD verified with
+  json.loads). Index panel + call-board row added (10 posts), sitemap entry added,
+  blog lastmod bumped to 09-22. `npm run check` passes, analytics block included.
+- **Branch:** `authority-engine`, committed and pushed. Not merged, no PR opened.
+- **Photo:** none. Article has a commented figure slot; the index panel borrows
+  broadway-bound-camp-counselor-camper.jpg as a placeholder. Ask Tony.
+- **Drafts:** runs/2026-09-22-topic-11-break-camps/ — substack.md (verbatim mirror,
+  canonical pointer line, absolute URLs), linkedin.md (link in first comment),
+  facebook.md, instagram.md (caption + 8-slide carousel), reddit.md (r/nova).
+- **Reddit:** r/nova only. Ledger: r/nova Sept 14 (eight days, allowed) ·
+  r/Theatre Sept 18 (four days, skipped) · r/MusicalTheatre Sept 10.
+
+### Field re-check (primary: "spring break theatre camps for kids")
+
+Page 1 is entirely vendor landing pages and listing aggregators: Encore Stage &
+Studio (Arlington/Alexandria), The Theatre Lab (DC), Alliance Theatre (Atlanta),
+The Play Group Theatre (Westchester), City Kids Theater (Glenview), and four
+Kids Out and About city pages. Secondary "winter break camps for kids what to
+look for" returns generic parenting listicles — Jumbula, Brighterly, Noodle,
+ActivityHero, and regional parent blogs — whose advice is about packing extra
+socks, not about choosing a program. Secondary "how to choose a theatre camp"
+is dominated by Long Lake Camp For The Arts (three separate posts), plus
+FBPlayhouse, Denise Simon Coaching, and ActivityHero, all written about
+*summer* camp: overnight, bunks, homesickness, multi-week.
+
+Nobody defines the break-camp category at all. Nobody separates winter break
+from spring break as different problems. Nobody states what a single day can
+honestly deliver versus a five-day week. Nobody publishes a price except The
+Theatre Lab ($450/week, 9-3, aftercare extra). Nobody writes a "when not to
+book one" section. Local supply is thin too: for Loudoun the SERP offers the
+county PRCS activity guide, Drama Kids, Loudoun Soccer and Karter Schools —
+no editorial answer.
+
+**Wedge:** the October email opening and the eighteen-closure-day count; the
+two-questions-at-once standard (childcare AND the day) stated without
+embarrassment; the three-products-one-name taxonomy; the Rule (one day = one
+skill, five days = one show) with the overselling tell; "compare the hours,
+not the price" with the $450/9-3-plus-aftercare worked example; the seven
+questions with a two-vague verdict line; real published prices ($79/day,
+$349 five-day pack = $69.80/day) inside a national answer; the 2027 Loudoun
+break dates; and a "when not to book" section that sends slow-to-warm kids to
+weekly classes and audition worries to coaching instead.
+
+### Standings vs. baseline-2026-09-06
+
+- **"Tony Cimino-Johnson" theatre:** page 1 unchanged from Run 11: LinkedIn,
+  Google Books (Playbook), VTA 2016 sched, EdTA candidate PDF, Instagram,
+  Loudoun Now award article, OnStage Blog editorial, MTI, YouTube channel,
+  tony-cimino.com. Tony's own site still holds its page-1 slot.
+- **"Mr. Cimino-Johnson" theatre:** VTA sched, LinkedIn, EdTA PDF, Perlego
+  (Playbook), MTI, lcps.org, tony-cimino.com, plus the two Loudoun Now /
+  OnStage items. Set is stable. Still no novapa.org URL on this query.
+- **"Mr. CJ" theatre Northern Virginia (bare nickname):** still zero Tony
+  properties — Tripadvisor, 1st Stage, NoVA Mag, Virginia.org. Unchanged from
+  baseline and from Runs 10 and 11. The surname-qualified queries do surface
+  him; the bare nickname does not.
+- **site:novapa.org/blog:** the operator still returns nothing from the domain
+  (Wikipedia noise, the GitHub repo, a YouTube playlist). Same caveat as Runs
+  10-11: either the tool does not honor the operator or the posts are not
+  indexed. **Manual Search Console check is still owed and is now three runs
+  old.**
+- **NEW, and worth Tony's attention:** an exact-match search for
+  "is my child too shy for drama class" + Cimino-Johnson returns **GitHub PR
+  #124 as the number one result**, while the live novapa.org article — merged
+  to main and live since Sept 18 — does not appear anywhere. The public repo
+  is outranking the site for the site's own article title. Page 1 otherwise is
+  the same UK/AU franchise set the piece was written to beat (Theatretrain,
+  StageAbility, Dramacube, Evoke, Drama Kids, PQ Academy, Mumsnet).
+- **Primary keyword:** no NOVAPA presence, expected, post not live.
+
+Next: topic 12, "What are Unified auditions? A plain-English guide for families".
