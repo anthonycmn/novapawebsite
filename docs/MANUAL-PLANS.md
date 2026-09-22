@@ -56,7 +56,11 @@ returns the same order id and changes nothing. That matches the conventions
 already in the table: comped orders use `free_`, saved-card class orders use
 the setup intent `seti_`.
 
-## The first one: the Johansen season
+Applied Sep 21, 2026 as migration
+`0320_a_hand_built_plan_gets_an_orders_row.sql`, recorded in
+`staff_portal.schema_migrations`.
+
+## The first one: the Johansen season, done
 
 Katy Johansen, Frozen and The Little Mermaid, 15 percent off.
 
@@ -75,13 +79,15 @@ The line prices are derived, not apportioned by hand: both shows list at
 $695.00 in `public.activities`, and $695.00 less 15 percent is $590.75, so
 two lines of 59075 come to the 118150 CJ quoted the family.
 
-**Before running this, CJ names the two activity ids.** Katy's age band picks
+The activity ids are not guessable and were not guessed. Katy's age band picks
 between three Frozen listings (1959789 Kids, 1959787 Junior, 1959805 Teens)
 and three Little Mermaid listings (1959850 Kids, 1959854 Junior, 1959851
-Teens). Guessing would route a student onto the wrong roster, so the two
-nulls below are a blank to fill, not a default.
+Teens). CJ named her Junior for both on Sep 21, so the ids below are 1959787
+and 1959854. Do the same for the next one: ask, do not infer, because a wrong
+id routes a student onto the wrong roster.
 
-Step 1, the row:
+Step 1, the row. Run Sep 21, 2026, returning order **15271**, uuid
+`b75c3baf-a327-4021-858c-f894b27c4cfe`:
 
 ```sql
 select public.record_manual_plan(
@@ -112,7 +118,15 @@ from public.orders
 where stripe_payment_intent = 'manual_sub_1UGevUGWP2ZbtaszV8Bd4eAI';
 ```
 
-Step 2, the metadata, with the uuid step 1 returned:
+Actual result: order 15271, `plan = deposit`, `total_cents` 118150,
+`amount_today_cents` 37500, `installments_paid_cents` 0, remaining 80650. Two
+`order_items` rows on 1959787 and 1959854 at 59075 each. `orders` went 242 to
+243 and `order_items` 338 to 340. `registration_portal_audit()` still returns
+zero rows, and `activities.sold` and `booked_offline` did not move on either
+show: Frozen Jr. is still 32 sold with 13 booked offline, Mermaid Jr. still 9
+sold. Katy was already inside that 13, confirmed by CJ.
+
+Step 2, the metadata, with the uuid step 1 returned. Done Sep 21, 2026:
 
 Stripe dashboard: open the subscription, Edit metadata, add `order_id` =
 the uuid. Or:
@@ -121,9 +135,15 @@ the uuid. Or:
 stripe subscriptions update sub_1UGevUGWP2ZbtaszV8Bd4eAI --metadata[order_id]=<uuid>
 ```
 
-Check it worked: the next $125.00 pull on Oct 17 should appear in
+Read back after: `sub_1UGevUGWP2ZbtaszV8Bd4eAI` now carries
+`metadata.order_id = b75c3baf-a327-4021-858c-f894b27c4cfe`, still $125.00
+monthly on `price_1U18VpGWP2Zbtasz76Q1lZxL`, still `cancel_at` Apr 17, 2027.
+Nothing else on the subscription changed.
+
+Check it worked for real: the next $125.00 pull on Oct 17 should appear in
 `order_installments` within a minute of the invoice, and
-`orders.installments_paid_cents` for that row should read 12500.
+`orders.installments_paid_cents` for order 15271 should read 12500. That is
+the first end-to-end proof; until Oct 17 this path is wired but unexercised.
 
 ## What this does not settle
 
