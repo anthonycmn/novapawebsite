@@ -160,7 +160,9 @@ that post as the Page also requires the PAGE asset assigned to the system user
 
 The four original NOVAPA/Frozen ads carry **no `utm_content` at all**, which is why
 NOVAPA-side creative attribution is guesswork. Adding url_tags to those is the
-single highest-value fix to the measurement setup.
+single highest-value fix to the measurement setup. The exact strings, one per
+ad_id, are in `docs/meta-url-tags.md` (21 Sep 2026), ready to paste into the
+ad's URL parameters field; none had been applied when that file was written.
 
 Rebuild this table rather than trusting it — one call:
 
