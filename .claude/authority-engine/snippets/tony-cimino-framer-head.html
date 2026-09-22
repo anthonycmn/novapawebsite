@@ -1,0 +1,75 @@
+<!-- Tony Cimino-Johnson entity schema — paste into Framer:
+     Site Settings → General → Custom Code → "End of <head> tag" → Save & Publish.
+     This makes tony-cimino.com the canonical hub for the person entity that
+     novapa.org and impacttoursandtravel.com point at (@id must stay exactly
+     "https://tony-cimino.com/#person" everywhere). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://tony-cimino.com/#website",
+      "url": "https://tony-cimino.com/",
+      "name": "Tony Cimino-Johnson",
+      "about": {"@id": "https://tony-cimino.com/#person"}
+    },
+    {
+      "@type": "ProfilePage",
+      "@id": "https://tony-cimino.com/#profile",
+      "url": "https://tony-cimino.com/",
+      "mainEntity": {"@id": "https://tony-cimino.com/#person"}
+    },
+    {
+      "@type": "Person",
+      "@id": "https://tony-cimino.com/#person",
+      "name": "Tony Cimino-Johnson",
+      "alternateName": ["Anthony Cimino-Johnson", "Mr. Cimino-Johnson", "Mr. CJ"],
+      "url": "https://tony-cimino.com/",
+      "jobTitle": "Theatre Educator, Director, Producer & College Audition Coach",
+      "description": "Tony Cimino-Johnson (\"Mr. CJ\") is a Tony Awards–honored theatre educator, director, producer, and college audition coach with more than 20 years of experience in Northern Virginia and the DC metro area. He is the author of The Theatre Leader's Playbook (Routledge) and the founder and CEO of Northern Virginia Performing Arts in Leesburg, Virginia.",
+      "homeLocation": {"@type": "Place", "address": {"@type": "PostalAddress", "addressLocality": "Leesburg", "addressRegion": "VA", "addressCountry": "US"}},
+      "worksFor": {"@id": "https://novapa.org/#organization"},
+      "knowsAbout": ["Theatre education", "Children's theatre", "Musical theatre", "College audition coaching", "Acting coaching", "Vocal coaching", "Theatre leadership", "Arts administration", "Educational theatre travel"],
+      "award": [
+        "Excellence in Theatre Education Award — Honorable Mention, The Tony Awards & Carnegie Mellon University (2024)",
+        "Northern Virginia 40 Under 40, Class of 2025"
+      ],
+      "sameAs": [
+        "https://novapa.org/faculty",
+        "https://www.linkedin.com/in/tonyciminojohnson/",
+        "https://www.instagram.com/cjtheatredirector/",
+        "https://x.com/tonycmn",
+        "https://www.mtishows.com/people/anthony-cimino-johnson-0",
+        "https://cjcreative.substack.com/",
+        "https://books.google.com/books/about/The_Theatre_Leader_s_Playbook.html?id=yWvd0QEACAAJ"
+      ]
+    },
+    {
+      "@type": "EducationalOrganization",
+      "@id": "https://novapa.org/#organization",
+      "name": "Northern Virginia Performing Arts",
+      "alternateName": ["NOVAPA"],
+      "url": "https://novapa.org/",
+      "founder": {"@id": "https://tony-cimino.com/#person"}
+    },
+    {
+      "@type": "TravelAgency",
+      "@id": "https://impacttoursandtravel.com/#organization",
+      "name": "ImpACT Tours and Travel",
+      "url": "https://impacttoursandtravel.com/",
+      "description": "Educational student group travel — Broadway trips to New York City and theme-park trips to Orlando. For educators, by educators.",
+      "founder": {"@id": "https://tony-cimino.com/#person"}
+    },
+    {
+      "@type": "Book",
+      "@id": "https://tony-cimino.com/#playbook",
+      "name": "The Theatre Leader's Playbook: Tools for Teaching, Directing, and Running the Business Behind the Curtain",
+      "author": {"@id": "https://tony-cimino.com/#person"},
+      "publisher": {"@type": "Organization", "name": "Routledge"},
+      "isbn": "9781041153429",
+      "sameAs": ["https://books.google.com/books/about/The_Theatre_Leader_s_Playbook.html?id=yWvd0QEACAAJ"]
+    }
+  ]
+}
+</script>

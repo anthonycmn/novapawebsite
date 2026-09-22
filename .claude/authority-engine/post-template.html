@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<!-- AUTHORITY ENGINE POST TEMPLATE — not a live page.
+     To mint a post: copy to /blog/<slug>.html, replace every {{TOKEN}}, add the
+     post card to /blog/index.html between POSTS:BEGIN and POSTS:END (newest first),
+     and remove/keep the FAQ entries as written. SLUG RULE (CJ, 16 Sep 2026): every
+     {{SLUG}} ENDS IN -tony-cimino-johnson, e.g.
+     does-theatre-look-good-on-college-applications-tony-cimino-johnson. The byline
+     is part of the address on purpose; do not shorten it. Body copy must go through the
+     tony-voice skill. One topic = ONE canonical article (this file); siblings on
+     other properties get distinct angles and link here. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{{SEO_TITLE}} | Northern Virginia Performing Arts</title>
+<link rel="canonical" href="https://novapa.org/blog/{{SLUG}}.html">
+<meta name="description" content="{{META_DESCRIPTION}}">
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Protest+Strike&family=DM+Sans:wght@300;400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600&display=swap" rel="stylesheet"/>
+<meta name="theme-color" content="#08111F">
+<link rel="icon" type="image/png" href="/favicon.png">
+<style>html{background:#08111F}</style>
+<link rel="stylesheet" href="/brand.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#08111F;--navy2:#0F1E36;--gold:#C8892A;--gold2:#E8B84B}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:#fff;overflow-x:hidden}
+h1{font-family:'Protest Strike',sans-serif;font-weight:400;letter-spacing:0.01em}
+.post-wrap{max-width:760px;margin:0 auto;padding:150px 24px 80px}
+.post-wrap .eyebrow{font-size:11px;font-weight:700;letter-spacing:0.22em;color:var(--gold2);text-transform:uppercase;margin-bottom:16px}
+.post-wrap h1{font-size:clamp(32px,5vw,52px);line-height:1.1;margin-bottom:18px}
+.post-byline{display:flex;align-items:center;gap:10px;font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:44px;padding-bottom:22px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.post-byline a{color:var(--gold2);text-decoration:none}
+.post-byline a:hover{text-decoration:underline}
+.post-body{font-size:17px;line-height:1.85;font-weight:300;color:rgba(255,255,255,0.85)}
+.post-body h2{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:#fff;margin:46px 0 16px}
+.post-body p{margin-bottom:22px}
+.post-body a{color:var(--gold2);text-decoration:none}
+.post-body a:hover{text-decoration:underline}
+.post-body ul,.post-body ol{margin:0 0 22px 22px}
+.post-body li{margin-bottom:8px}
+.post-faq{margin-top:60px;padding-top:30px;border-top:1px solid rgba(255,255,255,0.08)}
+.post-faq h2{font-family:'Cormorant Garamond',serif;font-size:28px;margin-bottom:20px}
+.post-faq details{background:var(--navy2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;margin-bottom:12px}
+.post-faq summary{font-weight:600;font-size:15px;cursor:pointer}
+.post-faq details p{margin-top:12px;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.72);font-weight:300}
+.post-cta{margin-top:56px;background:var(--navy2);border:1px solid rgba(232,184,75,0.35);border-radius:16px;padding:30px 28px;text-align:center}
+.post-cta p{font-size:16px;color:rgba(255,255,255,0.8);margin-bottom:18px}
+.post-cta a.btn{display:inline-block;background:rgba(201,146,42,0.15);border:1px solid rgba(201,146,42,0.5);color:var(--gold2);padding:12px 26px;border-radius:12px;text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600}
+.post-author{margin-top:56px;display:flex;gap:18px;background:var(--navy2);border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.07)}
+.post-author p{font-size:14px;line-height:1.7;color:rgba(255,255,255,0.7);font-weight:300}
+.post-author strong{color:#fff}
+.post-author a{color:var(--gold2);text-decoration:none}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "@id": "https://novapa.org/blog/{{SLUG}}.html#article",
+      "headline": "{{SEO_TITLE}}",
+      "description": "{{META_DESCRIPTION}}",
+      "url": "https://novapa.org/blog/{{SLUG}}.html",
+      "datePublished": "{{ISO_DATE}}",
+      "dateModified": "{{ISO_DATE}}",
+      "inLanguage": "en-US",
+      "isPartOf": {"@id": "https://novapa.org/blog/#blog"},
+      "author": {"@id": "https://tony-cimino.com/#person"},
+      "publisher": {"@id": "https://novapa.org/#organization"},
+      "about": ["{{TOPIC_ABOUT_1}}", "{{TOPIC_ABOUT_2}}"]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://novapa.org/blog/{{SLUG}}.html#faq",
+      "mainEntity": [
+        {"@type": "Question", "name": "{{FAQ_Q1}}", "acceptedAnswer": {"@type": "Answer", "text": "{{FAQ_A1}}"}},
+        {"@type": "Question", "name": "{{FAQ_Q2}}", "acceptedAnswer": {"@type": "Answer", "text": "{{FAQ_A2}}"}},
+        {"@type": "Question", "name": "{{FAQ_Q3}}", "acceptedAnswer": {"@type": "Answer", "text": "{{FAQ_A3}}"}}
+      ]
+    },
+    {
+      "@type": "Person",
+      "@id": "https://tony-cimino.com/#person",
+      "name": "Tony Cimino-Johnson",
+      "alternateName": ["Anthony Cimino-Johnson", "Mr. Cimino-Johnson", "Mr. CJ"],
+      "url": "https://tony-cimino.com/",
+      "jobTitle": "Theatre Educator, Director, Producer & College Audition Coach",
+      "worksFor": {"@id": "https://novapa.org/#organization"},
+      "sameAs": [
+        "https://www.linkedin.com/in/tonyciminojohnson/",
+        "https://www.instagram.com/cjtheatredirector/",
+        "https://x.com/tonycmn",
+        "https://www.mtishows.com/people/anthony-cimino-johnson-0",
+        "https://cjcreative.substack.com/"
+      ]
+    },
+    {
+      "@type": "EducationalOrganization",
+      "@id": "https://novapa.org/#organization",
+      "name": "Northern Virginia Performing Arts",
+      "alternateName": ["NOVAPA", "NoVAPA"],
+      "url": "https://novapa.org/",
+      "founder": {"@id": "https://tony-cimino.com/#person"}
+    },
+    {
+      "@type": "Blog",
+      "@id": "https://novapa.org/blog/#blog",
+      "url": "https://novapa.org/blog/",
+      "name": "The NOVAPA Blog",
+      "publisher": {"@id": "https://novapa.org/#organization"}
+    }
+  ]
+}
+</script>
+</head>
+<body class="has-u-nav">
+<script src="/nav.js"></script>
+
+<article class="post-wrap">
+  <div class="eyebrow">{{CATEGORY}} &middot; {{DISPLAY_DATE}}</div>
+  <h1>{{H1_TITLE}}</h1>
+  <div class="post-byline">
+    By <a href="https://tony-cimino.com/">Tony Cimino-Johnson</a> &middot; Founder &amp; CEO, Northern Virginia Performing Arts
+  </div>
+
+  <div class="post-body">
+    {{BODY_HTML}}
+    <!-- 1,200–1,800 words through the tony-voice skill. h2 sections. Internal
+         links to at least two program pages (/classes.html, /coaching.html,
+         /day-camps.html, /teen-conservatory.html, /summer-2027.html) woven into
+         prose, plus one link out to the sibling angle on another property. -->
+  </div>
+
+  <section class="post-faq">
+    <h2>Questions parents ask</h2>
+    <details><summary>{{FAQ_Q1}}</summary><p>{{FAQ_A1}}</p></details>
+    <details><summary>{{FAQ_Q2}}</summary><p>{{FAQ_A2}}</p></details>
+    <details><summary>{{FAQ_Q3}}</summary><p>{{FAQ_A3}}</p></details>
+  </section>
+
+  <div class="post-cta">
+    <p>{{CTA_LINE}}</p>
+    <a class="btn" href="{{CTA_HREF}}">{{CTA_LABEL}}</a>
+  </div>
+
+  <aside class="post-author">
+    <p><strong>About the author.</strong> Tony Cimino-Johnson — my students call me
+    Mr. CJ — is a Tony Awards&ndash;honored theatre educator, director, producer, and
+    college audition coach with more than 20 years in theatre arts education. He is
+    the author of <a href="https://tony-cimino.com/">The Theatre Leader's Playbook</a>
+    (Routledge) and the founder and CEO of Northern Virginia Performing Arts in
+    Leesburg, Virginia. He writes about theatre leadership at
+    <a href="https://cjcreative.substack.com/">CJ Creative on Substack</a>.</p>
+  </aside>
+</article>
+</body>
+</html>

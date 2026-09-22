@@ -1,0 +1,44 @@
+<!-- ImpACT Tours and Travel entity schema — add to the site <head>.
+     The site is on Netlify (project TBD — the apex domain resolves to Netlify but
+     the domain isn't attached to the "impact-tours-and-travel" project's primary URL).
+     Options: add to the site's repo <head>, or Netlify → Site configuration →
+     Build & deploy → Post processing → Snippet injection ("Insert before </head>"). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TravelAgency",
+      "@id": "https://impacttoursandtravel.com/#organization",
+      "name": "ImpACT Tours and Travel",
+      "url": "https://impacttoursandtravel.com/",
+      "description": "Educational student group travel — customized Broadway trips to New York City and theme-park trips to Orlando. For educators, by educators. Transparent pricing, free teacher travel.",
+      "areaServed": ["United States", "Northern Virginia", "Washington, DC metro area"],
+      "founder": {"@id": "https://tony-cimino.com/#person"},
+      "sameAs": ["https://register.impacttoursandtravel.com/"]
+    },
+    {
+      "@type": "Person",
+      "@id": "https://tony-cimino.com/#person",
+      "name": "Tony Cimino-Johnson",
+      "alternateName": ["Anthony Cimino-Johnson", "Mr. Cimino-Johnson", "Mr. CJ"],
+      "url": "https://tony-cimino.com/",
+      "jobTitle": "Theatre Educator, Director, Producer & College Audition Coach",
+      "worksFor": {"@id": "https://novapa.org/#organization"},
+      "sameAs": [
+        "https://www.linkedin.com/in/tonyciminojohnson/",
+        "https://www.instagram.com/cjtheatredirector/",
+        "https://www.mtishows.com/people/anthony-cimino-johnson-0",
+        "https://cjcreative.substack.com/"
+      ]
+    },
+    {
+      "@type": "EducationalOrganization",
+      "@id": "https://novapa.org/#organization",
+      "name": "Northern Virginia Performing Arts",
+      "url": "https://novapa.org/",
+      "founder": {"@id": "https://tony-cimino.com/#person"}
+    }
+  ]
+}
+</script>
