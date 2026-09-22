@@ -7,20 +7,38 @@ Working doc for the staging → production launch. Owner: Jason (site/DB), CJ (S
       **branch deploys** too (Netlify → Site config → Environment variables → the var →
       scopes/contexts), or staging tests will still hit the old account.
 - [x] Live publishable key committed to register/config.js (staging).
-- [ ] **Webhook endpoint** in the Broadway Bound Stripe dashboard (live mode):
-      Developers → Webhooks → Add destination/endpoint.
-      URL now (testing): `https://staging-summer-sprint--northernvirginiaperformingarts.netlify.app/api/reg-webhook`
-      Event: **payment_intent.succeeded** only (that's all the handler consumes).
-      Copy its signing secret (whsec_...) → Netlify env `STRIPE_WEBHOOK_SECRET` → redeploy.
-- [ ] At launch: add a second endpoint for `https://www.northernvirginiaperformingarts.org/api/reg-webhook`
-      (its own whsec_) and scope Netlify's STRIPE_WEBHOOK_SECRET per context
-      (production = prod endpoint secret, branch = staging endpoint secret).
+- [x] **Webhook endpoint** live and enabled. Verified Sep 21, 2026 by reading
+      `/v1/webhook_endpoints` on the live account `acct_1TvMGTGWP2Zbtasz`.
+      Endpoint `we_1TvOVrGWP2ZbtaszwuhxWPnc`, status `enabled`,
+      URL `https://novapa.org/api/reg-webhook`.
+      Events: **payment_intent.succeeded, setup_intent.succeeded, invoice.paid**.
+      This line used to read "payment_intent.succeeded only (that's all the handler
+      consumes)". That stopped being true on Sep 20, 2026, when PRs #143 and #144 added
+      `invoice.paid` handling to `reg-webhook.mjs` so class subscription invoices record
+      through `record_installment_paid`. `setup_intent.succeeded` carries the cards saved
+      at checkout for a first charge on the 1st. Do NOT narrow this endpoint back to one
+      event: class and installment cash stops recording the moment you do.
+      Its signing secret is already in Netlify env `STRIPE_WEBHOOK_SECRET`.
+- [x] Second live endpoint exists and is enabled: `we_1UCOqIGWP2ZbtaszcupFo4b2`,
+      URL `https://portal.novapa.org/api/store/stripe-webhook`, event
+      `checkout.session.completed` (parent portal store). Production runs on
+      `novapa.org`, so the planned `www.northernvirginiaperformingarts.org` reg-webhook
+      endpoint and the per-context secret split are not needed. No staging endpoint is
+      registered; the staging URL this section used to name is retired.
 - [ ] Stripe → Settings → Emails: turn ON "Successful payments" (customer receipts) and
       "Refunds". Set support email + statement descriptor while there.
+      Browser only. A restricted API key can neither read nor set these, so only a person
+      who has opened the page can tick this. Still open as of Sep 21, 2026.
 - [ ] Stripe → Settings → Payment method domains: add the staging domain AND
       www.northernvirginiaperformingarts.org (Apple Pay button won't render without this).
+      Browser only. `/v1/payment_method_domains` returns a permissions error on the key
+      this repo's agents hold, so the live state is unknown. Still open as of Sep 21, 2026.
 - [ ] Stripe → Settings → Billing → Revenue recovery: enable Smart Retries + failed-payment
       emails (covers bounced installment/class autopay cards).
+      Browser only, no API exists for it:
+      https://dashboard.stripe.com/settings/billing/automatic
+      This is the one that matters before Oct 1, 2026: 65 cards draw $11,762.52 that
+      morning and 19 of them have never been charged once. Still open as of Sep 21, 2026.
 - [ ] Live E2E test (our checkout has NO coupon field by design — test with real money, then
       refund from the Stripe dashboard): cheapest full-flow item is a $70 day camp via
       classes/catalog, or a $180 summer deposit to exercise the installment schedule.
