@@ -2776,6 +2776,16 @@
   function accActsById(){
     var m = {}; (ACC.activities||[]).forEach(function(a){ m[a.id] = a; }); return m;
   }
+  // What an order is worth. A class order (plan 'subscription') bills by the
+  // month, so orders.total_cents is only the checkout charge, and $0 when the
+  // first month was free; the tuition lives on order_items.unit_price_cents.
+  // Every sum of order value goes through here so a class counts its item
+  // price. Sep 21 2026: orders 15260 and 15253 read $0 against $60 and $90 a
+  // month, $150 of tuition missing from every total on this page.
+  function orderValueCents(o, items){
+    if (o.plan !== 'subscription') return o.total_cents || 0;
+    return (items || []).reduce(function(s, it){ return s + (it.unit_price_cents || 0); }, 0);
+  }
   function renderAccounting(){
     var d = ACC, byId = accActsById(), year = d.year;
     var progFilter = $('accProgram').value;
@@ -2811,11 +2821,14 @@
         g.disc += Math.round((+m.coupon_cents || 0) * share);
         g.planFee += Math.round((+m.plan_fee_cents || 0) * share);
         if (free) g.comps += Math.round(listGross);
-        g.invoiced += Math.round((o.total_cents || 0) * share);
+        g.invoiced += Math.round(orderValueCents(o, its) * share);
         var collected = t.amount_received != null ? t.amount_received : (o.amount_today_cents || 0);
         g.collected += Math.round(collected * share);
         g.fees += Math.round((t.fee || 0) * share);
         g.refunds += Math.round((t.refunded || 0) * share);
+        // Outstanding stays on total_cents on purpose: monthly tuition is
+        // revenue against no balance (db/registration/class-tuition-recorded.sql),
+        // so a class order never owes anything here.
         var out = Math.max(0, (o.total_cents || 0) - collected);
         g.outstanding += Math.round(out * share);
         if (o.stripe_schedule) g.future += Math.round(out * share);
@@ -2850,7 +2863,7 @@
 
     // reconciliation (whole year, payment basis, unfiltered)
     var sales = d.orders.filter(function(o){ return +String(o.created_at).slice(0,4) === year; })
-      .reduce(function(s,o){ return s + (o.total_cents||0); }, 0);
+      .reduce(function(s,o){ return s + orderValueCents(o, d.items_by_order[o.id]); }, 0);
     var collected = d.transactions.reduce(function(s,t){ return s + (t.amount_received||0); }, 0);
     var fees = d.transactions.reduce(function(s,t){ return s + (t.fee||0); }, 0);
     var refunded = d.refunds.reduce(function(s,r){ return s + r.amount; }, 0);
@@ -3271,7 +3284,9 @@
           '<td style="max-width:380px">' + itemsHtml + '</td>' +
           '<td><span class="tag ' + (o.plan==='subscription'?'gold':'') + '">' + o.plan + '</span></td>' +
           '<td class="num">' + usd2(o.amount_today_cents) + '</td>' +
-          '<td class="num">' + usd2(o.total_cents) + '</td>' +
+          // value_cents is admin_orders' answer to orderValueCents (the RPC
+          // has the item prices, this row does not); older RPC has no column
+          '<td class="num">' + usd2(o.value_cents != null ? o.value_cents : o.total_cents) + '</td>' +
           '<td>' + kebabHtml([{ label: 'Delete whole order&hellip;', cls: 'ord-del',
             attrs: ' data-id="' + esc(o.id) + '" data-who="' + esc((o.email||'') + ' - ' + orderItemsText(o).slice(0,80)) + '"' }]) + '</td></tr>';
       }).join('');
@@ -3765,7 +3780,7 @@
         return ((o.email || '') + ' ' + (o.parent_name || '') + ' ' + orderItemsText(o)).toLowerCase().indexOf(q) !== -1;
       }).slice(0, 6);
       if (ords.length) html += '<div class="gt">Orders</div>' + ords.map(function(o){
-        return '<a data-go="order" data-q=""><b>' + esc(o.parent_name || o.email) + '</b> <span class="sub">' + usd(o.total_cents) + ' · ' + dt(o.created_at) + '</span></a>';
+        return '<a data-go="order" data-q=""><b>' + esc(o.parent_name || o.email) + '</b> <span class="sub">' + usd(o.value_cents != null ? o.value_cents : o.total_cents) + ' · ' + dt(o.created_at) + '</span></a>';
       }).join('');
       out.innerHTML = html || '<div class="gt">nothing matched</div>';
       out.classList.add('on');

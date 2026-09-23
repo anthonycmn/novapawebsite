@@ -237,6 +237,11 @@ export default async (req) => {
     // who paid is registered whether or not we can say which ad sent them.
     // Before this, public.orders had nowhere to record where a buyer came
     // from, so every ad-driven registration was unattributable.
+    // This path had never run in production as of Sep 21 2026 (0 of 242
+    // orders carry an ad parameter), so its first run is also its first test.
+    // Every outcome names the order and the intent: a failure without the
+    // order id is unfindable in a function log, and a silent success is
+    // indistinguishable from the path never having run.
     if (orderId && m.utm) {
       try {
         const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -245,9 +250,13 @@ export default async (req) => {
           headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
           body: JSON.stringify({ utm: JSON.parse(m.utm) }),
         });
-        if (!r.ok) console.error("order utm write failed:", r.status, await r.text());
+        if (!r.ok) {
+          console.error(`order utm write failed: order ${orderId} pi ${pi.id} HTTP ${r.status}: ${await r.text()}`);
+        } else {
+          console.log(`order utm written: order ${orderId} pi ${pi.id} ${m.utm}`);
+        }
       } catch (e) {
-        console.error("order utm write failed:", e.message);
+        console.error(`order utm write failed: order ${orderId} pi ${pi.id} ${e.message}; utm metadata was ${JSON.stringify(m.utm)}`);
       }
     }
 
