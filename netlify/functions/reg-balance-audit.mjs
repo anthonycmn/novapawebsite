@@ -247,7 +247,7 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", to, subject, html }),
+    body: JSON.stringify({ from: "NOVAPA Alerts <leads@mail.novapa.org>", reply_to: "info@novapa.org", to, subject, html }),
   });
   if (!r.ok) {
     await markClaim("failed");

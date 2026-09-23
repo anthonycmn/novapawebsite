@@ -111,7 +111,7 @@ const checkout = (extra = {}) => regPay(new Request("https://www.northernvirgini
   const admin = mails.filter((m) => m.from.startsWith("NOVAPA Registrations <"));
   eq("exactly one office alert", admin.length, 1);
   eq("  to the admin list", admin[0] && admin[0].to, ADMINS);
-  eq("  subject reads like the webhook's", admin[0] && admin[0].subject, "New registration: Mer Kouhsari — $0.00 (full)");
+  eq("  subject reads like the webhook's", admin[0] && admin[0].subject, "New registration: Mer Kouhsari, $0.00 (full)");
   eq("  names the camp and the camper", admin[0] && /Cora Kouhsari — Heroes &amp; Villains|Cora Kouhsari — Heroes & Villains/.test(admin[0].html), true);
   eq("  says a credit paid for it", admin[0] && /Day camp credits.*1 redeemed/.test(admin[0].html), true);
   eq("  carries the order id", admin[0] && admin[0].html.includes("order 15264"), true);

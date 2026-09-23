@@ -65,8 +65,8 @@ export async function alertSeatOffersRedeemed(orderId) {
         method: "POST",
         headers: { Authorization: `Bearer ${rk}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: "NOVAPA Alerts <leads@mail.novapa.org>", to,
-          subject: `Seat taken: ${who} — ${name}`,
+          from: "NOVAPA Alerts <leads@mail.novapa.org>", to, reply_to: "info@novapa.org",
+          subject: `Seat taken: ${who}, ${name}`,
           html: `<div style="max-width:600px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif;color:#0B1422">
 <div style="font:700 20px/1.3 Helvetica,Arial,sans-serif">${esc(who)} took the seat</div>
 <div style="font:14px/1.8 Helvetica,Arial,sans-serif;margin-top:10px">
