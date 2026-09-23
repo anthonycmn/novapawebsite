@@ -52,11 +52,15 @@ comment on column public.mail_telemetry.ok is
 -- function that stopped firing. reg-send-watch has been in exactly that state
 -- all week: its counters were honestly zero, and no run could prove it ran.
 
+-- No run counter on purpose. beat() upserts one row per function, so a
+-- counter would need a read-modify-write that two overlapping runs could lose,
+-- and a column that is always 0 reads like data when it is not. The stamp is
+-- the signal: last_run against the function's own schedule.
+
 create table if not exists public.function_heartbeats (
   fn        text        primary key,
   last_run  timestamptz not null default now(),
   last_ok   timestamptz,
-  runs      bigint      not null default 0,
   status    text,
   detail    text
 );

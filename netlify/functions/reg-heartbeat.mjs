@@ -36,9 +36,9 @@ export async function beat(fn, status = "ok", detail = "") {
         apikey: key,
         Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
-        // merge-duplicates is the upsert: one row per function, rewritten each
-        // run. runs is left alone here so the counter stays honest if this
-        // ever races with itself.
+        // merge-duplicates is the upsert: one row per function, rewritten
+        // each run. No counter is kept, so two overlapping runs cannot lose
+        // each other's write; the stamp is the whole signal.
         Prefer: "resolution=merge-duplicates",
       },
       body: JSON.stringify(row),
