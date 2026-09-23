@@ -263,6 +263,11 @@ const TAGS = [
   ["G-90GQK8HYNV", "the Google Analytics 4 tag"],
   ["2191001311729801", "the NOVAPA Meta pixel"],
   ["902777265812159", "the cross-brand Meta pixel"],
+  // The consent banner goes wherever the pixels go. On Sep 23 2026 it was on
+  // 23 of the 60 pages that fire the five tags above, the checkout among the
+  // 37 without it. Asserting them together keeps a new page from shipping one
+  // without the other.
+  ["cdn-cookieyes.com/client_data/5fecf1dccea86bd09d1036b3311224f1/script.js", "the CookieYes consent banner"],
 ];
 
 // Untagged on purpose: a page no family browses, or one where a tag would
@@ -301,8 +306,80 @@ function checkAnalyticsTags() {
     }
   }
   if (!problems.some((p) => p.check === "analytics-tags")) {
-    ok(`all ${checked} public pages carry PostHog, both Meta pixels, the Google Ads tag and GA4`);
+    ok(`all ${checked} public pages carry PostHog, both Meta pixels, the Google Ads tag, GA4 and the CookieYes banner`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Check 4b - every Resend send names a reply address.
+//
+// Alerts and receipts go out from mail.novapa.org, which has no MX record, so
+// a send without reply_to bounces the moment someone hits Reply. On Sep 23
+// 2026 nine alert senders had none. Each call to the Resend API must carry
+// reply_to in the object it posts, whether written inline or built as a named
+// object first (reg-mail.mjs, reg-waitlist.mjs).
+
+function balanced(src, open) {
+  const pair = { "(": ")", "{": "}" }[src[open]];
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === src[open]) depth++;
+    else if (src[i] === pair && --depth === 0) return src.slice(open, i + 1);
+  }
+  return null;
+}
+
+function checkReplyTo() {
+  const dir = join(ROOT, "netlify/functions");
+  if (!existsSync(dir)) return;
+  let sends = 0;
+  for (const f of readdirSync(dir).filter((x) => x.endsWith(".mjs"))) {
+    const src = readFileSync(join(dir, f), "utf8");
+    for (let at = src.indexOf("api.resend.com/emails"); at > -1; at = src.indexOf("api.resend.com/emails", at + 1)) {
+      sends++;
+      const line = src.slice(0, at).split("\n").length;
+      const s = src.indexOf("JSON.stringify(", at);
+      let payload = s > -1 ? balanced(src, s + "JSON.stringify".length) : null;
+      // JSON.stringify(body): look up the object that name was built from.
+      const name = payload && payload.match(/^\(\s*([A-Za-z_$][\w$]*)\s*\)$/);
+      if (name) {
+        const decl = [...src.slice(0, s).matchAll(new RegExp(`\\b${name[1]}\\s*=\\s*\\{`, "g"))].pop();
+        payload = decl ? balanced(src, decl.index + decl[0].length - 1) : null;
+      }
+      if (!payload) fail("reply-to", `${f}:${line}: could not read the payload posted to Resend; write it inline so the gate can see reply_to`);
+      else if (!/\breply_to\s*:/.test(payload)) {
+        fail("reply-to", `${f}:${line}: Resend send has no reply_to. mail.novapa.org has no MX, so Reply bounces; add reply_to: "info@novapa.org"`);
+      }
+    }
+  }
+  if (!problems.some((p) => p.check === "reply-to")) ok(`all ${sends} Resend sends in netlify/functions set reply_to`);
+}
+
+// ---------------------------------------------------------------------------
+// Check 4c - no em dash in an email subject.
+//
+// House rule 1, no exceptions. The page checks never looked at
+// netlify/functions, where every subject line is written, and on Sep 23 2026
+// ten subjects carried one, three of them to families ("You're in — NOVAPA
+// registration confirmed"). A subject is read from "subject:" or "subject ="
+// to the end of the line, plus any ternary or concatenation lines under it.
+
+function checkSubjectDashes() {
+  const dir = join(ROOT, "netlify/functions");
+  if (!existsSync(dir)) return;
+  const re = /\bsubject\s*[:=]\s*([^\n]*(?:\r?\n\s*[?:+][^\n]*)*)/g;
+  let found = 0;
+  for (const f of readdirSync(dir).filter((x) => x.endsWith(".mjs"))) {
+    const src = readFileSync(join(dir, f), "utf8");
+    for (const m of src.matchAll(re)) {
+      const start = src.lastIndexOf("\n", m.index) + 1;
+      if (/^\s*(\/\/|\*)/.test(src.slice(start, m.index))) continue; // a comment
+      if (!m[1].includes("—")) continue;
+      found++;
+      fail("subject-dash", `${f}:${src.slice(0, m.index).split("\n").length}: em dash in an email subject; use a colon or a comma`);
+    }
+  }
+  if (!found) ok("no email subject in netlify/functions carries an em dash");
 }
 
 // ---------------------------------------------------------------------------
@@ -451,6 +528,8 @@ checkUndeclared();
 checkFunctions();
 checkCodeLength();
 checkAnalyticsTags();
+checkReplyTo();
+checkSubjectDashes();
 if (LIVE) await checkLive();
 
 // --alert emails on failure, for unattended runs. Silent when healthy, so a
@@ -467,7 +546,8 @@ async function alertByEmail() {
       body: JSON.stringify({
         from: "NOVAPA Alerts <alerts@mail.novapa.org>",
         to: ["cj@novapa.org"],
-        subject: `Registration preflight FAILED — ${problems.length} problem(s)`,
+        reply_to: "info@novapa.org",
+        subject: `Registration preflight FAILED: ${problems.length} problem(s)`,
         text: `Automated check of ${BASE} failed.\n\n${body}\n\n` +
               `This runs unattended and only emails on failure.\n` +
               `Reproduce with:  npm run check:live\n`,

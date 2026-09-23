@@ -68,7 +68,7 @@ async function sendTicketEmail(m, code) {
     fromName: "NOVAPA Box Office",
     replyTo: "info@novapa.org",
     to: m.email,
-    subject: `Your tickets — ${m.show_title}, ${m.performance_when}`,
+    subject: `Your tickets: ${m.show_title}, ${m.performance_when}`,
     html: `
 <div style="font-family:Georgia,serif;background:#f5f2ec;padding:28px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden">

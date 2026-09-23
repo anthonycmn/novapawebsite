@@ -114,6 +114,7 @@ ${r.isClass ? '<b style="color:#9E2B2B"> — looks like a CLASS, should end Jun 
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: "NOVAPA Alerts <leads@mail.novapa.org>",
+      reply_to: "info@novapa.org",
       to,
       subject,
       html: `<div style="max-width:620px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif">
