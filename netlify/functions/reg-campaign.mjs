@@ -9,6 +9,7 @@
 // Gmail/Yahoo bulk-sender rules).
 import crypto from "node:crypto";
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { beat } from "./reg-heartbeat.mjs";
 
 const BATCH_SIZE = 25; // ~18s of SMTP at ~0.7s/send, inside the fn limit
 
@@ -249,7 +250,13 @@ export default async () => {
   }
 
   const due = await svc(`campaigns?status=in.(scheduled,sending)&scheduled_at=lte.${encodeURIComponent(new Date().toISOString())}&order=scheduled_at&limit=1`);
-  if (!due.length) return new Response("no due campaigns", { status: 200 });
+  if (!due.length) {
+    // Stamp the idle tick. beat() swallows its own errors and is awaited only
+    // here, on the path that sends nothing, so it can never sit between a
+    // family and an email.
+    await beat("reg-campaign", "ok", "no due campaigns");
+    return new Response("no due campaigns", { status: 200 });
+  }
   const c = due[0];
 
   // Resend broadcast syntax ({{{contact.first_name}}}, {{{RESEND_UNSUBSCRIBE_URL}}})

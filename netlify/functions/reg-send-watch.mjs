@@ -11,6 +11,7 @@
 // The drip has its own hard ceiling (MAX_SENDS_PER_DAY) that halts the engine.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
+import { beat } from "./reg-heartbeat.mjs";
 
 // Baselines from the 30 days before the incident: drip 1-6/day, campaigns fire
 // only when a human schedules one. Thresholds sit well above normal so this
@@ -59,6 +60,7 @@ export default async () => {
       countSince("campaign_sends", "sent_at", hourAgo),
     ]);
   } catch (e) {
+    await beat("reg-send-watch", "count-failed", e.message);
     return new Response(`count failed: ${e.message}`, { status: 200 });
   }
 
@@ -66,7 +68,15 @@ export default async () => {
   if (dripHour >= DRIP_HOUR) hits.push(`Retargeting drip: <b>${dripHour}</b> in the last hour (normal is 0-1, alert at ${DRIP_HOUR}).`);
   if (dripDay >= DRIP_DAY) hits.push(`Retargeting drip: <b>${dripDay}</b> so far today (a normal day is 1-6, alert at ${DRIP_DAY}).`);
   if (campHour >= CAMPAIGN_HOUR) hits.push(`Campaign sender: <b>${campHour}</b> in the last hour (alert at ${CAMPAIGN_HOUR}) — expected if you scheduled a blast.`);
-  if (!hits.length) return new Response(`ok drip ${dripHour}/h ${dripDay}/d, campaigns ${campHour}/h`, { status: 200 });
+  if (!hits.length) {
+    // The quiet path is the one worth stamping. Zero counters return 200 and
+    // say so only in the function log, which no cloud agent can read, so a
+    // healthy silent hour and a watchdog that stopped firing looked the same
+    // for five days running. Now the heartbeat tells them apart.
+    const quiet = `ok drip ${dripHour}/h ${dripDay}/d, campaigns ${campHour}/h`;
+    await beat("reg-send-watch", "ok", quiet);
+    return new Response(quiet, { status: 200 });
+  }
 
   // One alert per condition per day. A spike that persists should not turn into
   // an hourly alarm — that is how people learn to ignore the alarm.
@@ -94,6 +104,7 @@ if that number is unexpected, set the campaign to <code>done</code> in the admin
 One alert per day. Thresholds: WATCH_DRIP_HOUR, WATCH_DRIP_DAY, WATCH_CAMPAIGN_HOUR.</div></div>`,
     }),
   });
+  await beat("reg-send-watch", "ok", `alerted: ${hits.length} condition(s)`);
   return new Response(`alerted: ${hits.length} condition(s)`, { status: 200 });
 };
 
