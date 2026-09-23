@@ -791,3 +791,43 @@ paragraph rather than a soft-pedal.
 
 Next: topic 13, "High school theatre fundraising that actually works"
 (tony-cimino.com lane — draft goes in runs/, not blog/).
+
+### Run 13 addendum — September 23, 2026, later the same day
+
+Tony came into the thread with photos and revision notes. Topic 12 revised and
+re-pushed; status moved to `awaiting-approval`.
+
+- **Photos supplied and installed.** Lead: a teen actor singing in a rehearsal
+  room, optimised with sharp to 1800x1200, jpeg q85 mozjpeg, at
+  `img/blog/teen-actor-singing-college-audition.jpg`, with keyword-bearing alt
+  text, a caption, `height:auto` figure CSS, and the URL added to the Article
+  schema image array. Author headshot at `img/staff/tony-cimino-johnson.jpg`
+  (526x522, native size, not upscaled), now in the post-author aside with a
+  circular crop. Child-names rule checked on both: no lanyards, badges, name
+  tags or cast lists visible in either frame. The index panel and call-board
+  row now use the real lead photo instead of the borrowed conservatory shot.
+- **DC Unifieds framing reversed on Tony's instruction.** The original draft's
+  count-your-schools rule discouraged attendance when only one or two list
+  schools were present, and the closing disclosure said "including the part
+  where I tell you not to." Both are gone. The replacement argument is stronger
+  and is also true: the standard counting advice misses the point, because the
+  programs a student has not heard of yet are the best reason to be in the
+  building. The FAQ carried the same discouraging line in two places (visible
+  details block and FAQPage JSON-LD) and was corrected in both.
+- **Registration link added** at https://dcunifieds.com/register.html — twice in
+  the article (cost section and disclosure), plus Facebook, LinkedIn and the
+  Reddit draft.
+- **De-AI pass.** Tony flagged the prose as sounding machine-written. Rewrote the
+  body: cut the density of antithesis constructions ("not X, but Y") and the
+  stacked one-line punch paragraphs down to two or three, let sentences run
+  long and uneven, added contractions throughout per the blog calibration in the
+  voice skill, varied the h2 shapes, and added concrete digression (the stairwell
+  acoustics line, the rep who wandered off to find breakfast, the carpet).
+  1,794 words, still inside the band.
+- **Reddit:** r/nova excluded per Tony. Draft is r/MusicalTheatre with the
+  registration link included as asked, plus an explicit warning in the file that
+  a self-linking post is the exact shape that subreddit removes, and three
+  options with a recommended one (post without the last line, drop the link in a
+  comment when asked).
+
+Nothing was published. The hard rule stands: Tony publishes.

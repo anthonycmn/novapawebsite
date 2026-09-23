@@ -33,7 +33,7 @@ Status: `todo` → `drafted` → `awaiting-approval` → `published` (+ date).
     Primary: benefits of drama for children with anxiety · steady parent research query; careful, never clinical.
 11. Winter and spring break theatre camps: what they are and how to choose [local] — `drafted` 2026-09-22 (branch authority-engine, pushed; photo needed) — novapa.org — MED
     Primary: spring break theatre camps for kids (+ Loudoun/NoVA secondary) · transactional seasonal; informational supply gap.
-12. What are Unified auditions? A plain-English guide for families — `drafted` 2026-09-23 (branch authority-engine, pushed; photo needed) — novapa.org — MED
+12. What are Unified auditions? A plain-English guide for families — `awaiting-approval` 2026-09-23 (CJ approved for publishing 09-23: revised pro-Unifieds framing, register link, real lead photo + author headshot in. Waiting on CJ to merge to main and post FB + r/MusicalTheatre) — novapa.org — MED
     Primary: what are unified college auditions · pure definitional query; DC Unifieds (Oct 15-18, Leesburg) as inside credential.
 13. High school theatre fundraising that actually works — `todo` — tony-cimino.com — MED
     Primary: high school theatre fundraising ideas · "fundraising ideas" is a high-volume pattern; $5K→$750K arc as case study.

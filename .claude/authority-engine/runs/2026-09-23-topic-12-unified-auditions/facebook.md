@@ -1,22 +1,23 @@
 # Facebook — NOVAPA25 page — topic 12, unified auditions
+# REVISED Sept 23 on CJ's notes: pro-Unifieds framing, register link, less polished voice.
+# Suggested image: the lead photo, img/blog/teen-actor-singing-college-audition.jpg
 
 ---
 
-If you have a junior or senior thinking about a musical theatre or acting degree, this one is for you.
+Every year a parent asks me some version of this: "So we have to go to Chicago in February?"
 
-Every year a parent asks me, "So we have to go to Chicago in February?"
+No. And the confusion isn't their fault, because the word "unifieds" is doing three different jobs and nobody in my field has ever bothered to sort it out.
 
-No. And the confusion is completely understandable, because the word "unifieds" gets used for three different things — the national coalition that auditions in New York, Chicago and LA, the regional events that borrowed the format (Pittsburgh, Utah, and yes, ours in Leesburg), and a separate event with an almost identical name. No single event is attended by every school.
+There's the National Unified Auditions, which is a coalition of about 25-30 BFA programs that audition in New York, Chicago and LA each winter. There are regional unifieds, which are independent events that do the same thing closer to home — Pittsburgh, Utah, Western New York, and ours here in Leesburg. And then there's "United Auditions," a separate thing with a name so similar that I don't blame anybody for mixing them up.
 
-So we wrote the plain-English guide. It covers:
+No single event is attended by every school. That's the part worth knowing before you book a flight.
 
-· What actually happens in the room — it's about five minutes, and it's a matching problem, not a ranking
-· Why prescreens in the fall matter more than the audition dates in January
-· What the season really costs, line by line (the widely cited number is upwards of $5,000, and most of it isn't audition fees)
-· The rule for deciding whether to go at all: count how many schools on your child's actual list will be in one building. Three or more, go. One or two, audition on campus.
+I wrote the whole plain-English version this week. What actually happens in that five-minute room. Why prescreens in the fall matter more than the audition dates in January. What the season really costs, line by line. And the thing I most want families to hear, which is that a "no" from a program isn't a verdict on your kid — it's two lists that didn't overlap.
 
-That last rule applies to our own event too, and the guide says so.
+One more thing I put in there, because I've watched it happen more times than I can count. Families come for three schools they've researched to death, and somewhere on Saturday afternoon their kid walks into a room for a program nobody had heard of that morning. And that's the one. That's what they talk about the whole drive home. You can't discover a school you've never heard of by driving to a campus you already picked.
 
-Read it here: https://novapa.org/blog/what-are-unified-college-auditions-tony-cimino-johnson.html
+Read the guide: https://novapa.org/blog/what-are-unified-college-auditions-tony-cimino-johnson.html
+
+And if you're on the East Coast and want thirty-plus schools in one building without the airfare, DC Unifieds registration is open: https://dcunifieds.com/register.html
 
 — Mr. CJ

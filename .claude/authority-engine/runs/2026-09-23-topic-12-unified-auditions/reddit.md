@@ -1,50 +1,59 @@
 # Reddit — topic 12, unified auditions
+# REVISED Sept 23 on CJ's notes: not r/nova, register link included, pro-Unifieds framing.
 
-**Subreddit: r/MusicalTheatre. One post only.**
+**Subreddit: r/MusicalTheatre. One post.**
 
-**Pacing ledger (checked this run):** r/MusicalTheatre last posted Sept 10 — thirteen
-days, comfortably inside the ~1x/week per-subreddit limit. r/nova was drafted
-yesterday (Sept 22, topic 11) and r/Theatre on Sept 18, so both are skipped.
+**Pacing:** r/MusicalTheatre last posted Sept 10 — thirteen days, inside the ~1x/week
+limit. r/nova excluded per CJ. r/Theatre Sept 18, too recent anyway.
 
-**Self-promotion rule:** r/MusicalTheatre is strict about self-promo, and this topic
-is one where I have an obvious commercial interest — I run a regional unified. The
-disclosure goes in the second line, not buried at the bottom, and the post carries no
-link at all. If the vocabulary breakdown isn't useful on its own, the post shouldn't
-exist.
+**⚠️ READ THIS BEFORE POSTING — the link is a real risk.**
+You asked for a registration link and it's in the draft below. You should know what
+that costs on this subreddit: r/MusicalTheatre moderates self-promotion hard, and a
+post that both explains a topic AND links the poster's own paid event is the exact
+shape that gets pulled, and sometimes gets the account flagged. The disclosure at the
+top helps but doesn't immunise you.
 
-**Tone (standing rule, Sept 16): offer, do not instruct.** No "you should." Assume
-nothing about the reader's budget, location, ability, or whether they're a student,
-a parent, or a teacher. Plenty of people in that sub are current BFA students who
-know this better than most — write so they can add to it rather than correct it.
+Three options, your call:
+  A. Post as written, link included. Highest reach if it survives, real chance it doesn't.
+  B. Post WITHOUT the last line (marked below), then drop the registration link in a
+     comment if anyone asks where the event is. This is what I'd do — the link almost
+     always gets asked for, and a link you were asked for reads completely differently.
+  C. Message the mods first and ask. Slowest, safest, and some mods will green-light it.
+
+Either way: do not post it and then argue in the comments if it gets challenged. Let it go.
 
 ---
 
-**Title:** "Unifieds" means three different things and nobody tells families this
+**Title:** "Unifieds" actually means three different things and I don't think anyone tells families this
 
 **Body:**
 
-Disclosure first: I run a regional college audition event, so I have a commercial interest in this topic. No link in this post for that reason. Posting because the confusion below comes up constantly and it costs families real money.
+Disclosure up front: I run one of these events, so I've got a commercial interest here. Mentioning it now rather than burying it at the bottom.
 
-The word "unifieds" gets used for three separate things:
+I've spent years on the organiser side of college audition weekends and the same confusion comes up constantly, so:
 
-**1. The National Unified Auditions.** The original — a coalition of roughly 25–30 BFA programs that agree to audition in the same three cities each winter: NYC, Chicago, LA. Chicago is the biggest and runs the most days. LA is the smallest. The member list is public at unifiedauditions.com.
+**"Unifieds" is three separate things.**
 
-**2. Regional unifieds.** Independent events that use the same word because it describes the same idea — many schools, one building, one weekend. Pittsburgh, Utah, Western New York, and others. Not run by the coalition, no shared school list, and they each work differently. Mine is one of these.
+1. **The National Unified Auditions** — the original. A coalition of roughly 25-30 BFA programs that audition in the same three cities each winter, NYC, Chicago, LA. Chicago's the biggest and runs the most days. Member list is public at unifiedauditions.com.
 
-**3. "United Auditions."** A separate event with a nearly identical name. People mix these up all the time.
+2. **Regional unifieds** — independent events that borrowed the word because they do the same thing. Pittsburgh, Utah, Western NY, a few others. Mine's one of these. Not run by the coalition, different school lists, each works a little differently.
 
-The consequence: when a school's site says "we'll be at Unifieds," that sentence is incomplete. Every program publishes its own list of where it's auditioning, and there is no single event that everyone attends.
+3. **"United Auditions"** — genuinely a different event, nearly identical name. I'd bet most people in this sub have mixed these up at some point.
 
-A few other things that seem to surprise people, offered for whatever they're worth:
+So when a school's site says "we'll be at Unifieds," that sentence isn't finished. There's no single event everyone attends.
 
-- **Prescreens usually decide whether you get a live slot at all.** The panic tends to hit in January; the actual deadline was often October. If someone's a junior now, working backward from prescreen deadlines is probably more useful than looking at Unifieds dates.
+Some other stuff that seems to catch people out:
 
-- **A live audition is generally by invitation.** You don't simply show up and audition for thirty schools. Walk-in slots exist at some programs but are limited.
+- **Prescreens usually decide whether you get a live slot at all.** The panic hits in January but the real deadline was October. If you're a junior, work backward from prescreen dates.
 
-- **The five minutes are less dramatic than they feel.** Headshot, résumé, a cut and a monologue. From what I've seen from the other side, faculty are making a first sort on fit and trainability, not ranking humans. A "no" from a program whose training doesn't match your type isn't a talent verdict — it's two lists not overlapping. Easier to say than to feel, I know.
+- **The five minutes are less dramatic than they feel.** Headshot, résumé, a cut, a monologue. From behind the table, faculty are sorting for fit and trainability, not ranking people. A no from a program that trains heavy classical when you belt contemporary isn't a talent verdict, it's two lists not overlapping. Much easier to type than to feel, I know.
 
-- **Most of the cost isn't audition fees.** It's travel. The commonly cited ~$5k for a season is mostly flights and midwinter hotels for two people.
+- **Most of the cost isn't audition fees, it's travel.** The ~$5k figure that gets thrown around for a season is mostly flights and midwinter hotels for two.
 
-- **You don't have to go.** If only one or two schools on the list will be at a given event, a campus audition is usually the better experience anyway — longer slot, calmer room, and you see the building you'd actually live in.
+- **The best argument for going is the schools you haven't heard of.** This is the one I'd push back on the standard advice about. People get told to count how many schools from their list will be there and only go if the number's high enough. I think that misses it. What I've watched happen over and over is a family shows up for three schools they've researched to death, there's a gap Saturday afternoon, the kid wanders into a room for a program nobody knew existed that morning, and that's the one. That's where they end up. You can't stumble into a school you've never heard of by driving to a campus you already chose.
 
-Happy to answer questions about the logistics side, including the unglamorous parts of how these events get built. And if anyone who's recently been through it wants to correct or add to any of the above from the student side, please do — my view is from behind the table, which is a limited angle.
+Happy to answer questions about the logistics side, including the unglamorous parts of how these weekends get built. And if you've been through it recently as a student, please add or correct anything — my angle is from behind the table, which only shows you so much.
+
+**[↓ THIS LAST LINE IS THE ONE TO CUT IF YOU GO WITH OPTION B ↓]**
+
+Mine is DC Unifieds, Leesburg VA, if anyone on the East Coast wants a look at which schools are coming: https://dcunifieds.com/register.html
