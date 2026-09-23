@@ -78,6 +78,37 @@ async function orderIdForInvoice(stripe, inv) {
 // Failure here never fails the webhook: the order is already confirmed.
 
 
+// What each order line records as its price. Normally what it cost today.
+//
+// A class enrollment on a SetupIntent (the booked free class was the only
+// session left in the month) costs $0 today, so its lines recorded $0 and
+// revenue read from them scored real monthly tuition as nothing: six orders,
+// $510.00 a month (registration audit, Sep 23 2026). Those lines now carry
+// the monthly price the subscription pulls on the 1st, the same figure a
+// PaymentIntent order's lines carry in a full month.
+//
+// orders.total_cents stays at what was charged ($0) on purpose. The parent
+// portal and registration_portal_audit read the balance as total minus paid,
+// and class invoices never count toward paid, so a $90 total would show the
+// family "$90 owed" forever.
+export function orderUnitPrices(m, isSetupIntent) {
+  let unitPrices;
+  if (m.unit_prices) {
+    try { unitPrices = JSON.parse(m.unit_prices); } catch { unitPrices = []; }
+  } else {
+    const nItems = parseInt(m.n_items || "0", 10) || 0;
+    unitPrices = Array.from({ length: nItems }, () => parseInt(m.unit_cents || "0", 10));
+  }
+  if (isSetupIntent && m.plan === "subscription") {
+    let monthly = [];
+    try { monthly = JSON.parse(m.monthly_items || "[]"); } catch {}
+    // One monthly figure per line, or the lines keep what they had: a
+    // mismatched array would put a price on the wrong class.
+    if (Array.isArray(monthly) && monthly.length === unitPrices.length) return monthly;
+  }
+  return unitPrices;
+}
+
 export default async (req) => {
   if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET ||
@@ -208,13 +239,7 @@ export default async (req) => {
   }
 
   try {
-    const nItems = parseInt(m.n_items || "0", 10) || 0;
-    let unitPrices;
-    if (m.unit_prices) {
-      try { unitPrices = JSON.parse(m.unit_prices); } catch { unitPrices = []; }
-    } else {
-      unitPrices = Array.from({ length: nItems }, () => parseInt(m.unit_cents || "0", 10));
-    }
+    const unitPrices = orderUnitPrices(m, event.type === "setup_intent.succeeded");
 
     const orderId = await serviceRpc("confirm_order", {
       p_hold_id: m.hold_id,
