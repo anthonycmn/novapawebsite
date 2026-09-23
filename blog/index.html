@@ -244,7 +244,23 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <!-- POSTS:BEGIN - newest first. Each post needs a .panel here AND a .row in the call board below; the data-id must match. -->
     <div class="panels">
 
-      <article class="panel on" id="panel-break-camps" role="tabpanel" aria-labelledby="tab-break-camps">
+      <article class="panel on" id="panel-unifieds" role="tabpanel" aria-labelledby="tab-unifieds">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <!-- LEAD PHOTO pending Tony: borrowed conservatory shot, swap src/alt when the real one arrives -->
+          <img class="shot" src="/img/blog/teen-conservatory-dear-evan-hansen.jpg" alt="Teen performers onstage in a conservatory production, the level of work college audition programs are looking for" width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">College</p>
+          <h2 class="name"><a href="/blog/what-are-unified-college-auditions-tony-cimino-johnson.html">What Are Unified Auditions? A Plain-English Guide for Families</a></h2>
+          <p class="role">September 23, 2026</p>
+          <p class="bio">One word is doing three jobs, which is why every family arrives believing there is a single official event they must get to. There isn't.</p>
+          <p class="bio">From the other side of the table: what really happens in that five-minute room, why prescreens reorder the whole year, what the season costs line by line, and the rule for deciding whether to go at all.</p>
+          <a class="link" href="/blog/what-are-unified-college-auditions-tony-cimino-johnson.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-break-camps" role="tabpanel" aria-labelledby="tab-break-camps">
         <div class="stage">
           <div class="beam" aria-hidden="true"></div>
           <!-- LEAD PHOTO pending Tony: borrowed camp shot, swap src/alt when the real one arrives -->
@@ -399,9 +415,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     </div>
 
     <aside class="board" role="tablist" aria-label="All posts">
-      <div class="boardhead"><span>The Call Board</span><b>10 posts</b></div>
+      <div class="boardhead"><span>The Call Board</span><b>11 posts</b></div>
 
-      <button class="row on" type="button" role="tab" id="tab-break-camps" data-id="break-camps" aria-selected="true" aria-controls="panel-break-camps">
+      <button class="row on" type="button" role="tab" id="tab-unifieds" data-id="unifieds" aria-selected="true" aria-controls="panel-unifieds">
+        <img class="thumb" src="/img/blog/teen-conservatory-dear-evan-hansen.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>What Are Unified Auditions?</b><i>College &middot; Sep 23, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-break-camps" data-id="break-camps" aria-selected="false" tabindex="-1" aria-controls="panel-break-camps">
         <img class="thumb" src="/img/blog/broadway-bound-camp-counselor-camper.jpg" alt="" width="1800" height="1200" loading="lazy">
         <span class="rowtext"><b>Winter and Spring Break Theatre Camps</b><i>Parents &middot; Sep 22, 2026</i></span>
         <span class="cue" aria-hidden="true"></span>

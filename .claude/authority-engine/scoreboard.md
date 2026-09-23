@@ -712,3 +712,82 @@ weekly classes and audition worries to coaching instead.
 - **Primary keyword:** no NOVAPA presence, expected, post not live.
 
 Next: topic 12, "What are Unified auditions? A plain-English guide for families".
+
+---
+
+## Run 13 — September 23, 2026 (topic 12: what are unified auditions) — DRAFTED, awaiting approval
+
+- **Canonical:** blog/what-are-unified-college-auditions-tony-cimino-johnson.html
+  (~1,650 words — inside ROUTINE.md's 1,200-1,800 band, unlike recent siblings —
+  8 h2 sections, valid Article + FAQPage JSON-LD verified with json.loads).
+  Index panel + call-board row added (11 posts), sitemap entry added, blog
+  lastmod bumped to 09-23. `npm run check` passes.
+- **Branch:** `authority-engine`, committed and pushed. Not merged, no PR.
+- **Photo:** none. Article has a commented figure slot; the index panel borrows
+  teen-conservatory-dear-evan-hansen.jpg as a placeholder. Ask Tony.
+- **Drafts:** runs/2026-09-23-topic-12-unified-auditions/ — substack.md (verbatim
+  mirror), linkedin.md (peer/field register, link in first comment), facebook.md,
+  instagram.md (caption + 8-slide carousel), reddit.md (r/MusicalTheatre).
+- **Reddit:** r/MusicalTheatre only. Ledger: r/MusicalTheatre Sept 10 (thirteen
+  days, allowed) · r/Theatre Sept 18 (five days, skipped) · r/nova Sept 22
+  (one day, skipped). No link in the draft at all, given the commercial interest.
+
+### Also this run: the GA4 gate caught the break-camps post
+
+main merged #153 overnight, adding Google Analytics 4 (G-90GQK8HYNV) to all 61
+public pages and teaching preflight to require it. Topic 11's post was written
+on this branch before that landed, so merging main brought the new rule without
+the tag and `npm run check` failed. Fixed by copying the block from a sibling
+post. This is the second time the analytics gate has caught a blog post written
+on a branch while an analytics change was in flight on main (the first was
+Sept 18, topic 9). Worth noting the pattern: it is working exactly as intended,
+and it will keep happening as long as posts are drafted on a long-lived branch.
+
+### Field re-check (primary: "what are unified college auditions")
+
+Page 1 is the official body (unifiedauditions.com, terse), Acceptd's guide
+(a platform vendor), and then coaching businesses selling coaching: My College
+Audition, College Audition Project, StageReady, Topher Keene, MacTheatre. Plus
+two BroadwayWorld articles (2019 and 2023) and a College Confidential master
+list thread. Secondary "do you have to attend unifieds / worth it": Road2College,
+the same coaching sites, and a WordPress pros-and-cons post from 2019.
+
+Nobody writes the plain-English taxonomy — that one word covers the national
+coalition, a scatter of independent regional events, AND the separately named
+"United Auditions." Nobody writes for the parent rather than the student or the
+coaching client. Nobody itemizes the money beyond a bare "upwards of $5,000."
+Nobody explains, from behind the table, what the five minutes actually are.
+And almost nobody states plainly that you do not have to go.
+
+**Wedge:** the ballroom-at-seven vignette written from the organiser's side;
+the three-things taxonomy; "this is a matching problem, not a ranking"; the
+prescreen-reorders-the-year point; the count-your-schools rule applied against
+Tony's own event ("if the school your child cares most about is not coming to
+Leesburg, I would rather say so than take your registration"); the four-line
+cost breakdown with coaching named as the first line to cut; and a disclosure
+paragraph rather than a soft-pedal.
+
+### Standings vs. baseline-2026-09-06
+
+- **"Tony Cimino-Johnson" theatre:** page 1 unchanged from Runs 11-12.
+- **"Tony Cimino-Johnson" (bare, no "theatre") — checked this run:** a different
+  page-1 set. LinkedIn, Instagram, VTA sched, EdTA PDF, X/@tonycmn, Wikipedia
+  noise, plus **Loudoun Times: "Loudoun County educator selected for Northern
+  Virginia 40 Under 40"** (Class of 2025) and two Loudoun Times/Loudoun Now
+  items about the LCPS matter. Two notes for Tony: the bare-name query surfaces
+  the LCPS coverage much higher than the "+theatre" query does, and the 40 Under
+  40 recognition is NOT on the approved credential list in ROUTINE.md. It has
+  not been used in any draft. Tony's call whether to add it.
+- **"Mr. Cimino-Johnson" theatre:** unchanged from Run 12.
+- **"Mr. CJ" theatre Northern Virginia:** still zero Tony properties. Unchanged
+  from baseline and Runs 10-12.
+- **site:novapa.org/blog:** manual Search Console check still owed, now four
+  runs old. The GitHub-outranking-the-site finding from Run 12 stands.
+- **Topic 11 primary ("spring break theatre camps for kids"):** re-checked
+  today, one day after drafting. No novapa.org presence, expected, post not
+  live. SERP composition unchanged: Encore Stage & Studio, Kids Out and About
+  city pages, besttheatercamps.com directory, individual theatre camp pages.
+  Still no editorial answer on the query.
+
+Next: topic 13, "High school theatre fundraising that actually works"
+(tony-cimino.com lane — draft goes in runs/, not blog/).
