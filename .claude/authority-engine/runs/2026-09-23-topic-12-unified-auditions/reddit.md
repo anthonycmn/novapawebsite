@@ -1,26 +1,18 @@
 # Reddit — topic 12, unified auditions
-# REVISED Sept 23 on CJ's notes: not r/nova, register link included, pro-Unifieds framing.
+# REVISED Sept 23 on CJ's notes: not r/nova, NO link (CJ removed it), pro-Unifieds framing.
 
 **Subreddit: r/MusicalTheatre. One post.**
 
 **Pacing:** r/MusicalTheatre last posted Sept 10 — thirteen days, inside the ~1x/week
 limit. r/nova excluded per CJ. r/Theatre Sept 18, too recent anyway.
 
-**⚠️ READ THIS BEFORE POSTING — the link is a real risk.**
-You asked for a registration link and it's in the draft below. You should know what
-that costs on this subreddit: r/MusicalTheatre moderates self-promotion hard, and a
-post that both explains a topic AND links the poster's own paid event is the exact
-shape that gets pulled, and sometimes gets the account flagged. The disclosure at the
-top helps but doesn't immunise you.
+**No link in this post — CJ's call, Sept 23.** The registration link has been removed
+entirely. This is the right call: r/MusicalTheatre removes posts that explain a topic
+and link the poster's own paid event, and the post stands on its own without it.
 
-Three options, your call:
-  A. Post as written, link included. Highest reach if it survives, real chance it doesn't.
-  B. Post WITHOUT the last line (marked below), then drop the registration link in a
-     comment if anyone asks where the event is. This is what I'd do — the link almost
-     always gets asked for, and a link you were asked for reads completely differently.
-  C. Message the mods first and ask. Slowest, safest, and some mods will green-light it.
-
-Either way: do not post it and then argue in the comments if it gets challenged. Let it go.
+If someone asks in the comments where the event is, answering then is normal
+participation, not self-promotion, and that is the moment to mention DC Unifieds.
+Don't lead with it and don't argue if the post gets challenged.
 
 ---
 
@@ -28,7 +20,7 @@ Either way: do not post it and then argue in the comments if it gets challenged.
 
 **Body:**
 
-Disclosure up front: I run one of these events, so I've got a commercial interest here. Mentioning it now rather than burying it at the bottom.
+Disclosure up front: I run one of these events myself, so I've got a commercial interest in the topic. Not naming it or linking it here, that's not what this post is for. Just flagging the bias so you can weigh what follows.
 
 I've spent years on the organiser side of college audition weekends and the same confusion comes up constantly, so:
 
@@ -53,7 +45,3 @@ Some other stuff that seems to catch people out:
 - **The best argument for going is the schools you haven't heard of.** This is the one I'd push back on the standard advice about. People get told to count how many schools from their list will be there and only go if the number's high enough. I think that misses it. What I've watched happen over and over is a family shows up for three schools they've researched to death, there's a gap Saturday afternoon, the kid wanders into a room for a program nobody knew existed that morning, and that's the one. That's where they end up. You can't stumble into a school you've never heard of by driving to a campus you already chose.
 
 Happy to answer questions about the logistics side, including the unglamorous parts of how these weekends get built. And if you've been through it recently as a student, please add or correct anything — my angle is from behind the table, which only shows you so much.
-
-**[↓ THIS LAST LINE IS THE ONE TO CUT IF YOU GO WITH OPTION B ↓]**
-
-Mine is DC Unifieds, Leesburg VA, if anyone on the East Coast wants a look at which schools are coming: https://dcunifieds.com/register.html
