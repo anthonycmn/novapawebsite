@@ -640,14 +640,42 @@ export function priceCart(cart, plan, opts = {}) {
     return { ...it, unit: Math.round(list * (1 - rate)), rate };
   });
 
+  // Credit redemption: a camper's day credits zero out their day-camp lines
+  // (snow-day events pull from snow credits instead). Priciest lines redeem
+  // first so a credit never burns on a sibling-discounted price while a
+  // full-price line pays cash. opts.creditsByKid = { kidKey: {day, snow} }
+  // comes from the DB in reg-pay; the webhook deducts on payment.
+  //
+  // Credits redeem BEFORE the cart-form pack below. Until Sep 23 2026 the
+  // pack went first and packed lines never redeem, so a credit holder who
+  // booked five days in one cart was charged a second $349 pack against five
+  // unspent credits (the Skelton family, four attempts on Sep 21, no order).
+  const creditsByKid = opts.creditsByKid || {};
+  const creditsUsed = {};
+  const redeemable = priced.filter((it) => it.daycamp && !it.coaching && !it.pack)
+    .sort((a, b) => b.unit - a.unit);
+  for (const it of redeemable) {
+    const k = kidKey(it);
+    const bal = creditsByKid[k];
+    if (!bal) continue;
+    const kind = isSnowDayName(it.name) ? "snow" : "day";
+    const used = creditsUsed[k] || (creditsUsed[k] = { day: 0, snow: 0 });
+    if ((bal[kind] || 0) - used[kind] > 0) {
+      used[kind] += 1;
+      it.unit = 0;
+      it.credited = true;
+    }
+  }
+
   // Day Camp 5-Pack, cart form (Jason, Aug 2 evening — replaces the credit-
   // pack product UX): a camper booked into 5 day camps in ONE order pays
   // $349 flat for those 5 (per camper, packs stack). Applied by scaling the
   // camper's priciest day-camp units so every downstream number inherits it.
   // The webhook still grants 2 snow-day credits per pack bought by Sep 21 2026.
+  // Days a credit already paid for are not in it: only uncredited days pack.
   const byKidDc = {};
   for (const it of priced) {
-    if (it.daycamp && !it.coaching && !it.pack) (byKidDc[kidKey(it)] = byKidDc[kidKey(it)] || []).push(it);
+    if (it.daycamp && !it.coaching && !it.pack && !it.credited) (byKidDc[kidKey(it)] = byKidDc[kidKey(it)] || []).push(it);
   }
   const dayPacksByKid = {};
   for (const k of Object.keys(byKidDc)) {
@@ -664,28 +692,6 @@ export function priceCart(cart, plan, opts = {}) {
       const u = (i === packed.length - 1) ? target - acc : Math.round(it.unit * target / packedSum);
       acc += u; it.unit = u; it.pack = true;
     });
-  }
-
-  // Credit redemption: a camper's day credits zero out their day-camp lines
-  // (snow-day events pull from snow credits instead). Priciest lines redeem
-  // first so a credit never burns on a sibling-discounted price while a
-  // full-price line pays cash. opts.creditsByKid = { kidKey: {day, snow} }
-  // comes from the DB in reg-pay; the webhook deducts on payment.
-  const creditsByKid = opts.creditsByKid || {};
-  const creditsUsed = {};
-  const redeemable = priced.filter((it) => it.daycamp && !it.coaching && !it.pack)
-    .sort((a, b) => b.unit - a.unit);
-  for (const it of redeemable) {
-    const k = kidKey(it);
-    const bal = creditsByKid[k];
-    if (!bal) continue;
-    const kind = isSnowDayName(it.name) ? "snow" : "day";
-    const used = creditsUsed[k] || (creditsUsed[k] = { day: 0, snow: 0 });
-    if ((bal[kind] || 0) - used[kind] > 0) {
-      used[kind] += 1;
-      it.unit = 0;
-      it.credited = true;
-    }
   }
 
   const grossSubtotal = priced.reduce((s, it) => s + it.unit, 0);

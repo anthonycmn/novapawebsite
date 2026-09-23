@@ -1079,9 +1079,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   // Day Camp 5-Pack, cart form: a camper booked into 5 day camps in one order
   // pays $349 flat for those 5 (per camper, packs stack) - mirrors priceCart:
   // priciest lines scaled so the pack sums exactly.
-  function applyDayPacks(items, units, isDay){
+  // Credited days are skipped: credits redeem first (see applyCredits).
+  function applyDayPacks(items, units, isDay, credited){
     var byKid = {};
-    items.forEach(function(it, i){ if (!isPack(it.activity_id) && isDay(it, i)) (byKid[kidKey(it)] = byKid[kidKey(it)] || []).push(i); });
+    items.forEach(function(it, i){ if (!isPack(it.activity_id) && isDay(it, i) && !(credited && credited[i])) (byKid[kidKey(it)] = byKid[kidKey(it)] || []).push(i); });
     var packed = {}, packsByKid = {};
     Object.keys(byKid).forEach(function(k){
       var idxs = byKid[k];
@@ -1101,7 +1102,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   // credits zero out a camper's day-camp lines, priciest first - mirrors
   // priceCart. isDay(i) decides "is this line a day camp"; snow-day events
-  // consume snow credits instead of day credits. Packed lines never redeem.
+  // consume snow credits instead of day credits. Runs before applyDayPacks,
+  // like priceCart, so a credit holder's five days are never re-sold as a pack.
   function applyCredits(items, units, isDay, nameOf, packed){
     var byKid = {};
     items.forEach(function(it, i){
@@ -3359,9 +3361,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       var a3 = byId[it.activity_id] || {};
       return a3.category !== 'class' && !isCoach(it.activity_id) && (a3.price_cents || 0) <= 20000 && !!a3.price_cents;
     };
-    var dp = applyDayPacks(items, units, isDayTest);
+    // credits first, then packs from the uncredited days only (Skelton, Sep 21 2026)
     var credited = applyCredits(items, units, isDayTest,
-      function(it){ return (byId[it.activity_id] || {}).name; }, dp.packed);
+      function(it){ return (byId[it.activity_id] || {}).name; }, null);
+    var dp = applyDayPacks(items, units, isDayTest, credited);
     // Mid-month proration (CJ, Sep 16 2026): a class line is charged today
     // for the sessions left in the month it covers; `units` stays the monthly
     // amount the subscription pulls on the 1st.
@@ -3517,9 +3520,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // Day Camp 5-Pack + credits (mirrors priceCart)
     items.forEach(function(it, i){ var pk = packOf(it.activity_id); if (pk) units[i] = pk.cents; });
     var isDayTest2 = function(it){ return !it.show && isDayId(it.activity_id); };
-    var dp = applyDayPacks(items, units, isDayTest2);
+    // credits first, then packs from the uncredited days only (Skelton, Sep 21 2026)
     var credited = applyCredits(items, units, isDayTest2,
-      function(it){ return (byIdAll[it.activity_id] || {}).name; }, dp.packed);
+      function(it){ return (byIdAll[it.activity_id] || {}).name; }, null);
+    var dp = applyDayPacks(items, units, isDayTest2, credited);
     var subtotal = units.reduce(function(x,y){ return x+y; }, 0);
     var coupon = !state.coupon ? 0
       : state.coupon.pct ? Math.round(subtotal * state.coupon.pct / 100)
