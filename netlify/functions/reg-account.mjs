@@ -458,7 +458,7 @@ export default async (req) => {
       cfg = (cfgs.data || []).find((c) => (c.metadata || {}).novapa === "card-update");
       if (!cfg) {
         cfg = await sapi(`billing_portal/configurations`, {
-          "business_profile[headline]": "NOVAPA — manage your payment method",
+          "business_profile[headline]": "NOVAPA: manage your payment method",
           "features[payment_method_update][enabled]": "true",
           "features[invoice_history][enabled]": "true",
           "features[subscription_cancel][enabled]": "false",

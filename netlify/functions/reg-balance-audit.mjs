@@ -220,7 +220,7 @@ async function runAudit(resend) {
 
   const rowOrder = (o, extra) => `<tr>${cell(`#${o.order_no}`)}${cell(esc(o.email))}${cell(extra)}</tr>`;
   const html = `<div style="max-width:680px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif">
-<div style="font:700 20px/1.3 Helvetica,Arial,sans-serif;color:#0B1422">${issues ? "Registration audit" : "Registration audit — all clear"}</div>
+<div style="font:700 20px/1.3 Helvetica,Arial,sans-serif;color:#0B1422">${issues ? "Registration audit" : "Registration audit: all clear"}</div>
 <div style="font:14px/1.7 Helvetica,Arial,sans-serif;color:#5B6472;margin-top:9px">
 ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" })}.
 Checked ${s.deposits} deposit plan${s.deposits === 1 ? "" : "s"} and ${s.classes} class membership${s.classes === 1 ? "" : "s"} against Stripe, and every paid order line against the parent portal.

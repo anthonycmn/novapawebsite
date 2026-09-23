@@ -438,8 +438,11 @@ export default async (req) => {
       }
     } catch (e) { console.error("mark_registered failed:", e.message); }
     // A free first class that turned into this order. The booking is matched
-    // by email, listing and the child's first name and marked converted with
-    // this order id, so the trial-to-enrolment rate can be read off the table.
+    // by email and then the child's first name on any listing, or the listing
+    // alone when the family has only one child booked on it (so "Katy" still
+    // converts "Katelyn"; db/free-class-conversion-listing.sql), and marked
+    // converted with this order id, so the trial-to-enrolment rate can be read
+    // off the table.
     // Idempotent in the database, so a redelivered event converts nothing
     // twice. Logged and skipped on failure, like everything else here: a
     // bookkeeping miss must never fail a checkout.
@@ -538,7 +541,7 @@ export default async (req) => {
         await sendMail({
           fromName: "NOVAPA Registrations",
           to: admins,
-          subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
+          subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email}, $${paid} (${m.plan})`,
           html: [
             `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt;` +
             `${m.phone ? ` · ${m.phone}` : ""} · plan: <b>${m.plan}</b>`,
@@ -569,7 +572,7 @@ export default async (req) => {
           await sendMail({
             fromName: "NOVAPA Alerts",
             to: "cj@novapa.org",
-            subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
+            subject: `WEBHOOK FAILED: payment without order, ${md.email || "unknown"}`,
             html: [
               `A Stripe event was received but order creation FAILED. The customer paid (or saved a card) and got nothing.`,
               `<b>Error:</b> ${String(err.message || err).slice(0, 300)}`,
