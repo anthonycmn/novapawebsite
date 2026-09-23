@@ -616,7 +616,7 @@ export default async (req) => {
         await sendMail({
           fromName: "NOVAPA Registrations",
           to: admins,
-          subject: `New registration: ${parent_name || email} — $0.00 (full)`,
+          subject: `New registration: ${parent_name || email}, $0.00 (full)`,
           html: [
             `<b>${parent_name || "(no name)"}</b> &lt;${email}&gt;` +
             `${phone ? ` · ${phone}` : ""} · plan: <b>full</b>`,

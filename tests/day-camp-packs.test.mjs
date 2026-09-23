@@ -115,6 +115,47 @@ const fiveDays = (camper, ci) => [1962598, 1962615, 991111, 991115, 991118].map(
   eq("a fully credited cart grants nothing", ev.grants, []);
 }
 
+// A credit holder booking FIVE days (the Skelton family, 21 Sep 2026). Five
+// days in one cart also form a cart-form 5-pack, and the pack used to be
+// applied first: packed lines never redeem, so the five days priced at $349
+// against five unspent credits (Stripe pi_3UID5ZGWP2Zbtasz3qAGcdSC and three
+// more that afternoon: amount 34900, credit_redeems []). The family, who had
+// already paid $349 for the credits, was asked for $349 again and left.
+// Credits redeem first; only uncredited days can form a pack.
+{
+  const sep21 = new Date("2026-09-21T19:41:00Z"); // 3:41 PM ET, the first attempt
+  const items = fiveDays("Cullen Skelton", 0);
+  const pricing = priceCart(items, "full", { now: sep21, creditsByKid: { i0: { day: 5, snow: 2 } } });
+  eq("five credits cover five days: every line is $0", pricing.items.map((it) => it.unit), [0, 0, 0, 0, 0]);
+  eq("the cart owes nothing today", pricing.todayCents, 0);
+  eq("and nothing in total, so it takes the free order path", pricing.totalCents, 0);
+  eq("no pack forms out of credited days", pricing.dayPacksByKid, {});
+  const ev = creditEventsFor(items, pricing, sep21);
+  eq("all five credits redeem, by name", ev.redemptions, [{ camper: "Cullen Skelton", day: 5, snow: 0 }]);
+  eq("and no second snow bonus is granted for a pack never bought", ev.grants, []);
+}
+// Ten days with five credits: five redeem, the other five are a real pack.
+{
+  const items = [...fiveDays("Kid A", 0), ...[991101, 991102, 991105, 991106, 991116].map((id) => day(id, "Kid A", 0))];
+  const pricing = priceCart(items, "full", { now: afterSnowEnd, creditsByKid: { i0: { day: 5, snow: 0 } } });
+  eq("five credited, five packed", pricing.items.filter((it) => it.credited).length, 5);
+  eq("the uncredited five cost one pack", pricing.todayCents, DAY_CAMP_PACK_CENTS);
+  eq("one pack formed", pricing.dayPacksByKid, { i0: 1 });
+}
+// Five days with three credits: three redeem, the two left are too few for a pack.
+{
+  const items = fiveDays("Kid A", 0);
+  const pricing = priceCart(items, "full", { now: afterSnowEnd, creditsByKid: { i0: { day: 3, snow: 0 } } });
+  eq("three credited", pricing.items.filter((it) => it.credited).length, 3);
+  eq("two days at the single price", pricing.todayCents, 2 * 7900);
+  eq("no pack from two days", pricing.dayPacksByKid, {});
+}
+// No credits: five days are still a pack, unchanged.
+{
+  const pricing = priceCart(fiveDays("Kid A", 0), "full", { now: afterSnowEnd });
+  eq("five uncredited days are still one $349 pack", pricing.todayCents, DAY_CAMP_PACK_CENTS);
+}
+
 // Cart-form pack after the snow deadline: no events at all (days are booked, not credited).
 {
   const items = fiveDays("Kid A", 0);

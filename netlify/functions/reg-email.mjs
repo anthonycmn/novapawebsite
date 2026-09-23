@@ -373,7 +373,7 @@ export async function sendConfirmationEmail(m, pi) {
       fromName: "DC Unifieds",
       replyTo: "support@dcunifieds.com",
       to: m.email,
-      subject: "You're registered — DC Unifieds 2026",
+      subject: "You're registered: DC Unifieds 2026",
       html: dcuConfirmationHtml(m, pi),
     });
     return;
@@ -386,7 +386,7 @@ export async function sendConfirmationEmail(m, pi) {
     replyTo: "info@novapa.org",
     to: m.email,
     ...(cc ? { cc } : {}),
-    subject: "You're in — NOVAPA registration confirmed",
+    subject: "You're in, NOVAPA registration confirmed",
     html: confirmationHtml(m, pi, details),
   });
 }
