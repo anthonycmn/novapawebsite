@@ -10,7 +10,8 @@
 // unknown stops the send.
 
 import assert from 'node:assert/strict';
-import { audienceKind, hasBroadcastSyntax, WIDE_AUDIENCES } from '../netlify/functions/reg-campaign.mjs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { audienceKind, hasBroadcastSyntax, refLink, WIDE_AUDIENCES } from '../netlify/functions/reg-campaign.mjs';
 
 let failures = 0;
 function check(label, fn) {
@@ -70,6 +71,30 @@ check('a body written for this sender is accepted', () => {
   assert.equal(hasBroadcastSyntax('your link: {ref_link}'), false);
   assert.equal(hasBroadcastSyntax(''), false);
   assert.equal(hasBroadcastSyntax(undefined), false);
+});
+
+// {ref_link} used to fall back to NOVAPA4747, which is the "Jason (Test
+// Account)" family: a referral through a code-less send paid the reward to
+// a test account. No code means no ?ref= at all.
+check('a family with a code gets its own share link', () => {
+  assert.equal(refLink('NEELAF716'), 'https://www.northernvirginiaperformingarts.org/register/?ref=NEELAF716');
+  assert.equal(refLink(' RYLANE2DA '), 'https://www.northernvirginiaperformingarts.org/register/?ref=RYLANE2DA');
+});
+
+check('a recipient without a code gets the plain registration link, never the house code', () => {
+  for (const none of [undefined, null, '', '   ']) {
+    const link = refLink(none);
+    assert.equal(link, 'https://www.northernvirginiaperformingarts.org/register/', String(none));
+    assert.equal(link.includes('NOVAPA4747'), false);
+    assert.equal(link.includes('?ref='), false);
+  }
+});
+
+check('no sender still carries the NOVAPA4747 fallback', () => {
+  const dir = new URL('../netlify/functions/', import.meta.url);
+  const carriers = readdirSync(dir).filter((f) => f.endsWith('.mjs'))
+    .filter((f) => readFileSync(new URL(f, dir), 'utf8').includes('"NOVAPA4747"'));
+  assert.deepEqual(carriers, []);
 });
 
 if (failures) { console.log('\n' + failures + ' failing'); process.exit(1); }
