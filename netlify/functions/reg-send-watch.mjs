@@ -11,6 +11,7 @@
 // The drip has its own hard ceiling (MAX_SENDS_PER_DAY) that halts the engine.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 // Baselines from the 30 days before the incident: drip 1-6/day, campaigns fire
 // only when a human schedules one. Thresholds sit well above normal so this
@@ -36,7 +37,7 @@ async function countSince(table, column, iso) {
   return total && total !== "*" ? Number(total) : 0;
 }
 
-export default async () => {
+const run = async () => {
   if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
     return new Response("skipped: non-production", { status: 200 });
   }
@@ -97,5 +98,7 @@ One alert per day. Thresholds: WATCH_DRIP_HOUR, WATCH_DRIP_DAY, WATCH_CAMPAIGN_H
   });
   return new Response(`alerted: ${hits.length} condition(s)`, { status: 200 });
 };
+
+export default withHeartbeat("reg-send-watch", run);
 
 export const config = { schedule: "0 * * * *" };

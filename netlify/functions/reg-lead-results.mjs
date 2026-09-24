@@ -15,13 +15,14 @@
 // table.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { isTestAddress, resultsEmail } from "./reg-lead-email.mjs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 // Only mail.novapa.org is verified in Resend; the display name carries the
 // DCU brand. Replies go to the customer inbox Jen works.
 const FROM = "DC Unifieds <hello@mail.novapa.org>";
 const REPLY_TO = "info@novapa.org";
 
-export default async () => {
+const run = async () => {
   if (String(process.env.LEAD_RESULTS_EMAIL || "").toLowerCase() !== "on") {
     return new Response(JSON.stringify({ skipped: "disabled" }), { status: 200 });
   }
@@ -81,5 +82,7 @@ export default async () => {
   }
   return new Response(JSON.stringify({ sent }), { status: 200 });
 };
+
+export default withHeartbeat("reg-lead-results", run);
 
 export const config = { schedule: "7,22,37,52 * * * *" };

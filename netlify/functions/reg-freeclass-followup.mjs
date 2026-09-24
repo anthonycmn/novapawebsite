@@ -38,6 +38,7 @@
 // parent who hits reply lands with him.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { CLASSES } from "./reg-freeclass.mjs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 export const FOLLOWUP_SINCE = "2026-09-16";  // class_date on or after this
 export const FROM = "CJ Cimino-Johnson, NOVAPA <cj@mail.novapa.org>";
@@ -246,7 +247,7 @@ async function sendResend({ to, subject, text, html }) {
   return r.json();
 }
 
-export default async () => {
+const run = async () => {
   if ((process.env.FREECLASS_FOLLOWUP || "").toLowerCase() === "off")
     return new Response("free-class follow-up: paused (FREECLASS_FOLLOWUP=off)", { status: 200 });
   if (!process.env.RESEND_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -299,5 +300,7 @@ export default async () => {
   }
   return new Response(`free-class follow-up: sent ${sent}, waiting for class to end ${waiting}, skipped ${skipped}`, { status: 200 });
 };
+
+export default withHeartbeat("reg-freeclass-followup", run);
 
 export const config = { schedule: "*/15 * * * *" };

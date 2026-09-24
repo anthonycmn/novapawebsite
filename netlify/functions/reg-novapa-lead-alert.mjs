@@ -8,6 +8,7 @@
 // who just asked for a free class is worth calling the same hour.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 const STORE = "lead-alerts";
 const KEY = "novapa-seen";
@@ -54,7 +55,7 @@ function card(kind, r) {
 ${detail}</td></tr>`;
 }
 
-export default async () => {
+const run = async () => {
   if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
     return new Response("skipped: non-production", { status: 200 });
   }
@@ -113,5 +114,7 @@ export default async () => {
   }));
   return new Response(`alerted ${n}`, { status: 200 });
 };
+
+export default withHeartbeat("reg-novapa-lead-alert", run);
 
 export const config = { schedule: "*/5 * * * *" };
