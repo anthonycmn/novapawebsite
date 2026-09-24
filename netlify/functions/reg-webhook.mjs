@@ -9,6 +9,7 @@ import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { mintDcuFamily } from "./dcu-family.mjs";
+import { attributeOrder } from "./reg-attribution.mjs";
 import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
@@ -237,19 +238,12 @@ export default async (req) => {
     // who paid is registered whether or not we can say which ad sent them.
     // Before this, public.orders had nowhere to record where a buyer came
     // from, so every ad-driven registration was unattributable.
-    if (orderId && m.utm) {
-      try {
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
-          method: "PATCH",
-          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ utm: JSON.parse(m.utm) }),
-        });
-        if (!r.ok) console.error("order utm write failed:", r.status, await r.text());
-      } catch (e) {
-        console.error("order utm write failed:", e.message);
-      }
-    }
+    // Since Sep 24 2026 an order that arrives with no utm takes the first
+    // tagged free-class booking or quiz lead for the same email, because the
+    // ad click and the checkout are almost never the same visit. See
+    // reg-attribution.mjs. It never throws; failures log as
+    // "[order-attribution] FAILED" so they are not mistaken for "no ad".
+    if (orderId) await attributeOrder(orderId, m);
 
     // A DC Unifieds buyer is a guest too, but gets the register entry
     // dcu-family.mjs describes, not the camp upsert below (which would add
