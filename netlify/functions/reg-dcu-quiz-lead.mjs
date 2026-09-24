@@ -107,8 +107,9 @@ export default async (req) => {
           headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             from: "NOVAPA Leads <leads@mail.novapa.org>",
+            reply_to: "info@novapa.org",
             to,
-            subject: `New DCU lead — ${studentName} (one-weekend quiz)`,
+            subject: `New DCU lead: ${studentName} (one-weekend quiz)`,
             html: `<div style="max-width:600px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif">
 <div style="font:700 21px/1.25 Helvetica,Arial,sans-serif;color:#0B1422">${esc(studentName)} just finished the one-weekend quiz</div>
 <table style="border-collapse:collapse;margin-top:10px">
