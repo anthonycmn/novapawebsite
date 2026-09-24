@@ -831,3 +831,95 @@ re-pushed; status moved to `awaiting-approval`.
   comment when asked).
 
 Nothing was published. The hard rule stands: Tony publishes.
+
+---
+
+## Run 14 — September 24, 2026 (topic 13: high school theatre fundraising) — DRAFTED
+
+**Tony did not deploy overnight.** Topic 12 is not on main; topic-12-ship is
+still unmerged. Topics 10, 11 and 12 are all waiting on him. Backlog is 3,
+under the guard of 5, so this run drafted normally. If it reaches 5 the guard
+trips and the engine stops drafting until he clears some.
+
+### The CookieYes gate fired — third run in a row
+
+main merged #155 overnight (alert reply-to, dash-free subjects, a day-camp date
+floor, and the CookieYes consent banner on all 60 tag-gated pages, with
+preflight taught to require it). Both posts on this branch predate it, so
+merging main brought the rule without the banner and the gate blocked the
+deploy on two files. Fixed on `authority-engine`, and separately on
+`topic-12-ship`, which was cut before #155 and would otherwise have failed
+Tony's deploy at the moment he ran it. That branch now has main merged in, so a
+`--ff-only` merge from main is still clean, verified with `git merge-base
+--is-ancestor`.
+
+**This is now a pattern, not an incident:** Sept 18 the analytics block, Sept 23
+GA4, Sept 24 CookieYes. Three consecutive site-wide tag changes landing on main
+while posts sat drafted on a long-lived branch. The gate has caught all three,
+which is the system working, but it will keep happening for as long as drafts
+wait. The structural fix is either shorter-lived per-topic branches cut fresh
+at draft time, or Tony merging sooner. Worth a decision rather than a fourth
+occurrence.
+
+### Topic 13 — tony-cimino.com lane, so no blog/ file
+
+- **Canonical draft:** runs/2026-09-24-topic-13-theatre-fundraising/
+  tony-cimino-canonical.md (~1,510 words). Framer publishes separately from
+  this repo, so there is no HTML, no index panel and no sitemap entry — correct
+  per the routine's lane rule.
+- **Channels:** substack.md (mirror), linkedin.md (strongest LinkedIn fit in
+  the queue to date — this is precisely that audience), instagram.md
+  (teacher-facing, lower priority), channels-note.md explaining the Facebook
+  and Reddit decisions.
+- **Facebook skipped on purpose.** NOVAPA25 is a parent page; this piece argues
+  about budgets, administrators and teacher burnout. Wrong room. Its real home
+  is theatre-educator Facebook groups, which are personal-account posts.
+- **Reddit skipped on pacing.** r/Theatre was Sept 18 (six days, inside the
+  one-a-week rule), r/MusicalTheatre was yesterday, r/nova is excluded.
+- **Blocker for Tony:** both the Substack mirror and the LinkedIn first comment
+  point at https://tony-cimino.com/high-school-theatre-fundraising, which does
+  not exist yet. The Framer page has to go up before either posts.
+
+### Field re-check (primary: "high school theatre fundraising ideas")
+
+The entire page is listicles written by companies that profit from the
+fundraiser: GoFundMe, Donorbox, On The Stage, Broadway Licensing, Fun Pasta
+Fundraising, van Wyk Confections, Pioneer Drama, Theatrefolk, PerformerStuff,
+schoolplayscripts. Car washes, t-shirts, pasta, trivia nights, fifteen ideas at
+a time. Secondary "school theatre program budget funding" adds StageAgent,
+OnStage Blog, EdTA Foundation grants and a student-newspaper piece.
+
+Nearest competitor found: dramamommaspeaks.com, which does name fundraiser
+fatigue and the weekend cost honestly. It is the only one that does. Nobody
+draws the fundraising-versus-revenue distinction, nobody runs dollars per
+teacher-hour as a decision rule, nobody addresses account structure or the
+administrator briefing, and nobody has an arc to back it.
+
+**Wedge:** the $5,000 opening on a cart in a corridor; "it was giving up on
+fundraising"; fundraising defined as a second job and revenue as the same
+activity priced correctly; the hourly-rate Rule; four levers (price the ticket,
+sell the room, use the building when it is dark, get legitimate about where the
+money lives); the September-plan-versus-March-crisis point about administrators;
+three fundraisers that survive the math, all of which add no weekend; and time
+sustainability as the real constraint — "programs don't fail because they run
+out of money, they fail because you run out."
+
+Sourcing note: every figure is either Tony's own ($5,000 start, ~$750,000
+operation) or published (fall musical box office commonly $4,000-$6,000, three
+to four fundraisers a year, ~$9,500 district line items). Nothing invented, per
+rule 4. Flagged to Tony that a real Rock Ridge ticket-price or camp figure would
+strengthen two sections if he wants to supply one.
+
+### Standings vs. baseline-2026-09-06
+
+- **"Tony Cimino-Johnson" theatre:** page 1 unchanged across Runs 11-14.
+  LinkedIn, Google Books, VTA sched, EdTA PDF, Instagram, Loudoun Now award,
+  OnStage editorial, MTI, YouTube, tony-cimino.com.
+- **"Mr. CJ" theatre Northern Virginia:** still zero Tony properties. Unchanged
+  from baseline through four runs.
+- **site:novapa.org/blog:** manual Search Console check still owed, now five
+  runs old. This is the longest-standing open item in the engine.
+- **Topic 13 primary:** no Tony presence, expected.
+
+Next: topic 14, "The BFA musical theatre audition timeline, month by month"
+(novapa.org, and seasonally urgent — fall spike, and it pairs with topic 12).
