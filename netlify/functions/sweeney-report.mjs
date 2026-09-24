@@ -421,8 +421,8 @@ export default async (req) => {
       to: who.to,
       ...(who.cc ? { cc: who.cc } : {}),
       subject: isBuy
-        ? `DEH — links to buy (${r.items.length} item${r.items.length === 1 ? "" : "s"}, ${money(r.totalCents || 0)})`
-        : `DEH rehearsal report — ${r.dayLabel}`,
+        ? `DEH: links to buy (${r.items.length} item${r.items.length === 1 ? "" : "s"}, ${money(r.totalCents || 0)})`
+        : `DEH rehearsal report: ${r.dayLabel}`,
       text: isBuy ? buyText(r) : reportText(r),
       html: isBuy ? buyHtml(r) : reportHtml(r),
     });

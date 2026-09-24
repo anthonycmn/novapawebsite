@@ -109,7 +109,7 @@ export default async () => {
       method: "POST",
       headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: FROM, to,
+        from: FROM, to, reply_to: "info@novapa.org",
         subject: info
           ? `DCU weekend-info request: ${x.email}`
           : `New Find Your 5 lead: ${x.name}${hot ? " (hot)" : ""}`,

@@ -68,7 +68,7 @@ export default async (req) => {
       const send = (msg) => fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { Authorization: `Bearer ${rk}`, "Content-Type": "application/json" },
-        body: JSON.stringify(msg),
+        body: JSON.stringify({ reply_to: "info@novapa.org", ...msg }),
       }).catch((e) => console.error("reg-waitlist email:", e.message));
 
       // Waitlist alerts go to whoever decides capacity — WAITLIST_ALERT_TO,

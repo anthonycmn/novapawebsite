@@ -173,6 +173,7 @@ async function alertSpike(sentToday) {
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: "NOVAPA Alerts <leads@mail.novapa.org>",
+        reply_to: "info@novapa.org",
         to,
         subject: `Drip halted: ${sentToday} emails sent today`,
         html: `<div style="max-width:560px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif;color:#0B1422">

@@ -96,6 +96,7 @@ export default async () => {
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: "NOVAPA Leads <leads@mail.novapa.org>",
+      reply_to: "info@novapa.org",
       to,
       subject: n === 1 ? `New ${what}: ${(freshFree[0] || freshQuiz[0]).parent_name || "no name"}` : `${n} new ${what}`,
       html: `<div style="max-width:600px;margin:0 auto;padding:26px 22px;font-family:Helvetica,Arial,sans-serif">

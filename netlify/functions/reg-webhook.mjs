@@ -537,8 +537,9 @@ export default async (req) => {
           `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td align="right">${v}</td></tr>`).join("");
         await sendMail({
           fromName: "NOVAPA Registrations",
+          replyTo: "info@novapa.org",
           to: admins,
-          subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email} — $${paid} (${m.plan})`,
+          subject: `${m.brand === "dcu" ? "DC Unifieds" : "New"} registration: ${m.parent_name || m.email}, ${paid} (${m.plan})`,
           html: [
             `<b>${m.parent_name || "(no name)"}</b> &lt;${m.email}&gt;` +
             `${m.phone ? ` · ${m.phone}` : ""} · plan: <b>${m.plan}</b>`,
@@ -569,7 +570,7 @@ export default async (req) => {
           await sendMail({
             fromName: "NOVAPA Alerts",
             to: "cj@novapa.org",
-            subject: `WEBHOOK FAILED: payment without order — ${md.email || "unknown"}`,
+            subject: `WEBHOOK FAILED: payment without order, ${md.email || "unknown"}`,
             html: [
               `A Stripe event was received but order creation FAILED. The customer paid (or saved a card) and got nothing.`,
               `<b>Error:</b> ${String(err.message || err).slice(0, 300)}`,

@@ -607,11 +607,21 @@ export default async (req) => {
     // Pruitt's mother booked hers by finding the catalog links herself.
     // starts_on and age_range go out with each row so the picker can group a
     // date's three sessions together and say which band each one is.
+    //
+    // A date floor, because active/bookable/hidden say nothing about time: on
+    // Sep 23 2026 the three Sep 21 camps were still offered with 87 seats. A
+    // camp whose ends_on is before today (Eastern) is never offered; a row with
+    // no ends_on falls back to starts_on. Same idea as reg-freeclass's
+    // SEASON_START floor after Sep 8. No row is changed, only what is offered.
     let dayCamps = [];
     if (credits.length) {
-      const rows = await svc(
-        `activities?select=id,name,price_cents,capacity,sold,booked_offline,starts_on,age_range` +
-        `&active=is.true&bookable=is.true&hidden=is.false&offering_kind=eq.day_camp&order=starts_on,age_range`);
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+      const rows = (await svc(
+        `activities?select=id,name,price_cents,capacity,sold,booked_offline,starts_on,ends_on,age_range` +
+        `&active=is.true&bookable=is.true&hidden=is.false&offering_kind=eq.day_camp` +
+        `&or=(ends_on.gte.${today},and(ends_on.is.null,starts_on.gte.${today}))&order=starts_on,age_range`))
+        // The same floor again, so it holds even if the query term is dropped.
+        .filter((a) => (a.ends_on || a.starts_on || today) >= today);
       const held = new Map(await Promise.all(rows.map(async (a) =>
         [a.id, a.capacity == null ? 0 : await heldCount(a.id)])));
       dayCamps = rows
