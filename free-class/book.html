@@ -74,6 +74,16 @@
   .submit { display:inline-block; border:0; background:var(--gold); color:var(--navy); font-family:inherit; font-weight:700; font-size:16px; padding:14px 32px; border-radius:999px; cursor:pointer; margin-top:6px; }
   .submit[disabled] { opacity:0.6; cursor:wait; }
   .err { color:#B4232A; font-size:14px; margin-top:12px; display:none; }
+  .card-step { display:none; margin-top:26px; padding-top:22px; border-top:1.5px solid var(--line); }
+  .card-step.on { display:block; }
+  .terms { font-size:13.5px; color:var(--dim); margin-bottom:16px; }
+  .terms b { color:var(--ink); }
+  #payElement { margin:6px 0 16px; }
+  .or { text-align:center; font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--dim); margin:12px 0 4px; }
+  label.agree { display:flex; gap:10px; align-items:flex-start; font-weight:400; font-size:13.5px; line-height:1.45; margin:0 0 14px; cursor:pointer; }
+  label.agree input { margin-top:3px; flex:none; width:16px; height:16px; }
+  .linkish { display:block; background:none; border:0; color:var(--dim); font-family:inherit; font-size:13px; margin-top:12px; cursor:pointer; text-decoration:underline; }
+  form.locked input { opacity:0.6; }
 
   footer { text-align:center; padding:0 22px 46px; font-size:11.5px; color:rgba(255,255,255,0.5); line-height:2; }
   footer img { height:24px; margin:0 auto 10px; display:block; }
@@ -114,6 +124,7 @@ fbq('track', 'PageView');
 fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 </script>
 <script src="/posthog.js" defer></script>
+<script src="/register/config.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18370900407"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','AW-18370900407');gtag('config','G-90GQK8HYNV');</script>
 </head>
@@ -126,7 +137,7 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 <div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA"></div>
 <div class="head">
   <h1>Pick your child&rsquo;s free class</h1>
-  <p>Takes about a minute. No payment, no card, no commitment: we just need to know who&rsquo;s coming and when, so we can hold their seat.</p>
+  <p id="headNote">Takes about a minute, and the class is free. A card on file holds your child&rsquo;s seat: it is only charged a $30 no-show fee if they miss the class without canceling 24 hours ahead.</p>
 </div>
 
 <div class="widget">
@@ -160,6 +171,18 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
         <button class="submit" id="submitBtn" type="submit">Hold my child&rsquo;s seat</button>
         <div class="err" id="err"></div>
       </form>
+      <!-- The card on file (CJ, Sep 24 2026). Shown once the booking checks
+           pass; a Stripe SetupIntent, so nothing is charged here. -->
+      <div id="cardStep" class="card-step">
+        <div class="sect-label">3. Hold the seat with a card</div>
+        <p class="terms" id="cardTerms"></p>
+        <div id="expressWrap" style="display:none"><div id="expressCheckout"></div><div class="or">or enter a card</div></div>
+        <div id="payElement"></div>
+        <label class="agree"><input type="checkbox" id="agree"> <span id="agreeText"></span></label>
+        <button class="submit" id="cardBtn" type="button" disabled>Hold my child&rsquo;s seat</button>
+        <button class="linkish" id="editBtn" type="button">&larr; Change details</button>
+        <div class="err" id="cardErr"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -256,6 +279,8 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
 
   fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) {
     classes = j.classes || [];
+    // FREECLASS_CARD=off in Netlify: the old no-card booking, and its promise.
+    if (j.card_required === false) $("headNote").innerHTML = "Takes about a minute. No payment, no card, no commitment: we just need to know who&rsquo;s coming and when, so we can hold their seat.";
     // ?class=<key> arrives from the weekly grid in register/classes.html, so a
     // parent who picked a class there does not have to find it again here
     var want = new URLSearchParams(location.search).get("class");
@@ -294,42 +319,161 @@ fbq('track', 'InitiateCheckout', { content_name: 'Free Class Booking' });
     } catch (e) {}
   }
 
+  function post(body) {
+    return fetch("/api/reg-freeclass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(function (r) { return r.json().then(function (j) {
+      if (!r.ok) throw new Error(j.error || "Something went wrong. Try again.");
+      return j;
+    }); });
+  }
+  var utm = {};
+  new URLSearchParams(location.search).forEach(function (v, k) {
+    if (/^utm_|^fbclid$/.test(k)) utm[k] = v;
+  });
+  function fields() {
+    return {
+      parent_name: $("parentName").value.trim(),
+      email: $("email").value.trim(),
+      phone: $("phone").value.trim(),
+      child_name: $("childName").value.trim(),
+      child_age: parseInt($("childAge").value, 10),
+      "class": clsKey, date: dateISO, utm: utm,
+    };
+  }
+  function resetBtn() { var b = $("submitBtn"); b.disabled = false; b.textContent = "Hold my child’s seat"; }
+  function showErr(el, msg) { el.style.display = "block"; el.textContent = msg; }
+  function refreshClasses() {
+    fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) { classes = j.classes || []; renderClasses(); });
+  }
+
+  // A card saved a minute ago on this page, for this email, holds the next
+  // sibling's seat too: one card, one Stripe customer, one enroll button later.
+  function cachedCard(email) {
+    try {
+      var c = JSON.parse(sessionStorage.getItem("fc_card") || "null");
+      return c && c.email === email.toLowerCase() ? c.si : null;
+    } catch (e) { return null; }
+  }
+  function cacheCard(email, si) {
+    try { sessionStorage.setItem("fc_card", JSON.stringify({ email: email.toLowerCase(), si: si })); } catch (e) {}
+  }
+
+  function book(si) {
+    var f = fields();
+    if (si) f.setup_intent = si;
+    return post(f).then(function (j) {
+      if (si) cacheCard(f.email, si);
+      rememberAttr(utm);
+      try { fbq("track", "Lead", { content_name: "Free Class Booking" }); } catch (e) {}
+      try { if (window.posthog) posthog.capture("free_class_booked", { "class": clsKey, date: dateISO, card: !!si }); } catch (e) {}
+      var b = j.booking;
+      location.href = "/free-class/confirmed.html?n=" + encodeURIComponent(b.child_name) +
+        "&d=" + encodeURIComponent(b.pretty_date) + "&t=" + encodeURIComponent(b.time) +
+        "&c=" + encodeURIComponent(b.class_label) + (qs ? "&" + qs : "");
+    });
+  }
+
+  // ── The card step ──────────────────────────────────────────────────────────
+  var stripe = null, elements = null;
+  function lockForm(on) {
+    $("bookForm").classList.toggle("locked", on);
+    $("bookForm").querySelectorAll("input").forEach(function (i) { i.readOnly = on; });
+    $("submitBtn").style.display = on ? "none" : "";
+    $("cardStep").classList.toggle("on", on);
+  }
+  function loadStripe() {
+    if (window.Stripe) return Promise.resolve();
+    return new Promise(function (ok, no) {
+      var s = document.createElement("script");
+      s.src = "https://js.stripe.com/v3/"; s.onload = ok; s.onerror = no;
+      document.head.appendChild(s);
+    });
+  }
+  function agreed() {
+    if ($("agree").checked) return true;
+    showErr($("cardErr"), "Tick the box to agree to the no-show fee first.");
+    return false;
+  }
+  function confirmCard() {
+    $("cardErr").style.display = "none";
+    return stripe.confirmSetup({
+      elements: elements, redirect: "if_required",
+      confirmParams: { return_url: location.origin + "/free-class/book.html" + location.search },
+    }).then(function (res) {
+      if (res.error) throw new Error(res.error.message);
+      if (!res.setupIntent || res.setupIntent.status !== "succeeded") throw new Error("Your card wasn't saved. Try again.");
+      return book(res.setupIntent.id);
+    });
+  }
+  function openCardStep() {
+    var child = $("childName").value.trim() || "your child";
+    $("cardTerms").innerHTML = "The class is <b>free</b>. We save a card to hold " + esc(child) +
+      "&rsquo;s seat, and it is only charged in two cases: a <b>$30 no-show fee</b> if " + esc(child) +
+      " doesn&rsquo;t come and the seat wasn&rsquo;t canceled at least 24 hours before class, or class tuition if you choose to enroll afterward. Nothing is charged today. Your confirmation email has a one-click cancel link.";
+    $("agreeText").textContent = "I agree NOVAPA may charge this card a $30 no-show fee if " + child +
+      " misses the free class without canceling at least 24 hours before it starts.";
+    lockForm(true);
+    $("cardBtn").disabled = true; $("cardBtn").textContent = "Loading the card form…";
+    $("expressWrap").style.display = "none"; $("payElement").innerHTML = ""; $("expressCheckout").innerHTML = "";
+    Promise.all([post({ action: "card", email: $("email").value.trim(), parent_name: $("parentName").value.trim() }), loadStripe()])
+      .then(function (r) {
+        stripe = stripe || Stripe(window.NOVAREG.STRIPE_PUBLISHABLE_KEY);
+        elements = stripe.elements({ clientSecret: r[0].client_secret,
+          appearance: { theme: "stripe", variables: { colorPrimary: "#B07B1E", fontFamily: "DM Sans, sans-serif", borderRadius: "8px" } } });
+        // Apple Pay / Google Pay live in Express Checkout above the card form,
+        // the same split as the register page.
+        elements.create("payment", { wallets: { applePay: "never", googlePay: "never" } }).mount("#payElement");
+        var ece = elements.create("expressCheckout", { buttonHeight: 46 });
+        ece.on("ready", function (e) { $("expressWrap").style.display = (e && e.availablePaymentMethods) ? "" : "none"; });
+        ece.on("loaderror", function () { $("expressWrap").style.display = "none"; });
+        ece.on("click", function (e) { if (!agreed()) return; e.resolve(); });
+        ece.on("confirm", function () {
+          confirmCard().catch(function (e) { showErr($("cardErr"), e.message); });
+        });
+        ece.mount("#expressCheckout");
+        $("cardBtn").disabled = false; $("cardBtn").textContent = "Hold " + child + "’s seat";
+      })
+      .catch(function (e) {
+        showErr($("cardErr"), e.message || "We couldn't open the card form. Refresh, or call (571) 571-2120.");
+        $("cardBtn").textContent = "Hold my child’s seat";
+      });
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  $("cardBtn").addEventListener("click", function () {
+    if (!agreed()) return;
+    var b = $("cardBtn"); b.disabled = true; b.textContent = "Holding their seat…";
+    confirmCard().catch(function (e) {
+      b.disabled = false; b.textContent = "Hold my child’s seat";
+      showErr($("cardErr"), e.message);
+      refreshClasses();
+    });
+  });
+  $("editBtn").addEventListener("click", function () { lockForm(false); resetBtn(); });
+
   $("bookForm").addEventListener("submit", function (ev) {
     ev.preventDefault();
     var err = $("err"); err.style.display = "none";
-    if (!clsKey || !dateISO) { err.style.display = "block"; err.textContent = "Pick a class and date first."; return; }
-    var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Holding their seat…";
-    var utm = {};
-    new URLSearchParams(location.search).forEach(function (v, k) {
-      if (/^utm_|^fbclid$/.test(k)) utm[k] = v;
-    });
-    fetch("/api/reg-freeclass", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        parent_name: $("parentName").value.trim(),
-        email: $("email").value.trim(),
-        phone: $("phone").value.trim(),
-        child_name: $("childName").value.trim(),
-        child_age: parseInt($("childAge").value, 10),
-        "class": clsKey, date: dateISO, utm: utm,
-      }),
-    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
-      .then(function (res) {
-        if (!res.ok) throw new Error(res.j.error || "Something went wrong. Try again.");
-        rememberAttr(utm);
-        try { fbq("track", "Lead", { content_name: "Free Class Booking" }); } catch (e) {}
-        try { if (window.posthog) posthog.capture("free_class_booked", { "class": clsKey, date: dateISO }); } catch (e) {}
-        var b = res.j.booking;
-        location.href = "/free-class/confirmed.html?n=" + encodeURIComponent(b.child_name) +
-          "&d=" + encodeURIComponent(b.pretty_date) + "&t=" + encodeURIComponent(b.time) +
-          "&c=" + encodeURIComponent(b.class_label) + (qs ? "&" + qs : "");
-      })
-      .catch(function (e) {
-        btn.disabled = false; btn.textContent = "Hold my child’s seat";
-        err.style.display = "block"; err.textContent = e.message;
-        fetch("/api/reg-freeclass").then(function (r) { return r.json(); }).then(function (j) { classes = j.classes || []; renderClasses(); });
+    if (!clsKey || !dateISO) { showErr(err, "Pick a class and date first."); return; }
+    var btn = $("submitBtn"); btn.disabled = true; btn.textContent = "Checking the seat…";
+    // Ask before the card: a family never types a card for a seat it cannot have.
+    var f = fields(); f.action = "precheck";
+    post(f).then(function (j) {
+      if (!j.card_required) return book(null);
+      var si = cachedCard(f.email);
+      if (si) return book(si).catch(function (e) {
+        // a stale saved card: forget it, and the next press opens the card form
+        try { sessionStorage.removeItem("fc_card"); } catch (x) {}
+        throw e;
       });
+      btn.textContent = "Hold my child’s seat";
+      openCardStep();
+    }).catch(function (e) {
+      resetBtn(); showErr(err, e.message); refreshClasses();
+    });
   });
 })();
 </script>

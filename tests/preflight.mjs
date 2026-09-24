@@ -275,6 +275,8 @@ const TAGS = [
 const UNTAGGED_ON_PURPOSE = new Map([
   ["auth-continue.html", "sign-in interstitial: email scanners prefetch it, so a tag would count them as visitors"],
   ["brand.html", "internal brand reference, noindex"],
+  ["free-class/enroll.html", "one-click enroll, reached only from CJ's after-class email: scanners prefetch it; the order's utm is credited server-side (reg-attribution)"],
+  ["free-class/manage.html", "free-class cancel link, reached only from the confirmation email: scanners prefetch it"],
   ["register/admin/index.html", "staff admin, gated by public.admin_emails"],
   ["register/lessons-preview.html", "internal preview of a register tab, noindex"],
   ["sweeney/index.html", "staff rehearsal schedule, noindex nofollow"],
