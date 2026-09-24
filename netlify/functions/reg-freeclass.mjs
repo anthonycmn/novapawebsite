@@ -1,15 +1,34 @@
 // Free class funnel — /api/reg-freeclass (novapa.org/free-class)
-//   GET  -> { classes: [{ key, name, ages, day, time, dates: [{ date, left }] }] }
-//   POST { parent_name, email, phone, child_name, child_age, class, date, utm }
+//   GET  -> { classes: [{ key, name, ages, day, time, dates: [{ date, left }] }], card_required }
+//   POST { parent_name, email, phone, child_name, child_age, class, date, utm, setup_intent }
 //        -> { ok, booking } and sends the confirmation email.
+//   POST { action: "precheck", ...same fields }  -> { ok } or the booking's error, no write
+//   POST { action: "card", email, parent_name }  -> { client_secret } for the card step
+//   POST { action: "manage", token }             -> the booking behind a cancel link
+//   POST { action: "cancel", token }             -> cancels it, if 24+ hours out
+//   POST { action: "enroll_info", tokens }       -> what the one-click enroll page shows
 //
 // Jason (Aug 26 2026): the free pass is for the real weekly CLASSES, any
 // class on the schedule, booked 7 or more days out. The catalog mirrors
 // classes.html (September–June season, $90/month per class — price never
 // shown here, the visit is free). Writes go to free_class_bookings
 // (RLS closed, service role only).
+//
+// The card on file (CJ, Sep 24 2026): the visit is still free, but the family
+// saves a card to hold the seat. It is charged $30 if the child does not come
+// and the family did not cancel 24 or more hours before the class
+// (reg-freeclass-noshow.mjs), and it is the card the one-click enroll button
+// uses afterward (free-class/enroll.html -> reg-pay). Saving it is a Stripe
+// SetupIntent: no money moves at booking. FREECLASS_CARD=off in Netlify
+// switches the card step off without a deploy.
+import Stripe from "stripe";
 
 const SUPABASE_URL = "https://tlkuqwsqicxcjdmumkje.supabase.co";
+
+export const NO_SHOW_FEE_CENTS = 3000;
+export const CANCEL_NOTICE_HOURS = 24;
+const cardRequired = () => (process.env.FREECLASS_CARD || "").toLowerCase() !== "off"
+  && !!process.env.STRIPE_SECRET_KEY;
 
 // Weekly schedule verified against classes.html (Aug 26 2026).
 // day: 0=Sun..6=Sat. Adult classes are deliberately absent — this funnel
@@ -117,6 +136,7 @@ export function freeVisitUsed(prior) {
   return null;
 }
 const VENUE = "National Conference Center, 18945 Conference Center Drive, Plaza C, Leesburg, VA 20176";
+export const MANAGE_URL = "https://novapa.org/free-class/manage.html";
 
 async function db(method, path, body) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -184,6 +204,32 @@ export function bookable(dateIso, timeStr) {
   if (dateIso < today) return false;
   return timeToMinutes(timeStr) - nowEasternMinutes() >= CUTOFF_MINUTES;
 }
+// The instant a class starts: its Eastern wall-clock time on that date,
+// daylight saving included.
+export function classStartsAt(dateIso, timeStr) {
+  const guess = Date.parse(`${dateIso}T00:00:00Z`) + timeToMinutes(timeStr) * 60000;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", hour12: false, year: "numeric", month: "2-digit",
+    day: "2-digit", hour: "2-digit", minute: "2-digit",
+  }).formatToParts(new Date(guess));
+  const g = (t) => +parts.find((p) => p.type === t).value;
+  const local = Date.UTC(g("year"), g("month") - 1, g("day"), g("hour") % 24, g("minute"));
+  return new Date(guess + (guess - local));
+}
+// CJ, Sep 24 2026: a family can cancel for free until 24 hours before the
+// class. After that the seat stands, and a no-show is charged the $30.
+export function cancelDeadline(dateIso, timeStr) {
+  return new Date(classStartsAt(dateIso, timeStr).getTime() - CANCEL_NOTICE_HOURS * 3600000);
+}
+export function canCancelFree(dateIso, timeStr, now = new Date()) {
+  return now.getTime() <= cancelDeadline(dateIso, timeStr).getTime();
+}
+// "Monday, September 28 at 6:00 PM", for the deadline sentence
+export function prettyDeadline(d) {
+  return d.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "long",
+    month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).replace(/, (\d{1,2}:\d{2})/, " at $1");
+}
+
 // next N bookable occurrences of `day`, clamped inside the season
 function upcomingDates(day, time) {
   let start = todayEastern();
@@ -259,7 +305,8 @@ function confirmationHtml(b, cls) {
   <p style="margin:18px 0 0"><b>What to bring:</b> comfortable clothes your child can move in, sneakers, and a water bottle. Nothing else is needed. No preparation, no audition, no experience.</p>
   <p style="margin:16px 0 0">We are in the South Building at Plaza C. Park free in the south lot and take the walkway to the entrance. An instructor will greet ${b.child_name} by name.</p>
   <p style="margin:16px 0 0"><b>Two minutes before the day:</b> tell us your emergency contact and any allergies, and sign the release, at <a href="https://novapa.org/free-class/details.html?e=${encodeURIComponent(b.email)}&n=${encodeURIComponent(b.child_name)}" style="color:#C8892A;font-weight:700">novapa.org/free-class/details</a>. Check in takes seconds when this is done.</p>
-  <p style="margin:16px 0 0">Life happens. If you need a different date or class, reply to this email and we will move the seat.</p>
+${b.stripe_payment_method_id ? `  <p style="margin:16px 0 0"><b>Can't make it?</b> Cancel free until ${prettyDeadline(cancelDeadline(b.class_date, cls.time))} at <a href="${MANAGE_URL}?t=${b.link_token}" style="color:#C8892A;font-weight:700">novapa.org/free-class/manage</a>. The class is free, and your card is only charged the $30 no-show fee if ${b.child_name} doesn't come and the seat wasn't canceled by then. To move to a different date or class, reply to this email.</p>`
+  : `  <p style="margin:16px 0 0">Life happens. If you need a different date or class, reply to this email and we will move the seat.</p>`}
   <div style="height:1px;background:#e5e5e5;margin:22px 0"></div>
   <p style="font-size:14px;color:#444;margin:0">Questions before the day? Call (571) 571-2120 or reply here. A person answers.</p>
 </td></tr>
@@ -323,10 +370,135 @@ async function noteSendFailure(b, err) {
   });
 }
 
+// ── The card on file ─────────────────────────────────────────────────────────
+// A SetupIntent for the booking page: a new Stripe customer for this email,
+// card and Link only (Apple Pay and Google Pay ride the card rails through the
+// Express Checkout element, the same as the register page), saved for charges
+// made later without the family present. No money moves.
+async function saveCardIntent(body) {
+  if (!cardRequired()) return Response.json({ error: "The card step is off." }, { status: 409 });
+  const email = String(body.email || "").trim().toLowerCase();
+  const parent = String(body.parent_name || "").trim().slice(0, 120);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: "A valid email is required" }, { status: 400 });
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const customer = await stripe.customers.create({
+      email, name: parent || undefined, metadata: { source: "novapa-free-class" },
+    });
+    const si = await stripe.setupIntents.create({
+      customer: customer.id,
+      usage: "off_session",
+      payment_method_types: ["card", "link"],
+      description: "NOVAPA free class: card on file for the $30 no-show fee and enrollment",
+      metadata: { source: "free-class", email },
+    });
+    return Response.json({ client_secret: si.client_secret });
+  } catch (e) {
+    console.error("reg-freeclass card", e.message);
+    return Response.json({ error: "We couldn't open the card form. Refresh, or call (571) 571-2120." }, { status: 500 });
+  }
+}
+
+// The SetupIntent the page says it confirmed: it must be one this endpoint
+// made (metadata.source), for this email, and actually succeeded. Returns
+// { customer, pm } or null.
+async function verifiedCard(siId, email) {
+  if (!/^seti_[A-Za-z0-9]+$/.test(siId)) return null;
+  try {
+    const si = await new Stripe(process.env.STRIPE_SECRET_KEY).setupIntents.retrieve(siId);
+    const m = si.metadata || {};
+    if (si.status !== "succeeded" || m.source !== "free-class" || m.email !== email) return null;
+    const pm = typeof si.payment_method === "string" ? si.payment_method : si.payment_method?.id;
+    const customer = typeof si.customer === "string" ? si.customer : si.customer?.id;
+    return pm && customer ? { pm, customer } : null;
+  } catch (e) {
+    console.error("reg-freeclass verify card", e.message);
+    return null;
+  }
+}
+
+const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// novapa.org/free-class/manage?t=<link_token>: what the booking is, and a
+// free cancel while the class is 24 or more hours away. Inside 24 hours the
+// page says the seat stands and how to reach a person; nothing here charges.
+async function manage(body) {
+  const token = String(body.token || "");
+  if (!TOKEN_RE.test(token)) return Response.json({ error: "That link isn't right. Use the one in your confirmation email." }, { status: 404 });
+  try {
+    const rows = await db("GET", `free_class_bookings?link_token=eq.${token}&select=id,status,child_name,cast_key,class_date,stripe_payment_method_id`);
+    const b = rows && rows[0];
+    const cls = b && CLASSES[b.cast_key];
+    if (!b || !cls) return Response.json({ error: "We couldn't find that booking. Reply to your confirmation email and we'll sort it." }, { status: 404 });
+    const deadline = cancelDeadline(b.class_date, cls.time);
+    const view = () => ({
+      child_name: b.child_name, status: b.status,
+      class_label: `${cls.name} (ages ${cls.ages[0]}–${cls.ages[1]})`,
+      when: `${prettyDate(b.class_date)}, ${cls.time}`,
+      deadline: prettyDeadline(deadline),
+      can_cancel: b.status === "booked" && canCancelFree(b.class_date, cls.time),
+      card_on_file: !!b.stripe_payment_method_id,
+    });
+    if (body.action === "manage") return Response.json({ ok: true, booking: view() });
+
+    if (b.status === "cancelled") return Response.json({ ok: true, booking: view() });
+    if (b.status !== "booked")
+      return Response.json({ error: "This visit has already happened, so there's nothing to cancel." }, { status: 409 });
+    if (!canCancelFree(b.class_date, cls.time))
+      return Response.json({ error: `Free cancellation closed ${prettyDeadline(deadline)}. Call (571) 571-2120 or reply to your confirmation email.` }, { status: 409 });
+    // status=eq.booked in the filter: a teacher's mark landing in the same
+    // moment wins, and this PATCH updates nothing.
+    const upd = await db("PATCH", `free_class_bookings?id=eq.${b.id}&status=eq.booked`,
+      { status: "cancelled", cancelled_at: new Date().toISOString() });
+    if (!upd || !upd.length) return Response.json({ error: "This booking just changed. Refresh the page." }, { status: 409 });
+    b.status = "cancelled";
+    return Response.json({ ok: true, booking: view() });
+  } catch (e) {
+    console.error("reg-freeclass manage", e.message);
+    return Response.json({ error: "server error" }, { status: 500 });
+  }
+}
+
+// What free-class/enroll.html shows before the parent presses Enroll: the
+// family, each visit the link names, and which card will be charged. The
+// tokens come from CJ's after-class note, one per child and class in it.
+async function enrollInfo(body) {
+  const tokens = [...new Set((Array.isArray(body.tokens) ? body.tokens : []).map(String))].filter((t) => TOKEN_RE.test(t)).slice(0, 6);
+  if (!tokens.length) return Response.json({ error: "That link isn't right. Use the one in your email." }, { status: 404 });
+  try {
+    const rows = await db("GET",
+      `free_class_bookings?link_token=in.(${tokens.join(",")})&select=parent_name,email,child_name,cast_key,activity_id,status,stripe_payment_method_id`);
+    if (!rows || rows.length !== tokens.length || new Set(rows.map((r) => r.email)).size !== 1)
+      return Response.json({ error: "We couldn't find that visit. Reply to the email and we'll enroll you by hand." }, { status: 404 });
+    let card = null;
+    const pm = rows[0].stripe_payment_method_id;
+    if (pm && rows.every((r) => r.stripe_payment_method_id === pm)) {
+      try {
+        const p = await new Stripe(process.env.STRIPE_SECRET_KEY).paymentMethods.retrieve(pm);
+        card = p.card ? { brand: p.card.brand, last4: p.card.last4, wallet: p.card.wallet?.type || null }
+             : p.type === "link" ? { brand: "link", last4: null, wallet: null } : { brand: p.type, last4: null, wallet: null };
+      } catch (e) { console.error("enroll_info card", e.message); }
+    }
+    return Response.json({
+      ok: true,
+      parent_name: rows[0].parent_name, email: rows[0].email, card,
+      visits: rows.map((r) => ({
+        child_name: r.child_name, activity_id: r.activity_id, status: r.status,
+        class_label: CLASSES[r.cast_key] ? `${CLASSES[r.cast_key].name} (ages ${CLASSES[r.cast_key].ages[0]}–${CLASSES[r.cast_key].ages[1]})` : "the class",
+        when: CLASSES[r.cast_key] ? `${["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"][CLASSES[r.cast_key].day]} at ${CLASSES[r.cast_key].time}` : "",
+      })),
+    });
+  } catch (e) {
+    console.error("reg-freeclass enroll_info", e.message);
+    return Response.json({ error: "server error" }, { status: 500 });
+  }
+}
+
 export default async (req) => {
   if (req.method === "GET") {
     try {
-      return Response.json({ classes: await availability(), venue: VENUE, booking_cutoff_minutes: CUTOFF_MINUTES });
+      return Response.json({ classes: await availability(), venue: VENUE, booking_cutoff_minutes: CUTOFF_MINUTES,
+        card_required: cardRequired(), no_show_fee_cents: NO_SHOW_FEE_CENTS, cancel_notice_hours: CANCEL_NOTICE_HOURS });
     } catch (e) {
       console.error("reg-freeclass GET", e);
       return Response.json({ error: "server error" }, { status: 500 });
@@ -368,6 +540,10 @@ export default async (req) => {
       return Response.json({ error: "server error" }, { status: 500 });
     }
   }
+
+  if (body.action === "card") return saveCardIntent(body);
+  if (body.action === "manage" || body.action === "cancel") return manage(body);
+  if (body.action === "enroll_info") return enrollInfo(body);
 
   const parent = String(body.parent_name || "").trim().slice(0, 120);
   const email = String(body.email || "").trim().toLowerCase();
@@ -422,15 +598,33 @@ export default async (req) => {
       }, { status: 409 });
     }
 
+    // The card step runs between these checks and the booking, so the page
+    // asks first and a family never types a card for a seat it cannot have.
+    if (body.action === "precheck") return Response.json({ ok: true, card_required: cardRequired() });
+
+    // The saved card. The page confirmed a SetupIntent this endpoint minted
+    // for this same email; the booking takes its customer and card. Without
+    // one, and with the card step on, there is no booking.
+    let card = null;
+    if (cardRequired()) {
+      card = await verifiedCard(String(body.setup_intent || ""), email);
+      if (!card) return Response.json({ error: "We couldn't confirm your card. Enter it again, or call (571) 571-2120." }, { status: 402 });
+    }
+
     const utm = body.utm && typeof body.utm === "object"
       ? Object.fromEntries(Object.entries(body.utm).slice(0, 8).map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 120)]))
       : null;
 
-    const rows = await db("POST", "free_class_bookings", {
+    const row = {
       parent_name: parent, email, phone: phone || null, child_name: child,
       child_age: age, cast_key: clsKey, activity_id: cls.activityId,
       class_date: date, utm,
-    });
+    };
+    const rows = await db("POST", "free_class_bookings", card ? {
+      ...row,
+      stripe_customer_id: card.customer, stripe_payment_method_id: card.pm,
+      card_saved_at: new Date().toISOString(),
+    } : row);
     const booking = rows[0];
 
     // Joy Roque booked Semira at 6:05 and Pio at 6:06 on 11 Sep 2026 and only
