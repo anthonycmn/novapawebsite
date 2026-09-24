@@ -16,6 +16,7 @@ import Stripe from "stripe";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { sendMail } from "./reg-mail.mjs";
+import { attributeOrder } from "./reg-attribution.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
@@ -581,6 +582,12 @@ export default async (req) => {
       p_installment_cents: null, p_stripe_payment_intent: "free_" + hold_id,
       p_stripe_customer: null, p_unit_prices: pricing.unitPrices,
     });
+    // Ad attribution for a $0 order (Sep 24 2026). reg-webhook credits every
+    // paid order, but this branch never reaches Stripe, so a fully credited or
+    // comped order kept utm NULL. Same rule as the webhook: the checkout's own
+    // utm, else the family's first tagged free-class booking or quiz lead.
+    // attributeOrder never throws and logs its own failures.
+    if (freeOrderId) await attributeOrder(freeOrderId, { email, utm: utmMeta });
     // A seat offer spent on a $0 order still gets the Chief told.
     try { await alertSeatOffersRedeemed(freeOrderId); }
     catch (e) { console.error("seat offer alert failed:", e.message); }
