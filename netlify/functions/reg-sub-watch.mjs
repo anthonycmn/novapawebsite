@@ -19,6 +19,7 @@
 // day that anything is still open-ended gets the full list, with the ones not
 // seen before marked, and a quiet morning means there are none.
 import { getStore } from "@netlify/blobs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 const STORE = "lead-alerts";
 const KEY = "openended-subs";
@@ -44,7 +45,7 @@ async function stripe(path, params = {}) {
 // stops when it is paid. The distinction changes how urgent the row is.
 const CLASSY = /\bclass|membership|\bdance\b|\bacting\b|season/i;
 
-export default async () => {
+const run = async () => {
   if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
     return new Response("skipped: non-production", { status: 200 });
   }
@@ -136,5 +137,7 @@ To end one, set <code>cancel_at</code> on the subscription in Stripe; it drops o
   await store.set(KEY, JSON.stringify(rows.map((x) => x.id)));
   return new Response(`alerted ${rows.length} open-ended (${fresh.size} new, ${classes.length} class-like)`, { status: 200 });
 };
+
+export default withHeartbeat("reg-sub-watch", run);
 
 export const config = { schedule: "0 13 * * *" };
