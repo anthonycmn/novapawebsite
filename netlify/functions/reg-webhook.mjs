@@ -9,10 +9,11 @@ import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { mintDcuFamily } from "./dcu-family.mjs";
+import { attributeOrder } from "./reg-attribution.mjs";
 import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
-import { sendMail, mailConfigured } from "./reg-mail.mjs";
+import { sendMail, mailConfigured, logMailFailure } from "./reg-mail.mjs";
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
 const CLASS_PRODUCT_ID = "novapa-class-monthly";
@@ -237,19 +238,12 @@ export default async (req) => {
     // who paid is registered whether or not we can say which ad sent them.
     // Before this, public.orders had nowhere to record where a buyer came
     // from, so every ad-driven registration was unattributable.
-    if (orderId && m.utm) {
-      try {
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const r = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
-          method: "PATCH",
-          headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ utm: JSON.parse(m.utm) }),
-        });
-        if (!r.ok) console.error("order utm write failed:", r.status, await r.text());
-      } catch (e) {
-        console.error("order utm write failed:", e.message);
-      }
-    }
+    // Since Sep 24 2026 an order that arrives with no utm takes the first
+    // tagged free-class booking or quiz lead for the same email, because the
+    // ad click and the checkout are almost never the same visit. See
+    // reg-attribution.mjs. It never throws; failures log as
+    // "[order-attribution] FAILED" so they are not mistaken for "no ad".
+    if (orderId) await attributeOrder(orderId, m);
 
     // A DC Unifieds buyer is a guest too, but gets the register entry
     // dcu-family.mjs describes, not the camp upsert below (which would add
@@ -549,9 +543,18 @@ export default async (req) => {
           ].join("<br><br>"),
         });
       }
-    } catch (e) { console.error("admin notify failed:", e.message); }
+    } catch (e) {
+      console.error("admin notify failed:", e.message);
+      await logMailFailure({ fn: "reg-webhook", kind: "admin_notify", orderId, paymentIntent: pi.id, error: e });
+    }
     try { await sendConfirmationEmail(m, pi); }
-    catch (e) { console.error("confirmation email failed:", e.message); }
+    catch (e) {
+      console.error("confirmation email failed:", e.message);
+      await logMailFailure({ fn: "reg-webhook", kind: "family_confirmation", orderId, paymentIntent: pi.id, error: e });
+    }
+    // Still 200 when a send failed: the money moved and the order is recorded,
+    // so a Stripe retry would only repeat the side effects. The failure is a
+    // row in public.mail_failures instead of a line nobody reads.
 
     return new Response("ok", { status: 200 });
   } catch (err) {

@@ -16,6 +16,7 @@ import Stripe from "stripe";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { sendMail } from "./reg-mail.mjs";
+import { attributeOrder } from "./reg-attribution.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
@@ -235,6 +236,37 @@ export default async (req) => {
   if (!hold || !hold.items) return Response.json({ error: "hold_not_found" }, { status: 404 });
   if (hold.status !== "active" || new Date(hold.expires_at) < new Date()) {
     return Response.json({ error: "hold_expired" }, { status: 409 });
+  }
+
+  // One-click enroll after a free class (CJ, Sep 24 2026): the card the
+  // family saved when they booked the visit pays for the class, from the
+  // button in CJ's after-class note (free-class/enroll.html). The booking's
+  // link_token is the proof, and it only reaches that family's inbox. It
+  // may pay for exactly the classes and children those visits were, nothing
+  // else, so a forwarded link cannot put a different cart on the card.
+  // Everything after this (pricing, the free-session credit, the order, the
+  // monthly subscription) is the ordinary guest checkout.
+  const fcTokens = Array.isArray((body || {}).freeclass_tokens)
+    ? [...new Set(body.freeclass_tokens.map(String))].slice(0, 6) : [];
+  let savedCard = null;
+  if (fcTokens.length) {
+    if (!guest || !fcTokens.every((t) => /^[0-9a-f-]{36}$/i.test(t))) {
+      return Response.json({ error: "bad_request" }, { status: 400 });
+    }
+    const svcKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const visits = await (await fetch(
+      `${SUPABASE_URL}/rest/v1/free_class_bookings?link_token=in.(${fcTokens.join(",")})&select=email,child_name,activity_id,stripe_customer_id,stripe_payment_method_id`,
+      { headers: { apikey: svcKey, Authorization: `Bearer ${svcKey}` } })).json().catch(() => null);
+    const ok = Array.isArray(visits) && visits.length === fcTokens.length
+      && visits.every((v) => String(v.email).toLowerCase() === email
+        && v.stripe_payment_method_id && v.stripe_customer_id
+        && v.stripe_payment_method_id === visits[0].stripe_payment_method_id
+        && v.stripe_customer_id === visits[0].stripe_customer_id)
+      && hold.items.every((it) => it.activity_id && visits.some((v) =>
+        Number(v.activity_id) === Number(it.activity_id)
+        && String(v.child_name || "").trim().toLowerCase() === String(it.camper || "").trim().toLowerCase()));
+    if (!ok) return Response.json({ error: "saved_card_unavailable" }, { status: 409 });
+    savedCard = { customer: visits[0].stripe_customer_id, pm: visits[0].stripe_payment_method_id };
   }
 
   // Guest campers exist only in the browser until the webhook mints their
@@ -543,6 +575,25 @@ export default async (req) => {
       .join("; ");
   }
 
+  // The enroll page shows the family exactly what the button will charge
+  // before they press it: the same numbers, no Stripe objects made.
+  if (savedCard && (body || {}).quote_only) {
+    return Response.json({
+      quote: true,
+      pricing: {
+        today_cents: pricing.todayCents,
+        unit_prices: pricing.unitPrices,
+        monthly_items: pricing.monthlyItems,
+        monthly_cents: (pricing.monthlyItems || []).reduce((s, v) => s + v, 0),
+        proration: pricing.prorations || [], class_month: pricing.classMonth || "",
+        first_class_free: !!pricing.firstClassFree,
+        next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
+        prior_classes: pricing.priorClasses || [],
+      },
+      description,
+    });
+  }
+
   // 100%-off orders: nothing to charge — skip Stripe entirely.
   // (Not for class subscriptions: those still need the monthly plan created.)
   if (pricing.todayCents === 0 && pricing.totalCents === 0 && plan !== "subscription") {
@@ -581,6 +632,12 @@ export default async (req) => {
       p_installment_cents: null, p_stripe_payment_intent: "free_" + hold_id,
       p_stripe_customer: null, p_unit_prices: pricing.unitPrices,
     });
+    // Ad attribution for a $0 order (Sep 24 2026). reg-webhook credits every
+    // paid order, but this branch never reaches Stripe, so a fully credited or
+    // comped order kept utm NULL. Same rule as the webhook: the checkout's own
+    // utm, else the family's first tagged free-class booking or quiz lead.
+    // attributeOrder never throws and logs its own failures.
+    if (freeOrderId) await attributeOrder(freeOrderId, { email, utm: utmMeta });
     // A seat offer spent on a $0 order still gets the Chief told.
     try { await alertSeatOffersRedeemed(freeOrderId); }
     catch (e) { console.error("seat offer alert failed:", e.message); }
@@ -682,12 +739,16 @@ export default async (req) => {
   // family's whole first month.)
   if (plan === "subscription" && pricing.firstClassFree && pricing.todayCents === 0) {
     const stripeS = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const customerS = await stripeS.customers.create({
+    const customerS = savedCard ? { id: savedCard.customer } : await stripeS.customers.create({
       email, name: parent_name || undefined, phone: phone || undefined, metadata: { source: "novapa-register" },
     });
-    const si = await stripeS.setupIntents.create({
+    let si;
+    try { si = await stripeS.setupIntents.create({
       customer: customerS.id,
       payment_method_types: ["card", "link"],
+      // one-click enroll: the free-class card is already saved, so confirming
+      // here is the whole checkout, and the webhook takes it from there
+      ...(savedCard ? { payment_method: savedCard.pm, usage: "off_session", confirm: true } : {}),
       metadata: {
         hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
         utm: utmMeta,
@@ -705,9 +766,18 @@ export default async (req) => {
         n_items: String(items.length),
         order_desc: description.slice(0, 480),
       },
-    });
+    }, savedCard ? { idempotencyKey: `fc-enroll-${hold_id}` } : undefined); }
+    catch (e) {
+      if (!savedCard) throw e;
+      console.error("one-click enroll setup failed:", e.message);
+      return Response.json({ error: "card_declined", message: e.message }, { status: 402 });
+    }
+    if (savedCard && si.status !== "succeeded") {
+      return Response.json({ error: "card_needs_action" }, { status: 402 });
+    }
     return Response.json({
-      client_secret: si.client_secret, setup: true,
+      enrolled: savedCard ? true : undefined,
+      client_secret: savedCard ? undefined : si.client_secret, setup: true,
       pricing: {
         n: items.length, discount_pct: 0,
         unit_prices: pricing.unitPrices,
@@ -753,7 +823,7 @@ export default async (req) => {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const customer = await stripe.customers.create({
+  const customer = savedCard ? { id: savedCard.customer } : await stripe.customers.create({
     email, name: parent_name || undefined, phone: phone || undefined,
     metadata: { source: "novapa-register" },
   });
@@ -761,11 +831,17 @@ export default async (req) => {
   // What this order does to the family's day-camp credits, for the webhook.
   const creditEvents = creditEventsFor(items, pricing);
 
-  const pi = await stripe.paymentIntents.create({
+  let pi;
+  try { pi = await stripe.paymentIntents.create({
     amount: pricing.todayCents,
     currency: "usd",
     customer: customer.id,
-    setup_future_usage: (plan === "deposit" || plan === "subscription") ? "off_session" : undefined,
+    // One-click enroll charges the saved free-class card right here, with the
+    // family on the page but not typing a card (off_session, which Stripe
+    // will not combine with setup_future_usage; the card is saved already).
+    ...(savedCard
+      ? { payment_method: savedCard.pm, off_session: true, confirm: true }
+      : { setup_future_usage: (plan === "deposit" || plan === "subscription") ? "off_session" : undefined }),
     // Cards + Link only. Apple Pay / Google Pay ride the card rails via the
     // Express Checkout element. Redirect methods (Amazon Pay, Klarna, ...)
     // are excluded deliberately: they hijack mobile checkout and cannot be
@@ -827,10 +903,22 @@ export default async (req) => {
       credit_redeems: JSON.stringify(creditEvents.redemptions).slice(0, 450),
       ...refMeta,
     },
-  });
+  }, savedCard ? { idempotencyKey: `fc-enroll-${hold_id}` } : undefined); }
+  catch (e) {
+    // A declined saved card is an answer for the family, not a crash: the
+    // enroll page offers the ordinary checkout with a different card.
+    if (!savedCard) throw e;
+    console.error("one-click enroll charge failed:", e.code || "", e.message);
+    return Response.json({ error: e.code === "authentication_required" ? "card_needs_action" : "card_declined",
+      message: e.message }, { status: 402 });
+  }
+  if (savedCard && pi.status !== "succeeded") {
+    return Response.json({ error: "card_needs_action" }, { status: 402 });
+  }
 
   return Response.json({
-    client_secret: pi.client_secret,
+    enrolled: savedCard ? true : undefined,
+    client_secret: savedCard ? undefined : pi.client_secret,
     pricing: {
       n: items.length,
       discount_pct: pricing.discountPct,

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enroll after your free class | NOVAPA</title>
+<meta name="robots" content="noindex">
+<!-- One-click enroll (CJ, Sep 24 2026). The button in CJ's after-class note
+     lands here with ?t=<link_token>[,<link_token>]. Opening the page charges
+     nothing: inbox link scanners open every link, so the charge waits for the
+     parent to press Enroll. The page holds the seat (acquire_hold_guest),
+     asks /api/reg-pay for the exact numbers (quote_only), and on the press
+     asks it again to charge the card saved at booking. From there it is the
+     ordinary checkout: reg-webhook makes the order and the monthly plan. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+  :root { --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --line:#E4E7ED; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:#fff; font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .logo { text-align:center; padding-top:34px; }
+  .logo img { height:24px; }
+  .card { background:#fff; color:var(--ink); border-radius:20px; max-width:560px; margin:30px auto 70px; padding:38px 40px; }
+  h1 { font-size:clamp(26px,5vw,34px); letter-spacing:-0.035em; line-height:1.2; margin-bottom:10px; }
+  .sub { color:var(--dim); font-size:15px; margin-bottom:22px; }
+  .visit { border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+  .visit b { display:block; font-size:16px; }
+  .visit span { color:var(--dim); font-size:13.5px; }
+  .money { background:#FFFBEE; border-radius:12px; padding:16px 18px; margin:18px 0; font-size:15px; }
+  .money .big { font-size:26px; font-weight:700; letter-spacing:-0.02em; }
+  .money p + p { margin-top:6px; }
+  .cardline { font-size:14px; color:var(--dim); margin-bottom:16px; }
+  label.agree { display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.45; color:var(--dim); margin-bottom:18px; cursor:pointer; }
+  label.agree input { margin-top:3px; flex:none; width:16px; height:16px; }
+  label.agree a { color:var(--ink); }
+  .btn { display:block; width:100%; border:0; background:var(--gold); color:var(--navy); font-family:inherit; font-weight:700; font-size:17px; padding:15px 20px; border-radius:999px; cursor:pointer; text-align:center; text-decoration:none; }
+  .btn[disabled] { opacity:0.55; cursor:default; }
+  .alt { display:block; text-align:center; margin-top:14px; font-size:13.5px; color:var(--dim); }
+  .alt a { color:var(--ink); }
+  .err { color:#B4232A; font-size:14px; margin-top:14px; display:none; }
+  .done h1::before { content:"✓ "; color:#2E8B57; }
+  .muted { color:var(--dim); font-size:15px; }
+  footer { text-align:center; padding:0 22px 40px; font-size:11.5px; color:rgba(255,255,255,0.5); }
+  @media (max-width:560px) { .card { margin:22px 16px 50px; padding:26px 20px; border-radius:16px; } }
+</style>
+<script src="/register/config.js"></script>
+</head>
+<body>
+<div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA"></div>
+<div class="card" id="card"><p class="muted">Loading your class…</p></div>
+<footer>Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120</footer>
+
+<script>
+(function () {
+  var C = window.NOVAREG || {};
+  var $ = function (id) { return document.getElementById(id); };
+  var card = $("card");
+  var tokens = (new URLSearchParams(location.search).get("t") || "").split(",").filter(Boolean);
+  var info = null, holdId = null, quote = null;
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function money(c) { var d = (c || 0) / 100; return "$" + (d % 1 ? d.toFixed(2) : d.toFixed(0)); }
+  function list(xs) { return xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]; }
+  function registerUrl() { return "/register/?activity=" + (info ? info.visits.map(function (v) { return v.activity_id; }).join(",") : ""); }
+  function stop(title, html) {
+    card.innerHTML = "<h1>" + esc(title) + "</h1><p class='muted'>" + html + "</p>";
+  }
+  function fallback(why) {
+    stop("Let's finish this another way",
+      esc(why) + " <a href='" + registerUrl() + "'>Register here</a> with any card (it takes about a minute), or reply to the email and we'll enroll you by hand.");
+  }
+  function post(url, body) {
+    return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); });
+  }
+
+  // The seat, held for this family's email for 30 minutes, exactly as the
+  // register page holds one. One child is one ci, however many classes.
+  function hold() {
+    var kids = [];
+    var items = info.visits.map(function (v) {
+      var k = kids.indexOf(v.child_name.toLowerCase());
+      if (k === -1) { kids.push(v.child_name.toLowerCase()); k = kids.length - 1; }
+      return { activity_id: v.activity_id, camper: v.child_name, ci: k };
+    });
+    return fetch(C.SUPABASE_URL + "/rest/v1/rpc/acquire_hold_guest", {
+      method: "POST",
+      headers: { apikey: C.SUPABASE_ANON_KEY, Authorization: "Bearer " + C.SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_items: items, p_email: info.email }),
+    }).then(function (r) { return r.json().then(function (j) {
+      if (!r.ok) {
+        var m = (j && j.message) || "";
+        throw new Error(/SOLD_OUT|FULL|capacity/i.test(m) ? "That class just filled up." : "We couldn't hold the seat.");
+      }
+      holdId = j.hold_id;
+    }); });
+  }
+  function pay(quoteOnly) {
+    return post("/api/reg-pay", {
+      hold_id: holdId, plan: "subscription", email: info.email, parent_name: info.parent_name,
+      freeclass_tokens: tokens, quote_only: quoteOnly,
+    });
+  }
+
+  function render() {
+    var p = quote.pricing;
+    var kids = [];
+    info.visits.forEach(function (v) { if (kids.indexOf(v.child_name) === -1) kids.push(v.child_name); });
+    var next = p.next_bill_utc ? new Date(p.next_bill_utc * 1000).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric" }) : null;
+    var today = p.today_cents
+      ? "<p><span class='big'>" + money(p.today_cents) + "</span> today</p><p>That covers the classes left in " + esc(p.class_month) + (p.first_class_free ? ", less the free class already booked" : "") + ".</p>"
+      : "<p><span class='big'>$0</span> today</p><p>The rest of " + esc(p.class_month) + " is already covered.</p>";
+    var ends = p.cancel_at_utc ? new Date(p.cancel_at_utc * 1000).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", year: "numeric" }) : null;
+    var monthly = p.monthly_cents
+      ? "<p>Then " + money(p.monthly_cents) + " a month on the 1st" + (next ? ", starting " + esc(next) : "") + (ends ? ", until the class ends in " + esc(ends) : "") + ".</p>"
+      : "";
+    var c = info.card;
+    var cardText = c ? (c.wallet === "apple_pay" ? "Apple Pay" : c.wallet === "google_pay" ? "Google Pay" : c.brand === "link" ? "your Link account" : (c.brand.charAt(0).toUpperCase() + c.brand.slice(1)))
+      + (c.last4 ? " ending in " + esc(c.last4) : "") : "";
+    card.innerHTML =
+      "<h1>Enroll " + esc(list(kids)) + "</h1>" +
+      "<p class='sub'>Welcome, " + esc((info.parent_name || "").split(" ")[0] || "there") + ". Here's exactly what enrolling does.</p>" +
+      info.visits.map(function (v) {
+        return "<div class='visit'><b>" + esc(v.child_name) + ": " + esc(v.class_label) + "</b><span>Every week, " + esc(v.when) + "</span></div>";
+      }).join("") +
+      "<div class='money'>" + today + monthly + "</div>" +
+      "<p class='cardline'>Charged to the card you saved when you booked: <b>" + cardText + "</b>.</p>" +
+      "<label class='agree'><input type='checkbox' id='ok'> <span>I agree to NOVAPA's <a href='/terms' target='_blank' rel='noopener'>terms</a>, <a href='/policies' target='_blank' rel='noopener'>policies</a>, and <a href='/terms#photo' target='_blank' rel='noopener'>Photo and Media Release</a>: all sales are final (no refunds). Tuition is charged to this card today and on the 1st of each month until the class ends.</span></label>" +
+      "<button class='btn' id='go' disabled>" + (p.today_cents ? "Enroll and pay " + money(p.today_cents) : "Enroll") + "</button>" +
+      "<div class='err' id='err'></div>" +
+      "<span class='alt'>Want to use a different card? <a href='" + registerUrl() + "'>Register here instead</a>.</span>";
+    $("ok").addEventListener("change", function () { $("go").disabled = !this.checked; });
+    $("go").addEventListener("click", enroll);
+  }
+
+  function enroll() {
+    var btn = $("go"), err = $("err");
+    btn.disabled = true; btn.textContent = "Enrolling…"; err.style.display = "none";
+    pay(false).then(function (res) {
+      if (res.ok && res.j.enrolled) {
+        card.classList.add("done");
+        card.innerHTML = "<h1>You're enrolled</h1><p class='muted'>Welcome to NOVAPA! Your confirmation email is on its way to " + esc(info.email) +
+          ", with everything for the first class. Questions? Reply to it, or call (571) 571-2120.</p>";
+        return;
+      }
+      var e = res.j.error;
+      if (e === "hold_expired" || e === "hold_not_found") {
+        // the 30-minute hold lapsed: hold again and show the numbers again,
+        // rather than charging a price the parent has not seen
+        return start();
+      }
+      if (e === "card_declined" || e === "card_needs_action" || e === "saved_card_unavailable") {
+        btn.textContent = "Enroll";
+        err.style.display = "block";
+        err.innerHTML = (e === "card_needs_action" ? "Your bank wants to confirm this payment with you." : "The saved card was declined.") +
+          " Nothing was charged. <a href='" + registerUrl() + "'>Register here with a card</a> instead, it takes about a minute.";
+        return;
+      }
+      throw new Error("Something went wrong and nothing was charged. Try again, or call (571) 571-2120.");
+    }).catch(function (x) {
+      btn.disabled = false; btn.textContent = "Enroll";
+      err.style.display = "block"; err.textContent = x.message;
+    });
+  }
+
+  function start() {
+    card.innerHTML = "<p class='muted'>Loading your class…</p>";
+    return hold().then(function () { return pay(true); }).then(function (res) {
+      if (!res.ok || !res.j.quote) throw new Error(res.j && res.j.error === "registration_closed" ? "Registration for that class is closed right now." : "We couldn't work out the price.");
+      quote = res.j; render();
+    }).catch(function (e) { fallback(e.message); });
+  }
+
+  if (!tokens.length) { stop("That link isn't complete", "Use the Enroll button in the email from Mr. Cimino-Johnson, or <a href='/register/'>register here</a>."); return; }
+  post("/api/reg-freeclass", { action: "enroll_info", tokens: tokens }).then(function (res) {
+    if (!res.ok) { stop("We couldn't find that visit", esc(res.j.error || "") + " Or <a href='/register/'>register here</a>."); return; }
+    info = res.j;
+    if (info.visits.every(function (v) { return v.status === "converted"; })) {
+      stop("You're already enrolled", "Thank you! Nothing more to do. Questions? Call (571) 571-2120.");
+      return;
+    }
+    // a child already enrolled drops out of this cart; the rest go ahead
+    var done = info.visits.filter(function (v) { return v.status === "converted"; });
+    if (done.length) {
+      fallback(list(done.map(function (v) { return v.child_name; })) + " is already enrolled in one of these.");
+      return;
+    }
+    if (!info.card) { fallback("There's no saved card on this booking."); return; }
+    start();
+  }).catch(function () { stop("Something went wrong", "Refresh the page, or call (571) 571-2120."); });
+})();
+</script>
+</body>
+</html>

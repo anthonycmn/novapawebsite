@@ -38,6 +38,7 @@
 // parent who hits reply lands with him.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { CLASSES } from "./reg-freeclass.mjs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 export const FOLLOWUP_SINCE = "2026-09-16";  // class_date on or after this
 export const FROM = "CJ Cimino-Johnson, NOVAPA <cj@mail.novapa.org>";
@@ -46,6 +47,12 @@ const REGISTER = "https://novapa.org/register/";
 // Where a family that missed its free class picks a new date. The utm tags
 // keep the rebooking attributable, like every other link into the funnel.
 export const REBOOK = "https://novapa.org/free-class/book?utm_source=novapa&utm_medium=email&utm_campaign=freeclass_missed";
+// One-click enroll (CJ, Sep 24 2026): a visit booked with a saved card gets a
+// button to this page instead of the register link. It names the visits by
+// their link_token, shows the exact charge, and charges the saved card only
+// when the parent presses Enroll there. The email link itself charges nothing,
+// because inbox link scanners open every link in a message.
+export const ENROLL = "https://novapa.org/free-class/enroll.html";
 const TZ = "America/New_York";
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -129,12 +136,31 @@ export function groupVisits(visits, listings) {
       name: l.name || CLASSES[v.cast_key]?.name || "the class",
       ages: l.age_range || (CLASSES[v.cast_key] ? `${CLASSES[v.cast_key].ages[0]} – ${CLASSES[v.cast_key].ages[1]} yrs` : ""),
       hours: l.hours || null, ends_at: ends,
+      token: v.link_token || null, card: v.stripe_payment_method_id || null, fee: v.no_show_fee_state || null,
     });
     if (ends && (!g.ends_at || ends > g.ends_at)) g.ends_at = ends;
   }
   return [...groups.values()];
 }
 export const isDue = (g, now = new Date()) => !!g.ends_at && g.ends_at <= now;
+
+// The one-click enroll link for an attended group, or null when any visit in
+// it was booked without a card (those families get the register link). All
+// the visits must share one card, because the button charges one card.
+export function enrollUrl(g) {
+  const cards = new Set(g.visits.map((v) => v.card));
+  if (cards.size !== 1 || cards.has(null) || g.visits.some((v) => !v.token)) return null;
+  return `${ENROLL}?t=${[...new Set(g.visits.map((v) => v.token))].join(",")}`;
+}
+// A missed visit with a card waits for reg-freeclass-noshow to settle the $30
+// before CJ's note goes, so the note can say what happened to it. Not when
+// the fee job is switched off, and not for a class more than a week old
+// (the fee job's own lookback), or the note would wait forever.
+export function feePending(g, now = new Date(), feeOff = false) {
+  if (g.status !== "no_show" || feeOff) return false;
+  if (g.ends_at && now - g.ends_at > 7 * 86400000) return false;
+  return g.visits.some((v) => v.card && (!v.fee || v.fee === "charging"));
+}
 
 // ── The note ───────────────────────────────────────────────────────────────
 const uniq = (xs) => [...new Set(xs)];
@@ -157,7 +183,11 @@ export function composeNote(g) {
   const child = one ? children[0] : list(children);
   const day = weekdayOf(g.class_date);
   const next = prettyDate(addDays(g.class_date, 7));
-  const url = `${REGISTER}?activity=${classes.map((c) => c.activity_id).join(",")}`;
+  const enroll = enrollUrl(g);
+  const url = enroll || `${REGISTER}?activity=${classes.map((c) => c.activity_id).join(",")}`;
+  const linkPara = enroll
+    ? { link: url, button: classes.length === 1 && one ? `Enroll ${child} in ${classes[0].name}` : "Enroll" }
+    : { link: url };
   const classesLabel = classes.length === 1 ? classes[0].name : list(classes.map((c) => c.name));
 
   const p = [];
@@ -168,8 +198,10 @@ export function composeNote(g) {
   if (classes.length === 1) {
     const c = classes[0];
     const hrs = prettyHours(c.hours);
-    p.push(`If ${one ? child : "they"} loved it, the class meets every ${day}${hrs ? ` from ${hrs}` : ""}, and the next one is this coming ${next}. Registering takes about a minute here:`);
-    p.push({ link: url });
+    p.push(enroll
+      ? `If ${one ? child : "they"} loved it, the class meets every ${day}${hrs ? ` from ${hrs}` : ""}, and the next one is this coming ${next}. Enrolling is one click: the button uses the card you saved when you booked, and shows you the exact charge before anything is paid.`
+      : `If ${one ? child : "they"} loved it, the class meets every ${day}${hrs ? ` from ${hrs}` : ""}, and the next one is this coming ${next}. Registering takes about a minute here:`);
+    p.push(linkPara);
     p.push(`It is $90 a month, and if ${one ? child : "they"} want${one ? "s" : ""} to add a second class later it is $150 for two, $180 for three.`);
   } else {
     p.push(`If ${one ? child : "they"} loved them, the classes meet every ${day}:`);
@@ -178,8 +210,10 @@ export function composeNote(g) {
       const hrs = prettyHours(c.hours);
       p.push(`• ${who}${c.name}${c.ages ? ` (ages ${c.ages.replace(/\s*yrs$/, "")})` : ""}${hrs ? `, ${hrs}` : ""}`);
     }
-    p.push(`The next ones are this coming ${next}. This link puts ${classes.length === 2 ? "both" : "all of them"} in the cart, and registering takes about a minute:`);
-    p.push({ link: url });
+    p.push(enroll
+      ? `The next ones are this coming ${next}. Enrolling in ${classes.length === 2 ? "both" : "all of them"} is one click: the button uses the card you saved when you booked, and shows you the exact charge before anything is paid.`
+      : `The next ones are this coming ${next}. This link puts ${classes.length === 2 ? "both" : "all of them"} in the cart, and registering takes about a minute:`);
+    p.push(linkPara);
     p.push(one
       ? `Two classes together are $150 a month. If ${child} would rather start with just one, either is $90 a month on its own, and you can always add the other later.`
       : `Each class is $90 a month, and a child taking more than one pays less: $150 for two, $180 for three.`);
@@ -205,6 +239,8 @@ export function composeMissedNote(g) {
   const p = [];
   p.push(`Hi ${firstName(g.parent_name)},`);
   p.push(`We saved a seat for ${child} in ${list(classes)} on ${prettyDate(g.class_date)} and missed ${one ? child : "them"} in the room. Life with kids is busy, and it happens.`);
+  if (g.visits.some((v) => v.fee === "charged"))
+    p.push(`As the booking said, the $30 no-show fee went on the card you saved. Stripe sends the receipt separately.`);
   p.push(`The free class is still yours. Pick a new date that works better here, it takes about a minute:`);
   p.push({ link: REBOOK });
   p.push(`If a different day or class would be a better fit, or you have any questions at all, just reply to this email and it comes straight to me. We would love to meet ${one ? child : "them"}.`);
@@ -215,11 +251,13 @@ export function composeMissedNote(g) {
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export function renderNote({ paragraphs }) {
-  const text = paragraphs.map((p) => (typeof p === "string" ? p : p.link)).join("\n\n");
+  const text = paragraphs.map((p) => (typeof p === "string" ? p : p.button ? `${p.button}: ${p.link}` : p.link)).join("\n\n");
   const html = `<!doctype html><html><body style="margin:0;padding:0"><div style="max-width:560px;padding:8px 4px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;color:#1a2233">
 ${paragraphs.map((p) => typeof p === "string"
     ? `<p style="margin:0 0 18px">${esc(p).replace(/\n/g, "<br>")}</p>`
-    : `<p style="margin:0 0 18px"><a href="${esc(p.link)}" style="color:#0b5fff">${esc(p.link)}</a></p>`).join("\n")}
+    : p.button
+      ? `<p style="margin:4px 0 22px"><a href="${esc(p.link)}" style="display:inline-block;background:#E8B84B;color:#0F1E36;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:999px">${esc(p.button)}</a></p>`
+      : `<p style="margin:0 0 18px"><a href="${esc(p.link)}" style="color:#0b5fff">${esc(p.link)}</a></p>`).join("\n")}
 </div></body></html>`;
   return { text, html };
 }
@@ -246,7 +284,7 @@ async function sendResend({ to, subject, text, html }) {
   return r.json();
 }
 
-export default async () => {
+const run = async () => {
   if ((process.env.FREECLASS_FOLLOWUP || "").toLowerCase() === "off")
     return new Response("free-class follow-up: paused (FREECLASS_FOLLOWUP=off)", { status: 200 });
   if (!process.env.RESEND_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -257,7 +295,7 @@ export default async () => {
   // exactly the set still to be asked.
   const visits = await svc(
     `free_class_bookings?status=in.(attended,no_show)&followup_sent_at=is.null&class_date=gte.${FOLLOWUP_SINCE}` +
-    `&select=id,status,parent_name,email,child_name,cast_key,activity_id,class_date,attended_at&order=class_date,email`);
+    `&select=id,status,parent_name,email,child_name,cast_key,activity_id,class_date,attended_at,link_token,stripe_payment_method_id,no_show_fee_state&order=class_date,email`);
   if (!visits?.length) return new Response("free-class follow-up: nothing to send", { status: 200 });
 
   const ids = [...new Set(visits.map((v) => v.activity_id))];
@@ -268,9 +306,10 @@ export default async () => {
   const suppressed = new Set((await svc("email_suppressions?select=email")).map((s) => s.email.toLowerCase()));
 
   const now = new Date();
+  const feeOff = (process.env.FREECLASS_NOSHOW_FEE || "").toLowerCase() === "off";
   let sent = 0, waiting = 0, skipped = 0;
   for (const g of groupVisits(visits, listings)) {
-    if (!isDue(g, now)) { waiting++; continue; }
+    if (!isDue(g, now) || feePending(g, now, feeOff)) { waiting++; continue; }
     try {
       // The claim. Stamp first, and only rows nobody else stamped come back;
       // an empty result means another tick owns this family tonight.
@@ -299,5 +338,7 @@ export default async () => {
   }
   return new Response(`free-class follow-up: sent ${sent}, waiting for class to end ${waiting}, skipped ${skipped}`, { status: 200 });
 };
+
+export default withHeartbeat("reg-freeclass-followup", run);
 
 export const config = { schedule: "*/15 * * * *" };
