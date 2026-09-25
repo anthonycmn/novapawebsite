@@ -247,7 +247,23 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     <!-- POSTS:BEGIN - newest first. Each post needs a .panel here AND a .row in the call board below; the data-id must match. -->
     <div class="panels">
 
-      <article class="panel on" id="panel-unifieds" role="tabpanel" aria-labelledby="tab-unifieds">
+      <article class="panel on" id="panel-mt-timeline" role="tabpanel" aria-labelledby="tab-mt-timeline">
+        <div class="stage">
+          <div class="beam" aria-hidden="true"></div>
+          <!-- LEAD PHOTO pending Tony: borrowed audition shot, swap src/alt when the real one arrives -->
+          <img class="shot" src="/img/blog/school-musical-audition-in-progress.jpg" alt="A student mid-audition, the work the BFA musical theatre timeline builds toward" width="1800" height="1200" loading="lazy">
+        </div>
+        <div class="detail">
+          <p class="dept">College</p>
+          <h2 class="name"><a href="/blog/musical-theatre-college-audition-timeline-tony-cimino-johnson.html">The BFA Musical Theatre Audition Timeline, Month by Month</a></h2>
+          <p class="role">September 25, 2026</p>
+          <p class="bio">Every timeline online is written for the family who started in junior year. This one runs two tracks, the student's and the parent's, and the real deadline is a semester earlier than most families think.</p>
+          <p class="bio">Plus the part nobody writes: what to cut, in order, if you decided in August and the prescreen window is five weeks away.</p>
+          <a class="link" href="/blog/musical-theatre-college-audition-timeline-tony-cimino-johnson.html">Read the full guide &rarr;</a>
+        </div>
+      </article>
+
+      <article class="panel" id="panel-unifieds" role="tabpanel" aria-labelledby="tab-unifieds">
         <div class="stage">
           <div class="beam" aria-hidden="true"></div>
           <img class="shot" src="/img/blog/teen-actor-singing-college-audition.jpg" alt="A teenage actor singing in a rehearsal room, preparing college audition material for unified auditions" width="1800" height="1200" loading="lazy">
@@ -417,9 +433,15 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     </div>
 
     <aside class="board" role="tablist" aria-label="All posts">
-      <div class="boardhead"><span>The Call Board</span><b>11 posts</b></div>
+      <div class="boardhead"><span>The Call Board</span><b>12 posts</b></div>
 
-      <button class="row on" type="button" role="tab" id="tab-unifieds" data-id="unifieds" aria-selected="true" aria-controls="panel-unifieds">
+      <button class="row on" type="button" role="tab" id="tab-mt-timeline" data-id="mt-timeline" aria-selected="true" aria-controls="panel-mt-timeline">
+        <img class="thumb" src="/img/blog/school-musical-audition-in-progress.jpg" alt="" width="1800" height="1200" loading="lazy">
+        <span class="rowtext"><b>The BFA Musical Theatre Audition Timeline</b><i>College &middot; Sep 25, 2026</i></span>
+        <span class="cue" aria-hidden="true"></span>
+      </button>
+
+      <button class="row" type="button" role="tab" id="tab-unifieds" data-id="unifieds" aria-selected="false" tabindex="-1" aria-controls="panel-unifieds">
         <img class="thumb" src="/img/blog/teen-actor-singing-college-audition.jpg" alt="" width="1800" height="1200" loading="lazy">
         <span class="rowtext"><b>What Are Unified Auditions?</b><i>College &middot; Sep 23, 2026</i></span>
         <span class="cue" aria-hidden="true"></span>

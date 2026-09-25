@@ -923,3 +923,97 @@ strengthen two sections if he wants to supply one.
 
 Next: topic 14, "The BFA musical theatre audition timeline, month by month"
 (novapa.org, and seasonally urgent — fall spike, and it pairs with topic 12).
+
+---
+
+## Run 15 — September 25, 2026 (topic 14: BFA musical theatre audition timeline) — DRAFTED
+
+**Third day with nothing deployed.** Topics 10, 11, 12 and 13 are all waiting on
+Tony. Backlog was 4 at the start of this run, so drafting was allowed; it is 5
+now, which means **the backlog guard trips on tomorrow's run and the engine
+stops drafting until he clears some.** That is the guard working as designed,
+not a fault, but tomorrow's report will be a backlog report rather than a new
+topic unless something merges first.
+
+### Branch maintenance
+
+main moved twice overnight (#158 order attribution for $0 orders, #159 free
+class card hold). Merged cleanly into `authority-engine` with no gate failure
+this time — both waiting posts already carry every tag main requires.
+
+`topic-12-ship` needed re-syncing again. main having moved meant Tony's
+`--ff-only` merge would have been refused, so main was merged in and the branch
+re-pushed; verified fast-forward is clean again. **This is the second day
+running that the ship branch needed maintenance purely because it sat.** Each
+day it waits is another re-sync, and each re-sync is another chance for a
+conflict that has to be resolved by hand. Worth saying plainly: the cheapest
+moment to merge that branch was two days ago.
+
+### Field re-check (primary: "musical theatre college audition timeline")
+
+**This one is not a supply gap, and I want that on the record rather than
+overclaimed.** EdTA has "The (Ideal) College Audition Timeline." MyMT Manager
+publishes a maintained prescreen-deadline database. Topher Keene, MTCA, Actor
+Aesthetic, TheaterMania and a booster-club page all have competent timelines.
+The month-by-month calendar itself is well covered, and we will not outrank
+EdTA on the bare query quickly.
+
+Where the gap genuinely is:
+
+1. Every timeline is written for the student who started in junior year. Nobody
+   writes for the family that decided in August, which is a large share of real
+   searchers and the one most likely to be reading in a panic.
+2. Every timeline is a list of student tasks. The parent has a parallel
+   timeline — budget, midwinter travel booked early, aid paperwork, the
+   December night results land, the April money conversation — and nobody
+   writes it down.
+3. Nobody says what to cut when you are behind, in order.
+4. Nobody flags that the artistic and academic calendars collide in October.
+
+**Wedge:** two tracks rather than one; "the real deadline is the prescreen, and
+it is roughly a semester earlier than families expect"; the triage list with the
+rule "reduce the number of schools before you reduce the quality of anything";
+"faculty forgive a modest voice, they do not forgive not being able to hear it";
+and the close, "the calendar matters, it matters less than the person holding
+it." Cross-links to topic 12, which is the strongest internal pairing the blog
+now has.
+
+Sourcing: prescreen window Nov 1 - Dec 15, national unifieds NYC January and
+Chicago/LA February, decisions March 1 - April 1, May 1 national reply date —
+all from published sources. No year-specific school dates used, since those
+rotate and the piece should stay evergreen.
+
+### Seasonality note — this draft is perishable
+
+Prescreen deadlines are five to eleven weeks out from today. Posted now it meets
+the audience mid-search; posted in December it is dead until next August. Of the
+five drafts currently waiting, this is the only one with a real clock on it.
+Said plainly in the report.
+
+### Channels
+
+runs/2026-09-25-topic-14-bfa-timeline/ — substack.md (mirror), facebook.md
+(parent-facing, timely), linkedin.md (field-facing angle: who we write timelines
+for and who we don't), instagram.md, channels-note.md.
+
+**Reddit skipped on pacing:** r/MusicalTheatre was two days ago. Also noted in
+the channel file that this topic's real forum home is College Confidential's
+Musical Theater Majors board rather than Reddit, and that building a presence
+there should be Tony posting as himself over months, not a drafted post from
+the engine. Not something to fake.
+
+### Standings vs. baseline-2026-09-06
+
+- **"Tony Cimino-Johnson" theatre:** page 1 unchanged across Runs 11-15. Five
+  consecutive runs with no movement on the flagship query, which is expected
+  while nothing new is indexed — no post drafted since Sept 22 has gone live.
+- **"Mr. CJ" theatre Northern Virginia:** still zero Tony properties.
+- **site:novapa.org/blog:** manual Search Console check still owed, six runs
+  old and now the oldest open item in the engine by a wide margin.
+- **Honest read on the scoreboard generally:** standings cannot move while the
+  queue sits. Four articles written since the 22nd are not indexed because they
+  are not published. The engine's output is currently capped by the publishing
+  step, exactly as the backlog guard was designed to detect.
+
+Next: the backlog guard trips. Tomorrow's run reports the queue and drafts
+nothing unless Tony has cleared some of it.

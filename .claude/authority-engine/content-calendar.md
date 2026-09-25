@@ -37,7 +37,7 @@ Status: `todo` → `drafted` → `awaiting-approval` → `published` (+ date).
     Primary: what are unified college auditions · pure definitional query; DC Unifieds (Oct 15-18, Leesburg) as inside credential.
 13. High school theatre fundraising that actually works — `drafted` 2026-09-24 (runs/2026-09-24-topic-13-theatre-fundraising/; Framer page must go up before Substack/LinkedIn, both point at the tony-cimino.com URL) — tony-cimino.com — MED
     Primary: high school theatre fundraising ideas · "fundraising ideas" is a high-volume pattern; $5K→$750K arc as case study.
-14. The BFA musical theatre audition timeline, month by month — `todo` — novapa.org — MED
+14. The BFA musical theatre audition timeline, month by month — `drafted` 2026-09-25 (branch authority-engine, pushed; photo needed; SEASONAL — prescreen deadlines Nov 1-Dec 15, so this one is perishable) — novapa.org — MED
     Primary: musical theatre college audition timeline · seasonal fall spike, urgent audience.
 15. Musical theatre prescreens: what schools want and how to film at home — `todo` — novapa.org — MED
     Primary: BFA prescreen requirements how to film · niche but urgent and question-shaped.
