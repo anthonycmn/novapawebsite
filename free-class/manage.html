@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your free class | NOVAPA</title>
+<meta name="robots" content="noindex">
+<!-- The cancel link in the free-class confirmation (CJ, Sep 24 2026: free
+     cancellation until 24 hours before the class). ?t=<link_token>. Opening
+     the page changes nothing; only the Cancel button does, so an inbox link
+     scanner cannot cancel a seat. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'GT Walsheim'; src:url('/free-class/fonts/GTWalsheim-Bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+  :root { --navy:#0B1422; --ink:#1A2230; --dim:#5B6472; --gold:#FFC866; --line:#E4E7ED; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:#fff; font-family:'GT Walsheim','DM Sans',sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .logo { text-align:center; padding-top:34px; }
+  .logo img { height:24px; }
+  .card { background:#fff; color:var(--ink); border-radius:20px; max-width:520px; margin:30px auto 70px; padding:36px 38px; }
+  h1 { font-size:clamp(24px,5vw,32px); letter-spacing:-0.035em; line-height:1.2; margin-bottom:14px; }
+  .visit { border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:18px; }
+  .visit b { display:block; }
+  .visit span { color:var(--dim); font-size:14px; }
+  p { font-size:15px; margin-bottom:14px; }
+  .muted { color:var(--dim); }
+  .btn { display:block; width:100%; border:1.5px solid #B4232A; background:#fff; color:#B4232A; font-family:inherit; font-weight:700; font-size:16px; padding:13px 20px; border-radius:999px; cursor:pointer; }
+  .btn[disabled] { opacity:0.55; cursor:default; }
+  .err { color:#B4232A; font-size:14px; margin-top:12px; display:none; }
+  a { color:var(--ink); }
+  footer { text-align:center; padding:0 22px 40px; font-size:11.5px; color:rgba(255,255,255,0.5); }
+  @media (max-width:560px) { .card { margin:22px 16px 50px; padding:26px 20px; border-radius:16px; } }
+</style>
+</head>
+<body>
+<div class="logo"><img src="/free-class/img/logo-novapa.svg" alt="NOVAPA"></div>
+<div class="card" id="card"><p class="muted">Loading your booking…</p></div>
+<footer>Northern Virginia Performing Arts &middot; 18945 Conference Center Drive, Plaza C, Leesburg VA 20176 &middot; (571) 571-2120</footer>
+<script>
+(function () {
+  var card = document.getElementById("card");
+  var token = new URLSearchParams(location.search).get("t") || "";
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function call(action) {
+    return fetch("/api/reg-freeclass", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: action, token: token }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || "Something went wrong."); return j.booking; }); });
+  }
+  function visit(b) {
+    return "<div class='visit'><b>" + esc(b.child_name) + ": " + esc(b.class_label) + "</b><span>" + esc(b.when) + "</span></div>";
+  }
+  function show(b) {
+    if (b.status === "cancelled") {
+      card.innerHTML = "<h1>Canceled</h1>" + visit(b) +
+        "<p>The seat is released and nothing was charged. The free class is still yours whenever you're ready: <a href='/free-class/book.html'>pick a new date</a>.</p>";
+      return;
+    }
+    if (b.status !== "booked") {
+      card.innerHTML = "<h1>This visit has happened</h1>" + visit(b) +
+        "<p class='muted'>There's nothing to cancel. Questions? Call (571) 571-2120 or reply to your confirmation email.</p>";
+      return;
+    }
+    if (!b.can_cancel) {
+      card.innerHTML = "<h1>" + esc(b.child_name) + "'s seat is held</h1>" + visit(b) +
+        "<p>Free cancellation closed " + esc(b.deadline) + ", 24 hours before class.</p>" +
+        (b.card_on_file ? "<p>If " + esc(b.child_name) + " can't make it, the $30 no-show fee applies. " : "<p>") +
+        "Something come up? Call (571) 571-2120 or reply to your confirmation email and a person will help.</p>";
+      return;
+    }
+    card.innerHTML = "<h1>" + esc(b.child_name) + "'s free class</h1>" + visit(b) +
+      "<p>Can't make it? Cancel here until <b>" + esc(b.deadline) + "</b> and nothing is charged. To move to a different date or class instead, reply to your confirmation email.</p>" +
+      "<button class='btn' id='cancel'>Cancel " + esc(b.child_name) + "'s seat</button><div class='err' id='err'></div>";
+    document.getElementById("cancel").addEventListener("click", function () {
+      var btn = this; btn.disabled = true; btn.textContent = "Canceling…";
+      call("cancel").then(show).catch(function (e) {
+        btn.disabled = false; btn.textContent = "Cancel " + b.child_name + "'s seat";
+        var err = document.getElementById("err"); err.style.display = "block"; err.textContent = e.message;
+      });
+    });
+  }
+  call("manage").then(show).catch(function (e) {
+    card.innerHTML = "<h1>We couldn't find that booking</h1><p class='muted'>" + esc(e.message) + "</p>";
+  });
+})();
+</script>
+</body>
+</html>

@@ -359,6 +359,22 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
   function persona() { return PERSONAS[answers.q3] || PERSONAS["hard-to-say"]; }
   function program() { return PROGRAMS[answers.q1] || PROGRAMS["9-12"]; }
 
+  // The ad that brought this family, kept on the device as 'nova_attr' so a
+  // later checkout sends it with the order even when that visit has no
+  // params on the URL (Sep 24 2026). Same key, shape and first-touch rule as
+  // register/index.html: an existing set is never overwritten.
+  function rememberAttr(utm) {
+    try {
+      if (localStorage.getItem("nova_attr")) return;
+      var keep = {}, n = 0;
+      Object.keys(utm).forEach(function (k) {
+        if (n >= 8 || !utm[k]) return;
+        keep[k.toLowerCase().slice(0, 40)] = String(utm[k]).slice(0, 120); n++;
+      });
+      if (n) localStorage.setItem("nova_attr", JSON.stringify(keep));
+    } catch (e) {}
+  }
+
   function submitLead(child, parent, email, phone, silent) {
     submitted = true;
     var btn = $("gateBtn");
@@ -374,6 +390,7 @@ fbq('track', 'ViewContent', { content_name: 'Quiz Funnel' });
     }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
         if (!res.ok) throw new Error(res.j.error || "Something went wrong. Try again.");
+        rememberAttr(utm);
         try { fbq("track", "Lead", { content_name: "Quiz Funnel" }); } catch (e) {}
         showResult();
       })

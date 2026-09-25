@@ -37,6 +37,7 @@
 // nothing to fix. Read-only against Stripe; a restricted read key is enough.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -257,7 +258,7 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
   return new Response(`${subject}; healed ${s.healed.length}, portal ${(portal || []).length}`, { status: 200 });
 }
 
-export default async () => {
+const run = async () => {
   if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
     return new Response("skipped: non-production", { status: 200 });
   }
@@ -281,4 +282,6 @@ export default async () => {
 };
 
 // 11:00 UTC = 7am EDT / 6am EST, before the office opens.
+export default withHeartbeat("reg-balance-audit", run);
+
 export const config = { schedule: "0 11 * * *" };

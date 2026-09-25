@@ -17,6 +17,7 @@
 // its own notifyCoach falls into a void. We poll from the side with email.
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { isTestAddress } from "./reg-lead-email.mjs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 const FROM = "NOVAPA Leads <leads@mail.novapa.org>";
 
@@ -62,7 +63,7 @@ Prescreens <b>${esc(a.prescreen || "?")}</b> &middot; decision <b>${esc(a.certai
 Full details in the NOVAPA admin dashboard under Leads.</div></div>` };
 }
 
-export default async () => {
+const run = async () => {
   if (String(process.env.LEADS_ALERT_ENABLED || "").toLowerCase() !== "on") {
     return new Response(JSON.stringify({ skipped: "disabled" }), { status: 200 });
   }
@@ -127,5 +128,7 @@ export default async () => {
   }
   return new Response(JSON.stringify({ sent }), { status: 200 });
 };
+
+export default withHeartbeat("reg-leads-alert", run);
 
 export const config = { schedule: "*/15 * * * *" };

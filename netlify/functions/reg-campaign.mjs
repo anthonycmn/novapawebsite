@@ -9,6 +9,7 @@
 // Gmail/Yahoo bulk-sender rules).
 import crypto from "node:crypto";
 import { SUPABASE_URL } from "./reg-config.mjs";
+import { withHeartbeat } from "./reg-heartbeat.mjs";
 
 const BATCH_SIZE = 25; // ~18s of SMTP at ~0.7s/send, inside the fn limit
 
@@ -242,7 +243,7 @@ async function isAdmin(userToken) {
   return r.ok && (await r.text()).replace(/"/g, "").trim() === "full";
 }
 
-export default async () => {
+const run = async () => {
   // production deploy only — branch deploys share the DB (same rule as the drip)
   if (process.env.CONTEXT && process.env.CONTEXT !== "production") {
     return new Response("skipped: non-production context", { status: 200 });
@@ -318,5 +319,7 @@ export default async () => {
   });
   return new Response(`campaign ${c.name}: sent ${sent}, ~${audience.length - sent} remaining`, { status: 200 });
 };
+
+export default withHeartbeat("reg-campaign", run);
 
 export const config = { schedule: "*/5 * * * *" };

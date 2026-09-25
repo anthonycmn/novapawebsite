@@ -25,6 +25,8 @@
 // Office", to, subject, html }. The helper picks the address for the transport
 // in use, so no sender ever hard-codes a mailbox again.
 
+import { SUPABASE_URL } from "./reg-config.mjs";
+
 export const RESEND_REPLY_TO = "info@novapa.org";
 
 // The same mailbox reg-campaign.mjs sends NOVAPA Mail from. RESEND_FROM_ADDR
@@ -118,4 +120,39 @@ export async function sendMail(msg) {
     return { transport, id: out.id || null, messageId: null };
   }
   throw new Error("mail not configured: set SMTP_USER and SMTP_PASS, or RESEND_API_KEY");
+}
+
+// A send that throws inside a caller's try/catch used to leave nothing but a
+// console.error line in a Netlify function log. On Sep 23-24 2026 Resend
+// refused every mail.novapa.org send for 33 hours ("domain is not verified")
+// and a family paid with no confirmation while every function returned 200.
+// Callers that must keep going after a failed send (the Stripe webhook has
+// already taken the money) record it here instead, so the failure is a row
+// in public.mail_failures that an agent or the admin dashboard can see.
+// Best effort and bounded: logging a failure must never throw.
+export async function logMailFailure({ fn, kind, orderId = null, paymentIntent = null, error }) {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/mail_failures`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        fn,
+        kind,
+        order_id: orderId,
+        payment_intent: paymentIntent,
+        error: String((error && error.message) || error || "").slice(0, 1000),
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!r.ok) console.error(`mail failure not logged: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  } catch (e) {
+    console.error("mail failure not logged:", e.message);
+  }
 }
