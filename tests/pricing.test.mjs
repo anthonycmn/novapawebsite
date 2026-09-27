@@ -100,8 +100,8 @@ eq("slot key", slotKey("coach-1", 3, "17:30"), "coach-1__3__1730");
 // above, and every total stays a whole number of dollars.
 eq("lead coach is $138", getTeacher("tony-cimino-johnson").rate, 138);
 eq("associates are the published $120",
-  ["colton-sorenson", "ryyana-cunningham", "katie-hamburger"].map((id) => getTeacher(id).rate),
-  [120, 120, 120]);
+  ["ryyana-cunningham", "katie-hamburger"].map((id) => getTeacher(id).rate),
+  [120, 120]);
 eq("associate packs match the catalog exactly",
   [3, 6, 10].map((n) => priceFor({ rate: 120, sessions: n, price: { 3:350, 6:660, 10:1050 }[n] }).totalCents),
   [35000, 66000, 105000]);
@@ -122,7 +122,7 @@ eq("every tier price is a whole dollar",
 
 // ── Config sanity ───────────────────────────────────────────────────────────
 eq("4 plans offered (term + 3 packs)", allPlans().length, 4);
-eq("teacher lookup", getTeacher("colton-sorenson").name, "Colton Sorenson");
+eq("teacher lookup", getTeacher("ryyana-cunningham").name, "Ryyana Cunningham");
 eq("unknown teacher → null", getTeacher("nope"), null);
 
 // ── The payment window and the hold ─────────────────────────────────────────
