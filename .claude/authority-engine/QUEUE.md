@@ -1,6 +1,6 @@
 # Authority Engine — what is waiting, and how to ship it
 
-Updated by the daily run. Last updated: **Saturday 26 September 2026**.
+Updated by the daily run. Last updated: **Sunday 27 September 2026**.
 
 **Backlog: 5. The guard has tripped.** ROUTINE.md stops the engine drafting new
 topics at 5, so no topic was written today and none will be tomorrow until some
@@ -81,10 +81,25 @@ is time-sensitive. If you only do one thing, do this one.
    result while the live article does not appear at all. The public repo is
    outranking novapa.org for novapa.org's own article title.
 2. **`topic-10-ship` not on origin** — see topic 10 above.
-3. **DC Unifieds date mismatch** — the admin page says Oct 15-18, the public
-   dcunifieds.com listing reads Oct 15-17 plus a virtual weekend Oct 24-25.
-   Possibly both correct (a load-out day is not an audition day), but families
-   are reading one of them. The event is three weeks out.
+3. **DC Unifieds dates contradict each other ON THE PUBLIC SITE** — escalated
+   27 Sep, and this is now the most urgent item on the list. The event is
+   **18 days out** and families are booking hotels against these dates.
+
+   What I originally flagged was an internal/external mismatch: the register
+   admin page says Oct 15-18, the public site read Oct 15-17. On re-checking
+   today, the public site surfaces **both**: "October 15-17, 2026 at the
+   National Conference Center" in one place, and "in-person auditions Oct 15-18,
+   2026 (with virtual livestream available)" in another, plus the second
+   virtual weekend Oct 24-25.
+
+   So this is not a stale internal note. Your own public-facing site is
+   carrying two different end dates on different pages. A family reading the
+   first books three nights; a family reading the second books four.
+
+   I cannot verify further from here — the egress proxy blocks dcunifieds.com,
+   so all of this is from search snippets rather than the live pages. Someone
+   needs to open the site and reconcile it. Fifteen minutes, and it is the
+   highest-value fifteen minutes on this page.
 4. **40 Under 40** — the Loudoun Times piece on your Northern Virginia 40 Under
    40 selection is not on the approved credential list in ROUTINE.md, so it has
    not been used in any draft. Your call whether to add it.

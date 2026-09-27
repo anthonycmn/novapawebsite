@@ -1017,3 +1017,44 @@ the engine. Not something to fake.
 
 Next: the backlog guard trips. Tomorrow's run reports the queue and drafts
 nothing unless Tony has cleared some of it.
+
+---
+
+## Run 16 — September 27, 2026 — HOLD (backlog guard, day 2)
+
+Nothing changed overnight. main unchanged at 5c16da6, no deploy, topic-10-ship
+still not on origin, backlog still 5, `topic-12-ship` still fast-forwards
+cleanly with no maintenance needed. Second consecutive run drafting nothing.
+
+**Scoreboard searches deliberately skipped this run.** Standings cannot move:
+nothing drafted since Sept 22 has been published, so nothing new is indexed, and
+Runs 11 through 15 all recorded identical page-one results. Running the same
+four queries a sixth time to write "unchanged" again is not measurement, it is
+ritual. They resume the run after something goes live.
+
+### What the quiet time was spent on instead: the DC Unifieds dates
+
+Re-checked the date discrepancy first flagged on Sept 23, because the event is
+now 18 days out and families are booking travel against it.
+
+It is worse than first reported. The original flag was an internal/external
+mismatch — register admin says Oct 15-18, public site read Oct 15-17. Today's
+check shows **the public site carrying both**: "October 15-17, 2026 at the
+National Conference Center" in one place and "in-person auditions Oct 15-18,
+2026 (with virtual livestream available)" in another, alongside the Oct 24-25
+virtual weekend.
+
+That is not a stale internal note. That is two different end dates live on the
+same public site, three weeks before the event, in front of families booking
+hotel nights.
+
+Could not verify against the live pages: the egress proxy blocks
+dcunifieds.com, so this rests on search snippets. Someone with a browser needs
+to open the site and reconcile it. Escalated in QUEUE.md to the top of the
+standing items and pushed to Tony's phone.
+
+### Queue unchanged
+
+Topics 10, 11, 12, 13, 14. Topic 12 approved and one command from live; topic
+14 seasonal and now two days into its decay window; topic 10's article still
+only on Tony's machine. Full detail in QUEUE.md.
