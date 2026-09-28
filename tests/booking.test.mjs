@@ -71,7 +71,7 @@ eq("pre-term 3-pack allowed", (await store.claimSlot(KEY, { bookingId:"D", dates
 eq("  now 18 dates locked", (await taken(KEY)).length, 18);
 
 // ── 5. Other teachers / days untouched ──────────────────────────────────────
-const other = cfg.slotKey("colton-sorenson", 2, "16:00");
+const other = cfg.slotKey("katie-hamburger", 6, "09:00");
 eq("different slot unaffected", (await store.claimSlot(other, { bookingId:"E", dates:TERM_DATES })).ok, true);
 
 // ── 6. THE RACE: 8 families hit the same fresh slot simultaneously ──────────
@@ -101,7 +101,7 @@ eq("booked dates resist a new claim",
   (await store.claimSlot(KEY, { bookingId:"THIEF", dates:TERM_DATES })).ok, false);
 
 // ── 9. An abandoned checkout frees the slot again ───────────────────────────
-const stale = cfg.slotKey("colton-sorenson", 4, "17:00");
+const stale = cfg.slotKey("katie-hamburger", 5, "16:30");
 eq("hold placed", (await store.claimSlot(stale, { bookingId:"GONE", dates:TERM_DATES })).ok, true);
 eq("  slot looks busy while the hold is live", (await taken(stale)).length, 15);
 

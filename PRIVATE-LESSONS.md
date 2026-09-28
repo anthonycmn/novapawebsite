@@ -30,7 +30,7 @@ Nothing is committed or pushed.
 
 ## Pricing
 
-Two rates. Colton, Ryyana and Katie teach at the published $120 a lesson, so
+Two rates. Ryyana and Katie teach at the published $120 a lesson, so
 their packs are the activity rows that already exist and there is nothing new
 to publish for them. Tony carries a 15% premium at $138 — and because coaching
 is flat priced, a price is a row, so that rate needs its own products.
