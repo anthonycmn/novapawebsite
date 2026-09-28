@@ -97,7 +97,7 @@ window.DEHSCENES = {
         { id: 'I.2-s1', cat: 'set', name: 'Computer lab: desks and monitors', note: 'Where the letter gets printed and taken.', src: 'proposed' },
         { id: 'I.2-p1', cat: 'prop', name: 'Sharpie for signing the cast', note: 'CRITICAL. Must write huge and legibly from the back row. Test on the real cast material.', qty: 4, src: 'script' },
         { id: 'I.2-p2', cat: 'prop', name: 'Printed letter — the copy Connor takes', note: 'Same sheet, same fold as I.1 and I.4. Build a matched set of at least six.', qty: 6, src: 'script' },
-        { id: 'I.2-p3', cat: 'prop', name: 'Practical printer or printer sound cue', note: 'Decide with Colton: real machine or sound only.', src: 'proposed' },
+        { id: 'I.2-p3', cat: 'prop', name: 'Practical printer or printer sound cue', note: 'Decide with the TD: real machine or sound only.', src: 'proposed' },
         { id: 'I.2-c1', cat: 'costume', who: 'Heidi', name: 'Heidi in scrubs, on shift', note: 'First time we see the work look.', src: 'script' }
       ] },
 
