@@ -20,7 +20,7 @@
 // commits the production's money.
 import { sendMail, mailConfigured } from "./reg-mail.mjs";
 const RECIPIENTS = {
-  report: { to: ["colton@novapa.org", "ryyana@novapa.org", "katieh@novapa.org", "cj@novapa.org"] },
+  report: { to: ["ryyana@novapa.org", "katieh@novapa.org", "cj@novapa.org"] },
   buy:    { to: ["todd@novapa.org"], cc: ["cj@novapa.org"] },
 };
 
