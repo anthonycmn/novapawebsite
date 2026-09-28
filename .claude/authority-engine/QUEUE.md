@@ -1,6 +1,6 @@
 # Authority Engine — what is waiting, and how to ship it
 
-Updated by the daily run. Last updated: **Sunday 27 September 2026**.
+Updated by the daily run. Last updated: **Monday 28 September 2026**.
 
 **Backlog: 5. The guard has tripped.** ROUTINE.md stops the engine drafting new
 topics at 5, so no topic was written today and none will be tomorrow until some
@@ -72,6 +72,35 @@ is time-sensitive. If you only do one thing, do this one.
 - Photo: index panel is borrowing the school-audition shot.
 
 ---
+
+## Verified Monday 28 Sep — the waiting drafts have not gone stale
+
+Three hold days with nothing to merge, so the run spent the time checking
+whether the drafts still tell the truth. main has moved five times since topic
+11 was written, and an article that quotes live prices can rot quietly.
+
+- **Topic 11's figures all still hold** against `day-camps.html` as it stands
+  today: $79 a day, $349 for the five-day pack, $395 list, $69.80 a day,
+  8:30-4:15, the three age groups, spring break still Mar 22-26 2027, and still
+  no camp on the calendar between Dec 20 and Jan 3, which is what the article
+  says.
+- **Every internal link in all three waiting posts resolves.** Twenty-seven
+  links checked, zero dead.
+- **Preflight passes** on the current merge of main.
+
+### One thing this turned up: a shipping order dependency
+
+**Topic 14 links to topic 12's article.** Topic 12 is not live. So if topic 14
+ships first, that link 404s on a brand new post.
+
+Order matters, and there are only two safe options:
+- Ship **12 first, then 14**, or
+- Ship them **together**, which `authority-engine` already does since both are
+  on it.
+
+What does not work is 14 alone. If you want the seasonal one out on its own,
+say so and the next run cuts a `topic-14-ship` branch with the topic 12 link
+swapped for something live.
 
 ## Standing items, oldest first
 

@@ -1058,3 +1058,50 @@ standing items and pushed to Tony's phone.
 Topics 10, 11, 12, 13, 14. Topic 12 approved and one command from live; topic
 14 seasonal and now two days into its decay window; topic 10's article still
 only on Tony's machine. Full detail in QUEUE.md.
+
+---
+
+## Run 17 — September 28, 2026 — HOLD (backlog guard, day 3)
+
+Nothing changed again. main unchanged since Friday, nothing deployed, backlog
+still 5, topic-10-ship still not on origin, ship branch still fast-forwards
+clean. Third consecutive run drafting nothing.
+
+### Spent the hold on quality assurance instead
+
+An article that quotes live prices rots quietly, and main has moved five times
+since topic 11 was drafted six days ago. So this run verified the waiting work
+rather than adding to it.
+
+- Topic 11's figures re-checked against `day-camps.html` as it stands today.
+  All still correct: $79, $349 pack, $395 list, $69.80 a day, 8:30-4:15, three
+  age groups, spring break Mar 22-26 2027, and no camp between Dec 20 and Jan 3.
+- All 27 internal links across the three waiting blog posts resolve. Zero dead.
+- Preflight passes on the current merge of main.
+
+**Found one real problem: a shipping order dependency.** Topic 14 links to
+topic 12's article, and topic 12 is not live. Ship 14 alone and that link 404s
+on a brand new post. Safe orders are 12 then 14, or both together off
+`authority-engine`. Recorded in QUEUE.md. This is exactly the class of thing
+that would have shipped broken if the queue had been merged in a hurry, and is
+the argument for the engine spending hold days on verification rather than
+volume.
+
+### The cadence question is now worth asking properly
+
+Six days, five drafts, zero published. The guard has held the engine idle for
+three of those days. That is the guard working, but it also says something
+about the configuration: a daily drafting routine feeding a publishing step
+that runs at a different speed will always end up here, and the drafts decay
+while they wait — topic 14 measurably, since its audience is searching now.
+
+Not a complaint about Tony's bandwidth; running NOVAPA and DC Unifieds three
+weeks out from the event is the actual job. It is an observation that the
+routine's cadence was set before anyone knew what the publishing rate would be,
+and the evidence is now in. Proposal put to him in the report: move the
+drafting run to two or three times a week, and keep a light daily check for
+branch drift and anything time-sensitive. His call; the routine's cron is not
+something the engine should change on its own.
+
+Scoreboard searches skipped again, same reason as Run 16: nothing new is
+published, so nothing new can be indexed.
