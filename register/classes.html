@@ -217,6 +217,18 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var hh = h % 12; if (hh === 0) hh = 12;
     return hh + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
   }
+  // "6:00 – 6:55 PM" from "6:00pm - 6:55pm EDT". A family deciding whether
+  // the drive works needs the end time, not only the start. Falls back to
+  // the start alone when the text carries no end.
+  function rangeOf(a) {
+    var t = String((ct(a).primary_text || [])[0] || '');
+    var m = t.match(/(\d{1,2}:\d{2})\s*(am|pm)\s*[–—-]\s*(\d{1,2}:\d{2})\s*(am|pm)/i);
+    if (!m) return clockOf(a);
+    var ap1 = m[2].toUpperCase(), ap2 = m[4].toUpperCase();
+    return ap1 === ap2
+      ? m[1] + ' – ' + m[3] + ' ' + ap2
+      : m[1] + ' ' + ap1 + ' – ' + m[3] + ' ' + ap2;
+  }
   function agesOf(a) {
     var raw = String(a.age_range || '');
     var m = raw.match(/(\d+)\s*[–—-]\s*(\d+)/);
@@ -276,7 +288,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
             var tag = full ? '<span class="slot-tag slot-full">Waitlist only</span>'
               : free ? '<span class="slot-tag">Free trial</span>' : '';
             return '<button class="slot" type="button" data-id="' + a.id + '">' +
-              '<span class="slot-t">' + esc(clockOf(a)) + '</span>' +
+              '<span class="slot-t">' + esc(rangeOf(a)) + '</span>' +
               '<div class="slot-n">' + esc(a.name) + '</div>' +
               '<div class="slot-a">' + (ag && ag.adult ? 'Adults' : ag ? 'Ages ' + ag.lo + '–' + ag.hi : esc(a.age_range || '')) + '</div>' +
               tag + '</button>';
@@ -295,7 +307,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     var free = trials[a.id];
     var full = a.remaining != null && a.remaining <= 0;
     var dl = DAYS.filter(function (d) { return d.n === dayOf(a); })[0];
-    var when = (dl ? dl.long + 's' : '') + (clockOf(a) ? ' at ' + clockOf(a) : '');
+    var when = [dl ? dl.long + 's' : '', rangeOf(a)].filter(Boolean).join(', ');
     var season = a.starts_on && a.ends_on ? pretty(a.starts_on) + ' – ' + pretty(a.ends_on) : '';
 
     var rows = '';

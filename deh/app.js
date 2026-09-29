@@ -18,14 +18,14 @@
   var GATE_WORD = 'orchard';   // curtain, not a lock — change here and tell staff
 
   // Who can sign a block off. Anyone not listed picks "Someone else" and types.
-  var STAFF = ['Danielle', 'Shelby', 'Ryyana', 'Colton', 'Tony', 'Stage Manager'];
+  var STAFF = ['Danielle', 'Shelby', 'Ryyana', 'Tony', 'Stage Manager'];
 
   // Where the two outgoing emails land. These are printed on the buttons so
   // nobody sends one without knowing who reads it. The addresses themselves
   // are fixed inside netlify/functions/deh-report.mjs — this page only names
   // them, it cannot choose them.
-  var REPORT_TO = ['colton@novapa.org', 'ryyana@novapa.org', 'katieh@novapa.org', 'cj@novapa.org'];
-  var REPORT_WHO = 'Colton, Ryyana, Katie and CJ';
+  var REPORT_TO = ['ryyana@novapa.org', 'katieh@novapa.org', 'cj@novapa.org'];
+  var REPORT_WHO = 'Ryyana, Katie and CJ';
   var BUY_TO = 'todd@novapa.org';
 
   // Attendance states, in the order a tap cycles through them.
@@ -132,7 +132,7 @@
     { k: 'MTI ACCOUNT', v: 'Northern Virginia Performing Arts, account number 9012523. Dear Evan Hansen sits under this account; the ProductionPro order on it is booking 7099101.' },
     { k: 'REHEARSAL TRACKS', v: 'MTI Player, opened with the rehearsal CODE. No login needed. Danielle and Shelby confirmed these working on 7/22 — ask either of them for the code.' },
     { k: 'PERFORMANCE TRACKS', v: 'MTI Player, and the rehearsal code will NOT open them. Performance tracks and the vocal sweeteners both need the organisation login.' },
-    { k: 'ORG LOGIN', v: 'Held by Colton, Technical Director (CJ, 7/30). It is not printed here because this page lives in a public repository and our MTI licence does not permit publishing account credentials. Ask Colton, or CJ. If nobody has it, the account admin resets it in two minutes at player.mtishows.com/forgot.' },
+    { k: 'ORG LOGIN', v: 'Held by CJ. It is not printed here because this page lives in a public repository and our MTI licence does not permit publishing account credentials. Ask CJ. If nobody has it, the account admin resets it in two minutes at player.mtishows.com/forgot.' },
     { k: 'PLAYBACK RULES', v: 'MTI is strict on these. Once the show is loaded on a device, do not update the app or iOS until we close. Put the device in airplane mode with WiFi off before every playback — a call, a text or an auto-update will interrupt the track mid-number.' },
     { k: 'SCRIPTS AND SCORES', v: 'ProductionPro, ordered 7/24. There is no shared login and there is no company password — every person is invited individually and signs in as themselves.' },
     { k: 'GETTING INVITED', v: 'Send your email address to CJ or Zoe and you are added to DEAR EVAN HANSEN on ProductionPro. The invite arrives from noreply@production.pro — check spam, that is where most of them land.' },
@@ -216,7 +216,6 @@
     { person_id: 'staff-danielle', name: 'Danielle Sirinsky', role: 'Director / Choreographer', kind: 'staff', sort: 1 },
     { person_id: 'staff-shelby', name: 'Shelby Milgram', role: 'Vocal Director', kind: 'staff', sort: 2 },
     { person_id: 'staff-ryyana', name: 'Ryyana Cunningham', role: 'Assistant Director', kind: 'staff', sort: 3 },
-    { person_id: 'staff-colton', name: 'Colton Sorensen', role: 'Technical Director', kind: 'staff', sort: 4 },
     { person_id: 'staff-tony', name: 'Tony Cimino-Johnson', role: 'Intimacy / Study track', kind: 'staff', sort: 5 }
   ];
   function castRows() {
@@ -225,6 +224,7 @@
     });
   }
   var SEED_KEY = '_seed-version';
+  var RETIRED = ['staff-colton'];
   function seedRoster() {
     return CREATIVE.concat(castRows());
   }
@@ -278,6 +278,14 @@
         var serverCast = rows.filter(function (x) { return (x.kind || 'cast') === 'cast'; }).length;
         var marker = rows.filter(function (x) { return x.person_id === SEED_KEY; })[0];
         var seenVersion = marker ? (marker.sort || 0) : 0;
+
+        // People who have left. Seeding never deletes, so a roster stored
+        // before they left keeps them until they are removed here.
+        rows = rows.filter(function (x) {
+          if (RETIRED.indexOf(x.person_id) === -1) return true;
+          api('roster_set', { person_id: x.person_id, active: false }).catch(function () {});
+          return false;
+        });
 
         if (rows.length) {
           roster = rows.map(function (x) {
@@ -410,7 +418,7 @@
   // ---------- live sync ----------
   // connect() only ran at boot, so a phone showed whatever was true when it
   // was opened. During a rehearsal that is useless: Danielle ticks a block and
-  // Colton's phone still shows it open an hour later. Poll while the page is
+  // another phone still shows it open an hour later. Poll while the page is
   // visible, and refresh the moment someone returns to the app.
   var POLL_MS = 25000;
   var lastSync = 0, polling = null, refreshing = false;
@@ -525,7 +533,7 @@
       '<div class="bar"><i style="width:' + pct + '%"></i></div></div>';
 
     var staff = [['Danielle', cov.danielle], ['Shelby', cov.shelby], ['Ryyana', cov.ryyana],
-                 ['Colton', cov.colton], ['Tony', cov.tony]]
+                 ['TD', cov.td], ['Tony', cov.tony]]
       .filter(function (p) { return p[1]; })
       .map(function (p) {
         var out = /out of town|^out /i.test(p[1]);

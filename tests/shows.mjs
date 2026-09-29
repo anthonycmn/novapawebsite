@@ -28,10 +28,12 @@ const plain = (s) => s
   .replace(/\s+/g, ' ');
 
 console.log('CANONICAL');
-A(S && S.shows.length === 14, 'shows.js loads with 14 companies');
+// Hadestown is off the site temporarily (CJ, 28 Sep 2026): 13 companies,
+// 64 performances. Restore 14 / 76 and the Hadestown rows when it returns.
+A(S && S.shows.length === 13, 'shows.js loads with 13 companies');
 A(S.houseOpensMinutes === 15, 'the house opens 15 minutes before curtain');
 const total = S.shows.reduce((n, s) => n + s.performances.length, 0);
-A(total === 76, 'the season has 76 performances — got ' + total);
+A(total === 64, 'the season has 64 performances — got ' + total);
 
 // A date and its printed weekday can never disagree, because the weekday is
 // derived. This checks the dates themselves are the days they claim to be.
@@ -63,7 +65,6 @@ for (const show of S.shows) {
 console.log('\nFIRST REHEARSAL');
 const REHEARSALS = [
   ['Sweeney Todd', 'Mon, Aug 24, 2026', 'sweeney-todd.html', 'from August 24 through opening night'],
-  ['Hadestown', 'Mon, Nov 16, 2026', 'hadestown.html', 'from November 16 through opening night'],
 ];
 const textOf = (f) => plain(read(f).replace(/<[^>]+>/g, ' '));
 for (const [show, stated, page, prose] of REHEARSALS) {
@@ -297,7 +298,7 @@ for (const [file, casts] of Object.entries(PAGE_CASTS)) {
 // auditions and these cast everyone.
 // The site briefly used "Broadway Bound Teen" for both, which put a 13–18
 // audition track and a junior cast under one name.
-for (const key of ['deh', 'sweeney', 'carol', 'hadestown', 'mean-girls']) {
+for (const key of ['deh', 'sweeney', 'carol', 'mean-girls']) {
   A(S.byKey(key).season === 'Teen Conservatory',
     key + ' belongs to the Teen Conservatory — got "' + S.byKey(key).season + '"');
 }
@@ -368,9 +369,6 @@ const ADMIN_CALENDAR = {
   'frozen-kids': ['2027-01-22 19:00', '2027-01-23 14:00', '2027-01-23 19:00'],
   'frozen-jr': ['2027-01-29 19:00', '2027-01-30 14:00', '2027-01-30 19:00'],
   'frozen-teen': ['2027-02-05 19:00', '2027-02-06 14:00', '2027-02-06 19:00'],
-  hadestown: ['2027-03-05 19:00', '2027-03-06 14:00', '2027-03-06 19:00', '2027-03-07 14:00',
-    '2027-03-11 19:00', '2027-03-12 19:00', '2027-03-13 14:00', '2027-03-13 19:00',
-    '2027-03-14 14:00', '2027-03-19 19:00', '2027-03-20 14:00', '2027-03-20 19:00'],
   // Kids and Jr. moved into the May 21-23 weekend (CJ, 27 Aug 2026).
   'mermaid-kids': ['2027-05-21 19:00', '2027-05-22 11:00', '2027-05-22 13:00'],
   'mermaid-jr': ['2027-05-22 16:00', '2027-05-22 19:00', '2027-05-23 14:00'],
@@ -405,8 +403,6 @@ const PAGE_BLOCKS = {
   'dear-evan-hansen.html': ['deh'],
   'sweeney-todd.html': ['sweeney'],
   'christmas-carol.html': ['carol'],
-  // three weekend blocks that together are the whole run
-  'hadestown.html': ['hadestown'],
 };
 const CAST_RE = /<div class="perf-cast-name">(.*?)<\/div>\s*<div class="perf-cast-tag">(.*?)<\/div>\s*<ul class="perf-list">([\s\S]*?)<\/ul>/g;
 const ITEM_RE = /<span class="perf-day">(.*?)<\/span>\s*<span class="perf-date">(.*?)<\/span>\s*<span class="perf-time">(.*?)<\/span>/g;
@@ -444,7 +440,6 @@ const RUNS = [
   ['little-mermaid-jr.html', 'mermaid-kids', 30, 'The Kids run is about 30 minutes'],
   ['frozen-jr.html', 'frozen-jr', 90, 'Each performance runs about 90 minutes'],
   ['sweeney-todd.html', 'sweeney', 150, 'about 2 hours 30 minutes'],
-  ['hadestown.html', 'hadestown', 150, 'about 2 hours 30 minutes'],
   ['dear-evan-hansen.html', 'deh', 150, 'about 2 hours 30 minutes'],
 ];
 for (const [file, key, minutes, text] of RUNS) {
@@ -549,7 +544,7 @@ const CURTAINS = [
   ['summer-2027.html', ['mermaid-jr']], ['summer-2027.html', ['mermaid-teen']],
   ['summer-2027.html', ['httyd']], ['summer-2027.html', ['charlie']],
   ['summer-2027.html', ['trolls']],
-  ['teen-conservatory.html', ['sweeney']], ['teen-conservatory.html', ['hadestown']],
+  ['teen-conservatory.html', ['sweeney']],
   ['register/index.html', ['httyd']], ['register/index.html', ['charlie']],
   ['register/index.html', ['trolls']], ['register/index.html', ['mean-girls']],
 ];
@@ -585,7 +580,6 @@ const CARDS = [
   ['A Christmas Carol', P('carol')],
   ['Frozen Kids', P('frozen-kids')],
   ['Frozen', [...P('frozen-jr'), ...P('frozen-teen')]],
-  ['Hadestown', P('hadestown')],
   ['The Little Mermaid', [...P('mermaid-kids'), ...P('mermaid-jr'), ...P('mermaid-teen')]],
   ['Mean Girls', P('mean-girls')],
   ['How to Train Your Dragon Jr.', P('httyd')],

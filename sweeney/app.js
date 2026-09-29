@@ -24,8 +24,8 @@
   // nobody sends one without knowing who reads it. The addresses themselves
   // are fixed inside netlify/functions/sweeney-report.mjs — this page only names
   // them, it cannot choose them.
-  var REPORT_TO = ['colton@novapa.org', 'ryyana@novapa.org', 'katieh@novapa.org', 'cj@novapa.org'];
-  var REPORT_WHO = 'Colton, Ryyana, Katie and CJ';
+  var REPORT_TO = ['ryyana@novapa.org', 'katieh@novapa.org', 'cj@novapa.org'];
+  var REPORT_WHO = 'Ryyana, Katie and CJ';
   var BUY_TO = 'todd@novapa.org';
 
   // Attendance states, in the order a tap cycles through them.
@@ -406,7 +406,7 @@
   // ---------- live sync ----------
   // connect() only ran at boot, so a phone showed whatever was true when it
   // was opened. During a rehearsal that is useless: one phone ticks a block and
-  // Colton's phone still shows it open an hour later. Poll while the page is
+  // another phone still shows it open an hour later. Poll while the page is
   // visible, and refresh the moment someone returns to the app.
   var POLL_MS = 25000;
   var lastSync = 0, polling = null, refreshing = false;
