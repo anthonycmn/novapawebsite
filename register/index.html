@@ -562,14 +562,6 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           <div class="kids" data-fallshow="sweeney"></div>
         </div>
       </div>
-      <div class="showb" data-fall="hadestown">
-        <div class="poster" style="background-image:url('/register/img/hadestown.jpg')"></div>
-        <div class="bd">
-          <div class="t">Hadestown: Teen Conservatory</div>
-          <div class="d">Ages 13&ndash;18 · Performs March 5&ndash;21, 2027 · $895<br><span style="color:var(--gold3)">Cast by audition &middot; only ensemble roles remain</span></div>
-          <div class="kids" data-fallshow="hadestown"></div>
-        </div>
-      </div>
       <!-- Teens summer intensive. No data-fall, so the season filter counts it
            as Summer (it runs June 2027) while the fall-cast renderer still
            drives its checkboxes via data-fallshow. -->
@@ -950,10 +942,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     // to pay - the ?activity= link stays valid alongside these cards.
     { key:'sweeney', title:'Sweeney Todd: Teen Conservatory', img:'/register/img/sweeney.jpg',
       date:'Ages 12\u201318 \u00b7 Performs Oct 23 \u2013 Nov 1, 2026 \u00b7 $895', re:/sweeney/i,
-      start:'2026-10-23', ages:'12\u201318' },
-    { key:'hadestown', title:'Hadestown: Teen Conservatory', img:'/register/img/hadestown.jpg',
-      date:'Ages 13\u201318 \u00b7 Performs March 5\u201321, 2027 \u00b7 $895', re:/hadestown/i,
-      start:'2027-03-05', ages:'13\u201318' }
+      start:'2026-10-23', ages:'12\u201318' }
   ];
   function fallActsFor(showKey){
     var s = FALL_SHOWS.filter(function(x){ return x.key === showKey; })[0];

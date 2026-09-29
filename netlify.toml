@@ -120,6 +120,21 @@
   status = 301
   force = true
 
+# Hadestown is off the site temporarily (CJ, Sep 28 2026). hadestown.html
+# stays in the repo; 302, not 301, so browsers and search engines do not
+# cache the move. Delete these two rules to bring the page back.
+[[redirects]]
+  from = "/hadestown"
+  to = "/teen-conservatory.html"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/hadestown.html"
+  to = "/teen-conservatory.html"
+  status = 302
+  force = true
+
 # Every Sawyer and Regpack embed is gone (Jul 31 2026) — registration,
 # coaching, and auditions all run through our own system now. These pages
 # are deleted but still indexed (Todd's Jul 30 audit), so send them to the

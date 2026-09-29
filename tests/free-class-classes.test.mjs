@@ -46,7 +46,10 @@ const EXPECTED = {
   "mt-dance-9-12":   1960939,   // Wed  6:15 PM   9-12
   "mt-acting-9-12":  1960945,   // Wed  7:15 PM   9-12
   "improv-9-12":     1960959,   // Thu  6:30 PM   9-12
-  "improv-13-17":    1960961,   // Thu  7:30 PM  13-17
+  // improv-13-17 1960961 removed Sep 20 2026, both sides together per the
+  // rule above: the listing has sold nothing on the web and the key has
+  // never produced a trial booking. Restore here AND in reg-freeclass.mjs
+  // when the class runs again.
   "acting-mt-sat":   1962562,   // Sat 12:00 PM   9-12
   "film-tv":         992001,    // Mon  8:00 PM  11-17  (added Sep 16 2026, narrowed to 13-17 in #128,
                               //                        widened back on CJ's word Sep 18)

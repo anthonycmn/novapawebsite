@@ -196,25 +196,6 @@
       ]
     },
     {
-      key: 'hadestown', season: 'Teen Conservatory', title: 'Hadestown',
-      company: 'Teen Conservatory', ages: '13–18', runMinutes: 150,
-      page: 'hadestown.html',
-      performances: [
-        { at: '2027-03-05 19:00' },
-        { at: '2027-03-06 14:00' },
-        { at: '2027-03-06 19:00' },
-        { at: '2027-03-07 14:00' },
-        { at: '2027-03-11 19:00' },
-        { at: '2027-03-12 19:00' },
-        { at: '2027-03-13 14:00' },
-        { at: '2027-03-13 19:00' },
-        { at: '2027-03-14 14:00' },
-        { at: '2027-03-19 19:00' },
-        { at: '2027-03-20 14:00' },
-        { at: '2027-03-20 19:00' }
-      ]
-    },
-    {
       key: 'mean-girls', season: 'Teen Conservatory', title: 'Mean Girls',
       company: 'Teen Conservatory', ages: '13–18', runMinutes: 150, page: null,
       performances: [
