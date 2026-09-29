@@ -1,8 +1,8 @@
 # Authority Engine — what is waiting, and how to ship it
 
-Updated by the daily run. Last updated: **Monday 28 September 2026**.
+Updated by the daily run. Last updated: **Tuesday 29 September 2026**.
 
-**Backlog: 5. The guard has tripped.** ROUTINE.md stops the engine drafting new
+**Backlog: 5. The guard has tripped — day 4.** ROUTINE.md stops the engine drafting new
 topics at 5, so no topic was written today and none will be tomorrow until some
 of this clears. Writing is not the bottleneck; publishing is.
 

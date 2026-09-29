@@ -1105,3 +1105,28 @@ something the engine should change on its own.
 
 Scoreboard searches skipped again, same reason as Run 16: nothing new is
 published, so nothing new can be indexed.
+
+---
+
+## Run 18 — September 29, 2026 — HOLD (backlog guard, day 4)
+
+main moved overnight (#163 Sweeney Todd rehearsal reports, #164 remove Colton
+from the Dear Evan Hansen dashboard). Merged into `authority-engine`, preflight
+green, no gate failures — both waiting posts carry every tag main requires.
+
+`topic-12-ship` needed re-syncing for the third time. main having moved meant
+Tony's `--ff-only` merge would have been refused again, so main was merged in,
+preflight re-run, branch re-pushed, fast-forward re-verified, and the topic-11
+exclusion re-checked. Third re-sync in six days, all of it caused purely by the
+branch sitting.
+
+Nothing else changed: backlog still 5, topic 12 still not on main, topic-10-ship
+still not on origin. Fourth consecutive run drafting nothing.
+
+Scoreboard searches skipped for the third run, same reason: nothing published
+means nothing newly indexed, so the numbers cannot move.
+
+No new observation to add. The cadence proposal from Run 17 and the shipping
+order dependency from Run 17 both stand unanswered, and repeating them daily
+would be noise rather than information. They are in QUEUE.md where Tony can
+find them when he has a moment.
