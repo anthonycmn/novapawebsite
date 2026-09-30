@@ -1,5 +1,6 @@
-// Abandoned-cart heads-up for CJ and Todd (CJ, Sep 30 2026). One email per
-// abandoned checkout, so the office can call while the family still cares.
+// Abandoned-cart heads-up (CJ, Sep 30 2026) for CJ, Todd, Jen, and Katie
+// Rivers (CART_ALERT_TO). One email per abandoned checkout, so the office can
+// call while the family still cares. A declined card says so, with the reason.
 //
 // A checkout starts by taking a 30-minute hold (public.holds). A paid hold
 // turns "confirmed"; one that expires unpaid stays "active" or is
@@ -20,7 +21,28 @@
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { isTestAddress } from "./reg-lead-email.mjs";
 import { withHeartbeat } from "./reg-heartbeat.mjs";
-import { sendMoneyAlert, esc } from "./reg-admin-alerts.mjs";
+import Stripe from "stripe";
+import { sendMoneyAlert, esc, cartAlertRecipients } from "./reg-admin-alerts.mjs";
+
+// Did the family try to pay and get declined? Checkout's PaymentIntent carries
+// the hold id, so ask Stripe for intents on this hold that hold a card error.
+// The email then says "card declined: insufficient funds" instead of leaving
+// the office to guess whether they walked away or were turned away.
+async function declineFor(stripe, holdId) {
+  if (!stripe) return "";
+  try {
+    const res = await stripe.paymentIntents.search({
+      query: `metadata['hold_id']:'${String(holdId).replace(/'/g, "")}'`, limit: 5,
+    });
+    const hit = (res.data || []).find((p) => p.last_payment_error);
+    if (!hit) return "";
+    const e = hit.last_payment_error;
+    return e.message || String(e.decline_code || e.code || "declined").replace(/_/g, " ");
+  } catch (e) {
+    console.error("decline lookup failed:", e.message);
+    return "";
+  }
+}
 
 const GRACE_MIN = 30;
 const WINDOW_H = 48;
@@ -85,9 +107,11 @@ const run = async () => {
   const acts = actIds.length ? await svc(`activities?select=id,name&id=in.(${actIds.join(",")})`) : [];
   const actName = Object.fromEntries(acts.map((a) => [a.id, a.name]));
 
+  const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
   let sent = 0;
   for (const [email, h] of abandoned) {
     const f = fam[email] || {};
+    const declined = await declineFor(stripe, h.id);
     const items = (h.items || []).map((it) => {
       const what = it.activity_id
         ? (actName[it.activity_id] || `activity ${it.activity_id}`)
@@ -104,13 +128,15 @@ const run = async () => {
 <div style="margin-top:12px"><b>${esc(f.parent_name || "(no name on file)")}</b>
 &lt;<a href="mailto:${esc(email)}">${esc(email)}</a>&gt;${f.phone ? ` · <a href="tel:${esc(f.phone)}">${esc(f.phone)}</a>` : ""}</div>
 <div style="color:#555;margin-top:4px">Started checkout ${esc(started)} and did not pay.</div>
+${declined ? `<div style="margin-top:8px;color:#B3261E"><b>Their card was declined:</b> ${esc(declined)}. They tried to pay; a call to help with another card will likely close it.</div>` : ""}
 <ul style="margin:10px 0 0 18px;padding:0">${items}</ul>
 <div style="color:#555;margin-top:14px">Worth a call or a short note. <a href="https://novapa.org/register/admin/">Admin dashboard</a></div></div>`;
     const ok = await sendMoneyAlert(`cart:${h.id}`, {
       fn: "reg-cart-alert", kind: "admin_abandoned_cart",
       fromName: "NOVAPA Registrations",
-      subject: `Abandoned cart: ${label}`,
+      subject: declined ? `Abandoned cart (card declined): ${label}` : `Abandoned cart: ${label}`,
       html,
+      to: cartAlertRecipients(),
     });
     if (ok) sent++;
   }
