@@ -1,8 +1,8 @@
 # Authority Engine — what is waiting, and how to ship it
 
-Updated by the daily run. Last updated: **Tuesday 29 September 2026**.
+Updated by the daily run. Last updated: **Wednesday 30 September 2026**.
 
-**Backlog: 5. The guard has tripped — day 4.** ROUTINE.md stops the engine drafting new
+**Backlog: 5. The guard has tripped — day 5.** ROUTINE.md stops the engine drafting new
 topics at 5, so no topic was written today and none will be tomorrow until some
 of this clears. Writing is not the bottleneck; publishing is.
 
@@ -11,9 +11,15 @@ of this clears. Writing is not the bottleneck; publishing is.
 ## The one with a clock on it
 
 **Topic 14 — The BFA musical theatre audition timeline.** Prescreen deadlines
-run November 1 to December 15, so the audience is searching for this now.
-Published in December it is dead until next August. Nothing else in the queue
-is time-sensitive. If you only do one thing, do this one.
+run November 1 to December 15. **As of today the nearest of those is 32 days
+out and the furthest is 76.** The audience is mid-search right now; published
+in December it is dead until next August. Nothing else in the queue has a
+clock. If you only do one thing, do this one — and remember it has to ship
+with or after topic 12, because it links to it.
+
+**Also worth knowing: DC Unifieds is 15 days out** and its public site still
+shows two different end dates, per the standing item below. That is not an
+Authority Engine job, but it is the most time-critical thing this run can see.
 
 ---
 

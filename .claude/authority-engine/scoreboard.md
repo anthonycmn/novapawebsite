@@ -1130,3 +1130,34 @@ No new observation to add. The cadence proposal from Run 17 and the shipping
 order dependency from Run 17 both stand unanswered, and repeating them daily
 would be noise rather than information. They are in QUEUE.md where Tony can
 find them when he has a moment.
+
+---
+
+## Run 19 — September 30, 2026 — HOLD (backlog guard, day 5)
+
+main moved again (#165, registration admin password sign-in). Merged into
+`authority-engine`; preflight green, 63 public pages now carry the full tag
+set. `topic-12-ship` re-synced for the fourth time and fast-forward re-verified,
+scope re-checked as topic 12 only.
+
+Process note on this run: the first preflight output was buried under npm
+version notices and the branch was pushed before the result had actually been
+read. Re-ran it explicitly afterwards and it passes, but the push went out on
+an assumption rather than a check. Worth recording, because "the gate will
+catch it" only holds if someone reads what the gate said.
+
+Nothing else changed. Fifth consecutive run drafting nothing. Backlog 5.
+Scoreboard searches skipped for the fourth run, same standing reason.
+
+### Clocks, stated once with real numbers
+
+- **Topic 14** is the only draft with a deadline attached to its audience. The
+  nearest prescreen dates are 32 days out, the furthest 76. It ships with or
+  after topic 12 because it links to it.
+- **DC Unifieds is 15 days out** and its public site still carries two
+  different end dates (Oct 15-17 in one place, Oct 15-18 in another). Outside
+  this engine's remit, flagged since Sept 23, escalated Sept 27, still open.
+  Families are booking hotel nights against whichever page they landed on.
+
+Nothing new to propose. The cadence question from Run 17 and the shipping-order
+dependency both stand; they are in QUEUE.md rather than repeated here.
