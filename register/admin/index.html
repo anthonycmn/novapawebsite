@@ -236,6 +236,8 @@
     background:var(--panel); color:#fff; font-size:15px; font-family:inherit; margin-bottom:10px; }
   #login button { width:100%; padding:12px; border:0; border-radius:10px; background:var(--gold);
     color:#1a1206; font-weight:700; font-size:15px; cursor:pointer; font-family:inherit; }
+  #login button.lgAlt { margin-top:10px; background:transparent; color:var(--dim); font-weight:400;
+    font-size:13px; border:1px solid var(--line); }
   #login .msg { margin-top:12px; color:var(--dim); font-size:13px; }
   .empty { color:var(--dim); padding:20px; text-align:center; }
 
@@ -310,8 +312,10 @@
 
 <div id="login" style="display:none">
   <div class="logo">NOVA<em>PA</em> · ADMIN</div>
-  <input type="email" id="lgEmail" placeholder="admin email">
-  <button id="lgGo">Send sign-in link</button>
+  <input type="email" id="lgEmail" placeholder="admin email" autocomplete="username">
+  <input type="password" id="lgPw" placeholder="password (same as the staff portal)" autocomplete="current-password">
+  <button id="lgPwGo">Sign in</button>
+  <button id="lgGo" class="lgAlt">Email me a sign-in link instead</button>
   <div class="msg" id="lgMsg"></div>
 </div>
 
@@ -619,8 +623,24 @@
     var em = $('lgEmail').value.trim();
     if (!em) return;
     sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.origin + '/register/admin/', shouldCreateUser: false } })
-      .then(function(r){ $('lgMsg').textContent = r.error ? r.error.message : 'Link sent: check email.'; });
+      .then(function(r){ $('lgMsg').textContent = r.error ? r.error.message : 'Link sent: check email (and spam), from info@novapa.org.'; });
   });
+  // Password sign-in (Sep 29). The staff portal and registration share one
+  // Supabase project, so an admin's staff portal password works here too; the
+  // emailed link alone locked Todd out when it landed where he never saw it.
+  // Access is still admin_emails via is_admin() above - a password only proves
+  // who you are, it grants nothing.
+  $('lgPwGo').addEventListener('click', function(){
+    var em = $('lgEmail').value.trim(), pw = $('lgPw').value;
+    if (!em || !pw) { $('lgMsg').textContent = 'Enter your email and password.'; return; }
+    var b = this; b.disabled = true; $('lgMsg').textContent = 'Signing in…';
+    sb.auth.signInWithPassword({ email: em, password: pw }).then(function(r){
+      b.disabled = false;
+      if (r.error) { $('lgMsg').textContent = 'That password didn\'t work. Use your staff portal password, or email yourself a link.'; return; }
+      location.reload();
+    });
+  });
+  $('lgPw').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('lgPwGo').click(); });
   $('signOut').addEventListener('click', function(e){ e.preventDefault(); sb.auth.signOut().then(function(){ location.reload(); }); });
 
   // ---- data loading: every tab refetches on visit, every failure is
