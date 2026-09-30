@@ -91,7 +91,16 @@ export async function itemDetails(m, pi) {
   });
 }
 
+const escapeAttr = (u) => String(u).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
 export function confirmationHtml(m, pi, details) {
+  // Front-door checkouts (CJ, 30 Sep 2026) get a one-time link that signs the
+  // family straight into the parent portal; everyone else keeps My NOVAPA.
+  const portalBtn = m.portal_url && /^https:\/\//.test(m.portal_url)
+    ? { href: escapeAttr(m.portal_url), label: "Open your Parent Portal",
+        note: "This button signs you in. Your schedule, balances and everything else for your family live there." }
+    : { href: "https://www.northernvirginiaperformingarts.org/register/account.html", label: "View or update in My NOVAPA",
+        note: "Your registrations, tickets, and credits live in your account." };
   const items = (m.order_desc || "").split("; ").filter(Boolean);
   const today = pi.amount_received ?? pi.amount ?? 0; // a SetupIntent carries no amount
   const total = parseInt(m.total_cents || "0", 10) || today;
@@ -272,7 +281,7 @@ export function confirmationHtml(m, pi, details) {
         </p>
       </td></tr>
     </table>
-  </td></tr></table><table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px auto 0"><tr><td style="background:${GOLD};border-radius:8px"><a href="https://www.northernvirginiaperformingarts.org/register/account.html" style="display:inline-block;padding:12px 26px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;font-family:Georgia,serif">View or update in My NOVAPA</a></td></tr></table><p style="font-size:12px;color:#999;text-align:center;margin-top:8px;font-family:Georgia,serif">Your registrations, tickets, and credits live in your account.</p></body></html>`;
+  </td></tr></table><table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px auto 0"><tr><td style="background:${GOLD};border-radius:8px"><a href="${portalBtn.href}" style="display:inline-block;padding:12px 26px;color:#fff;text-decoration:none;font-weight:700;font-size:14px;font-family:Georgia,serif">${portalBtn.label}</a></td></tr></table><p style="font-size:12px;color:#999;text-align:center;margin-top:8px;font-family:Georgia,serif">${portalBtn.note}</p></body></html>`;
 }
 // Some families want a second parent on every receipt (families.cc_email).
 // Looked up here rather than threaded through every caller.
