@@ -27,6 +27,14 @@ export function moneyAlertRecipients() {
     .split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+// Abandoned carts go wider (CJ, Sep 30 2026): Jen and Katie Rivers work the
+// call list, so they get the cart emails. Money emails stay CJ and Todd.
+export function cartAlertRecipients() {
+  return (process.env.CART_ALERT_TO ||
+    "cj@novapa.org,todd@novapa.org,jen@novapa.org,katie@novapa.org")
+    .split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 export function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -70,11 +78,11 @@ export async function releaseClaim(key) {
 
 // Claim, send, and on a failed send release and log. Never throws: these run
 // after the money has already been recorded.
-export async function sendMoneyAlert(key, { fromName, subject, html, kind, fn }) {
+export async function sendMoneyAlert(key, { fromName, subject, html, kind, fn, to }) {
   if (!mailConfigured()) return false;
   if (!(await claimOnce(key))) return false;
   try {
-    await sendMail({ fromName, to: moneyAlertRecipients(), replyTo: "info@novapa.org", subject, html });
+    await sendMail({ fromName, to: to || moneyAlertRecipients(), replyTo: "info@novapa.org", subject, html });
     return true;
   } catch (e) {
     console.error(`${kind} alert failed:`, e.message);
@@ -105,6 +113,81 @@ function wrap(title, color, rows, links) {
 
 const kv = (k, v) =>
   `<tr><td style="padding:3px 14px 3px 0;color:#555">${k}</td><td>${v}</td></tr>`;
+
+const familyRow = (p) =>
+  kv("Family", `<b>${esc(p.name || "(no name on file)")}</b> &lt;${esc(p.email || "?")}&gt;`);
+
+// charge.dispute.created: a family asked their bank to reverse a charge.
+// Stripe decides against us automatically if nobody submits evidence by the
+// due date, so the date leads the email.
+export async function alertDispute(dispute, p = {}) {
+  const due = dispute.evidence_details?.due_by;
+  const rows = [
+    familyRow(p),
+    kv("Amount", `<b>${usd(dispute.amount)}</b> (held from our balance now)`),
+    kv("Bank's reason", esc(String(dispute.reason || "unknown").replace(/_/g, " "))),
+    due ? kv("Respond by", `<b style="color:#B3261E">${day(due)}</b>`) : "",
+    p.what ? kv("Charge was for", esc(p.what)) : "",
+  ].join("");
+  return sendMoneyAlert(`dispute:${dispute.id}`, {
+    fn: "reg-webhook", kind: "admin_dispute",
+    fromName: "NOVAPA Payments",
+    subject: `CHARGEBACK: ${p.label || p.email || "a family"}, ${usd(dispute.amount)}` +
+      (due ? `, respond by ${day(due)}` : ""),
+    html: wrap("Chargeback opened", "#B3261E", rows,
+      `If nobody responds in Stripe by the date above, the bank gives the money back to the family automatically. ` +
+      `Upload the registration, the policy they agreed to, and any emails.<br><br>` +
+      `<a href="https://dashboard.stripe.com/disputes/${dispute.id}">Respond in Stripe</a>`),
+  });
+}
+
+// refund.created: money went back to a family, whoever clicked it.
+export async function alertRefund(refund, p = {}) {
+  const rows = [
+    familyRow(p),
+    kv("Refunded", `<b>${usd(refund.amount)}</b>` +
+      (p.chargeAmount ? ` of the original ${usd(p.chargeAmount)}` : "")),
+    refund.reason ? kv("Reason", esc(String(refund.reason).replace(/_/g, " "))) : "",
+    p.what ? kv("Original charge", esc(p.what)) : "",
+    kv("Status", esc(refund.status || "")),
+  ].join("");
+  return sendMoneyAlert(`refund:${refund.id}`, {
+    fn: "reg-webhook", kind: "admin_refund",
+    fromName: "NOVAPA Payments",
+    subject: `Refund issued: ${p.label || p.email || "a family"}, ${usd(refund.amount)}`,
+    html: wrap("Refund issued", "#8A5A00", rows,
+      refund.charge ? `<a href="https://dashboard.stripe.com/payments/${esc(p.paymentIntent || refund.charge)}">View in Stripe</a>` : ""),
+  });
+}
+
+// customer.subscription.deleted, only when it ended EARLY: a family or staff
+// member cancelled, or Stripe gave up after declines. Plans that ran their
+// course (a class membership reaching its season-end cancel_at, a payment
+// schedule after its last installment) are the normal ending and say nothing.
+export async function alertSubscriptionEnded(sub, p = {}) {
+  const reason = sub.cancellation_details?.reason || "";
+  const why = reason === "payment_failed"
+    ? "Stripe cancelled it after the card kept declining"
+    : reason === "payment_disputed"
+      ? "Stripe cancelled it because of a chargeback"
+      : "Cancelled (by the family through Stripe, or by staff in the dashboard)";
+  const rows = [
+    familyRow(p),
+    p.what ? kv("Plan", esc(p.what)) : "",
+    p.monthly ? kv("Monthly amount", `<b>${usd(p.monthly)}</b> no longer coming in`) : "",
+    kv("Why", esc(why)),
+    sub.cancellation_details?.comment ? kv("Their note", esc(sub.cancellation_details.comment)) : "",
+    sub.start_date ? kv("Started", day(sub.start_date)) : "",
+  ].join("");
+  return sendMoneyAlert(`sub-ended:${sub.id}`, {
+    fn: "reg-webhook", kind: "admin_subscription_ended",
+    fromName: "NOVAPA Payments",
+    subject: `Plan cancelled: ${p.label || p.email || "a family"}` + (p.monthly ? `, ${usd(p.monthly)}/month` : ""),
+    html: wrap("Payment plan or class cancelled", "#B3261E", rows,
+      `<a href="https://dashboard.stripe.com/subscriptions/${sub.id}">View in Stripe</a> · ` +
+      `<a href="https://novapa.org/register/admin/">Admin dashboard</a>`),
+  });
+}
 
 // invoice.paid with money in it: a monthly installment, class tuition, or a
 // payment plan someone set up by hand in Stripe. $0 invoices (a class trial
