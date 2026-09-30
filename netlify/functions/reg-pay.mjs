@@ -19,7 +19,7 @@ import { sendMail } from "./reg-mail.mjs";
 import { attributeOrder } from "./reg-attribution.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
-  CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classLadder, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
   classCoveredMonth, classSessionsInMonth, prorateCents, MONTH_NAMES,
   SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
   creditEventsFor,
@@ -409,7 +409,16 @@ export default async (req) => {
       );
     }
     byId = Object.fromEntries(acts.map((a) => [a.id, a]));
+    // Money terms set on the listing in the staff portal (0333). Same
+    // never-block rule as activity_facts: if the function is missing or
+    // unreachable, every line prices exactly as it did before terms existed.
+    const terms = await anonRpc("activity_pricing_for", { p_ids: ids });
+    if (Array.isArray(terms)) for (const t of terms) if (byId[t.activity_id]) byId[t.activity_id].terms = t;
   }
+  // The class bundle ladder a Chief can change in the staff portal; a missing
+  // or malformed row falls back to CLASS_BUNDLE_CENTS inside classLadder().
+  const houseRules = activityItems.length ? await anonRpc("pricing_settings_get", {}) : null;
+  const ladder = classLadder(houseRules && houseRules.class_bundle_cents);
   const classItems = activityItems.filter((it) => byId[it.activity_id].category === "class");
   const showItems = activityItems.filter((it) => byId[it.activity_id].category !== "class");
   if (classItems.length && (summerItems.length || showItems.length)) {
@@ -441,7 +450,7 @@ export default async (req) => {
       const idxs = byKidClasses[k];
       const camper = String(classItems[idxs[0]].camper || "").trim();
       const had = prior[camper.toLowerCase()] || null;
-      const bundle = had ? classAddedMonthlyCents(had.n, idxs.length) : classMonthlyCents(idxs.length);
+      const bundle = had ? classAddedMonthlyCents(had.n, idxs.length, ladder) : classMonthlyCents(idxs.length, ladder);
       if (had) priorClasses.push({ camper, n: had.n, names: had.names });
       const per = Math.floor(bundle / idxs.length);
       idxs.forEach((idx, j) => {
@@ -548,11 +557,17 @@ export default async (req) => {
         start: byId[it.activity_id].starts_on || showStartFor(byId[it.activity_id].name),
         // Lets priceCart stop inferring a day camp from its price.
         offering_kind: byId[it.activity_id].offering_kind || null,
+        // The listing's own money terms (0333), when it has any. Absent, the
+        // line prices exactly as before.
+        ...(byId[it.activity_id].terms ? { terms: byId[it.activity_id].terms } : {}),
       })),
     ];
     const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid, special, creditsByKid });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
+    }
+    if (plan === "full" && p.planRequired) {
+      return Response.json({ error: "plan_required" }, { status: 400 });
     }
     pricing = {
       todayCents: p.todayCents, totalCents: p.totalCents, subtotalCents: p.subtotal,

@@ -85,6 +85,49 @@ export function fixedPlanDates(activityIds, now = new Date()) {
   return null;
 }
 
+// ── Money terms set on a listing in the staff portal (Draft & Publish, 0333) ──
+// CJ, 30 Sep 2026: a show's price, installments, deposit and discounts are set
+// on its draft and published, not typed into this file. reg-pay reads them
+// with activity_pricing_for() and hands each cart line its `terms`. A line with
+// no terms prices exactly as it always has — tests/activity-terms.golden.mjs
+// holds 360 carts to that.
+//
+// A cart whose lines carry installment calendars follows the one that ends
+// FIRST, the same promise FIXED_PLAN_DATES_UTC makes: every item is paid off
+// no later than its own calendar says, sometimes sooner. Past dates drop off,
+// so a late registrant gets fewer, larger payments. The code map above still
+// wins when both exist.
+export function termsPlanDates(items, now = new Date()) {
+  const nowSec = Math.floor(now.getTime() / 1000);
+  let best = null;
+  for (const it of items || []) {
+    const t = it && it.terms;
+    if (!t || !Array.isArray(t.installment_dates) || !t.installment_dates.length) continue;
+    if (it.daycamp || it.payToday) continue;
+    const dates = [...t.installment_dates].map(String).sort().map((d) => utc4(d.slice(0, 10)));
+    if (!best || dates[dates.length - 1] < best[best.length - 1]) best = dates;
+  }
+  return best ? best.filter((t) => t > nowSec) : null;
+}
+// Early-bird price while it runs, else list. Terms-less lines: list.
+function termsBase(it, now) {
+  const t = it && it.terms;
+  if (t && t.early_bird_price_cents != null && t.early_bird_ends_at && now <= new Date(t.early_bird_ends_at)) {
+    return Number(t.early_bird_price_cents);
+  }
+  return it.price_cents || 0;
+}
+// The line's own sibling %, or null for the house rule.
+const termsSiblingPct = (it) =>
+  it && it.terms && it.terms.sibling_pct != null ? Number(it.terms.sibling_pct) : null;
+// Flags a terms line carries into the math below. Never added to a line
+// without terms, so a legacy line's priced shape is byte-for-byte unchanged.
+function termsFlags(it) {
+  const t = it && it.terms;
+  if (!t) return {};
+  return { payToday: t.allow_plan === false, noInsurance: t.insurance_eligible === false };
+}
+
 // One-time account adjustments approved by Todd/CJ. The code is entered like a
 // coupon but locked to one family's email; any combination of: pctOffList
 // (replaces every program discount with a flat pct off LIST price),
@@ -481,27 +524,37 @@ export function perKidRate(nCampsForKid, now = new Date()) {
 // one, the third $30 more than two — those two deltas are what the
 // checkout dangles when a camper is in one class.
 export const CLASS_BUNDLE_CENTS = [0, 9000, 15000, 18000];
-export function classMonthlyCents(nClassesForKid) {
+// The ladder can now come from pricing_settings.class_bundle_cents (0333),
+// which a Chief edits in the staff portal. Anything that is not a sane ladder
+// — a list of at least two non-negative numbers starting at 0 — falls back to
+// the constant, so a bad row can never price a class at nothing.
+export function classLadder(fromSettings) {
+  const l = fromSettings;
+  if (Array.isArray(l) && l.length >= 2 && Number(l[0]) === 0 &&
+      l.every((x) => Number.isFinite(Number(x)) && Number(x) >= 0)) return l.map(Number);
+  return CLASS_BUNDLE_CENTS;
+}
+export function classMonthlyCents(nClassesForKid, ladder = CLASS_BUNDLE_CENTS) {
   if (nClassesForKid <= 0) return 0;
-  if (nClassesForKid < CLASS_BUNDLE_CENTS.length) return CLASS_BUNDLE_CENTS[nClassesForKid];
-  const top = CLASS_BUNDLE_CENTS.length - 1;
-  const step = CLASS_BUNDLE_CENTS[top] - CLASS_BUNDLE_CENTS[top - 1];
-  return CLASS_BUNDLE_CENTS[top] + (nClassesForKid - top) * step; // past three: 3rd-class step
+  if (nClassesForKid < ladder.length) return ladder[nClassesForKid];
+  const top = ladder.length - 1;
+  const step = ladder[top] - ladder[top - 1];
+  return ladder[top] + (nClassesForKid - top) * step; // past three: 3rd-class step
 }
 // What one more class costs a camper already in n — the number the
 // "add a second class" nudge shows. Never negative.
-export function classNextDeltaCents(nClassesForKid) {
+export function classNextDeltaCents(nClassesForKid, ladder = CLASS_BUNDLE_CENTS) {
   const n = Math.max(0, nClassesForKid || 0);
-  return Math.max(0, classMonthlyCents(n + 1) - classMonthlyCents(n));
+  return Math.max(0, classMonthlyCents(n + 1, ladder) - classMonthlyCents(n, ladder));
 }
 // A camper already paying for nPrior classes adds nNew more: the new lines
 // are worth what they add to the bundle, never the bundle over again.
 // CJ, Sep 14 2026 ("price it separately"): the added classes become their
 // own subscription at this amount — $60/mo for a second, $30/mo for a
 // third — and the running subscription is left exactly as it is.
-export function classAddedMonthlyCents(nPrior, nNew) {
+export function classAddedMonthlyCents(nPrior, nNew, ladder = CLASS_BUNDLE_CENTS) {
   const p = Math.max(0, nPrior || 0), n = Math.max(0, nNew || 0);
-  return Math.max(0, classMonthlyCents(p + n) - classMonthlyCents(p));
+  return Math.max(0, classMonthlyCents(p + n, ladder) - classMonthlyCents(p, ladder));
 }
 
 export function siblingActive(isBB, now = new Date()) {
@@ -608,13 +661,13 @@ export function priceCart(cart, plan, opts = {}) {
     // "charged in full today, never insurable, never on installments" part —
     // same handling, different reason.
     if (isCoaching(it)) {
-      return { ...it, unit: it.price_cents || 0, rate: 0, daycamp: true, coaching: true };
+      return { ...it, unit: termsBase(it, now), rate: 0, daycamp: true, coaching: true };
     }
     // day camp: no bundle/tier, sibling 5% for 2nd+ child (non-BB — runs now)
     if (isDayCampItem(it)) {
-      let unit = it.price_cents;
+      let unit = it.terms ? termsBase(it, now) : it.price_cents;
       if (kidKey(it) !== firstKid) {
-        unit = Math.round(unit * (1 - SIBLING_PCT / 100));
+        unit = Math.round(unit * (1 - (termsSiblingPct(it) ?? SIBLING_PCT) / 100));
       }
       return { ...it, unit, rate: 0, daycamp: true };
     }
@@ -625,11 +678,14 @@ export function priceCart(cart, plan, opts = {}) {
     // shows now gets 15% rather than the old 10%.
     const kid = kidKey(it);
     const rate = perKidRate(countByKid[kid], now);
-    let unit = Math.round((it.price_cents || 0) * (1 - rate));
-    if (rate === 0 && siblingActive(true, now) && kid !== firstKid) {
-      unit = Math.round(unit * (1 - SIBLING_PCT / 100));
+    let unit = Math.round(termsBase(it, now) * (1 - rate));
+    // A listing's own sibling % runs whenever it is set; the house 5% waits
+    // for the end of the launch sale on Broadway Bound programs.
+    const sib = termsSiblingPct(it);
+    if (rate === 0 && (sib != null || siblingActive(true, now)) && kid !== firstKid) {
+      unit = Math.round(unit * (1 - (sib ?? SIBLING_PCT) / 100));
     }
-    return { ...it, unit, rate };
+    return { ...it, unit, rate, ...termsFlags(it) };
   }).map((it) => {
     // special: flat pct off LIST on every camp/show IN SCOPE, REPLACING the
     // tier/bundle/trio/sibling math above — never stacking on it. Items
@@ -697,7 +753,7 @@ export function priceCart(cart, plan, opts = {}) {
   // insurance covers camps/shows only (day camps excluded) and is ALWAYS
   // 10% of the LIST price — discounts and coupons never shrink it
   const listInsurableCents = priced.reduce(
-    (s, it) => s + (it.daycamp ? 0 : (it.show ? PRICE_CENTS : (it.price_cents || 0))), 0);
+    (s, it) => s + (it.daycamp || it.noInsurance ? 0 : (it.show ? PRICE_CENTS : (it.price_cents || 0))), 0);
   // percent coupons cover insurance too (a 100% code means a $0 order)
   const insuranceCents = insurance
     ? Math.round(listInsurableCents * INSURANCE_PCT / 100 * (1 - couponPct / 100)) : 0;
@@ -706,9 +762,13 @@ export function priceCart(cart, plan, opts = {}) {
   // earliest start in cart governs the installment window
   const starts = cart.map((it) => it.show ? CAMP_START[it.show] : (it.start || showStartFor(it.name || "")))
     .filter(Boolean).sort();
-  const fixed = (special && special.months) ? null : fixedPlanDates(cart.map((it) => it.activity_id), now);
+  const fixed = (special && special.months) ? null
+    : (fixedPlanDates(cart.map((it) => it.activity_id), now) || termsPlanDates(priced, now));
   const schedule = fixed || installmentDates(starts[0], now, (special && special.months) || 0);
   const payFullOnly = schedule.length === 0;
+  // A listing may insist on a plan (allow_pay_in_full false). Only said when
+  // true, so a legacy cart's answer carries no new key; reg-pay refuses "full".
+  const planRequired = priced.some((it) => it.terms && it.terms.allow_pay_in_full === false);
 
   if (plan === "full" || payFullOnly) {
     return {
@@ -716,11 +776,13 @@ export function priceCart(cart, plan, opts = {}) {
       planFeeCents: 0,
       todayCents: totalCents, installmentCents: 0, installmentDatesUTC: [],
       payFullOnly, plan: "full",
+      ...(planRequired && !payFullOnly ? { planRequired: true } : {}),
     };
   }
-  // day camps are cheap one-offs: charged in full today, never spread over installments
-  const dayCampCents = priced.reduce((s, it) => s + (it.daycamp ? it.unit : 0), 0);
-  const planFeeCents = (special && special.waivePlanFee)
+  // day camps are cheap one-offs: charged in full today, never spread over
+  // installments — and so is any listing whose terms switch its plan off
+  const dayCampCents = priced.reduce((s, it) => s + (it.daycamp || it.payToday ? it.unit : 0), 0);
+  let planFeeCents = (special && special.waivePlanFee)
     ? 0 : Math.round(subtotal * PLAN_FEE_PCT / 100);
 
   if (special) {
@@ -745,6 +807,35 @@ export function priceCart(cart, plan, opts = {}) {
       installmentDatesUTC: schedule,
       payFullOnly: false, plan: "deposit",
     };
+  }
+
+  // Terms (0333). A listing's own plan fee replaces the house 5% on its own
+  // line; lines without one keep the house rate. Only recomputed when some
+  // line sets one, so legacy carts keep the legacy fee to the cent.
+  const financedItems = priced.filter((it) => !it.daycamp && !it.payToday);
+  const couponFactor2 = grossSubtotal > 0 ? subtotal / grossSubtotal : 1;
+  if (financedItems.some((it) => it.terms && it.terms.plan_fee_pct != null)) {
+    planFeeCents = financedItems.reduce((s, it) => {
+      const pct = it.terms && it.terms.plan_fee_pct != null ? Number(it.terms.plan_fee_pct) : PLAN_FEE_PCT;
+      return s + Math.round(it.unit * couponFactor2 * pct / 100);
+    }, 0);
+  }
+  // A deposit, when EVERY financed line names one: the deposits are today's
+  // share, the rest divides evenly over the calendar, rounding lands today.
+  if (financedItems.length && financedItems.every((it) => it.terms && it.terms.deposit_cents != null)) {
+    const fin = subtotal - dayCampCents + planFeeCents;
+    const dep = Math.min(fin, financedItems.reduce((s, it) => s + Number(it.terms.deposit_cents), 0));
+    const rest = fin - dep;
+    const each = Math.floor(rest / schedule.length);
+    if (rest > 0 && each > 0) {
+      return {
+        items: priced, creditsUsed, dayPacksByKid, subtotal, couponCents, insuranceCents,
+        totalCents: totalCents + planFeeCents, planFeeCents,
+        todayCents: dep + (rest - each * schedule.length) + insuranceCents + dayCampCents,
+        installmentCents: each, installmentDatesUTC: schedule,
+        payFullOnly: false, plan: "deposit",
+      };
+    }
   }
 
   // Even split (Jason + CJ, Aug 1): the financed balance (everything except
