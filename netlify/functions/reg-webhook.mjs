@@ -4,7 +4,9 @@
 // invoice.paid -> write a recurring pull back onto its order: a deposit
 // plan's installment pays the balance down, a class membership's monthly
 // tuition is recorded as revenue.
-// (The endpoint in Stripe must be subscribed to invoice.paid as well.)
+// invoice.payment_failed -> tell CJ and Todd a saved card was declined.
+// (The endpoint in Stripe must be subscribed to invoice.paid and
+// invoice.payment_failed as well.)
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
@@ -14,6 +16,7 @@ import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
 import { sendMail, mailConfigured, logMailFailure } from "./reg-mail.mjs";
+import { alertInvoicePaid, alertInvoiceFailed } from "./reg-admin-alerts.mjs";
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
 const CLASS_PRODUCT_ID = "novapa-class-monthly";
@@ -130,13 +133,38 @@ export default async (req) => {
           console.log(`invoice ${inv.id} not recorded against order ${orderId}: already present, or the plan is one record_installment_paid declines`);
         }
       } else {
-        console.log(`invoice ${inv.id} belongs to no NOVAPA order, ignored`);
+        console.log(`invoice ${inv.id} belongs to no NOVAPA order, not recorded`);
       }
+      // CJ and Todd hear about every pull, ours or a plan made by hand in
+      // Stripe. After the record, so a failed email can never cost a retry.
+      try { await alertInvoicePaid(inv, { orderId }); }
+      catch (e) { console.error("payment alert failed:", e.message); }
       return new Response("ok", { status: 200 });
     } catch (e) {
       console.error("installment record failed:", e.message);
       return new Response("error", { status: 500 }); // Stripe retries; the RPC is idempotent
     }
+  }
+
+  // invoice.payment_failed = a saved card was declined on a monthly pull.
+  // Nothing to write to the order (Stripe retries by itself); the point is
+  // that CJ and Todd hear the same day. Always 200: a Stripe retry of this
+  // event would not make the card work.
+  if (event.type === "invoice.payment_failed") {
+    try {
+      const inv = event.data.object;
+      let reason = "";
+      try {
+        const cust = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+        if (cust) {
+          const ch = await stripe.charges.list({ customer: cust, limit: 3 });
+          const failed = (ch.data || []).find((c) => c.status === "failed");
+          if (failed) reason = failed.failure_message || failed.outcome?.seller_message || "";
+        }
+      } catch (e) { console.error("decline reason lookup failed:", e.message); }
+      await alertInvoiceFailed(inv, { reason });
+    } catch (e) { console.error("decline alert failed:", e.message); }
+    return new Response("ok", { status: 200 });
   }
 
   // setup_intent.succeeded = a class enrollment with nothing to charge today:
