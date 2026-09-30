@@ -641,6 +641,39 @@ export default async (req) => {
     });
   }
 
+  // The front door's review step (CJ, 30 Sep 2026): the family sees every
+  // number the server will charge — plan, insurance, coupon — before any
+  // Stripe object exists, for either half of a class-and-show cart. The same
+  // pricing the real call computes; nothing is created or saved.
+  if ((body || {}).quote_only && frontMeta.front_door === "portal") {
+    return Response.json({
+      quote: true,
+      free: pricing.todayCents === 0 && pricing.totalCents === 0 && plan !== "subscription",
+      pricing: {
+        n: items.length,
+        discount_pct: pricing.discountPct,
+        unit_prices: pricing.unitPrices,
+        subtotal_cents: pricing.subtotalCents,
+        coupon_cents: pricing.couponCents || 0,
+        coupon: (couponPct || couponFixedCents) ? couponCode.toUpperCase() : null,
+        plan_fee_cents: pricing.planFeeCents || 0,
+        insurance_cents: pricing.insuranceCents || 0,
+        total_cents: pricing.totalCents,
+        today_cents: pricing.todayCents,
+        installment_cents: pricing.installmentCents || 0,
+        n_installments: pricing.nInstallments || 0,
+        first_installment_utc: pricing.firstInstallmentUTC || 0,
+        monthly_items: pricing.monthlyItems || [],
+        monthly_cents: (pricing.monthlyItems || []).reduce((s, v) => s + v, 0),
+        proration: pricing.prorations || [], class_month: pricing.classMonth || "",
+        first_class_free: !!pricing.firstClassFree,
+        next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
+        prior_classes: pricing.priorClasses || [],
+      },
+      description,
+    });
+  }
+
   // 100%-off orders: nothing to charge — skip Stripe entirely.
   // (Not for class subscriptions: those still need the monthly plan created.)
   if (pricing.todayCents === 0 && pricing.totalCents === 0 && plan !== "subscription") {
