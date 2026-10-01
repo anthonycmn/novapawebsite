@@ -1161,3 +1161,35 @@ Scoreboard searches skipped for the fourth run, same standing reason.
 
 Nothing new to propose. The cadence question from Run 17 and the shipping-order
 dependency both stand; they are in QUEUE.md rather than repeated here.
+
+---
+
+## Run 20 — October 1, 2026 — HOLD (backlog guard, day 6)
+
+main moved (#167, chargeback and refund alerts). Merged, preflight read and
+green, pushed. `topic-12-ship` re-synced for the fifth time, fast-forward and
+scope both re-verified. Preflight output read explicitly this time rather than
+tailed, after yesterday's miss.
+
+### Correcting something I have been saying
+
+I have been describing topic 11 as evergreen and topic 14 as the only draft
+with a clock. That was wrong, and the calendar flip makes it obvious.
+
+Topic 11 is about choosing a camp for the days school is closed. The fall
+closure days on NOVAPA's own calendar are **Oct 12** (Indigenous Peoples' Day,
+Loudoun, Fairfax and Prince William all out — 11 days away), **Oct 29 and 30**,
+then Nov 2, 3, 9 and 11. Parents book these two to three weeks ahead. So the
+demand for that article is live right now and thins through November.
+
+It is a softer deadline than topic 14's prescreen window, but it is a deadline,
+and calling it evergreen for nine days understated it. Corrected in QUEUE.md.
+
+### Clocks as of today
+
+- Topic 14: nearest prescreen deadline 31 days out, furthest 75.
+- Topic 11: first fall closure day 11 days out.
+- DC Unifieds: 14 days out, public site still carrying two end dates.
+
+Nothing else changed. Backlog 5. Scoreboard searches skipped, fifth run, same
+standing reason: nothing published means nothing newly indexed.
