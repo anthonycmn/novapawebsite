@@ -4,7 +4,10 @@
 // invoice.paid -> write a recurring pull back onto its order: a deposit
 // plan's installment pays the balance down, a class membership's monthly
 // tuition is recorded as revenue.
-// (The endpoint in Stripe must be subscribed to invoice.paid as well.)
+// invoice.payment_failed -> tell CJ and Todd a saved card was declined.
+// charge.dispute.created, refund.created, customer.subscription.deleted ->
+// tell CJ and Todd about a chargeback, a refund, or a plan that stopped early.
+// (The endpoint in Stripe must be subscribed to every one of these.)
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
@@ -14,6 +17,10 @@ import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
 import { sendMail, mailConfigured, logMailFailure } from "./reg-mail.mjs";
+import {
+  alertInvoicePaid, alertInvoiceFailed, alertDispute, alertRefund, alertSubscriptionEnded,
+  moneyAlertRecipients,
+} from "./reg-admin-alerts.mjs";
 
 const INSTALLMENT_PRODUCT_ID = "novapa-summer-2027-installments";
 const CLASS_PRODUCT_ID = "novapa-class-monthly";
@@ -130,13 +137,97 @@ export default async (req) => {
           console.log(`invoice ${inv.id} not recorded against order ${orderId}: already present, or the plan is one record_installment_paid declines`);
         }
       } else {
-        console.log(`invoice ${inv.id} belongs to no NOVAPA order, ignored`);
+        console.log(`invoice ${inv.id} belongs to no NOVAPA order, not recorded`);
       }
+      // CJ and Todd hear about every pull, ours or a plan made by hand in
+      // Stripe. After the record, so a failed email can never cost a retry.
+      try { await alertInvoicePaid(inv, { orderId }); }
+      catch (e) { console.error("payment alert failed:", e.message); }
       return new Response("ok", { status: 200 });
     } catch (e) {
       console.error("installment record failed:", e.message);
       return new Response("error", { status: 500 }); // Stripe retries; the RPC is idempotent
     }
+  }
+
+  // Chargebacks, refunds, and plans that stop early (CJ, Sep 30 2026). None
+  // of these touch an order row; they exist so CJ and Todd hear the same day.
+  // Always 200: a Stripe retry would not change anything we could do.
+  if (event.type === "charge.dispute.created" || event.type === "refund.created" ||
+      event.type === "customer.subscription.deleted") {
+    try {
+      const obj = event.data.object;
+      // Who and what, from the charge a dispute or refund points at.
+      const fromCharge = async (chargeId) => {
+        if (!chargeId) return {};
+        const ch = await stripe.charges.retrieve(typeof chargeId === "string" ? chargeId : chargeId.id);
+        const email = ch.billing_details?.email || ch.receipt_email || ch.metadata?.email || "";
+        const name = ch.billing_details?.name || ch.metadata?.parent_name || "";
+        return {
+          email, name, label: name || email,
+          what: ch.description || ch.metadata?.order_desc || "",
+          chargeAmount: ch.amount,
+          paymentIntent: typeof ch.payment_intent === "string" ? ch.payment_intent : ch.payment_intent?.id,
+        };
+      };
+      if (event.type === "charge.dispute.created") {
+        await alertDispute(obj, await fromCharge(obj.charge));
+      } else if (event.type === "refund.created") {
+        await alertRefund(obj, await fromCharge(obj.charge));
+      } else {
+        const sub = obj;
+        const reason = sub.cancellation_details?.reason || "";
+        let ranItsCourse = false;
+        if (reason !== "payment_failed" && reason !== "payment_disputed") {
+          if (sub.schedule) {
+            const schedId = typeof sub.schedule === "string" ? sub.schedule : sub.schedule.id;
+            const sched = await stripe.subscriptionSchedules.retrieve(schedId);
+            ranItsCourse = sched.status === "completed";
+          } else if (sub.cancel_at && sub.ended_at) {
+            ranItsCourse = sub.ended_at >= sub.cancel_at - 3600;
+          }
+        }
+        if (!ranItsCourse) {
+          const custId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+          const cust = custId ? await stripe.customers.retrieve(custId) : {};
+          const items = sub.items?.data || [];
+          const monthly = items.reduce((a, it) => a + (it.price?.unit_amount || 0) * (it.quantity || 1), 0);
+          let what = "";
+          const prod = items[0]?.price?.product;
+          if (prod) {
+            try {
+              what = typeof prod === "string" ? (await stripe.products.retrieve(prod)).name : prod.name;
+            } catch {}
+          }
+          await alertSubscriptionEnded(sub, {
+            email: cust.email || "", name: cust.name || "",
+            label: cust.name || cust.email || "", what, monthly,
+          });
+        }
+      }
+    } catch (e) { console.error(`${event.type} alert failed:`, e.message); }
+    return new Response("ok", { status: 200 });
+  }
+
+  // invoice.payment_failed = a saved card was declined on a monthly pull.
+  // Nothing to write to the order (Stripe retries by itself); the point is
+  // that CJ and Todd hear the same day. Always 200: a Stripe retry of this
+  // event would not make the card work.
+  if (event.type === "invoice.payment_failed") {
+    try {
+      const inv = event.data.object;
+      let reason = "";
+      try {
+        const cust = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+        if (cust) {
+          const ch = await stripe.charges.list({ customer: cust, limit: 3 });
+          const failed = (ch.data || []).find((c) => c.status === "failed");
+          if (failed) reason = failed.failure_message || failed.outcome?.seller_message || "";
+        }
+      } catch (e) { console.error("decline reason lookup failed:", e.message); }
+      await alertInvoiceFailed(inv, { reason });
+    } catch (e) { console.error("decline alert failed:", e.message); }
+    return new Response("ok", { status: 200 });
   }
 
   // setup_intent.succeeded = a class enrollment with nothing to charge today:
@@ -566,13 +657,12 @@ export default async (req) => {
     try {
       if (mailConfigured()) {
         {
-          // Failure alerts go to CJ alone (since Sep 2026; Jason's call of
-          // Aug 7 was that only one person gets the plumbing pages). Todd gets
-          // the happy-path registration emails.
+          // Money taken with no order behind it goes to CJ and Todd (CJ,
+          // Sep 30 2026): it is a refund-or-fix decision, not just plumbing.
           const md = (pi && pi.metadata) || {};
           await sendMail({
             fromName: "NOVAPA Alerts",
-            to: "cj@novapa.org",
+            to: moneyAlertRecipients(),
             subject: `WEBHOOK FAILED: payment without order, ${md.email || "unknown"}`,
             html: [
               `A Stripe event was received but order creation FAILED. The customer paid (or saved a card) and got nothing.`,

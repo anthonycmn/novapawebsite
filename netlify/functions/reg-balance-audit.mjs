@@ -38,6 +38,7 @@
 import { SUPABASE_URL } from "./reg-config.mjs";
 import { getStore } from "@netlify/blobs";
 import { withHeartbeat } from "./reg-heartbeat.mjs";
+import { moneyAlertRecipients } from "./reg-admin-alerts.mjs";
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -244,7 +245,12 @@ Runs every morning from netlify/functions/reg-balance-audit.mjs. Stripe is read-
   // consistent "lead-alerts" key on this line; #137 added the strong one
   // without removing it). The older one never cleared on a Resend refusal, so
   // a morning whose send failed could not be retried that day. Gone.
-  const to = (process.env.AUDIT_ALERT_TO || "cj@novapa.org").split(",").map((x) => x.trim()).filter(Boolean);
+  // Todd reads this too since Sep 30 2026 (CJ): whatever AUDIT_ALERT_TO says,
+  // the money-alert list (CJ and Todd) is always on it.
+  const to = [...new Set([
+    ...(process.env.AUDIT_ALERT_TO || "cj@novapa.org").split(","),
+    ...moneyAlertRecipients(),
+  ].map((x) => x.trim().toLowerCase()).filter(Boolean))];
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
