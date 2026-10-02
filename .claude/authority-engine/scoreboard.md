@@ -1193,3 +1193,18 @@ and calling it evergreen for nine days understated it. Corrected in QUEUE.md.
 
 Nothing else changed. Backlog 5. Scoreboard searches skipped, fifth run, same
 standing reason: nothing published means nothing newly indexed.
+
+---
+
+## Run 21 — October 2, 2026 — HOLD (backlog guard, day 7)
+
+Nothing changed. main unchanged at 1ac7fd7, no deploy, backlog 5, topic-10-ship
+still not on origin, `topic-12-ship` still fast-forwards clean with no
+maintenance needed. Nothing drafted, nothing to fix, no searches run.
+
+Clocks rolled one day: topic 11's first fall closure day is 10 days out, topic
+14's nearest prescreen deadline 30 days, DC Unifieds 13 days.
+
+No new observation. Everything the engine has to say is in QUEUE.md and has
+been said. Logging this run in one paragraph rather than restating the queue
+for a seventh morning.
