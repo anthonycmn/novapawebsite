@@ -1,8 +1,8 @@
 # Authority Engine — what is waiting, and how to ship it
 
-Updated by the daily run. Last updated: **Friday 2 October 2026**.
+Updated by the daily run. Last updated: **Saturday 3 October 2026**.
 
-**Backlog: 5. The guard has tripped — day 7.** ROUTINE.md stops the engine drafting new
+**Backlog: 5. The guard has tripped — day 8.** ROUTINE.md stops the engine drafting new
 topics at 5, so no topic was written today and none will be tomorrow until some
 of this clears. Writing is not the bottleneck; publishing is.
 
@@ -11,13 +11,13 @@ of this clears. Writing is not the bottleneck; publishing is.
 ## The one with a clock on it
 
 **Topic 14 — The BFA musical theatre audition timeline.** Prescreen deadlines
-run November 1 to December 15. **As of today the nearest of those is 30 days
-out and the furthest is 74.** The audience is mid-search right now; published
+run November 1 to December 15. **As of today the nearest of those is 29 days
+out and the furthest is 73.** The audience is mid-search right now; published
 in December it is dead until next August. Nothing else in the queue has a
 clock. If you only do one thing, do this one — and remember it has to ship
 with or after topic 12, because it links to it.
 
-**Also worth knowing: DC Unifieds is 13 days out** and its public site still
+**Also worth knowing: DC Unifieds is 12 days out** and its public site still
 shows two different end dates, per the standing item below. That is not an
 Authority Engine job, but it is the most time-critical thing this run can see.
 
@@ -40,7 +40,7 @@ Authority Engine job, but it is the most time-critical thing this run can see.
 
 The piece is about how to choose a camp for the days school is closed, and the
 fall closure days on your own calendar are **Oct 12** (Indigenous Peoples' Day,
-all three divisions out, 10 days away), **Oct 29 and 30** (Loudoun workday and
+all three divisions out, 9 days away), **Oct 29 and 30** (Loudoun workday and
 student holiday), then Nov 2, 3, 9 and 11. Parents shop for these two to three
 weeks ahead, which means the demand for this article is live now and thins out
 through November. It is not as sharp a deadline as topic 14's, but it is not
