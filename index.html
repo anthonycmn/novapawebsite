@@ -3028,7 +3028,25 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  <script src="/nav.js"></script>
  <!-- reg-banner-sitewide: rotating promo banner (Oct 2026) -->
  <div class="ab-rotator" id="abRotator" role="region" aria-roledescription="carousel" aria-label="Now enrolling">
- <a href="/register/?go=1" class="audition-banner ab-slide is-on" aria-label="Register now for Broadway Bound shows, classes and camps">
+ <a href="/register/?activity=970701" class="audition-banner ab-slide is-on" aria-label="Register for the Open Jar masterclass with James Gray, October 15">
+ <div class="audition-banner-inner">
+ <div class="audition-banner-icon" aria-hidden="true">
+ <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+ </div>
+ <div class="audition-banner-text">
+ <div class="audition-banner-eyebrow"><span class="ab-pulse"></span>Masterclass · Thu, Oct 15</div>
+ <div class="audition-banner-title">Open Jar with <span>James Gray</span></div>
+ <div class="audition-banner-sub">Broadway director and choreographer. 6:00 to 7:30 PM, $10.</div>
+ </div>
+ <div class="audition-banner-cta">
+ <span>Register</span>
+ <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+ <line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
+ </svg>
+ </div>
+ </div>
+ </a>
+ <a href="/register/?go=1" class="audition-banner ab-slide" aria-label="Register now for Broadway Bound shows, classes and camps" aria-hidden="true" tabindex="-1">
  <div class="audition-banner-inner">
  <div class="audition-banner-icon" aria-hidden="true">
  <svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3154,7 +3172,7 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  b.addEventListener('click',function(){show(k);restart();}); dots.appendChild(b);
  })(k);}
  function stop(){if(timer){clearInterval(timer);timer=null;}}
- function restart(){stop(); if(!still) timer=setInterval(function(){show(i+1);},5500);}
+ function restart(){stop(); if(!still) timer=setInterval(function(){show(i+1);},2500);}
  root.addEventListener('mouseenter',stop); root.addEventListener('mouseleave',restart);
  root.addEventListener('focusin',stop); root.addEventListener('focusout',restart);
  document.addEventListener('visibilitychange',function(){document.hidden?stop():restart();});
