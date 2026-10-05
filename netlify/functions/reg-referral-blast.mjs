@@ -8,6 +8,7 @@
 // referral_email_sent_at so re-runs never double-send.
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./reg-config.mjs";
 import { sendMail } from "./reg-mail.mjs";
+import { refLink } from "./reg-campaign.mjs";
 
 const SUBJECT = "Give 2 tickets, get 2 tickets.";
 const BODY = (first, link) => `Hi ${first},
@@ -57,15 +58,16 @@ export default async (req) => {
   const list = targets.map((f) => ({
     email: f.email,
     first: (f.parent_name || "").trim().split(" ")[0] || "there",
-    link: `https://www.northernvirginiaperformingarts.org/register/?ref=${f.ref_code}`,
+    link: refLink(f.ref_code),
   }));
 
   // { test_to: "addr" } — one real send to that address using that family's
-  // own code (falls back to the NOVAPA4747 house code); never stamps anyone
+  // own code (an address that is not a family gets the plain registration
+  // link — never another family's code); never stamps anyone
   if (body.test_to) {
     const tf = fams.filter((f) => (f.email || "").toLowerCase() === String(body.test_to).toLowerCase())[0];
     const first = (tf?.parent_name || "").trim().split(" ")[0] || "CJ";
-    const link = `https://www.northernvirginiaperformingarts.org/register/?ref=${tf?.ref_code || "NOVAPA4747"}`;
+    const link = refLink(tf?.ref_code);
     await sendMail({
       fromName: "CJ from Broadway Bound",
       replyTo: "info@novapa.org",
