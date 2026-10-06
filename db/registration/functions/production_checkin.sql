@@ -116,9 +116,18 @@ as $function$
         case when coalesce(c.profile->>'emergency_phone', '') <> ''
              then jsonb_build_array(jsonb_build_object('name', c.profile->>'emergency_name', 'phone', c.profile->>'emergency_phone', 'rel', ''))
         end,
+        -- No emergency contact on file: the parents are the next call, so
+        -- the door screen never comes up empty when a phone exists anywhere.
+        (select jsonb_agg(jsonb_build_object('name', g->>'fullName', 'phone', g->>'phone', 'rel', 'Parent'))
+           from jsonb_array_elements(coalesce(b.guardians, '[]'::jsonb)) g
+          where coalesce(g->>'phone', '') <> ''),
+        case when coalesce(f.phone, '') <> ''
+             then jsonb_build_array(jsonb_build_object('name', coalesce(f.parent_name, 'Parent'), 'phone', f.phone, 'rel', 'Parent'))
+        end,
         '[]'::jsonb)
   )
   from campers c
+  left join families f on f.id = c.family_id
   left join lateral (select * from family_hub.students s where s.camper_id = c.id order by s.updated_at desc limit 1) s on true
   left join lateral (select * from family_hub.v_student_profile_bridge b where b.student_id = s.id limit 1) b on true
   where c.id = p_camper;
