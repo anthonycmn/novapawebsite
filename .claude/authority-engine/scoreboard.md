@@ -1235,3 +1235,33 @@ reasonable one. The right posture is patience, not escalation. The queue is
 safe, both branches are green, nothing is rotting that a merge will not fix,
 and the two soft deadlines are still reachable. No further prompting from the
 engine until something changes or Tony speaks.
+
+## Run 25 — October 6, 2026 — HOLD (day 11), and the repo woke up
+
+Four commits landed on main yesterday after five days of silence: a Sweeney
+Todd hero and rotating promo banner (#169), themed names restored to the ages
+5-9 day camps (#170), the Open Jar masterclass with James Gray (#171), and the
+ages 12-15 camp dropped from Oct 12 (#172).
+
+**#170 and #172 both touch day camps, which is topic 11's subject, so the draft
+was re-checked against the new state rather than assumed safe.** It holds:
+
+- Topic 11 says NOVAPA runs day camps "in three age groups: five to nine, nine
+  to twelve, twelve to fifteen". Still true — the 12-15 group runs on 16 other
+  dates; only Oct 12 lost it.
+- The article names no specific date's line-up and no camp theme, so #170's
+  renamed 5-9 camps (Oct 12 is now "Golden: A K-Pop Demon Hunters Inspired
+  Day") change nothing in it.
+- Its only other camp-specific claims — $79, the $349 pack, 8:30-4:15, spring
+  break Mar 22-26, no camp Dec 20-Jan 3 — were verified on Sept 28 and are
+  untouched by these commits.
+
+No edit needed. Worth recording that the check was run, because this is the
+first time main has moved underneath a draft in a way that could plausibly have
+falsified it.
+
+Merged into `authority-engine`, preflight green. `topic-12-ship` re-synced for
+the sixth time, fast-forward and scope re-verified.
+
+Clocks: topic 11's first closure day 6 days out, topic 14's nearest prescreen
+deadline 26, DC Unifieds 9.
