@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>NOVAPA Check-in</title>
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #08111F; --navy2: #0F1E36; --card: rgba(22,43,82,0.55); --line: rgba(255,255,255,0.14);
+    --gold: #E8B84B; --gold2: #C8892A; --ink: #F4F1EA; --dim: rgba(244,241,234,0.62);
+    --red: #C62828; --orange: #E8590C; --blue: #1565C0; --yellow: #F2C230; --ok: #2E9D5B;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: radial-gradient(120% 90% at 50% 0%, var(--navy2), var(--navy)); background-color: var(--navy);
+    color: var(--ink); font: 16px/1.45 "DM Sans", system-ui, sans-serif; padding: 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  h1 { font: 700 28px/1.1 "Cormorant Garamond", Georgia, serif; margin: 0; color: var(--gold); }
+  .label { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  input { width: 100%; padding: 13px 14px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0,0,0,.25); color: var(--ink); font: inherit; margin: 6px 0 12px; }
+  button { font: 700 13px/1 "DM Sans", sans-serif; letter-spacing: .12em; text-transform: uppercase; border: 0; border-radius: 10px; padding: 15px 18px; cursor: pointer; width: 100%;
+    background: linear-gradient(90deg, var(--gold2), var(--gold)); color: #1a1205; }
+  button.ghost { background: transparent; color: var(--gold); border: 1px solid var(--gold2); width: auto; padding: 10px 14px; }
+  .err { color: #ff8a80; min-height: 1.4em; margin: 0; }
+
+  .cam { position: relative; border-radius: 14px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; border: 1px solid var(--line); }
+  .cam video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cam .aim { position: absolute; inset: 18% 24%; border: 2px solid rgba(232,184,75,.8); border-radius: 12px; pointer-events: none; }
+  .cam .hint { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 14px; color: var(--ink); text-shadow: 0 1px 3px #000; }
+  .cam .start { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .cam .start button { max-width: 280px; }
+
+  .result { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(4,8,16,.82); z-index: 10; }
+  .result.on { display: flex; }
+  .rcard { width: 100%; max-width: 560px; background: #0d1a30; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+  .rstat { padding: 14px 18px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 14px; }
+  .rstat.present { background: var(--ok); } .rstat.late { background: var(--yellow); color: #1a1205; }
+  .rstat.already { background: #3a4d70; } .rstat.bad { background: var(--red); }
+  .rbody { padding: 18px; }
+  .nick { font: 700 48px/1 "Cormorant Garamond", Georgia, serif; margin: 0; }
+  .full { color: var(--dim); margin: 6px 0 2px; font-size: 17px; }
+  .prod { color: var(--gold); font-size: 14px; }
+  .allergy { margin-top: 14px; border-radius: 10px; padding: 12px 14px; font-weight: 700; }
+  .allergy .mk { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #fff; margin-right: 9px; vertical-align: -1px; }
+  .allergy.t-red .mk { border-radius: 2px; transform: rotate(45deg) scale(.9); }
+  .allergy.t-yellow .mk { background: #1a1205; }
+  .allergy small { display: block; font-weight: 500; opacity: .9; margin-top: 3px; }
+  .t-red { background: var(--red); } .t-orange { background: var(--orange); } .t-blue { background: var(--blue); }
+  .t-yellow { background: var(--yellow); color: #1a1205; } .t-none { background: rgba(255,255,255,.08); color: var(--dim); font-weight: 500; }
+  .med, .em { margin-top: 12px; font-size: 15px; }
+  .em a { color: var(--gold); text-decoration: none; }
+  .rfoot { padding: 0 18px 18px; }
+
+  .today { margin-top: 16px; }
+  .prodrow { border-top: 1px solid var(--line); padding: 14px 0; }
+  .prodrow:first-of-type { border-top: 0; padding-top: 4px; }
+  .prodhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .prodhead b { font: 700 20px/1.2 "Cormorant Garamond", Georgia, serif; }
+  .count { color: var(--gold); font-weight: 700; white-space: nowrap; }
+  .missing { margin: 8px 0 0; color: var(--dim); font-size: 14.5px; }
+  .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 10px; color: var(--dim); font-size: 13px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Check-in</h1>
+    <span class="label" id="who"></span>
+  </header>
+
+  <section class="panel" id="gate" hidden>
+    <p class="label" style="margin-top:0">Staff passcode</p>
+    <input id="pass" type="password" autocomplete="current-password" inputmode="text">
+    <p class="label" style="margin:0">Your name</p>
+    <input id="by" type="text" autocomplete="name" placeholder="Shown in the attendance record">
+    <p class="err" id="gateErr"></p>
+    <button id="gateGo">Open scanner</button>
+  </section>
+
+  <main id="app" hidden>
+    <div class="cam">
+      <video id="video" playsinline muted></video>
+      <div class="aim"></div>
+      <div class="hint" id="hint">Hold the badge code inside the frame</div>
+      <div class="start" id="startCam"><button id="camGo">Start camera</button></div>
+    </div>
+    <section class="panel today">
+      <p class="label" style="margin-top:0">Rehearsing today</p>
+      <div id="todayList"><p class="missing">Loading</p></div>
+    </section>
+    <div class="foot"><span id="clock"></span><button class="ghost" id="signOut">Sign out</button></div>
+  </main>
+</div>
+
+<div class="result" id="result" role="dialog" aria-live="assertive">
+  <div class="rcard">
+    <div class="rstat" id="rStat"></div>
+    <div class="rbody" id="rBody"></div>
+    <div class="rfoot"><button id="rNext">Next</button></div>
+  </div>
+</div>
+
+<script src="/checkin/jsQR.js"></script>
+<script>
+(function () {
+  var KEY = 'novapa_checkin';
+  var state = load();
+  var video = document.getElementById('video');
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d', { willReadFrequently: true });
+  var scanning = false, busy = false, lastCode = '', lastAt = 0, closeTimer = null;
+  var detector = ('BarcodeDetector' in window) ? safeDetector() : null;
+
+  function safeDetector() { try { return new window.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { return null; } }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  function api(body) {
+    body.pass = state.pass; body.by = state.by || '';
+    return fetch('/api/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { j._status = r.status; return j; }); });
+  }
+
+  // Allergy tiers, same rules the printed badges use:
+  // red = carries an EpiPen, orange = food, blue = medication, yellow = environmental.
+  var NONE = /^(no|none|nonr|non|n\/?a|na|none known|nothing|unknown|no known allergies|nka|nkda)\.?$/i;
+  var FOOD = /(pea)?nuts?\b|walnut|pecan|pistachio|almond|cashew|hazelnut|\beggs?\b|milk|dairy|wheat|gluten|\bsoy|shellfish|\bfish|sesame|grape|potato|apple|carrot|strawberr|banana|\bcorn\b|food/i;
+  var MED = /penicillin|amox|ampicillin|cephalo|cef[a-z]*|antibiotic|sulfa|ibuprofen|aspirin|medication/i;
+  function allergyParts(card) {
+    var out = [], seen = {};
+    (card.allergies || []).forEach(function (s) {
+      String(s).split(';').forEach(function (p) {
+        p = p.trim();
+        if (!p || NONE.test(p) || /^yes$/i.test(p) || seen[p.toLowerCase()]) return;
+        seen[p.toLowerCase()] = 1; out.push(p);
+      });
+    });
+    return out;
+  }
+  function tier(card) {
+    var parts = allergyParts(card), all = parts.join(' ; ');
+    if (/^yes/i.test(card.epipen || '') || /epi ?pen/i.test(all)) return { t: 'red', name: 'EpiPen. Life threatening', parts: parts };
+    if (FOOD.test(all)) return { t: 'orange', name: 'Food allergy', parts: parts };
+    if (MED.test(all)) return { t: 'blue', name: 'Medication allergy', parts: parts };
+    if (parts.length) return { t: 'yellow', name: 'Environmental allergy', parts: parts };
+    return { t: 'none', name: 'No known allergies', parts: [] };
+  }
+  function phone(p) {
+    var d = String(p || '').replace(/\D/g, '');
+    if (d.length === 11 && d[0] === '1') d = d.slice(1);
+    return d.length === 10 ? '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6) : String(p || '');
+  }
+
+  function showResult(j) {
+    var stat = $('rStat'), body = $('rBody');
+    clearTimeout(closeTimer);
+    if (!j.ok) {
+      stat.className = 'rstat bad';
+      stat.textContent = j._status === 401 ? 'Passcode changed. Sign in again' : 'Not checked in';
+      var why = { not_on_roster: 'This badge is not on the roster for ' + (j.production || 'this production') + '.',
+        bad_code: 'That code is not a NOVAPA badge.', unknown_production: 'That production is not running.' }[j.error] || 'Something went wrong. Mark this child in the staff portal.';
+      body.innerHTML = '<p class="full">' + esc(why) + '</p>';
+      beep(false);
+    } else {
+      var a = tier(j);
+      stat.className = 'rstat ' + (j.already ? 'already' : j.status);
+      stat.textContent = j.already ? 'Already checked in at ' + j.at : (j.status === 'late' ? 'Checked in late, ' : 'Checked in, ') + j.at;
+      var em = (j.emergency || []).slice(0, 2).map(function (e) {
+        return esc(e.name || '') + (e.rel ? ' (' + esc(e.rel) + ')' : '') + ' <a href="tel:' + esc(String(e.phone).replace(/[^\d+]/g, '')) + '">' + esc(phone(e.phone)) + '</a>';
+      }).join('<br>');
+      var med = (j.medical || '').trim();
+      body.innerHTML =
+        '<p class="nick">' + esc(j.nickname || j.name) + '</p>' +
+        '<p class="full">' + esc(j.name) + '</p>' +
+        '<p class="prod">' + esc(j.production) + '</p>' +
+        '<div class="allergy t-' + a.t + '">' + (a.t === 'none' ? '' : '<span class="mk"></span>') + esc(a.name) + (a.parts.length ? '<small>' + esc(a.parts.join('; ')) + '</small>' : '') + '</div>' +
+        (med && !NONE.test(med) ? '<div class="med"><span class="label">Medical</span><br>' + esc(med) + '</div>' : '') +
+        (em ? '<div class="em"><span class="label">Emergency contact</span><br>' + em + '</div>' : '');
+      beep(true);
+      if (!j.already) refreshToday();
+    }
+    $('result').classList.add('on');
+    closeTimer = setTimeout(closeResult, j.ok && a_isPlain(j) ? 4000 : 9000);
+  }
+  function a_isPlain(j) { return tier(j).t === 'none'; }
+  function closeResult() { clearTimeout(closeTimer); $('result').classList.remove('on'); busy = false; }
+  $('rNext').onclick = closeResult;
+
+  var audio;
+  function beep(good) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      var o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = good ? 880 : 220; g.gain.value = 0.08;
+      o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + (good ? 0.12 : 0.35));
+    } catch (e) {}
+    if (navigator.vibrate) navigator.vibrate(good ? 60 : [80, 60, 80]);
+  }
+
+  function handle(code) {
+    var now = Date.now();
+    if (busy || (code === lastCode && now - lastAt < 8000)) return;
+    lastCode = code; lastAt = now; busy = true;
+    api({ op: 'scan', code: code }).then(function (j) {
+      if (j._status === 401) { state.pass = ''; save(); }
+      showResult(j);
+    }).catch(function () { showResult({ ok: false, error: 'network' }); });
+  }
+
+  function tick() {
+    if (!scanning) return;
+    if (!busy && video.readyState >= 2) {
+      if (detector) {
+        detector.detect(video).then(function (codes) { if (codes && codes[0]) handle(codes[0].rawValue); })
+          .catch(function () { detector = null; });
+      } else if (window.jsQR) {
+        var w = video.videoWidth, h = video.videoHeight, s = Math.min(1, 640 / Math.max(w, h));
+        canvas.width = Math.round(w * s); canvas.height = Math.round(h * s);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var hit = window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+        if (hit && hit.data) handle(hit.data);
+      }
+    }
+    setTimeout(function () { requestAnimationFrame(tick); }, 120);
+  }
+
+  function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('hint').textContent = 'This browser cannot use the camera'; return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false }).then(function (stream) {
+      video.srcObject = stream; video.play();
+      $('startCam').hidden = true; scanning = true; tick();
+    }).catch(function () { $('hint').textContent = 'Camera blocked. Allow camera access for this site and reload'; });
+  }
+  $('camGo').onclick = startCamera;
+
+  function refreshToday() {
+    api({ op: 'today' }).then(function (j) {
+      if (!j.ok) return;
+      var html = (j.productions || []).map(function (p) {
+        var kids = p.kids || [], inn = kids.filter(function (k) { return k.status === 'present' || k.status === 'late'; });
+        var out = kids.filter(function (k) { return k.status !== 'present' && k.status !== 'late'; });
+        return '<div class="prodrow"><div class="prodhead"><b>' + esc(p.title) + '</b><span class="count">' + inn.length + ' of ' + kids.length + ' in</span></div>' +
+          '<p class="label" style="margin:4px 0 0">Call ' + esc(p.starts) + '</p>' +
+          (out.length ? '<p class="missing">Not in yet: ' + out.map(function (k) { return esc(k.name) + (k.status ? ' (' + esc(k.status) + ')' : ''); }).join(', ') + '</p>' : '<p class="missing">Everyone is in.</p>') +
+          '</div>';
+      }).join('');
+      $('todayList').innerHTML = html || '<p class="missing">No rehearsals scheduled today. Scans still record attendance.</p>';
+    }).catch(function () {});
+  }
+
+  function openApp() {
+    $('gate').hidden = true; $('app').hidden = false;
+    $('who').textContent = state.by || '';
+    refreshToday(); setInterval(refreshToday, 30000);
+    var m = location.search.match(/[?&]b=([^&#]+)/);
+    if (m) { history.replaceState(null, '', location.pathname); handle(decodeURIComponent(m[1])); }
+  }
+
+  $('gateGo').onclick = function () {
+    var pass = $('pass').value.trim();
+    if (!pass) { $('gateErr').textContent = 'Enter the staff passcode'; return; }
+    state.pass = pass; state.by = $('by').value.trim();
+    api({ op: 'ping' }).then(function (j) {
+      if (j.ok) { save(); openApp(); }
+      else { $('gateErr').textContent = j._status === 503 ? 'Check-in is not switched on yet' : 'That passcode did not work'; }
+    }).catch(function () { $('gateErr').textContent = 'No connection'; });
+  };
+  $('signOut').onclick = function () { state = {}; save(); location.reload(); };
+
+  function clock() { $('clock').textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+  clock(); setInterval(clock, 15000);
+
+  if (state.pass) openApp(); else $('gate').hidden = false;
+})();
+</script>
+</body>
+</html>
