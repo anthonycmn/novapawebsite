@@ -41,6 +41,20 @@ const AVAILABILITY = [
   "Summer camps (weekdays, full-day)",
   "Seasonal productions / tech weeks",
 ];
+// Mandatory, paid camp staff training. A camp applicant must pick one; the
+// choice rides in `availability` so it reaches the Hiring pipeline's
+// availability note through the existing 0111 trigger, with no new column.
+const CAMP = "Summer Camp Staff / Counselor";
+const TRAINING = [
+  "Saturday, May 8, 2027 (10am to 4pm)",
+  "Saturday, June 12, 2027 (10am to 4pm)",
+];
+// The Sep 20 em-dash sweep (#145) relabelled the page's Teaching Artist boxes
+// "Teaching Artist: X", which this list then rejected. Accept the page's
+// spelling and store the original one, so reporting stays on one label.
+function canonPosition(p) {
+  return String(p || "").replace(/^Teaching Artist: /, "Teaching Artist — ");
+}
 
 function svcHeaders(extra = {}) {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -69,9 +83,15 @@ export default async (req) => {
   if (!full_name) return Response.json({ error: "name_required" }, { status: 400 });
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return Response.json({ error: "email_invalid" }, { status: 400 });
 
-  const positions = (Array.isArray(body.positions) ? body.positions : []).filter((p) => POSITIONS.includes(p));
+  const positions = (Array.isArray(body.positions) ? body.positions : []).map(canonPosition).filter((p) => POSITIONS.includes(p));
   const availability = (Array.isArray(body.availability) ? body.availability : []).filter((a) => AVAILABILITY.includes(a));
   if (!positions.length) return Response.json({ error: "position_required" }, { status: 400 });
+
+  const camp_training = positions.includes(CAMP) ? clean(body.camp_training, 80) : "";
+  if (positions.includes(CAMP) && !TRAINING.includes(camp_training)) {
+    return Response.json({ error: "training_required" }, { status: 400 });
+  }
+  if (camp_training) availability.push(`Camp training: ${camp_training}`);
 
   const earliest_start = clean(body.earliest_start, 60);
   const experience = clean(body.experience, 60);
@@ -138,7 +158,9 @@ export default async (req) => {
           html: [
             `<b>${esc(full_name)}</b> &lt;${esc(email)}&gt;${phone ? " · " + esc(phone) : ""}`,
             `<b>Interested in:</b><br>${positions.map(esc).join("<br>")}`,
-            availability.length ? `<b>Availability:</b><br>${availability.map(esc).join("<br>")}` : "",
+            camp_training ? `<b>Mandatory camp training:</b> ${esc(camp_training)}` : "",
+            availability.length > (camp_training ? 1 : 0)
+              ? `<b>Availability:</b><br>${availability.filter((a) => !a.startsWith("Camp training: ")).map(esc).join("<br>")}` : "",
             earliest_start ? `<b>Can start:</b> ${esc(earliest_start)}` : "",
             experience ? `<b>Experience:</b> ${esc(experience)}` : "",
             message ? `<b>Message:</b><br>${esc(message).replace(/\n/g, "<br>")}` : "",
