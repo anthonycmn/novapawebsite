@@ -51,6 +51,9 @@
   .full { color: var(--dim); margin: 6px 0 2px; font-size: 17px; }
   .prod { color: var(--gold); font-size: 14px; }
   .allergy { margin-top: 14px; border-radius: 10px; padding: 12px 14px; font-weight: 700; }
+  .allergy .mk { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #fff; margin-right: 9px; vertical-align: -1px; }
+  .allergy.t-red .mk { border-radius: 2px; transform: rotate(45deg) scale(.9); }
+  .allergy.t-yellow .mk { background: #1a1205; }
   .allergy small { display: block; font-weight: 500; opacity: .9; margin-top: 3px; }
   .t-red { background: var(--red); } .t-orange { background: var(--orange); } .t-blue { background: var(--blue); }
   .t-yellow { background: var(--yellow); color: #1a1205; } .t-none { background: rgba(255,255,255,.08); color: var(--dim); font-weight: 500; }
@@ -149,7 +152,7 @@
   }
   function tier(card) {
     var parts = allergyParts(card), all = parts.join(' ; ');
-    if (/^yes/i.test(card.epipen || '') || /epi ?pen/i.test(all)) return { t: 'red', name: 'Severe allergy. EpiPen', parts: parts };
+    if (/^yes/i.test(card.epipen || '') || /epi ?pen/i.test(all)) return { t: 'red', name: 'EpiPen. Life threatening', parts: parts };
     if (FOOD.test(all)) return { t: 'orange', name: 'Food allergy', parts: parts };
     if (MED.test(all)) return { t: 'blue', name: 'Medication allergy', parts: parts };
     if (parts.length) return { t: 'yellow', name: 'Environmental allergy', parts: parts };
@@ -183,7 +186,7 @@
         '<p class="nick">' + esc(j.nickname || j.name) + '</p>' +
         '<p class="full">' + esc(j.name) + '</p>' +
         '<p class="prod">' + esc(j.production) + '</p>' +
-        '<div class="allergy t-' + a.t + '">' + esc(a.name) + (a.parts.length ? '<small>' + esc(a.parts.join('; ')) + '</small>' : '') + '</div>' +
+        '<div class="allergy t-' + a.t + '">' + (a.t === 'none' ? '' : '<span class="mk"></span>') + esc(a.name) + (a.parts.length ? '<small>' + esc(a.parts.join('; ')) + '</small>' : '') + '</div>' +
         (med && !NONE.test(med) ? '<div class="med"><span class="label">Medical</span><br>' + esc(med) + '</div>' : '') +
         (em ? '<div class="em"><span class="label">Emergency contact</span><br>' + em + '</div>' : '');
       beep(true);
