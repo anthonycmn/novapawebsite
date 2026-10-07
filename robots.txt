@@ -8,5 +8,6 @@ Allow: /
 # the tag to do its job.
 #   /camp-info-2026-archive.html  /faculty.html  /press-submit.html
 #   /deh/  /sweeney/  /register/ (account, signin, catalog, admin)
+#   /checkin/ (rehearsal door scanner, staff passcode)
 
 Sitemap: https://novapa.org/sitemap.xml

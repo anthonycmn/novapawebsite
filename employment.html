@@ -58,6 +58,8 @@
     .e-done{ display:none; text-align:center; padding:34px 20px; }
     .e-done h2{ font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:800; margin-bottom:10px; }
     .e-done p{ color:rgba(255,255,255,0.7); max-width:440px; margin:0 auto; }
+    .e-note{ font-size:14px; color:rgba(255,255,255,0.78); margin:0 0 12px; }
+    .e-note b{ color:var(--gold3); }
     .hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
     footer{ text-align:center; padding:26px 20px 40px; color:rgba(255,255,255,0.45); font-size:13px; border-top:1px solid rgba(255,255,255,0.07); }
     footer a{ color:var(--gold3); text-decoration:none; }
@@ -131,6 +133,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
 
       <div class="e-sec">Positions You're Interested In <span class="req">*</span></div>
       <div class="e-checks" id="posBox"></div>
+
+      <div id="campTraining" class="e-training" hidden>
+        <div class="e-sec">Summer Camp Staff Training <span class="req">*</span></div>
+        <p class="e-note">All summer camp staff must attend one <b>mandatory training day</b>, 10am to 4pm. Training is paid, but it is required to work camp. Choose the date you can attend:</p>
+        <div class="e-checks" id="trainBox"></div>
+      </div>
 
       <div class="e-sec">Availability</div>
       <div class="e-checks" id="availBox"></div>
@@ -251,6 +259,12 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     'Summer camps (weekdays, full-day)',
     'Seasonal productions / tech weeks'
   ];
+  // Kept in sync with reg-apply.mjs. Asked only of camp applicants.
+  var CAMP = 'Summer Camp Staff / Counselor';
+  var TRAINING = [
+    'Saturday, May 8, 2027 (10am to 4pm)',
+    'Saturday, June 12, 2027 (10am to 4pm)'
+  ];
   var MAX_BYTES = 3 * 1024 * 1024;
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -261,6 +275,11 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
   }
   boxes($('posBox'), POSITIONS, 'pos');
   boxes($('availBox'), AVAILABILITY, 'avail');
+  $('trainBox').innerHTML = TRAINING.map(function(v, i){
+    return '<label class="e-check"><input type="radio" name="training" data-g="train" value="' + esc(v) + '" id="train' + i + '"><span>' + esc(v) + '</span></label>';
+  }).join('');
+  function wantsCamp(){ return picked('pos').indexOf(CAMP) !== -1; }
+  $('posBox').addEventListener('change', function(){ $('campTraining').hidden = !wantsCamp(); });
   function picked(group){
     return [].slice.call(document.querySelectorAll('input[data-g="' + group + '"]:checked')).map(function(c){ return c.value; });
   }
@@ -288,6 +307,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('Please enter a valid email address.');
     var positions = picked('pos');
     if (!positions.length) return fail('Please choose at least one position you’re interested in.');
+    var training = wantsCamp() ? (picked('train')[0] || '') : '';
+    if (wantsCamp() && !training) return fail('Please choose the camp training date you can attend.');
     var f = $('resume').files[0];
     if (f && f.size > MAX_BYTES) return fail('That résumé is larger than 3 MB: please attach a smaller file.');
 
@@ -299,7 +320,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           full_name: name, email: email, phone: $('phone').value.trim(),
-          positions: positions, availability: picked('avail'),
+          positions: positions, availability: picked('avail'), camp_training: training,
           earliest_start: $('earliest_start').value.trim(),
           experience: $('experience').value,
           message: $('message').value.trim(),
@@ -316,7 +337,8 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           resume_too_big: 'That résumé is larger than 3 MB: please attach a smaller file.',
           resume_upload_failed: 'We couldn’t save that résumé. Try again, or submit without it and email it to info@novapa.org.',
           email_invalid: 'Please enter a valid email address.',
-          position_required: 'Please choose at least one position.'
+          position_required: 'Please choose at least one position.',
+          training_required: 'Please choose the camp training date you can attend.'
         }[out.j.error] || 'Something went wrong on our end. Please try again, or email info@novapa.org.';
         ev('employment_form_error', { code: out.j.error || 'unknown' });
         return fail(m);
