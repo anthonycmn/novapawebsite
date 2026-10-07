@@ -3250,11 +3250,11 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  </section>
  <div class="sr-slide sr-banner" style="background:#06184a url(/img/frozen-jr-hero.webp) center/cover" aria-hidden="true" inert>
  <a class="sr-art" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Disney's Frozen JR., junior cast January 29 and 30, teen cast February 5 and 6"><img src="/img/frozen-jr-hero.webp" width="2000" height="833" alt="" decoding="async"></a>
- <div class="sr-ctas"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen JR.">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-jr.html" aria-label="About Frozen JR.">About the Show</a></div>
+ <div class="sr-ctas" style="--col:67%"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen JR.">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-jr.html" aria-label="About Frozen JR.">About the Show</a></div>
  </div>
  <div class="sr-slide sr-banner" style="background:#0b2763 url(/img/frozen-kids-hero.webp) center/cover" aria-hidden="true" inert>
  <a class="sr-art" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Disney's Frozen KIDS, ages 5 to 9, January 22 and 23"><img src="/img/frozen-kids-hero.webp" width="2000" height="833" alt="" decoding="async"></a>
- <div class="sr-ctas"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen KIDS">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-kids.html" aria-label="About Frozen KIDS">About the Show</a></div>
+ <div class="sr-ctas" style="--col:52%"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen KIDS">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-kids.html" aria-label="About Frozen KIDS">About the Show</a></div>
  </div>
  <div class="sr-dots" role="group" aria-label="Choose a show"></div>
  </div>
@@ -3267,9 +3267,9 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  .sr-banner::before{content:"";position:absolute;inset:-40px;background:inherit;filter:blur(28px) brightness(.7)}
  .sr-art{position:relative;flex:1 1 auto;min-height:0;display:block}
  .sr-art img{display:block;width:100%;height:100%;object-fit:contain}
- .sr-ctas{position:relative;flex:none;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:14px 16px 34px}
+ .sr-ctas{position:relative;flex:none;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;width:var(--col,100%);padding:14px 16px 34px;box-sizing:border-box}
  .sr-ctas .st-link{background:rgba(6,24,74,.45)}
- @media (max-width:860px){.sr-art{flex:none}.sr-art img{height:auto}}
+ @media (max-width:860px){.sr-art{flex:none}.sr-art img{height:auto}.sr-ctas{width:100%}}
  .sr-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:8px;z-index:3}
  .sr-dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:background .2s,width .2s}
  .sr-dots button[aria-current="true"]{background:#FFC866;width:22px;border-radius:4px}
