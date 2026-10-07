@@ -1265,3 +1265,23 @@ the sixth time, fast-forward and scope re-verified.
 
 Clocks: topic 11's first closure day 6 days out, topic 14's nearest prescreen
 deadline 26, DC Unifieds 9.
+
+## Run 26 — October 7, 2026 — HOLD (day 12)
+
+Five more commits on main overnight (#173 badge QR rehearsal check-in, the
+check-in redeploy, camp applicant training days, and two homepage hero changes
+ending in #177). Four of them touched files the waiting drafts cite:
+day-camps.html, classes.html, teen-conservatory.html, calendar.html.
+
+Checked rather than assumed again. The day-camps change was only the chat
+assistant's season list, which dropped A Christmas Carol and went from eight
+shows to seven. Every figure topic 11 quotes re-verified against the merged
+tree and all hold: $79, $349, $395, $69.80, 8:30-4:15, five spring break dates
+Mar 22-26, no camps Dec 20-Jan 3. No waiting draft mentions A Christmas Carol
+or any other dropped show, and all seven linked program pages still exist.
+
+Merged, preflight green, `topic-12-ship` re-synced for the seventh time with
+fast-forward and scope verified.
+
+Clocks: topic 11's first closure day 5 days out, topic 14's nearest prescreen
+deadline 25, DC Unifieds 8.
