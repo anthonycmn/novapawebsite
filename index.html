@@ -3248,13 +3248,17 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  </div>
  <p class="st-license">Sweeney Todd School Edition is presented through special arrangement with Music Theatre International (MTI). All authorized performance materials are also supplied by MTI. 423 West 55th Street, New York, NY 10019 &middot; (212) 541-4684 &middot; www.MTIShows.com</p>
  </section>
- <div class="sr-slide sr-banner" style="background:#06184a url(/img/frozen-jr-hero.webp) center/cover" aria-hidden="true" inert>
- <a class="sr-art" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Disney's Frozen JR., junior cast January 29 and 30, teen cast February 5 and 6"><img src="/img/frozen-jr-hero.webp" width="2000" height="833" alt="" decoding="async"></a>
- <div class="sr-ctas" style="--col:67%"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen JR.">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-jr.html" aria-label="About Frozen JR.">About the Show</a></div>
+ <div class="sr-slide sr-banner" style="background:#071a4c" aria-hidden="true" inert>
+ <div class="sr-frame">
+ <a class="sr-art" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Disney's Frozen JR., junior cast January 29 and 30, teen cast February 5 and 6"><img src="/img/frozen-jr-hero.webp" width="2000" height="1000" alt="" decoding="async"></a>
+ <div class="sr-ctas"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen JR.">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-jr.html" aria-label="About Frozen JR.">About the Show</a></div>
  </div>
- <div class="sr-slide sr-banner" style="background:#0b2763 url(/img/frozen-kids-hero.webp) center/cover" aria-hidden="true" inert>
- <a class="sr-art" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Disney's Frozen KIDS, ages 5 to 9, January 22 and 23"><img src="/img/frozen-kids-hero.webp" width="2000" height="833" alt="" decoding="async"></a>
- <div class="sr-ctas" style="--col:52%"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen KIDS">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-kids.html" aria-label="About Frozen KIDS">About the Show</a></div>
+ </div>
+ <div class="sr-slide sr-banner" style="background:#0c2a66" aria-hidden="true" inert>
+ <div class="sr-frame">
+ <a class="sr-art" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Disney's Frozen KIDS, ages 5 to 9, January 22 and 23"><img src="/img/frozen-kids-hero.webp" width="2000" height="1000" alt="" decoding="async"></a>
+ <div class="sr-ctas"><a class="st-btn" href="https://novapa.booktix.com" target="_blank" rel="noopener" aria-label="Get tickets for Frozen KIDS">Get Tickets <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a><a class="st-link" href="/frozen-kids.html" aria-label="About Frozen KIDS">About the Show</a></div>
+ </div>
  </div>
  <div class="sr-dots" role="group" aria-label="Choose a show"></div>
  </div>
@@ -3263,13 +3267,32 @@ h1 em, .sc-h1 em, h1 i, .sc-h1 i { font-style:normal !important; }
  .show-rotator .sr-slide{grid-area:1/1;opacity:0;visibility:hidden;transition:opacity .7s ease,visibility 0s linear .7s}
  .show-rotator .sr-slide.is-on{opacity:1;visibility:visible;transition:opacity .7s ease}
  .show-rotator .st-hero{padding-bottom:18px}
- .sr-banner{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
- .sr-banner::before{content:"";position:absolute;inset:-40px;background:inherit;filter:blur(28px) brightness(.7)}
- .sr-art{position:relative;flex:1 1 auto;min-height:0;display:block}
- .sr-art img{display:block;width:100%;height:100%;object-fit:contain}
- .sr-ctas{position:relative;flex:none;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;width:var(--col,100%);padding:14px 16px 34px;box-sizing:border-box}
- .sr-ctas .st-link{background:rgba(6,24,74,.45)}
- @media (max-width:860px){.sr-art{flex:none}.sr-art img{height:auto}.sr-ctas{width:100%}}
+ .sr-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;container-type:size}
+ .sr-frame{position:relative;width:min(100cqw,200cqh);aspect-ratio:2/1}
+ .sr-art,.sr-art img{display:block;width:100%;height:100%}
+ .sr-ctas{position:absolute;right:3.5%;bottom:24%;display:flex;flex-direction:column;gap:10px}
+ .sr-ctas .st-btn,.sr-ctas .st-link{justify-content:center}
+ .sr-ctas .st-link{background:rgba(6,24,74,.55)}
+ @media (min-width:861px){
+ .show-rotator{aspect-ratio:2/1}
+ .show-rotator .st-hero{display:flex;flex-direction:column;justify-content:center;overflow:clip}
+ .show-rotator .st-hero-inner,.show-rotator .st-license{width:100%;box-sizing:border-box}
+ }
+ @media (min-width:861px) and (max-width:1440px){
+ .show-rotator .st-hero-inner{padding-top:22px;padding-bottom:10px}
+ .show-rotator .st-title{margin-top:10px}
+ .show-rotator .st-sub{margin-top:8px}
+ .show-rotator .st-dates{margin-top:14px;padding:10px 4px}
+ .show-rotator .st-venue{margin-top:8px}
+ .show-rotator .st-ctas{margin-top:14px}
+ .show-rotator .st-license{padding-bottom:22px}
+ }
+ @media (max-width:860px){
+ .sr-banner{flex-direction:column;container-type:normal}
+ .sr-frame{width:100%;aspect-ratio:auto}
+ .sr-art,.sr-art img{height:auto}
+ .sr-ctas{position:static;flex-direction:row;flex-wrap:wrap;justify-content:center;margin-top:22px;padding:0 16px}
+ }
  .sr-dots{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:center;gap:8px;z-index:3}
  .sr-dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:background .2s,width .2s}
  .sr-dots button[aria-current="true"]{background:#FFC866;width:22px;border-radius:4px}
