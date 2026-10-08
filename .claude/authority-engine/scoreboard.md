@@ -1285,3 +1285,15 @@ fast-forward and scope verified.
 
 Clocks: topic 11's first closure day 5 days out, topic 14's nearest prescreen
 deadline 25, DC Unifieds 8.
+
+## Run 27 — October 8, 2026 — HOLD (day 13)
+
+No change on main (still c093ba3), ship branch still fast-forwards clean, no
+maintenance needed. Backlog 5.
+
+Clocks: topic 11's first closure day (Oct 12, all three divisions out) 4 days
+out, topic 14's nearest prescreen deadline 24, DC Unifieds 7.
+
+Note for the next run: once Oct 12 passes, topic 11's remaining fall closure
+days are Oct 29, Oct 30, and Nov 2, 3, 9 and 11, so its window narrows but does
+not close.
