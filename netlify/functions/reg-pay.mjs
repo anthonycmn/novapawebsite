@@ -17,9 +17,10 @@ import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { sendMail } from "./reg-mail.mjs";
 import { attributeOrder } from "./reg-attribution.mjs";
+import { recordTerms, portalWelcome, secondChargeCard } from "./reg-frontdoor.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
-  CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
+  CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classLadder, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
   classCoveredMonth, classSessionsInMonth, prorateCents, MONTH_NAMES,
   SPECIAL_PLANS, specialFromCouponRow, isCoachingId,
   creditEventsFor,
@@ -269,6 +270,37 @@ export default async (req) => {
     savedCard = { customer: visits[0].stripe_customer_id, pm: visits[0].stripe_payment_method_id };
   }
 
+  // One cart, two charges (CJ, 30 Sep 2026). The portal's front door sells
+  // classes and shows in one checkout, but a class is a monthly subscription
+  // and a show is a one-off or a plan, so they are two intents. The family
+  // types the card once, for the FIRST intent (created with save_card and a
+  // cart_id). The second call names that succeeded intent here, and pays on
+  // the card it saved through the same off-session path as one-click enroll.
+  // Proof it is the same family and the same checkout: the first intent
+  // succeeded less than an hour ago, for this email, carrying this cart_id —
+  // an unguessable uuid that only this browser holds.
+  const cartId = /^[0-9a-f-]{36}$/i.test(String((body || {}).cart_id || "")) ? String(body.cart_id) : "";
+  const payWith = String((body || {}).pay_with_intent || "");
+  if (!savedCard && payWith) {
+    if (!guest || !cartId || !/^pi_[A-Za-z0-9]+$/.test(payWith)) {
+      return Response.json({ error: "bad_request" }, { status: 400 });
+    }
+    let first = null;
+    try { first = await new Stripe(process.env.STRIPE_SECRET_KEY).paymentIntents.retrieve(payWith); } catch {}
+    savedCard = secondChargeCard(first, { email, cartId });
+    if (!savedCard) return Response.json({ error: "saved_card_unavailable" }, { status: 409 });
+  }
+  // Terms accepted at checkout (CJ, 30 Sep 2026: record who agreed, to which
+  // version, and when). Optional so a browser running the old page still
+  // pays; the portal front door always sends it. reg-webhook writes the row.
+  const termsVersion = String((body || {}).terms_version || "").replace(/[^\w.:-]/g, "").slice(0, 40);
+  const frontMeta = {
+    ...(cartId ? { cart_id: cartId } : {}),
+    ...(termsVersion ? { terms_version: termsVersion, terms_at: new Date().toISOString() } : {}),
+    ...((body || {}).front_door === "portal" ? { front_door: "portal" } : {}),
+  };
+  const saveCard = (body || {}).save_card === true;
+
   // Guest campers exist only in the browser until the webhook mints their
   // rows — carry their birthdays through metadata so those rows are born
   // complete. Signed-in flows keep reading campers.birthdate as before.
@@ -409,7 +441,16 @@ export default async (req) => {
       );
     }
     byId = Object.fromEntries(acts.map((a) => [a.id, a]));
+    // Money terms set on the listing in the staff portal (0333). Same
+    // never-block rule as activity_facts: if the function is missing or
+    // unreachable, every line prices exactly as it did before terms existed.
+    const terms = await anonRpc("activity_pricing_for", { p_ids: ids });
+    if (Array.isArray(terms)) for (const t of terms) if (byId[t.activity_id]) byId[t.activity_id].terms = t;
   }
+  // The class bundle ladder a Chief can change in the staff portal; a missing
+  // or malformed row falls back to CLASS_BUNDLE_CENTS inside classLadder().
+  const houseRules = activityItems.length ? await anonRpc("pricing_settings_get", {}) : null;
+  const ladder = classLadder(houseRules && houseRules.class_bundle_cents);
   const classItems = activityItems.filter((it) => byId[it.activity_id].category === "class");
   const showItems = activityItems.filter((it) => byId[it.activity_id].category !== "class");
   if (classItems.length && (summerItems.length || showItems.length)) {
@@ -441,7 +482,7 @@ export default async (req) => {
       const idxs = byKidClasses[k];
       const camper = String(classItems[idxs[0]].camper || "").trim();
       const had = prior[camper.toLowerCase()] || null;
-      const bundle = had ? classAddedMonthlyCents(had.n, idxs.length) : classMonthlyCents(idxs.length);
+      const bundle = had ? classAddedMonthlyCents(had.n, idxs.length, ladder) : classMonthlyCents(idxs.length, ladder);
       if (had) priorClasses.push({ camper, n: had.n, names: had.names });
       const per = Math.floor(bundle / idxs.length);
       idxs.forEach((idx, j) => {
@@ -548,11 +589,17 @@ export default async (req) => {
         start: byId[it.activity_id].starts_on || showStartFor(byId[it.activity_id].name),
         // Lets priceCart stop inferring a day camp from its price.
         offering_kind: byId[it.activity_id].offering_kind || null,
+        // The listing's own money terms (0333), when it has any. Absent, the
+        // line prices exactly as before.
+        ...(byId[it.activity_id].terms ? { terms: byId[it.activity_id].terms } : {}),
       })),
     ];
     const p = priceCart(cart, plan, { insurance, couponPct, couponFixedCents, priorCampsByKid, priorShowsByKid, special, creditsByKid });
     if (plan === "deposit" && p.payFullOnly) {
       return Response.json({ error: "pay_full_only" }, { status: 400 });
+    }
+    if (plan === "full" && p.planRequired) {
+      return Response.json({ error: "plan_required" }, { status: 400 });
     }
     pricing = {
       todayCents: p.todayCents, totalCents: p.totalCents, subtotalCents: p.subtotal,
@@ -584,6 +631,39 @@ export default async (req) => {
         today_cents: pricing.todayCents,
         unit_prices: pricing.unitPrices,
         monthly_items: pricing.monthlyItems,
+        monthly_cents: (pricing.monthlyItems || []).reduce((s, v) => s + v, 0),
+        proration: pricing.prorations || [], class_month: pricing.classMonth || "",
+        first_class_free: !!pricing.firstClassFree,
+        next_bill_utc: pricing.nextBillUTC || 0, cancel_at_utc: pricing.cancelAtUTC || 0,
+        prior_classes: pricing.priorClasses || [],
+      },
+      description,
+    });
+  }
+
+  // The front door's review step (CJ, 30 Sep 2026): the family sees every
+  // number the server will charge — plan, insurance, coupon — before any
+  // Stripe object exists, for either half of a class-and-show cart. The same
+  // pricing the real call computes; nothing is created or saved.
+  if ((body || {}).quote_only && frontMeta.front_door === "portal") {
+    return Response.json({
+      quote: true,
+      free: pricing.todayCents === 0 && pricing.totalCents === 0 && plan !== "subscription",
+      pricing: {
+        n: items.length,
+        discount_pct: pricing.discountPct,
+        unit_prices: pricing.unitPrices,
+        subtotal_cents: pricing.subtotalCents,
+        coupon_cents: pricing.couponCents || 0,
+        coupon: (couponPct || couponFixedCents) ? couponCode.toUpperCase() : null,
+        plan_fee_cents: pricing.planFeeCents || 0,
+        insurance_cents: pricing.insuranceCents || 0,
+        total_cents: pricing.totalCents,
+        today_cents: pricing.todayCents,
+        installment_cents: pricing.installmentCents || 0,
+        n_installments: pricing.nInstallments || 0,
+        first_installment_utc: pricing.firstInstallmentUTC || 0,
+        monthly_items: pricing.monthlyItems || [],
         monthly_cents: (pricing.monthlyItems || []).reduce((s, v) => s + v, 0),
         proration: pricing.prorations || [], class_month: pricing.classMonth || "",
         first_class_free: !!pricing.firstClassFree,
@@ -638,6 +718,14 @@ export default async (req) => {
     // utm, else the family's first tagged free-class booking or quiz lead.
     // attributeOrder never throws and logs its own failures.
     if (freeOrderId) await attributeOrder(freeOrderId, { email, utm: utmMeta });
+    // The front door's two after-steps, which the webhook does for paid
+    // orders: the terms row, and the portal account + sign-in email. A $0
+    // order never reaches the webhook, so they happen here. Neither throws.
+    if (freeOrderId && termsVersion) await recordTerms({ email, orderId: freeOrderId, intent: "free_" + hold_id, version: termsVersion, source: frontMeta.front_door || "register" });
+    let freePortalUrl = "";
+    if (freeOrderId && frontMeta.front_door === "portal") {
+      freePortalUrl = await portalWelcome({ email, parentName: parent_name || "", orderId: freeOrderId, cartId });
+    }
     // A seat offer spent on a $0 order still gets the Chief told.
     try { await alertSeatOffersRedeemed(freeOrderId); }
     catch (e) { console.error("seat offer alert failed:", e.message); }
@@ -728,6 +816,7 @@ export default async (req) => {
         total_cents: "0", coupon: couponCode.toUpperCase(),
         coupon_cents: String(pricing.couponCents || 0),
         fsa_eligible: "0",
+        portal_url: freePortalUrl,
       }, { amount_received: 0, amount: 0 });
     } catch (e) { console.error("free order: email failed:", e.message); }
     return Response.json({ confirmed: true });
@@ -765,6 +854,7 @@ export default async (req) => {
         monthly_items: JSON.stringify(pricing.monthlyItems).slice(0, 450),
         n_items: String(items.length),
         order_desc: description.slice(0, 480),
+        ...frontMeta,
       },
     }, savedCard ? { idempotencyKey: `fc-enroll-${hold_id}` } : undefined); }
     catch (e) {
@@ -841,7 +931,7 @@ export default async (req) => {
     // will not combine with setup_future_usage; the card is saved already).
     ...(savedCard
       ? { payment_method: savedCard.pm, off_session: true, confirm: true }
-      : { setup_future_usage: (plan === "deposit" || plan === "subscription") ? "off_session" : undefined }),
+      : { setup_future_usage: (plan === "deposit" || plan === "subscription" || saveCard) ? "off_session" : undefined }),
     // Cards + Link only. Apple Pay / Google Pay ride the card rails via the
     // Express Checkout element. Redirect methods (Amazon Pay, Klarna, ...)
     // are excluded deliberately: they hijack mobile checkout and cannot be
@@ -902,6 +992,7 @@ export default async (req) => {
       credit_grants: JSON.stringify(creditEvents.grants).slice(0, 450),
       credit_redeems: JSON.stringify(creditEvents.redemptions).slice(0, 450),
       ...refMeta,
+      ...frontMeta,
     },
   }, savedCard ? { idempotencyKey: `fc-enroll-${hold_id}` } : undefined); }
   catch (e) {

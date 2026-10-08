@@ -10,6 +10,7 @@
 // (The endpoint in Stripe must be subscribed to every one of these.)
 import Stripe from "stripe";
 import { sendConfirmationEmail } from "./reg-email.mjs";
+import { recordTerms, portalWelcome } from "./reg-frontdoor.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { mintDcuFamily } from "./dcu-family.mjs";
 import { attributeOrder } from "./reg-attribution.mjs";
@@ -638,7 +639,18 @@ export default async (req) => {
       console.error("admin notify failed:", e.message);
       await logMailFailure({ fn: "reg-webhook", kind: "admin_notify", orderId, paymentIntent: pi.id, error: e });
     }
-    try { await sendConfirmationEmail(m, pi); }
+    // Parent-portal front door (CJ, 30 Sep 2026): record the terms the family
+    // accepted, then have the portal make their account now and email the
+    // sign-in link; its second link rides the receipt as a button. Both never
+    // throw. Old-page checkouts carry neither key and skip both.
+    if (m.terms_version) {
+      await recordTerms({ email: m.email, orderId, intent: pi.id, version: m.terms_version, source: m.front_door || "register" });
+    }
+    let portalUrl = "";
+    if (m.front_door === "portal") {
+      portalUrl = await portalWelcome({ email: m.email, parentName: m.parent_name || "", orderId, cartId: m.cart_id || "" });
+    }
+    try { await sendConfirmationEmail(portalUrl ? { ...m, portal_url: portalUrl } : m, pi); }
     catch (e) {
       console.error("confirmation email failed:", e.message);
       await logMailFailure({ fn: "reg-webhook", kind: "family_confirmation", orderId, paymentIntent: pi.id, error: e });
