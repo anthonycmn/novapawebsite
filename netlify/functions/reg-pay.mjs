@@ -285,6 +285,12 @@ export default async (req) => {
   // coupon: validated server-side; invalid codes are a hard error so the
   // client never silently charges full price after showing a discount
   let couponPct = 0, couponFixedCents = 0, special = null;
+  // Ticket codes are for BookTix only: an Encore Points reward ticket (TIXE…)
+  // or a referral's ticket code (TIX-…) is worth a seat, not money off a
+  // registration (CJ, 9 Oct 2026; hub 0098). Refused here as a bad code.
+  if (/^TIX/i.test(couponCode)) {
+    return Response.json({ error: "bad_coupon" }, { status: 400 });
+  }
   if (couponCode) {
     const c = await anonRpc("check_coupon", { p_code: couponCode });
     // account-locked one-off adjustments (Todd/CJ approvals) — the coupons row
