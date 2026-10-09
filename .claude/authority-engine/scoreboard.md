@@ -1297,3 +1297,10 @@ out, topic 14's nearest prescreen deadline 24, DC Unifieds 7.
 Note for the next run: once Oct 12 passes, topic 11's remaining fall closure
 days are Oct 29, Oct 30, and Nov 2, 3, 9 and 11, so its window narrows but does
 not close.
+
+## Run 28 — October 9, 2026 — HOLD (day 14)
+
+No change on main, ship branch clean, no maintenance. Two weeks of the guard.
+
+Clocks: topic 11's first closure day (Oct 12) 3 days out, topic 14's nearest
+prescreen deadline 23, DC Unifieds 6.
