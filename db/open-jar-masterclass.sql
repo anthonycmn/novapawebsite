@@ -1,4 +1,6 @@
--- Open Jar Institute masterclass with James Gray (Oct 15 2026).
+-- Open Jar Institute masterclass with Brian Martin (Oct 15 2026).
+-- Originally listed with James Gray; the teacher changed to Brian Martin on
+-- Oct 9 2026 and the live row was renamed then. This file matches the live row.
 --
 -- Requested by Jennifer Travis on Oct 3 2026; price and time confirmed by CJ
 -- on Oct 5: $10, Thursday October 15, 6:00 to 7:30 PM.
@@ -18,9 +20,9 @@ insert into activities
    description, location, bookable, bb_gated, capacity, starts_on, ends_on,
    meets_start, meets_end, registration_closes_at, raw)
 values
-  (970701, 'Open Jar Masterclass with James Gray', 'coaching', 'coaching', 1000,
+  (970701, 'Open Jar Masterclass with Brian Martin', 'coaching', 'coaching', 1000,
    'Thursday, October 15, 2026 · 6:00 to 7:30 PM', null,
-   'A masterclass with James Gray of New York''s Open Jar Institute, the Broadway training program that puts students in the room with working professionals. James was associate director and choreographer to Susan Stroman on The Producers, Young Frankenstein and Bullets Over Broadway, performed on Broadway and in London''s West End, and teaches his audition workshop, Audition Truth, in New York and across the country.',
+   'A masterclass with Brian Martin of New York''s Open Jar Institute, the Broadway training program that puts students in the room with working professionals.',
    'NoVAPA at the National Conference Center, South Building, Plaza C, 18945 Conference Center Drive, Leesburg, VA 20176',
    true, false, null, '2026-10-15', '2026-10-15',
    '18:00', '19:30', '2026-10-15 18:00:00-04', '{"source":"novapa","created_by":"novapa","requested_by":"Jennifer Travis"}'::jsonb)

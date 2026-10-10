@@ -17,6 +17,7 @@ import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { sendConfirmationEmail } from "./reg-email.mjs";
 import { sendMail } from "./reg-mail.mjs";
 import { attributeOrder } from "./reg-attribution.mjs";
+import { recordAcceptance } from "./reg-terms.mjs";
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY, SHOWS, priceCart, kidKey,
   CLASS_PRICE_CENTS, classMonthlyCents, classAddedMonthlyCents, classBillingWindow, SIBLING_PCT, INSURANCE_PCT, DAY_CAMP_MAX_CENTS, showStartFor,
@@ -198,6 +199,12 @@ export default async (req) => {
         .map(([k, v]) => [String(k).slice(0, 40), String(v).slice(0, 120)]))
     : null;
   const utmMeta = utm && Object.keys(utm).length ? JSON.stringify(utm).slice(0, 450) : "";
+  // Where the checkout was built, filed with the family's agreement to the
+  // terms (reg-terms.mjs). The intent is created a moment before the parent
+  // ticks "I agree" and pays, in the same browser; reg-webhook reads these
+  // back off the metadata when it records the acceptance.
+  const termsIp = (req.headers.get("x-nf-client-connection-ip") || "").slice(0, 64);
+  const termsUa = (req.headers.get("user-agent") || "").slice(0, 300);
 
   // Two identities: a session (returning families), or a typed email plus a
   // hold that was ACQUIRED for that same email (guest checkout — the hold id
@@ -285,6 +292,12 @@ export default async (req) => {
   // coupon: validated server-side; invalid codes are a hard error so the
   // client never silently charges full price after showing a discount
   let couponPct = 0, couponFixedCents = 0, special = null;
+  // Ticket codes are for BookTix only: an Encore Points reward ticket (TIXE…)
+  // or a referral's ticket code (TIX-…) is worth a seat, not money off a
+  // registration (CJ, 9 Oct 2026; hub 0098). Refused here as a bad code.
+  if (/^TIX/i.test(couponCode)) {
+    return Response.json({ error: "bad_coupon" }, { status: 400 });
+  }
   if (couponCode) {
     const c = await anonRpc("check_coupon", { p_code: couponCode });
     // account-locked one-off adjustments (Todd/CJ approvals) — the coupons row
@@ -638,6 +651,9 @@ export default async (req) => {
     // utm, else the family's first tagged free-class booking or quiz lead.
     // attributeOrder never throws and logs its own failures.
     if (freeOrderId) await attributeOrder(freeOrderId, { email, utm: utmMeta });
+    // The terms this family agreed to (Oct 9 2026). Same reason as above: a
+    // $0 order never reaches the webhook. recordAcceptance never throws.
+    await recordAcceptance(freeOrderId, { email, intent: "free_" + hold_id, hold_id, ip: termsIp, ua: termsUa });
     // A seat offer spent on a $0 order still gets the Chief told.
     try { await alertSeatOffersRedeemed(freeOrderId); }
     catch (e) { console.error("seat offer alert failed:", e.message); }
@@ -752,6 +768,7 @@ export default async (req) => {
       metadata: {
         hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
         utm: utmMeta,
+        terms_ip: termsIp, terms_ua: termsUa,
         parent_name: (parent_name || "").slice(0, 100),
         phone, sms_consent: smsConsent ? "1" : "0",
         total_cents: "0", installment_cents: "0", n_installments: "0",
@@ -853,6 +870,7 @@ export default async (req) => {
     metadata: {
       hold_id, plan, email, guest: guest ? "1" : "0", kid_bdays: guest ? JSON.stringify(kidBdays).slice(0, 450) : "",
         utm: utmMeta,
+        terms_ip: termsIp, terms_ua: termsUa,
       parent_name: (parent_name || "").slice(0, 100),
       phone, sms_consent: smsConsent ? "1" : "0",
       total_cents: String(pricing.totalCents),

@@ -13,6 +13,7 @@ import { sendConfirmationEmail } from "./reg-email.mjs";
 import { alertSeatOffersRedeemed } from "./reg-seat-offer-alert.mjs";
 import { mintDcuFamily } from "./dcu-family.mjs";
 import { attributeOrder } from "./reg-attribution.mjs";
+import { recordAcceptance } from "./reg-terms.mjs";
 import {
   SUPABASE_URL, CLASS_BILL_ANCHOR_UTC, CLASS_SEASON_END_UTC,
 } from "./reg-config.mjs";
@@ -335,6 +336,13 @@ export default async (req) => {
     // reg-attribution.mjs. It never throws; failures log as
     // "[order-attribution] FAILED" so they are not mistaken for "no ad".
     if (orderId) await attributeOrder(orderId, m);
+
+    // The terms this family agreed to (Oct 9 2026): the checkout cannot reach
+    // payment without the "I agree" box, so a confirmed order is the
+    // agreement. Files which version was live, see reg-terms.mjs. Never throws.
+    await recordAcceptance(orderId, {
+      email: m.email, intent: pi.id, hold_id: m.hold_id, ip: m.terms_ip, ua: m.terms_ua,
+    });
 
     // A DC Unifieds buyer is a guest too, but gets the register entry
     // dcu-family.mjs describes, not the camp upsert below (which would add

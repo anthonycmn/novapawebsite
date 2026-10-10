@@ -212,7 +212,12 @@ eq("hasUtm: an array is not tagged", hasUtm(["x"]), false);
   eq("webhook: booking lookup is by the checkout email, lowercased",
     calls.some((c) => c.url.includes("free_class_bookings?email=ilike.parent%40example.com")), true);
   eq("webhook: order utm resolves to booking 40's utm", patch && JSON.parse(patch.body), { utm: BOOKING_40 });
-  eq("webhook: nothing left the fake database", calls.every((c) => c.url.startsWith("https://tlkuqwsqicxcjdmumkje.supabase.co/")), true);
+  // Since Oct 9 2026 the webhook also reads the site's own terms pages, to
+  // file the version the family agreed to (reg-terms.mjs). Those three GETs
+  // are expected; anything else leaving the fake database is not.
+  const termsRead = (c) => c.method === "GET" && /^https:\/\/novapa\.org\/(terms|policies|register\/)$/.test(c.url);
+  eq("webhook: nothing left the fake database",
+    calls.every((c) => c.url.startsWith("https://tlkuqwsqicxcjdmumkje.supabase.co/") || termsRead(c)), true);
 }
 
 console.log(fails ? `\n${fails} FAILED` : "\nall order-attribution checks pass");
