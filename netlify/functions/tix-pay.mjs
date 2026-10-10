@@ -38,12 +38,32 @@ async function emailFromJwt(req) {
   return (u.email || "").toLowerCase() || null;
 }
 
+// When CJ launched Encore Points in the staff portal (hub 0098), or null.
+// From that moment a referral earns the referrer points in the Parent Portal
+// instead of "give 2 tickets, get 2": rewards earned before launch are still
+// honored here, rewards created after it are not paid twice.
+async function encoreLaunchedAt() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/ep_program?id=eq.1&select=launched_at`, {
+      headers: { ...svcHeaders(), "Accept-Profile": "family_hub" },
+    });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    return rows?.[0]?.launched_at || null;
+  } catch {
+    return null;
+  }
+}
+
 // The first unredeemed referral reward for this account, either side of it.
 async function rewardFor(email) {
   const enc = encodeURIComponent(email);
+  const launched = await encoreLaunchedAt();
   const rows = await (await fetch(
     `${SUPABASE_URL}/rest/v1/referral_rewards?select=*&status=eq.earned` +
-    `&or=(referrer_email.ilike.${enc},referred_email.ilike.${enc})&order=created_at`,
+    `&or=(referrer_email.ilike.${enc},referred_email.ilike.${enc})` +
+    (launched ? `&created_at=lt.${encodeURIComponent(launched)}` : "") +
+    `&order=created_at`,
     { headers: svcHeaders() })).json();
   for (const r of rows || []) {
     if (r.referrer_email?.toLowerCase() === email && !r.referrer_redeemed_at) {
@@ -161,6 +181,27 @@ export default async (req) => {
   //    never show a discount and then silently charge full price (reg-pay rule).
   const couponCode = clean(body.coupon, 20).toUpperCase();
   let couponCents = 0;
+  // Encore Points registration credits (ENC…) are money off a show
+  // registration, not tickets.
+  if (/^ENC/.test(couponCode)) return Response.json({ error: "bad_coupon" }, { status: 400 });
+  // An Encore Points reward ticket (TIXE…) fills a seat that would otherwise
+  // be empty, so it stops working for a performance past 85% sold: a paying
+  // customer never loses a seat to points (hub 0098, ticket_cap_pct).
+  if (/^TIXE/.test(couponCode)) {
+    const count = async (path) => {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+        method: "HEAD", headers: { ...svcHeaders(), Prefer: "count=exact", Range: "0-0" },
+      });
+      return parseInt((r.headers.get("content-range") || "").split("/")[1] || "0", 10);
+    };
+    const [sold, seats] = await Promise.all([
+      count(`tix_tickets?performance_id=eq.${performanceId}&select=id`),
+      count(`tix_seats?select=id`),
+    ]);
+    if (seats && sold >= seats * 0.85) {
+      return Response.json({ error: "reward_ticket_unavailable" }, { status: 409 });
+    }
+  }
   if (couponCode) {
     const c = await rpc("check_coupon", { p_code: couponCode });
     if (!c || (!c.pct && !c.amount_cents)) {

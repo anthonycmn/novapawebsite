@@ -352,6 +352,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           btn.textContent = 'CONTINUE';
           if (res.j.error === 'seat_taken') { $('payErr').textContent = 'Someone just took one of those seats. Pick again.'; state.sel={}; loadMap(); }
           else if (res.j.error === 'bad_coupon') $('payErr').textContent = 'That code is not valid.';
+          else if (res.j.error === 'reward_ticket_unavailable') $('payErr').textContent = 'Reward tickets are full for this performance. Pick another date, or keep your code for the next show.';
           else if (res.j.error === 'credit_leaves_tiny_total') $('payErr').textContent = 'That credit leaves a total under 50¢: add a seat or contact the box office.';
           else $('payErr').textContent = 'Could not start checkout. Try again.';
           return;
