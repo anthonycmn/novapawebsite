@@ -22,6 +22,7 @@ import { execFileSync } from "node:child_process";
 import * as acorn from "acorn";
 import * as walk from "acorn-walk";
 import { CLASSES } from "../netlify/functions/reg-freeclass.mjs";
+import { extractTerms, extractPolicies, extractCheckbox } from "../netlify/functions/reg-terms.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LIVE = process.argv.includes("--live");
@@ -386,6 +387,28 @@ function checkSubjectDashes() {
 }
 
 // ---------------------------------------------------------------------------
+// Check 4d - the terms a family agrees to can still be filed.
+//
+// Every confirmed order files the text of /terms, the Terms & Conditions
+// section of /policies and the checkout's "I agree" sentence, read from the
+// published pages by reg-terms.mjs (Oct 9 2026, Todd). Those readers depend
+// on the markup: <main> on terms.html, <section id="terms"> on policies.html,
+// the <span> after #policyOk on the register page. A redesign that moves any
+// of them would quietly file nothing, so the same readers run here first.
+
+function checkTermsCapture() {
+  const read = (f) => { try { return readFileSync(join(ROOT, f), "utf8"); } catch { return ""; } };
+  const got = [
+    ["terms.html <main>", extractTerms(read("terms.html"))],
+    ["policies.html section#terms", extractPolicies(read("policies.html"))],
+    ["register/index.html #policyOk sentence", extractCheckbox(read("register/index.html"))],
+  ];
+  const bad = got.filter(([, t]) => !t);
+  for (const [where] of bad) fail("terms-capture", `cannot read the agreed terms from ${where}; reg-terms.mjs would file nothing for new orders`);
+  if (!bad.length) ok("the terms families agree to are readable for filing (terms, policies, checkbox)");
+}
+
+// ---------------------------------------------------------------------------
 // Check 5 - live probes. An auth error is the healthy answer: a 500 is what a
 // broken shared import looks like from outside.
 
@@ -533,6 +556,7 @@ checkCodeLength();
 checkAnalyticsTags();
 checkReplyTo();
 checkSubjectDashes();
+checkTermsCapture();
 if (LIVE) await checkLive();
 
 // --alert emails on failure, for unattended runs. Silent when healthy, so a
