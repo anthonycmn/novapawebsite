@@ -1304,3 +1304,15 @@ No change on main, ship branch clean, no maintenance. Two weeks of the guard.
 
 Clocks: topic 11's first closure day (Oct 12) 3 days out, topic 14's nearest
 prescreen deadline 23, DC Unifieds 6.
+
+## Run 29 — October 10, 2026 — HOLD (day 15)
+
+Three commits on main (#180 ticket vs registration codes, #182 Open Jar
+masterclass presenter change, #181 terms capture). None touches a page any
+waiting draft cites, so no re-verification needed beyond the diff check.
+
+Merged, preflight green, `topic-12-ship` re-synced for the eighth time with
+fast-forward and scope verified.
+
+Clocks: topic 11's first closure day (Oct 12) 2 days out, topic 14's nearest
+prescreen deadline 22, DC Unifieds 5.
