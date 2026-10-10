@@ -137,16 +137,16 @@ export function confirmationHtml(m, pi, details) {
     const paidToday = (pi && (pi.amount_received ?? pi.amount)) || 0;
     planLine = m.first_month_free === "1"
       ? `Your first month is on us. Your card is saved, and monthly tuition starts ${nextBillText}, then the 1st of each month through ${finalText}. ` +
-        `Nothing is charged in ${coveredMonthWord}, and nothing is charged after that — the plan ends itself. Cancel any time with 30 days' notice.`
+        `Nothing is charged in ${coveredMonthWord}, and nothing is charged after that — the plan ends itself. To drop the class, email katieh@novapa.org 30 days ahead: your card is charged for those 30 days, then billing stops. Stopping or disputing a payment does not drop a class.`
       : m.first_class_free === "1" && !paidToday
       ? `The free class you booked is on us, and it is the only one left in ${coveredMonthWord}, so nothing is charged today. Your card is saved, and ` +
         `${monthlyText.charAt(0).toLowerCase() + monthlyText.slice(1)} starts ${nextBillText}, then the 1st of each month through ${finalText}, and the plan ends itself after that. ` +
-        `Cancel any time with 30 days' notice.`
+        `To drop the class, email katieh@novapa.org 30 days ahead: your card is charged for those 30 days, then billing stops. Stopping or disputing a payment does not drop a class.`
       : noMoreBills
         ? `Today's payment covers ${covered || "the rest of the class"}${prorationText}and the class ends before the next 1st, so there are no further charges.`
         : `Today's payment covers the rest of ${covered || "this month"}${prorationText}so there is no further charge this month.${freeLine} ` +
           `${monthlyText} then runs ${nextBillText} and the 1st of each month through ${finalText}, and the plan ends itself after that. ` +
-          `Cancel any time with 30 days' notice.`;
+          `To drop the class, email katieh@novapa.org 30 days ahead: your card is charged for those 30 days, then billing stops. Stopping or disputing a payment does not drop a class.`;
   }
   const esc = (x) => String(x == null ? "" : x).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   const rows = (details && details.length)
@@ -248,11 +248,15 @@ export function confirmationHtml(m, pi, details) {
           <tr><td style="padding:16px 18px">
             <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a7a55">If plans change</div>
             <ul style="margin:8px 0 0;padding-left:18px;font-size:13.5px;color:#555;line-height:1.6">
+              ${m.plan === "subscription" ? `
+              <li style="margin:5px 0"><b>To drop a class, email <a href="mailto:katieh@novapa.org" style="color:${GOLD}">katieh@novapa.org</a> at least 30 days ahead.</b> Your card is charged for the 30 days after we receive your notice, then billing stops on its own.</li>
+              <li style="margin:5px 0"><b>Stopping or disputing a payment does not drop a class.</b> The tuition for the notice period is still owed.</li>
+              <li style="margin:5px 0">No refunds for missed classes. If we cancel for weather or an emergency, a make-up is scheduled rather than a refund issued.</li>` : `
               <li style="margin:5px 0"><b>All fees are non-refundable</b>, including for missed days or early withdrawal. Registering is a commitment to the full fee.</li>
               <li style="margin:5px 0"><b>Withdrawals must be in writing, at least one month before the program starts.</b> Email <a href="mailto:info@novapa.org" style="color:${GOLD}">info@novapa.org</a> — only written notice inside that window can be moved to another program.</li>
               <li style="margin:5px 0">Drop out <b>60 or more days before the start</b> with the balance paid in full and what you paid can go toward a future program as a tuition credit, good for one year, administrative fees apply.</li>
               <li style="margin:5px 0">Withdrawals <b>inside 30 days</b> are not eligible for a credit, and partial payments are non-transferable.</li>
-              <li style="margin:5px 0">If we cancel for weather or an emergency, a make-up is scheduled rather than a refund issued.</li>
+              <li style="margin:5px 0">If we cancel for weather or an emergency, a make-up is scheduled rather than a refund issued.</li>`}
             </ul>
             ${m.insured === "1" ? `<p style="margin:10px 0 0;font-size:13.5px;color:#555;line-height:1.6">
               <b>You bought tuition insurance</b>, so a withdrawal refunds 100% at 90&ndash;76 days before the start,
@@ -260,7 +264,7 @@ export function confirmationHtml(m, pi, details) {
               The premium itself is non-refundable and is deducted from the refund.</p>` : ""}
             <p style="margin:10px 0 0;font-size:13px;color:#777;line-height:1.6">
               This is a summary. The full terms are at
-              <a href="https://www.northernvirginiaperformingarts.org/policies#refunds" style="color:${GOLD}">novapa.org/policies</a>
+              <a href="https://www.northernvirginiaperformingarts.org/policies#${m.plan === "subscription" ? "classes" : "refunds"}" style="color:${GOLD}">novapa.org/policies</a>
               and they govern.</p>
           </td></tr>
         </table>

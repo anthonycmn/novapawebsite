@@ -676,6 +676,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
         <input type="checkbox" id="policyOk" style="width:17px;height:17px;accent-color:var(--gold2)">
         <span>I agree to NOVAPA's <a href="/terms" target="_blank" rel="noopener">terms</a>, <a href="/policies" target="_blank" rel="noopener">policies</a>, and <a href="/terms#photo" target="_blank" rel="noopener">Photo and Media Release</a>: <b>all sales are final (no refunds)</b>. Casting is at the director's discretion: not receiving a hoped-for role is not grounds for a refund or for stopping a payment plan.</span>
       </label>
+      <label class="tiny" id="classDropWrap" style="display:none;align-items:center;gap:8px;text-align:left;margin-top:10px;cursor:pointer">
+        <input type="checkbox" id="classDropOk" style="width:17px;height:17px;flex-shrink:0;accent-color:var(--gold2)">
+        <span><b>Monthly classes:</b> to drop a class I must email <b>katieh@novapa.org</b> at least <b>30 days</b> ahead, and my card is charged for those 30 days. Stopping or disputing a payment does not drop a class.</span>
+      </label>
       <button class="btn" id="payStart" style="display:none">Continue to Payment</button>
       <div id="expressWrap" style="display:none">
         <div id="expressCheckout"></div>
@@ -3447,8 +3451,9 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
     setPayH1(p.today);
     showPendingPay(p.today);
     $('payBreakdown').innerHTML = catAllClasses()
-      ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). Cancel with 30 days\' notice: you\'re billed for the upcoming month, then done. No refunds.</p>'
+      ? '<p class="tiny" style="text-align:left;margin-top:2px">Today covers each class\'s first month. Monthly tuition continues automatically (next bill Oct 1, final bill Jun 1). To drop a class, email katieh@novapa.org with 30 days\' notice: your card is charged for those 30 days, then billing stops. Stopping or disputing a payment does not drop a class. No refunds.</p>'
       : '<p class="tiny" style="text-align:left;margin-top:2px">One payment: you\'re done. All sales final.</p>';
+    syncClassDropBox();
   }
   function localPricing(){
     var items = state.hold ? state.hold.items : buildItems();
@@ -3913,9 +3918,10 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
           '<p class="tiny" style="text-align:left;margin-top:2px">Today covers the rest of ' + esc(mo) + proTxt +
           (noMore
             ? '. The class ends before the next 1st, so there are no further charges.'
-            : '. Monthly tuition of ' + money(p.monthly_cents || 0) + ' then continues automatically on the 1st (next bill ' + nb + ', final bill ' + fb + '). Cancel with 30 days\' notice: you\'re billed for the upcoming month, then done. No refunds.') +
+            : '. Monthly tuition of ' + money(p.monthly_cents || 0) + ' then continues automatically on the 1st (next bill ' + nb + ', final bill ' + fb + '). To drop a class, email katieh@novapa.org with 30 days\' notice: your card is charged for those 30 days, then billing stops. Stopping or disputing a payment does not drop a class. No refunds.') +
           '</p>';
       }
+      syncClassDropBox();
       return;
     }
     if (state.plan !== 'deposit' || !p.n_installments) return;
@@ -4104,7 +4110,7 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       if (state.setupMode) {
         $('payBreakdown').innerHTML =
           '<div class="sumrow total" style="border:none;padding-top:4px"><span>Due today</span><span>$0.00</span></div>' +
-          '<p class="tiny" style="text-align:left;margin-top:2px"><b>Free class</b>: the class you booked on the free-class page is the only one left this month, and it is on us. Monthly tuition of <b>' + money(res.j.pricing.monthly_cents) + '</b> starts ' + (res.j.pricing.next_bill_utc ? fmtBillDate(res.j.pricing.next_bill_utc) : 'Oct 1') + ', automatic on this card. Cancel with 30 days\u2019 notice.</p>';
+          '<p class="tiny" style="text-align:left;margin-top:2px"><b>Free class</b>: the class you booked on the free-class page is the only one left this month, and it is on us. Monthly tuition of <b>' + money(res.j.pricing.monthly_cents) + '</b> starts ' + (res.j.pricing.next_bill_utc ? fmtBillDate(res.j.pricing.next_bill_utc) : 'Oct 1') + ', automatic on this card. To drop the class, email katieh@novapa.org with 30 days\u2019 notice; the card is charged for those 30 days, then billing stops.</p>';
       }
       setPayH1(res.j.pricing.today_cents);
       mountStripe();
@@ -4146,7 +4152,23 @@ src="https://www.facebook.com/tr?id=902777265812159&ev=PageView&noscript=1"
       redirect: 'if_required'
     });
   }
+  // CJ, Oct 9 2026: a family must know, before paying, that a class is dropped
+  // with 30 days' written notice to Katie and the card is charged for them.
+  function classDropShown(){
+    return (typeof catAllClasses === 'function' && catAllClasses()) || state.plan === 'subscription';
+  }
+  function syncClassDropBox(){
+    var w = $('classDropWrap');
+    if (w) w.style.display = classDropShown() ? 'flex' : 'none';
+  }
   function policyBlocked(){
+    syncClassDropBox();
+    if (classDropShown() && !$('classDropOk').checked) {
+      var e2 = $('payErr');
+      e2.textContent = 'Please tick the box about dropping a class: 30 days\' notice to katieh@novapa.org, charged for those 30 days.';
+      e2.classList.add('on');
+      return true;
+    }
     if ($('policyOk').checked) return false;
     var errEl = $('payErr');
     errEl.textContent = 'Please agree to NOVAPA\'s terms, policies, and Photo and Media Release to continue.';
