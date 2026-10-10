@@ -72,11 +72,11 @@ try {
 
   // SMTP_PASS present: SMTP wins even with a Resend key beside it, from the
   // env mailbox. (No SMTP send is attempted here.)
-  env({ SMTP_USER: "jason@novapa.org", SMTP_PASS: "app-password", FROM_ADDR: "info@novapa.org", RESEND_API_KEY: "re_test" });
+  env({ SMTP_USER: "no-reply@novapa.org", SMTP_PASS: "app-password", FROM_ADDR: "info@novapa.org", RESEND_API_KEY: "re_test" });
   assert.equal(mailTransport(), "smtp");
   assert.equal(fromAddr(), "info@novapa.org");
-  env({ SMTP_USER: "jason@novapa.org", SMTP_PASS: "app-password" });
-  assert.equal(fromAddr(), "jason@novapa.org");
+  env({ SMTP_USER: "info@novapa.org", SMTP_PASS: "app-password" });
+  assert.equal(fromAddr(), "info@novapa.org");
 
   // A password with no user is not a transport.
   env({ SMTP_PASS: "app-password" });
